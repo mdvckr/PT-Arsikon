@@ -30,12 +30,17 @@ class RoleAndPermissionSeeder extends Seeder
             'materials.manage', 'view materials', 'create materials', 'edit materials', 'delete materials',
             'tools.manage', 'view tools', 'create tools', 'edit tools', 'delete tools',
             'goods_receipts.create', 'view goods receipts', 'create goods receipts',
-            'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve',
+            'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
             'distributions.create', 'view distributions', 'create distributions', 'distributions.receive',
             'tools.assign', 'view tool assignments', 'create tool assignments', 'return tool assignments', 'tools.inspect_return',
             'stock_opname.create', 'view stock opname', 'create stock opname', 'stock_opname.approve', 'approve stock opname',
             'reports.view_all', 'view reports',
             'audit_logs.view', 'view audit logs', 'view inventory',
+            // Procurement & PO
+            'view procurement', 'create procurement', 'approve procurement',
+            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view payments', 'create payments', 'verify payments',
+            'view returns', 'create returns', 'approve returns', 'receive returns',
         ];
 
         foreach ($permissions as $permission) {
@@ -78,6 +83,22 @@ class RoleAndPermissionSeeder extends Seeder
             'create stock opname',
             'stock_opname.create',
             'view inventory',
+            'create procurement',
+            'view procurement',
+            'create returns',
+            'view returns',
+        ]);
+
+        $adminPORole = Role::firstOrCreate(['name' => 'Admin PO']);
+        $adminPORole->syncPermissions([
+            'view suppliers', 'create suppliers', 'edit suppliers',
+            'view materials',
+            'view procurement', 'approve procurement',
+            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view payments', 'create payments', 'verify payments',
+            'view goods receipts', 'create goods receipts',
+            'view reports',
+            'audit_logs.view',
         ]);
 
         // 3. Create Default Central Warehouse & Sample Project
@@ -142,5 +163,16 @@ class RoleAndPermissionSeeder extends Seeder
         );
         $projectUser->assignRole($userRole);
         $projectUser->warehouses()->syncWithoutDetaching([$projectWarehouse->id]);
+
+        // Admin PO user
+        $adminPOUser = User::firstOrCreate(
+            ['email' => 'admin.po@arsikon.co.id'],
+            [
+                'name'     => 'Admin Pengadaan',
+                'password' => Hash::make('password123'),
+            ]
+        );
+        $adminPOUser->assignRole($adminPORole);
+        $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
     }
 }

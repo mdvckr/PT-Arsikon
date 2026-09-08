@@ -19,6 +19,10 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\ProcurementController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReturnController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -95,6 +99,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Audit Logs
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // Procurement Requests
+    Route::resource('procurement', ProcurementController::class)->only(['index','create','store','show']);
+    Route::post('/procurement/{procurement}/approve', [ProcurementController::class, 'approve'])->name('procurement.approve');
+    Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
+
+    // Purchase Orders
+    Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
+    Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
+    Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+
+    // Payments
+    Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);
+    Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
+    Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+
+    // Returns
+    Route::resource('returns', ReturnController::class)->only(['index','create','store','show']);
+    Route::post('/returns/{return}/approve', [ReturnController::class, 'approve'])->name('returns.approve');
+    Route::post('/returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
+    Route::post('/returns/{return}/reject',  [ReturnController::class, 'reject'])->name('returns.reject');
 
     // Admin: Users, Warehouses, Projects
     Route::resource('users', UserController::class);

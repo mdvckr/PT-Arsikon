@@ -718,6 +718,29 @@
                 </a>
             </div>
 
+            <!-- PENGADAAN (Admin PO & Owner) -->
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin PO']))
+            <div class="nav-section">
+                <div class="nav-section-label" style="padding: 8px 20px 4px;">Pengadaan</div>
+                <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
+                    <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
+                </a>
+                <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice"></i> Purchase Order
+                </a>
+                <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                    <i class="fas fa-money-bill-wave"></i> Pembayaran
+                </a>
+            </div>
+            @endif
+
+            <!-- PENGEMBALIAN -->
+            <div class="nav-section">
+                <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
+                    <i class="fas fa-rotate-left"></i> Pengembalian
+                </a>
+            </div>
+
             <!-- LAPORAN -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin']))
             <div class="nav-section">
