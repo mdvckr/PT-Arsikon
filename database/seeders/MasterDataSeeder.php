@@ -37,8 +37,8 @@ class MasterDataSeeder extends Seeder
         $supSemen = Supplier::firstOrCreate(['code' => 'SUP-001'], ['name' => 'PT Semen Indonesia Tbk', 'phone' => '021-5551234', 'email' => 'sales@semenindonesia.com', 'address' => 'Jakarta Central']);
         $supBesi = Supplier::firstOrCreate(['code' => 'SUP-002'], ['name' => 'PT Krakatau Steel Tbk', 'phone' => '0254-392222', 'email' => 'sales@krakatausteel.com', 'address' => 'Cilegon, Banten']);
 
-        // 4. Seed Materials
-        Material::firstOrCreate(
+        // 4. Seed Materials & Initial Inventories
+        $m1 = Material::firstOrCreate(
             ['sku' => 'MAT-SEM-001'],
             [
                 'category_id' => $catSemen->id,
@@ -50,7 +50,7 @@ class MasterDataSeeder extends Seeder
             ]
         );
 
-        Material::firstOrCreate(
+        $m2 = Material::firstOrCreate(
             ['sku' => 'MAT-BES-001'],
             [
                 'category_id' => $catBesi->id,
@@ -62,7 +62,7 @@ class MasterDataSeeder extends Seeder
             ]
         );
 
-        Material::firstOrCreate(
+        $m3 = Material::firstOrCreate(
             ['sku' => 'MAT-PAS-001'],
             [
                 'category_id' => $catAgregat->id,
@@ -73,6 +73,13 @@ class MasterDataSeeder extends Seeder
                 'description' => 'Pasir beton kualitas super',
             ]
         );
+
+        $centralWarehouse = Warehouse::where('is_central', true)->first();
+        if ($centralWarehouse) {
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m1->id], ['quantity' => 500, 'min_stock' => 100]);
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m2->id], ['quantity' => 1000, 'min_stock' => 200]);
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m3->id], ['quantity' => 250, 'min_stock' => 50]);
+        }
 
         // 5. Seed Tools
         $centralWarehouse = Warehouse::where('is_central', true)->first();
