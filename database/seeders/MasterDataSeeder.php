@@ -75,10 +75,18 @@ class MasterDataSeeder extends Seeder
         );
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();
+        $projectWarehouse = Warehouse::where('is_central', false)->first();
+
         if ($centralWarehouse) {
             \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m1->id], ['quantity' => 500, 'min_stock' => 100]);
             \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m2->id], ['quantity' => 1000, 'min_stock' => 200]);
             \App\Models\Inventory::firstOrCreate(['warehouse_id' => $centralWarehouse->id, 'material_id' => $m3->id], ['quantity' => 250, 'min_stock' => 50]);
+        }
+
+        if ($projectWarehouse) {
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $projectWarehouse->id, 'material_id' => $m1->id], ['quantity' => 50, 'min_stock' => 20]);
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $projectWarehouse->id, 'material_id' => $m2->id], ['quantity' => 100, 'min_stock' => 30]);
+            \App\Models\Inventory::firstOrCreate(['warehouse_id' => $projectWarehouse->id, 'material_id' => $m3->id], ['quantity' => 25, 'min_stock' => 10]);
         }
 
         // 5. Seed Tools
