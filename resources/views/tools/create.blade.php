@@ -21,7 +21,11 @@
                     </div>
                     <div>
                         <label class="form-label">Nama Alat <span class="text-danger">*</span></label>
-                        <input type="text" name="name" value="{{ old('name') }}" class="form-control" required>
+                        <input type="text" name="name" value="{{ old('name') }}" class="form-control" placeholder="Contoh: Tangga / Bor" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Tipe / Spesifikasi</label>
+                        <input type="text" name="type" value="{{ old('type') }}" class="form-control" placeholder="Contoh: 3 Meter / Teleskopik / 500W">
                     </div>
                     <div>
                         <label class="form-label">Kategori</label>

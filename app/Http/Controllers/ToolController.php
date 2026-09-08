@@ -51,12 +51,11 @@ class ToolController extends Controller
         $validated = $request->validate([
             'code'          => 'required|string|max:50|unique:tools,code',
             'name'          => 'required|string|max:255',
+            'type'          => 'nullable|string|max:255',
             'category_id'   => 'nullable|exists:categories,id',
             'serial_number' => 'nullable|string|max:100',
             'brand'         => 'nullable|string|max:100',
-            'purchase_date' => 'nullable|date',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'condition'     => 'required|in:good,damaged,under_maintenance',
+            'condition'     => 'nullable|string',
             'description'   => 'nullable|string',
         ]);
 
@@ -96,12 +95,11 @@ class ToolController extends Controller
         $validated = $request->validate([
             'code'          => "required|string|max:50|unique:tools,code,{$tool->id}",
             'name'          => 'required|string|max:255',
+            'type'          => 'nullable|string|max:255',
             'category_id'   => 'nullable|exists:categories,id',
             'serial_number' => 'nullable|string|max:100',
             'brand'         => 'nullable|string|max:100',
-            'purchase_date' => 'nullable|date',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'condition'     => 'required|in:good,damaged,under_maintenance',
+            'condition'     => 'nullable|string',
             'description'   => 'nullable|string',
         ]);
 

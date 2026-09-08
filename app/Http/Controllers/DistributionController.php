@@ -45,7 +45,10 @@ class DistributionController extends Controller
         $mr         = $mrId ? MaterialRequest::with(['items.material.unit', 'warehouse'])->findOrFail($mrId) : null;
         $warehouses = Warehouse::orderBy('name')->get();
 
-        return view('distributions.create', compact('mr', 'warehouses'));
+        $materials  = \App\Models\Material::with(['unit','category'])->orderBy('name')->get();
+        $tools      = \App\Models\Tool::where('status', 'available')->orderBy('name')->get();
+
+        return view('distributions.create', compact('mr', 'warehouses', 'materials', 'tools'));
     }
 
     public function store(Request $request)
@@ -66,6 +69,16 @@ class DistributionController extends Controller
         ]);
 
         $dist = $this->service->create($validated, auth()->id());
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $dist->load(['fromWarehouse', 'toWarehouse', 'creator', 'items.material.unit']);
+            return response()->json([
+                'success' => true,
+                'message' => "Surat Jalan #{$dist->delivery_number} berhasil dibuat.",
+                'distribution' => $dist,
+                'redirect_url' => route('distributions.show', $dist)
+            ]);
+        }
 
         return redirect()->route('distributions.show', $dist)
             ->with('success', "Distribusi #{$dist->delivery_number} berhasil dibuat.");

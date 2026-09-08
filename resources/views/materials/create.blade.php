@@ -27,8 +27,15 @@
                         <label class="form-label">Nama Material <span class="text-danger">*</span></label>
                         <input type="text" name="name" value="{{ old('name') }}"
                             class="form-control @error('name') is-invalid @enderror"
-                            placeholder="Nama material" required>
+                            placeholder="Contoh: Tangga / Semen" required>
                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div>
+                        <label class="form-label">Tipe / Spesifikasi</label>
+                        <input type="text" name="type" value="{{ old('type') }}"
+                            class="form-control @error('type') is-invalid @enderror"
+                            placeholder="Contoh: 3 Meter / 50 Kg / 10mm">
+                        @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div>
                         <label class="form-label">Kategori <span class="text-danger">*</span></label>

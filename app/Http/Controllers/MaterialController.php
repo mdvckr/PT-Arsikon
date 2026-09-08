@@ -50,10 +50,9 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'code'        => 'required|string|max:50|unique:materials,code',
             'name'        => 'required|string|max:255',
+            'type'        => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'unit_id'     => 'required|exists:units,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'unit_price'  => 'required|numeric|min:0',
             'description' => 'nullable|string',
         ]);
 
@@ -88,10 +87,9 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'code'        => "required|string|max:50|unique:materials,code,{$material->id}",
             'name'        => 'required|string|max:255',
+            'type'        => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'unit_id'     => 'required|exists:units,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'unit_price'  => 'required|numeric|min:0',
             'description' => 'nullable|string',
         ]);
 

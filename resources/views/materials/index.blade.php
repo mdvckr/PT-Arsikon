@@ -50,6 +50,7 @@
                         <th>#</th>
                         <th>Kode</th>
                         <th>Nama Material</th>
+                        <th>Tipe / Specs</th>
                         <th>Kategori</th>
                         <th>Satuan</th>
                         <th>Supplier</th>
@@ -68,6 +69,7 @@
                             <div class="text-muted" style="font-size:11.5px;">{{ Str::limit($m->description, 50) }}</div>
                             @endif
                         </td>
+                        <td><span class="badge badge-secondary">{{ $m->type ?? '-' }}</span></td>
                         <td>{{ $m->category?->name ?? '-' }}</td>
                         <td>{{ $m->unit?->abbreviation ?? $m->unit?->name ?? '-' }}</td>
                         <td>{{ $m->supplier?->name ?? '-' }}</td>

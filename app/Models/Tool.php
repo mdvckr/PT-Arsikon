@@ -16,6 +16,7 @@ class Tool extends Model
         'code',
         'serial_number',
         'name',
+        'type',
         'brand',
         'status',
         'is_active',

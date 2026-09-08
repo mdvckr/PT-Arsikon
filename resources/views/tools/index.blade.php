@@ -53,6 +53,7 @@
                     <tr>
                         <th>Kode</th>
                         <th>Nama Alat & Merk</th>
+                        <th>Tipe / Specs</th>
                         <th>Kategori</th>
                         <th>S/N</th>
                         <th>Kondisi</th>
@@ -74,6 +75,7 @@
                             <div class="fw-600">{{ $tool->name }}</div>
                             @if($tool->brand)<div class="text-muted" style="font-size:11px;">{{ $tool->brand }}</div>@endif
                         </td>
+                        <td><span class="badge badge-secondary">{{ $tool->type ?? '-' }}</span></td>
                         <td>{{ $tool->category?->name ?? '-' }}</td>
                         <td>{{ $tool->serial_number ?? '-' }}</td>
                         <td>
