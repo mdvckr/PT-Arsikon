@@ -22,7 +22,7 @@
                 </div>
                 <div style="min-width:160px;">
                     <label class="form-label">Kategori</label>
-                    <select name="category_id" class="form-control">
+                    <select name="category_id" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Kategori</option>
                         @foreach($categories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
@@ -31,7 +31,7 @@
                 </div>
                 <div style="min-width:160px;">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-control">
+                    <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="available" {{ request('status') === 'available' ? 'selected' : '' }}>Tersedia</option>
                         <option value="in_use" {{ request('status') === 'in_use' ? 'selected' : '' }}>Dipinjam</option>

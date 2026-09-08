@@ -20,7 +20,11 @@ class ToolAssignmentController extends Controller
         $query = ToolAssignment::with(['tool', 'assignedTo', 'fromWarehouse']);
 
         if ($request->status) {
-            $query->where('status', $request->status);
+            if ($request->status === 'active') {
+                $query->where('status', 'assigned');
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->search) {

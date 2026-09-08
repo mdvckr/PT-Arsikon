@@ -22,7 +22,7 @@
                 </div>
                 <div style="min-width:160px;">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-control">
+                    <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                         <option value="shipped" {{ request('status') === 'shipped' ? 'selected' : '' }}>Dikirim (Shipped)</option>

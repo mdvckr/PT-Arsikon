@@ -22,10 +22,11 @@
                 </div>
                 <div style="min-width:160px;">
                     <label class="form-label">Status</label>
-                    <select name="status" class="form-control">
+                    <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Sedang Dipinjam</option>
+                        <option value="assigned" {{ request('status') === 'assigned' || request('status') === 'active' ? 'selected' : '' }}>Dipinjam</option>
                         <option value="returned" {{ request('status') === 'returned' ? 'selected' : '' }}>Dikembalikan</option>
+                        <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Terlambat</option>
                     </select>
                 </div>
                 <div class="flex gap-2">
