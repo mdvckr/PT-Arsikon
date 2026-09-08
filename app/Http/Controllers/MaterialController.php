@@ -19,7 +19,7 @@ class MaterialController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('code', 'like', "%{$request->search}%");
+                  ->orWhere('sku', 'like', "%{$request->search}%");
             });
         }
 
@@ -48,7 +48,7 @@ class MaterialController extends Controller
         $this->authorize('create materials');
 
         $validated = $request->validate([
-            'code'        => 'required|string|max:50|unique:materials,code',
+            'sku'         => 'required|string|max:50|unique:materials,sku',
             'name'        => 'required|string|max:255',
             'type'        => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -85,7 +85,7 @@ class MaterialController extends Controller
         $this->authorize('edit materials');
 
         $validated = $request->validate([
-            'code'        => "required|string|max:50|unique:materials,code,{$material->id}",
+            'sku'         => "required|string|max:50|unique:materials,sku,{$material->id}",
             'name'        => 'required|string|max:255',
             'type'        => 'nullable|string|max:255',
             'category_id' => 'required|exists:categories,id',

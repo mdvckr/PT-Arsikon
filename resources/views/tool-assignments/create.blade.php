@@ -50,7 +50,7 @@
                                         <div class="fw-700 text-slate-800" style="font-size:14px;">{{ $item['name'] }}</div>
                                         <div class="flex gap-2 mt-1">
                                             <span class="badge badge-purple">{{ $item['category'] }}</span>
-                                            <span class="badge badge-gray"><i class="fas fa-warehouse text-xs"></i> {{ $item['current_warehouse'] }}</span>
+                                            <code style="font-size:11px;background:#f1f5f9;padding:1px 5px;border-radius:4px;">{{ $item['code'] }}</code>
                                         </div>
                                     </td>
                                     <td style="text-align:center;">
@@ -60,11 +60,11 @@
                                     </td>
                                     <td style="text-align:center;">
                                         <input type="number" 
-                                               name="quantities[{{ $item['name'] }}]" 
+                                               name="quantities[{{ $item['id'] }}]" 
                                                class="form-control qty-input" 
                                                min="0" 
                                                max="{{ $item['stock_available'] }}" 
-                                               value="{{ old('quantities.'.$item['name'], 0) }}" 
+                                               value="{{ old('quantities.'.$item['id'], 0) }}" 
                                                oninput="validateAndCalculateTotal()"
                                                style="text-align:center; font-weight:700; color:#1e293b;">
                                     </td>

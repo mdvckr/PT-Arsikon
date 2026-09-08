@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Master Data
     Route::resource('materials', MaterialController::class);
     Route::resource('tools', ToolController::class);
+    Route::post('/tools/{tool}/add-stock', [ToolController::class, 'addStock'])->name('tools.addStock');
     Route::resource('suppliers', SupplierController::class);
 
     // Categories & Units (combined page)

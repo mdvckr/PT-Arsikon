@@ -62,7 +62,7 @@
                     @forelse($materials as $i => $m)
                     <tr>
                         <td class="text-muted">{{ $materials->firstItem() + $i }}</td>
-                        <td><code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;font-size:12px;">{{ $m->code }}</code></td>
+                        <td><code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;font-size:12px;">{{ $m->sku }}</code></td>
                         <td>
                             <div class="fw-600">{{ $m->name }}</div>
                             @if($m->description)

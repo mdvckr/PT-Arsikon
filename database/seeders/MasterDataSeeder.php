@@ -97,10 +97,11 @@ class MasterDataSeeder extends Seeder
             [
                 'category_id' => $catAlatBerat->id,
                 'current_warehouse_id' => $centralWarehouse?->id,
-                'serial_number' => 'SN-GENSET-2026-001',
                 'name' => 'Genset Silent 5000W',
                 'brand' => 'Honda Silent',
-                'status' => 'available',
+                'type' => $catAlatBerat->name,
+                'stock_total' => 5,
+                'stock_available' => 5,
                 'is_active' => true,
             ]
         );
@@ -110,10 +111,11 @@ class MasterDataSeeder extends Seeder
             [
                 'category_id' => $catAlatBerat->id,
                 'current_warehouse_id' => $centralWarehouse?->id,
-                'serial_number' => 'SN-MOLEN-2026-002',
                 'name' => 'Mesin Molen Beton 500L',
                 'brand' => 'Tiger Engine',
-                'status' => 'available',
+                'type' => $catAlatBerat->name,
+                'stock_total' => 3,
+                'stock_available' => 3,
                 'is_active' => true,
             ]
         );

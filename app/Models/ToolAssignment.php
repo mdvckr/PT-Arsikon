@@ -14,6 +14,7 @@ class ToolAssignment extends Model
     protected $fillable = [
         'assignment_number',
         'tool_id',
+        'quantity',
         'from_warehouse_id',
         'to_warehouse_id',
         'assigned_to_user_id',

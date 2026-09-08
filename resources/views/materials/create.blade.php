@@ -18,10 +18,10 @@
                 <div class="grid grid-2">
                     <div>
                         <label class="form-label">Kode Material <span class="text-danger">*</span></label>
-                        <input type="text" name="code" value="{{ old('code') }}"
-                            class="form-control @error('code') is-invalid @enderror"
-                            placeholder="mis. MAT-001" required>
-                        @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <input type="text" name="sku" value="{{ old('sku') }}"
+                            class="form-control @error('sku') is-invalid @enderror"
+                            placeholder="Contoh: BESI-01" required>
+                        @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div>
                         <label class="form-label">Nama Material <span class="text-danger">*</span></label>

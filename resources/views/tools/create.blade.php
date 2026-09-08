@@ -7,7 +7,7 @@
         <span>Tambah Baru</span>
     </div>
 
-    <div class="card" style="max-width:700px;">
+    <div class="card" style="max-width:650px;">
         <div class="card-header">
             <i class="fas fa-plus-circle text-primary"></i> <span class="card-title">Form Tambah Alat</span>
         </div>
@@ -17,53 +17,34 @@
                 <div class="grid grid-2">
                     <div>
                         <label class="form-label">Kode Alat <span class="text-danger">*</span></label>
-                        <input type="text" name="code" value="{{ old('code') }}" class="form-control" placeholder="mis. T-001" required>
+                        <input type="text" name="code" value="{{ old('code') }}" class="form-control @error('code') is-invalid @enderror" placeholder="mis. GEN / MOLEN" required>
+                        <div class="text-muted" style="font-size:11px;margin-top:4px;">Kode unik untuk jenis alat ini</div>
+                        @error('code')<div class="text-danger" style="font-size:12px;">{{ $message }}</div>@enderror
                     </div>
                     <div>
                         <label class="form-label">Nama Alat <span class="text-danger">*</span></label>
-                        <input type="text" name="name" value="{{ old('name') }}" class="form-control" placeholder="Contoh: Tangga / Bor" required>
-                    </div>
-                    <div>
-                        <label class="form-label">Tipe / Spesifikasi</label>
-                        <input type="text" name="type" value="{{ old('type') }}" class="form-control" placeholder="Contoh: 3 Meter / Teleskopik / 500W">
+                        <input type="text" name="name" value="{{ old('name', request('name')) }}" class="form-control" placeholder="Contoh: Genset Silent 5000W" required>
                     </div>
                     <div>
                         <label class="form-label">Kategori</label>
-                        <select name="category_id" class="form-control">
-                            <option value="">Pilih Kategori</option>
-                            @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        <input list="typesList" name="type" id="type" value="{{ old('type', request('type')) }}" class="form-control" placeholder="Pilih atau Ketik Kategori..." autocomplete="off">
+                        <datalist id="typesList">
+                            @foreach($types as $t)
+                                <option value="{{ $t }}">
                             @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Serial Number</label>
-                        <input type="text" name="serial_number" value="{{ old('serial_number') }}" class="form-control">
+                        </datalist>
                     </div>
                     <div>
                         <label class="form-label">Merk / Brand</label>
-                        <input type="text" name="brand" value="{{ old('brand') }}" class="form-control">
+                        <input type="text" name="brand" value="{{ old('brand') }}" class="form-control" placeholder="Honda, Makita, dll">
                     </div>
                     <div>
-                        <label class="form-label">Kondisi Awal <span class="text-danger">*</span></label>
-                        <select name="condition" class="form-control" required>
-                            <option value="good" {{ old('condition') == 'good' ? 'selected' : '' }}>Baik (Good)</option>
-                            <option value="damaged" {{ old('condition') == 'damaged' ? 'selected' : '' }}>Rusak (Damaged)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Tgl. Pembelian</label>
-                        <input type="date" name="purchase_date" value="{{ old('purchase_date') }}" class="form-control">
-                    </div>
-                    <div>
-                        <label class="form-label">Harga Beli (Rp)</label>
-                        <input type="number" name="purchase_price" value="{{ old('purchase_price') }}" class="form-control" min="0" step="100">
+                        <label class="form-label">Jumlah Stok <span class="text-danger">*</span></label>
+                        <input type="number" name="stock_total" value="{{ old('stock_total', 1) }}" class="form-control" min="0" max="9999" required>
+                        <div class="text-muted" style="font-size:11px;margin-top:4px;">Jumlah total unit yang tersedia di gudang</div>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
-                </div>
+
                 <div class="flex gap-2 mt-4">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Alat</button>
                     <a href="{{ route('tools.index') }}" class="btn btn-secondary">Batal</a>

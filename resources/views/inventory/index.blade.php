@@ -17,7 +17,7 @@
                 </div>
                 <div style="min-width:160px;">
                     <label class="form-label">Level Stok</label>
-                    <select name="stock_level" class="form-control">
+                    <select name="stock_level" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua</option>
                         <option value="low" {{ request('stock_level') === 'low' ? 'selected' : '' }}>Stok Rendah</option>
                         <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Stok Habis</option>
@@ -51,7 +51,7 @@
                     <tr>
                         <td>
                             <div class="fw-600">{{ $inv->material?->name }}</div>
-                            <div class="text-muted" style="font-size:11.5px;">{{ $inv->material?->code }}</div>
+                            <div class="text-muted" style="font-size:11.5px;">{{ $inv->material?->sku }}</div>
                         </td>
                         <td>{{ $inv->material?->category?->name ?? '-' }}</td>
                         <td>{{ $inv->warehouse?->name ?? '-' }}</td>

@@ -6,13 +6,11 @@ use App\Models\Tool;
 use App\Models\ToolAssignment;
 use App\Models\Warehouse;
 use App\Models\User;
-use App\Services\ToolManagementService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ToolAssignmentController extends Controller
 {
-    public function __construct(private ToolManagementService $service) {}
-
     public function index(Request $request)
     {
         $this->authorize('view tool assignments');
@@ -20,16 +18,15 @@ class ToolAssignmentController extends Controller
         $query = ToolAssignment::with(['tool', 'assignedTo', 'fromWarehouse']);
 
         if ($request->status) {
-            if ($request->status === 'active') {
-                $query->where('status', 'assigned');
-            } else {
-                $query->where('status', $request->status);
-            }
+            $query->where('status', $request->status === 'active' ? 'assigned' : $request->status);
         }
 
         if ($request->search) {
-            $query->whereHas('tool', fn($q) => $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('code', 'like', "%{$request->search}%"));
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('tool', fn($q2) => $q2->where('name', 'like', "%{$request->search}%")
+                      ->orWhere('code', 'like', "%{$request->search}%"))
+                  ->orWhere('notes', 'like', "%{$request->search}%");
+            });
         }
 
         $assignments = $query->latest()->paginate(15)->withQueryString();
@@ -43,34 +40,19 @@ class ToolAssignmentController extends Controller
 
         $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
 
-        $rawToolsQuery = Tool::with(['category', 'currentWarehouse'])
-            ->where('status', 'available')
-            ->where('is_active', true);
+        // Ambil semua alat aktif yang punya stok tersedia
+        $toolsQuery = Tool::where('is_active', true)->where('stock_available', '>', 0);
 
-        if ($activeWarehouseId) {
-            $rawToolsQuery->where('current_warehouse_id', $activeWarehouseId);
-        }
-
-        $rawTools = $rawToolsQuery->get();
-
-        // Fallback: If no available tools found in the specific active warehouse, show all available tools
-        if ($rawTools->isEmpty()) {
-            $rawTools = Tool::with(['category', 'currentWarehouse'])
-                ->where('status', 'available')
-                ->where('is_active', true)
-                ->get();
-        }
-        
-        // Group by Tool Name to get grouped stock availability
-        $groupedTools = $rawTools->groupBy('name')->map(function ($group) {
+        $groupedTools = $toolsQuery->get()->map(function ($tool) {
             return [
-                'name'               => $group->first()->name,
-                'category'           => $group->first()->category?->name ?? 'Lainnya',
-                'current_warehouse'  => $group->first()->currentWarehouse?->name ?? 'Gudang Utama',
-                'stock_available'    => $group->count(),
-                'tools'              => $group->values(),
+                'id'                => $tool->id,
+                'name'              => $tool->name,
+                'code'              => $tool->code,
+                'category'          => $tool->type ?? 'Lainnya',
+                'current_warehouse' => $tool->currentWarehouse?->name ?? 'Gudang Utama',
+                'stock_available'   => $tool->stock_available,
             ];
-        })->values();
+        });
 
         $users      = User::orderBy('name')->get();
         $warehouses = Warehouse::orderBy('name')->get();
@@ -84,51 +66,58 @@ class ToolAssignmentController extends Controller
         $this->authorize('create tool assignments');
 
         $validated = $request->validate([
-            'quantities'   => 'required|array',
-            'borrower_name'=> 'required|string|max:255',
-            'location_name'=> 'required|string|max:255',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
-            'assigned_at'  => 'required|date',
+            'quantities'         => 'required|array',
+            'borrower_name'      => 'required|string|max:255',
+            'location_name'      => 'required|string|max:255',
+            'warehouse_id'       => 'nullable|exists:warehouses,id',
+            'assigned_at'        => 'required|date',
             'expected_return_at' => 'nullable|date|after_or_equal:assigned_at',
-            'purpose'      => 'nullable|string',
+            'purpose'            => 'nullable|string',
         ]);
 
-        // Find or fallback warehouse & user
         $warehouseId = $validated['warehouse_id'] ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
-        $warehouse  = Warehouse::find($warehouseId) ?? Warehouse::first();
-        $assignedBy = auth()->user();
+        $warehouse   = Warehouse::find($warehouseId) ?? Warehouse::first();
+        $assignedBy  = auth()->user();
 
-        // Include manual borrower name and location name in purpose/notes
-        $borrowerInfoNotes = "Peminjam Manual: {$validated['borrower_name']} | Lokasi Site: {$validated['location_name']}";
+        $borrowerInfoNotes = "Peminjam: {$validated['borrower_name']} | Lokasi: {$validated['location_name']}";
         if (!empty($validated['purpose'])) {
             $borrowerInfoNotes .= " | " . $validated['purpose'];
         }
 
         $totalAssignedCount = 0;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount) {
-            foreach ($validated['quantities'] as $toolName => $qty) {
+        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount) {
+            foreach ($validated['quantities'] as $toolId => $qty) {
                 $qty = (int) $qty;
-                if ($qty > 0) {
-                    $availableTools = Tool::where('name', $toolName)
-                        ->where('status', 'available')
-                        ->where('is_active', true)
-                        ->limit($qty)
-                        ->get();
+                if ($qty <= 0) continue;
 
-                    foreach ($availableTools as $tool) {
-                        $this->service->assignTool(
-                            $tool,
-                            $warehouse,
-                            $assignedBy,
-                            null,
-                            null,
-                            $validated['expected_return_at'] ?? null,
-                            $borrowerInfoNotes
-                        );
-                        $totalAssignedCount++;
-                    }
+                $tool = Tool::find($toolId);
+                if (!$tool) continue;
+
+                // Cek apakah stok tersedia cukup
+                if ($tool->stock_available < $qty) {
+                    $qty = $tool->stock_available; // Pinjam sebanyak yang tersedia
                 }
+
+                if ($qty <= 0) continue;
+
+                // Buat 1 record assignment per tool
+                $assignmentNumber = 'TA-' . strtoupper(substr(uniqid(), -6));
+                ToolAssignment::create([
+                    'assignment_number'   => $assignmentNumber,
+                    'tool_id'             => $tool->id,
+                    'quantity'            => $qty,
+                    'from_warehouse_id'   => $warehouse->id,
+                    'assigned_by_user_id' => $assignedBy->id,
+                    'assigned_at'         => $validated['assigned_at'],
+                    'expected_return_at'  => $validated['expected_return_at'] ?? null,
+                    'status'              => 'active',
+                    'notes'               => $borrowerInfoNotes,
+                ]);
+
+                // Kurangi stok tersedia
+                $tool->borrow($qty);
+                $totalAssignedCount += $qty;
             }
         });
 
@@ -158,12 +147,20 @@ class ToolAssignmentController extends Controller
             'notes'       => 'nullable|string',
         ]);
 
-        $this->service->returnTool(
-            $toolAssignment,
-            auth()->user(),
-            $request->condition,
-            $request->notes
-        );
+        DB::transaction(function () use ($request, $toolAssignment) {
+            $qty  = $toolAssignment->quantity ?? 1;
+            $tool = $toolAssignment->tool;
+
+            // Kembalikan stok sesuai kondisi
+            $tool->returnStock($qty, $request->condition);
+
+            // Update status assignment
+            $toolAssignment->update([
+                'returned_at' => $request->returned_at,
+                'status'      => 'returned',
+                'notes'       => $toolAssignment->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
+            ]);
+        });
 
         return back()->with('success', 'Alat berhasil dikembalikan.');
     }

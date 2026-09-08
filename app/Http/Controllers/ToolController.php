@@ -17,31 +17,37 @@ class ToolController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('code', 'like', "%{$request->search}%")
-                  ->orWhere('serial_number', 'like', "%{$request->search}%");
+                  ->orWhere('code', 'like', "%{$request->search}%");
             });
         }
 
-        if ($request->status) {
-            $query->where('status', $request->status);
+        if ($request->type) {
+            $query->where('type', $request->type);
         }
 
-        if ($request->category_id) {
-            $query->where('category_id', $request->category_id);
+        // Filter by stock status
+        if ($request->stock_status) {
+            match($request->stock_status) {
+                'available' => $query->where('stock_available', '>', 0),
+                'empty'     => $query->where('stock_available', '<=', 0),
+                'borrowed'  => $query->where('stock_borrowed', '>', 0),
+                'damaged'   => $query->where('stock_damaged', '>', 0),
+                default     => null,
+            };
         }
 
-        $tools      = $query->latest()->paginate(15)->withQueryString();
-        $categories = Category::orderBy('name')->get();
+        $tools = $query->orderBy('type')->orderBy('name')->latest()->paginate(50)->withQueryString();
+        $types = Tool::select('type')->whereNotNull('type')->where('type', '!=', '')->distinct()->pluck('type');
 
-        return view('tools.index', compact('tools', 'categories'));
+        return view('tools.index', compact('tools', 'types'));
     }
 
     public function create()
     {
         $this->authorize('create tools');
-        $categories = Category::orderBy('name')->get();
+        $types = Tool::select('type')->whereNotNull('type')->where('type', '!=', '')->distinct()->pluck('type');
 
-        return view('tools.create', compact('categories'));
+        return view('tools.create', compact('types'));
     }
 
     public function store(Request $request)
@@ -52,30 +58,43 @@ class ToolController extends Controller
             'code'          => 'required|string|max:50|unique:tools,code',
             'name'          => 'required|string|max:255',
             'type'          => 'nullable|string|max:255',
-            'category_id'   => 'nullable|exists:categories,id',
-            'serial_number' => 'nullable|string|max:100',
             'brand'         => 'nullable|string|max:100',
-            'condition'     => 'nullable|string',
-            'description'   => 'nullable|string',
+            'stock_total'   => 'required|integer|min:0',
         ]);
 
-        $validated['status'] = 'available';
-        Tool::create($validated);
+        $tool = Tool::create([
+            'code'           => strtoupper(trim($validated['code'])),
+            'name'           => $validated['name'],
+            'type'           => $validated['type'] ?? null,
+            'brand'          => $validated['brand'] ?? null,
+            'stock_total'    => $validated['stock_total'],
+            'stock_available'=> $validated['stock_total'],
+            'stock_borrowed' => 0,
+            'stock_maintenance' => 0,
+            'stock_damaged'  => 0,
+        ]);
 
         return redirect()->route('tools.index')
-            ->with('success', "Alat '{$validated['name']}' berhasil ditambahkan.");
+            ->with('success', "Alat '{$tool->name}' berhasil ditambahkan dengan stok {$tool->stock_total} unit.");
+    }
+
+    public function addStock(Request $request, Tool $tool)
+    {
+        $this->authorize('edit tools');
+
+        $request->validate(['quantity' => 'required|integer|min:1|max:500']);
+
+        $qty = (int) $request->quantity;
+        $tool->addStock($qty);
+
+        return redirect()->route('tools.edit', $tool)
+            ->with('success', "Stok '{$tool->name}' berhasil ditambah {$qty} unit. Total stok sekarang: {$tool->fresh()->stock_total} unit.");
     }
 
     public function show(Tool $tool)
     {
         $this->authorize('view tools');
-        $tool->load([
-            'category',
-            'toolAssignments.assignee',
-            'toolAssignments.warehouse',
-            'toolInspections',
-            'maintenances',
-        ]);
+        $tool->load(['category']);
 
         return view('tools.show', compact('tool'));
     }
@@ -83,9 +102,9 @@ class ToolController extends Controller
     public function edit(Tool $tool)
     {
         $this->authorize('edit tools');
-        $categories = Category::orderBy('name')->get();
+        $types = Tool::select('type')->whereNotNull('type')->where('type', '!=', '')->distinct()->pluck('type');
 
-        return view('tools.edit', compact('tool', 'categories'));
+        return view('tools.edit', compact('tool', 'types'));
     }
 
     public function update(Request $request, Tool $tool)
@@ -96,11 +115,11 @@ class ToolController extends Controller
             'code'          => "required|string|max:50|unique:tools,code,{$tool->id}",
             'name'          => 'required|string|max:255',
             'type'          => 'nullable|string|max:255',
-            'category_id'   => 'nullable|exists:categories,id',
-            'serial_number' => 'nullable|string|max:100',
             'brand'         => 'nullable|string|max:100',
-            'condition'     => 'nullable|string',
-            'description'   => 'nullable|string',
+            'stock_total'   => 'required|integer|min:0',
+            'stock_available' => 'required|integer|min:0',
+            'stock_maintenance' => 'nullable|integer|min:0',
+            'stock_damaged' => 'nullable|integer|min:0',
         ]);
 
         $tool->update($validated);
@@ -113,7 +132,7 @@ class ToolController extends Controller
     {
         $this->authorize('delete tools');
 
-        if ($tool->status === 'in_use') {
+        if ($tool->stock_borrowed > 0) {
             return back()->with('error', 'Tidak dapat menghapus alat yang sedang dipinjam.');
         }
 

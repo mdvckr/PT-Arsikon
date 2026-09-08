@@ -23,7 +23,7 @@
                 <table style="width:100%;font-size:13.5px;border-collapse:collapse;">
                     @php
                         $rows = [
-                            ['Kode', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">'.$material->code.'</code>'],
+                            ['Kode', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">'.$material->sku.'</code>'],
                             ['Nama', $material->name],
                             ['Kategori', $material->category?->name ?? '-'],
                             ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').') '],
