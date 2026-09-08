@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Models\Tool;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Models\ToolAssignment;
 use Illuminate\Database\Seeder;
 
@@ -112,11 +113,11 @@ class MasterDataSeeder extends Seeder
                     ['assignment_number' => 'TA-20260907-0001'],
                     [
                         'tool_id' => $tool->id,
-                        'warehouse_id' => $projectWarehouse->id,
+                        'from_warehouse_id' => $projectWarehouse->id,
                         'assigned_to_user_id' => $projectUser->id,
-                        'issued_by_user_id' => $projectUser->id,
+                        'assigned_by_user_id' => $projectUser->id,
                         'assigned_at' => now(),
-                        'expected_return_date' => now()->addDays(7),
+                        'expected_return_at' => now()->addDays(7),
                         'status' => 'active',
                         'notes' => 'Peminjaman alat untuk pekerjaan lantai 2',
                     ]
