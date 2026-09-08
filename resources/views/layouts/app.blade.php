@@ -856,5 +856,28 @@
     </script>
 
     @stack('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInputs = document.querySelectorAll('input[name="search"]');
+            searchInputs.forEach(input => {
+                let timeout = null;
+                input.addEventListener('input', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        if (this.form) {
+                            this.form.submit();
+                        }
+                    }, 400); // submit 400ms after user stops typing
+                });
+
+                // Set cursor at the end of input if already filled
+                if(input.value) {
+                    input.focus();
+                    const len = input.value.length;
+                    input.setSelectionRange(len, len);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
