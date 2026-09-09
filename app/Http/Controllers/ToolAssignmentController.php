@@ -18,7 +18,9 @@ class ToolAssignmentController extends Controller
         $query = ToolAssignment::with(['tool', 'assignedTo', 'fromWarehouse']);
 
         if ($request->status) {
-            $query->where('status', $request->status === 'active' ? 'assigned' : $request->status);
+            // Normalisasi 'assigned' (legacy UI) menjadi 'active'
+            $status = $request->status === 'assigned' ? 'active' : $request->status;
+            $query->where('status', $status);
         }
 
         if ($request->search) {
@@ -101,7 +103,7 @@ class ToolAssignmentController extends Controller
 
                 if ($qty <= 0) continue;
 
-                // Buat 1 record assignment per tool
+                // Buat 1 record assignment per tool (status: menunggu persetujuan admin)
                 $assignmentNumber = 'TA-' . strtoupper(substr(uniqid(), -6));
                 ToolAssignment::create([
                     'assignment_number'   => $assignmentNumber,
@@ -111,12 +113,11 @@ class ToolAssignmentController extends Controller
                     'assigned_by_user_id' => $assignedBy->id,
                     'assigned_at'         => $validated['assigned_at'],
                     'expected_return_at'  => $validated['expected_return_at'] ?? null,
-                    'status'              => 'active',
+                    'status'              => 'pending',
                     'notes'               => $borrowerInfoNotes,
                 ]);
 
-                // Kurangi stok tersedia
-                $tool->borrow($qty);
+                // Stok BELUM dikurangi; menunggu persetujuan Admin
                 $totalAssignedCount += $qty;
             }
         });
@@ -126,15 +127,64 @@ class ToolAssignmentController extends Controller
         }
 
         return redirect()->route('tool-assignments.index')
-            ->with('success', "Berhasil meminjamkan total {$totalAssignedCount} unit alat.");
+            ->with('success', "Pengajuan pinjam {$totalAssignedCount} unit alat berhasil dibuat & menunggu persetujuan Admin.");
     }
 
     public function show(ToolAssignment $toolAssignment)
     {
         $this->authorize('view tool assignments');
-        $toolAssignment->load(['tool', 'assignedTo', 'fromWarehouse', 'assignedBy']);
+        $toolAssignment->load(['tool', 'assignedTo', 'fromWarehouse', 'assignedBy', 'approvedBy']);
 
         return view('tool-assignments.show', compact('toolAssignment'));
+    }
+
+    public function approve(ToolAssignment $toolAssignment)
+    {
+        $this->authorize('approve tool assignments');
+
+        if ($toolAssignment->status !== 'pending') {
+            return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat disetujui.');
+        }
+
+        // Pastikan stok tersedia masih cukup saat persetujuan
+        $tool      = $toolAssignment->tool;
+        $available = (int) $tool->stock_available;
+        if ($available < $toolAssignment->quantity) {
+            return back()->with('error', "Stok tersedia ({$available}) kurang dari jumlah pinjam ({$toolAssignment->quantity}).");
+        }
+
+        DB::transaction(function () use ($toolAssignment, $tool) {
+            $toolAssignment->update([
+                'status'              => 'active',
+                'approved_by_user_id' => auth()->id(),
+                'approved_at'         => now(),
+            ]);
+
+            // Kurangi stok tersedia hanya setelah disetujui
+            $tool->borrow($toolAssignment->quantity);
+        });
+
+        return back()->with('success', 'Pengajuan peminjaman alat disetujui & stok alat dikurangi.');
+    }
+
+    public function reject(Request $request, ToolAssignment $toolAssignment)
+    {
+        $this->authorize('approve tool assignments');
+
+        if ($toolAssignment->status !== 'pending') {
+            return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat ditolak.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:255',
+        ]);
+
+        $toolAssignment->update([
+            'status'           => 'rejected',
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        return back()->with('success', 'Pengajuan peminjaman alat ditolak.');
     }
 
     public function return(Request $request, ToolAssignment $toolAssignment)

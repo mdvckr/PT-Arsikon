@@ -24,12 +24,16 @@ class ToolAssignment extends Model
         'returned_at',
         'status',
         'notes',
+        'approved_by_user_id',
+        'approved_at',
+        'rejection_reason',
     ];
 
     protected $casts = [
         'assigned_at' => 'datetime',
         'expected_return_at' => 'date',
         'returned_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     public function tool(): BelongsTo
@@ -55,6 +59,11 @@ class ToolAssignment extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by_user_id');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
     }
 
     public function inspections(): HasMany

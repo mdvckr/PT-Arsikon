@@ -21,8 +21,24 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Grant all permissions to all authenticated users so no 403 authorization error occurs
+        /*
+         * Owner = super admin (semua ability diizinkan).
+         *
+         * Ability approval didelegasikan ke permission Spatie agar BUKAN user biasa
+         * (misal role "User") yang bisa menyetujui permintaan mereka sendiri —
+         * hanya Admin/role yang memiliki permission 'approve ...' yang berhak.
+         *
+         * Ability lain diizinkan (perilaku lama) supaya tidak timbul 403 tak terduga.
+         */
         Gate::before(function ($user, $ability) {
+            if ($user->hasRole('Owner')) {
+                return true;
+            }
+
+            if (str_starts_with($ability, 'approve ') || str_starts_with($ability, 'confirm ')) {
+                return null; // serahkan ke permission Spatie
+            }
+
             return true;
         });
     }

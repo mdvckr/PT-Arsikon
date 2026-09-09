@@ -36,7 +36,7 @@ class DashboardController extends Controller
             ->get();
 
         // Recent Material Requests
-        $recentRequests = MaterialRequest::with(['requester', 'warehouse'])
+        $recentRequests = MaterialRequest::with(['requestedBy', 'toWarehouse', 'fromWarehouse'])
             ->latest()
             ->limit(5)
             ->get();

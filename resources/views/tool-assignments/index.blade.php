@@ -24,9 +24,11 @@
                     <label class="form-label">Status</label>
                     <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
+                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                         <option value="assigned" {{ request('status') === 'assigned' || request('status') === 'active' ? 'selected' : '' }}>Dipinjam</option>
                         <option value="returned" {{ request('status') === 'returned' ? 'selected' : '' }}>Dikembalikan</option>
                         <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Terlambat</option>
+                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     </select>
                 </div>
                 <div class="flex gap-2">
@@ -65,7 +67,7 @@
                             @if($assign->expected_return_at)
                                 @php
                                     $expDate = \Carbon\Carbon::parse($assign->expected_return_at);
-                                    $isOverdue = $assign->status === 'assigned' && $expDate->isPast();
+                                    $isOverdue = in_array($assign->status, ['active', 'overdue']) && $expDate->isPast();
                                 @endphp
                                 <span class="{{ $isOverdue ? 'text-danger fw-700' : '' }}">
                                     {{ $expDate->format('d/m/Y') }}
@@ -75,15 +77,19 @@
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>
-                            @if($assign->status === 'returned')
-                                <span class="badge badge-success"><i class="fas fa-check"></i> Dikembalikan</span>
-                            @elseif($assign->status === 'overdue')
-                                <span class="badge badge-danger"><i class="fas fa-clock"></i> Terlambat</span>
-                            @else
-                                <span class="badge badge-warning"><i class="fas fa-hand-holding"></i> Dipinjam</span>
-                            @endif
-                        </td>
+<td>
+                        @if($assign->status === 'pending')
+                            <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Menunggu Persetujuan</span>
+                        @elseif($assign->status === 'returned')
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Dikembalikan</span>
+                        @elseif($assign->status === 'overdue')
+                            <span class="badge badge-danger"><i class="fas fa-clock"></i> Terlambat</span>
+                        @elseif($assign->status === 'rejected')
+                            <span class="badge badge-danger"><i class="fas fa-xmark"></i> Ditolak</span>
+                        @else
+                            <span class="badge badge-purple"><i class="fas fa-hand-holding"></i> Dipinjam</span>
+                        @endif
+                    </td>
                         <td>
                             <a href="{{ route('tool-assignments.show', $assign) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail">
                                 <i class="fas fa-eye"></i>

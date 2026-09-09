@@ -27,7 +27,6 @@
                             ['Nama', $material->name],
                             ['Kategori', $material->category?->name ?? '-'],
                             ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').') '],
-                            ['Supplier', $material->supplier?->name ?? '-'],
 
                         ];
                     @endphp

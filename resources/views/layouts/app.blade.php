@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/Logo-Dashboard.png') }}">
     <title>{{ $title ?? config('app.name', 'CWMS') }} — Arsikon Warehouse</title>
 
     <!-- Fonts -->
@@ -48,7 +49,7 @@
         .sidebar {
             width: var(--sidebar-width);
             min-height: 100vh;
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(180deg, #9a3412 0%, #ea580c 100%);
             position: fixed;
             top: 0; left: 0; bottom: 0;
             z-index: 1000;
@@ -60,7 +61,7 @@
 
         .sidebar-brand {
             padding: 20px 20px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid rgba(255,255,255,0.18);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -68,7 +69,7 @@
 
         .sidebar-brand .brand-icon {
             width: 40px; height: 40px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: rgba(255,255,255,0.2);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -78,33 +79,43 @@
             flex-shrink: 0;
         }
 
+        .sidebar-brand .brand-logo {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+        }
+
         .sidebar-brand .brand-text h1 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #f8fafc;
-            line-height: 1.2;
+            font-size: 13px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.25;
+            letter-spacing: 0.02em;
         }
 
         .sidebar-brand .brand-text p {
             font-size: 10px;
-            color: #64748b;
-            font-weight: 500;
+            color: rgba(255,255,255,0.75);
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
+            margin-top: 2px;
         }
 
         /* Workspace Switcher */
         .workspace-switcher {
             margin: 12px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 10px;
             padding: 10px 12px;
         }
 
         .workspace-switcher label {
             font-size: 10px;
-            color: #64748b;
+            color: rgba(255,255,255,0.7);
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -115,17 +126,17 @@
         .workspace-switcher select {
             background: transparent;
             border: none;
-            color: #e2e8f0;
+            color: #fff;
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             width: 100%;
             cursor: pointer;
             outline: none;
         }
 
         .workspace-switcher select option {
-            background: #1e293b;
-            color: #e2e8f0;
+            background: #9a3412;
+            color: #fff;
         }
 
         /* Nav Section */
@@ -135,8 +146,8 @@
 
         .nav-section-label {
             font-size: 10px;
-            color: #475569;
-            font-weight: 600;
+            color: rgba(255,255,255,0.55);
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             padding: 0 8px;
@@ -148,13 +159,13 @@
             align-items: center;
             gap: 10px;
             padding: 9px 12px;
-            border-radius: 8px;
-            color: #94a3b8;
+            border-radius: 9px;
+            color: rgba(255,255,255,0.82);
             text-decoration: none;
             font-size: 13.5px;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.2s;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
             cursor: pointer;
             border: none;
             background: none;
@@ -169,23 +180,24 @@
         }
 
         .nav-item:hover {
-            background: rgba(59,130,246,0.12);
-            color: #93c5fd;
+            background: rgba(255,255,255,0.16);
+            color: #fff;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(59,130,246,0.25), rgba(59,130,246,0.1));
-            color: #60a5fa;
-            border-left: 3px solid #3b82f6;
+            background: linear-gradient(90deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12));
+            color: #fff;
+            border-left: 3px solid #fff;
             padding-left: 9px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         }
 
         .nav-item .badge {
             margin-left: auto;
-            background: #ef4444;
-            color: white;
+            background: #fff;
+            color: #c2410c;
             font-size: 10px;
-            font-weight: 700;
+            font-weight: 800;
             padding: 2px 6px;
             border-radius: 10px;
             min-width: 18px;
@@ -198,7 +210,7 @@
         .sidebar-footer {
             margin-top: auto;
             padding: 12px;
-            border-top: 1px solid rgba(255,255,255,0.07);
+            border-top: 1px solid rgba(255,255,255,0.18);
         }
 
         .sidebar-user {
@@ -207,13 +219,13 @@
             gap: 10px;
             padding: 10px;
             border-radius: 10px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.14);
         }
 
         .sidebar-user .avatar {
             width: 34px; height: 34px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #7c2d12, #c2410c);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -224,11 +236,11 @@
         }
 
         .sidebar-user .user-info { flex: 1; min-width: 0; }
-        .sidebar-user .user-name { font-size: 12.5px; font-weight: 600; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sidebar-user .user-role { font-size: 10px; color: #64748b; }
+        .sidebar-user .user-name { font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user .user-role { font-size: 10px; color: rgba(255,255,255,0.7); }
 
         .btn-logout {
-            color: #64748b;
+            color: rgba(255,255,255,0.8);
             background: none;
             border: none;
             cursor: pointer;
@@ -238,7 +250,7 @@
             font-size: 14px;
         }
 
-        .btn-logout:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+        .btn-logout:hover { color: #7f1d1d; background: rgba(255,255,255,0.9); }
 
         /* ===== MAIN CONTENT ===== */
         .main-wrapper {
@@ -633,9 +645,9 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon"><i class="fas fa-warehouse"></i></div>
+            <img src="{{ asset('assets/Logo-Dashboard.png') }}" class="brand-logo" alt="PT ARSIKON CIPTA KARYA" style="background:transparent;padding:0;border-radius:0;">
             <div class="brand-text">
-                <h1>Arsikon</h1>
+                <h1>PT ARSIKON<br>CIPTA KARYA</h1>
                 <p>Warehouse System</p>
             </div>
         </div>
@@ -678,12 +690,6 @@
                 </a>
                 <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
                     <i class="fas fa-screwdriver-wrench"></i> Alat
-                </a>
-                <a href="{{ route('suppliers.index') }}" class="nav-item {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
-                    <i class="fas fa-truck"></i> Supplier
-                </a>
-                <a href="{{ route('categories.index') }}" class="nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                    <i class="fas fa-tags"></i> Kategori & Satuan
                 </a>
             </div>
             @endif

@@ -14,7 +14,7 @@
             <div class="card-header">
                 <i class="fas fa-list text-primary"></i>
                 <span class="card-title">Item Permintaan</span>
-                @if($materialRequest->status === 'pending')
+                @if($materialRequest->status === 'submitted')
                     @can('approve material requests')
                     <div class="flex gap-2">
                         <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}">
@@ -48,7 +48,7 @@
                                 <div class="fw-600">{{ $item->material?->name }}</div>
                                 <div class="text-muted" style="font-size:11.5px;">{{ $item->material?->code }}</div>
                             </td>
-                            <td class="fw-600">{{ number_format($item->quantity, 2) }}</td>
+                            <td class="fw-600">{{ number_format($item->qty_requested, 2) }}</td>
                             <td>{{ $item->material?->unit?->abbreviation }}</td>
                             <td class="text-muted">{{ $item->notes ?? '-' }}</td>
                         </tr>
@@ -77,16 +77,20 @@
                 @php
                     $rows = [
                         ['No. Permintaan', $materialRequest->request_number],
-                        ['Pemohon', $materialRequest->requester?->name ?? '-'],
-                        ['Gudang', $materialRequest->warehouse?->name ?? '-'],
-                        ['Dibutuhkan', $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-'],
-                        ['Diproses Oleh', $materialRequest->approver?->name ?? '-'],
+                        ['Pemohon', $materialRequest->requestedBy?->name ?? '-'],
+                        ['Gudang Asal', $materialRequest->fromWarehouse?->name ?? '-'],
+                        ['Gudang Tujuan', $materialRequest->toWarehouse?->name ?? '-'],
+                        ['Diajukan', $materialRequest->created_at ? \Carbon\Carbon::parse($materialRequest->created_at)->format('d/m/Y') : '-'],
+                        ['Diproses Oleh', $materialRequest->approvedBy?->name ?? '-'],
                     ];
                     $statusMap = [
-                        'pending'  => ['badge-warning', 'clock', 'Pending'],
-                        'approved' => ['badge-success', 'check', 'Disetujui'],
-                        'rejected' => ['badge-danger', 'xmark', 'Ditolak'],
-                        'fulfilled'=> ['badge-info',   'truck', 'Terpenuhi'],
+                        'draft'               => ['badge-gray',   'file',          'Draft'],
+                        'submitted'           => ['badge-warning','clock',         'Menunggu Persetujuan'],
+                        'approved'            => ['badge-success','check',         'Disetujui'],
+                        'partially_fulfilled' => ['badge-info',   'truck',         'Terkirim Sebagian'],
+                        'fulfilled'           => ['badge-info',   'truck',         'Terpenuhi'],
+                        'rejected'            => ['badge-danger', 'xmark',         'Ditolak'],
+                        'cancelled'           => ['badge-gray',   'ban',           'Dibatalkan'],
                     ];
                     [$cls, $icon, $label] = $statusMap[$materialRequest->status] ?? ['badge-gray', 'question', $materialRequest->status];
                 @endphp

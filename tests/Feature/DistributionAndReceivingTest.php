@@ -27,6 +27,7 @@ class DistributionAndReceivingTest extends TestCase
     protected Warehouse $projectWarehouse;
     protected User $adminUser;
     protected User $projectUser;
+    protected User $adminPOUser;
     protected Supplier $supplier;
     protected Material $semenMaterial;
 
@@ -44,6 +45,7 @@ class DistributionAndReceivingTest extends TestCase
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->projectUser = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
+        $this->adminPOUser = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
         $this->supplier = Supplier::firstOrFail();
         $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
 
@@ -70,19 +72,28 @@ class DistributionAndReceivingTest extends TestCase
         // 2. Admin approves request
         $approvedRequest = $this->requestService->approveRequest($request, $this->adminUser);
 
-        // 3. Admin ships 200 bags
-        $distribution = $this->distributionService->shipDistribution(
-            $approvedRequest,
-            $this->adminUser,
-            [['material_id' => $this->semenMaterial->id, 'qty_shipped' => 200]]
-        );
+        // 3. Admin creates + ships 200 bags
+        $distribution = $this->distributionService->create([
+            'material_request_id'  => $approvedRequest->id,
+            'from_warehouse_id'    => $this->centralWarehouse->id,
+            'to_warehouse_id'      => $this->projectWarehouse->id,
+            'delivery_date'        => now()->toDateString(),
+            'driver_name'          => 'Budi',
+            'vehicle_number'       => 'B 1234 CD',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 200],
+            ],
+        ], $this->adminUser->id);
 
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        $distribution->refresh();
         $this->assertEquals('in_transit', $distribution->status);
 
         // Central stock should now be 300 (500 - 200)
         $centralStock = Inventory::where('warehouse_id', $this->centralWarehouse->id)
             ->where('material_id', $this->semenMaterial->id)
-            ->value('qty_on_hand');
+            ->value('quantity');
         $this->assertEquals(300, $centralStock);
 
         // Project in_transit stock should be 200
@@ -106,7 +117,7 @@ class DistributionAndReceivingTest extends TestCase
         // Project stock on hand should now be 195
         $projectStock = Inventory::where('warehouse_id', $this->projectWarehouse->id)
             ->where('material_id', $this->semenMaterial->id)
-            ->value('qty_on_hand');
+            ->value('quantity');
         $this->assertEquals(195, $projectStock);
 
         // Project in_transit stock should now be 0
@@ -114,5 +125,101 @@ class DistributionAndReceivingTest extends TestCase
             ->where('material_id', $this->semenMaterial->id)
             ->value('qty_in_transit');
         $this->assertEquals(0, $projectInTransitAfter);
+    }
+
+    public function test_print_surat_jalan_page_displayed_for_in_transit(): void
+    {
+        $request = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            $this->projectUser,
+            [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
+        );
+
+        $approvedRequest = $this->requestService->approveRequest($request, $this->adminUser);
+
+        $distribution = $this->distributionService->create([
+            'material_request_id'  => $approvedRequest->id,
+            'from_warehouse_id'    => $this->centralWarehouse->id,
+            'to_warehouse_id'      => $this->projectWarehouse->id,
+            'delivery_date'        => now()->toDateString(),
+            'driver_name'          => 'Budi',
+            'vehicle_number'       => 'B 1234 CD',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 100],
+            ],
+        ], $this->adminUser->id);
+
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        $response = $this->actingAs($this->adminUser)
+            ->get(route('distributions.print', $distribution));
+
+        $response->assertOk();
+        $response->assertSee('Surat Jalan');
+        $response->assertSee($distribution->distribution_number);
+        $response->assertSee($this->semenMaterial->name);
+    }
+
+    public function test_print_surat_jalan_page_accessible_for_viewer(): void
+    {
+        $request = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            $this->projectUser,
+            [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
+        );
+
+        $approvedRequest = $this->requestService->approveRequest($request, $this->adminUser);
+
+        $distribution = $this->distributionService->create([
+            'material_request_id'  => $approvedRequest->id,
+            'from_warehouse_id'    => $this->centralWarehouse->id,
+            'to_warehouse_id'      => $this->projectWarehouse->id,
+            'delivery_date'        => now()->toDateString(),
+            'driver_name'          => 'Budi',
+            'vehicle_number'       => 'B 1234 CD',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 100],
+            ],
+        ], $this->adminUser->id);
+
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        // projectUser memiliki view distributions, jadi harus bisa mengakses halaman cetak
+        $response = $this->actingAs($this->projectUser)
+            ->get(route('distributions.print', $distribution));
+
+        $response->assertOk();
+    }
+
+    public function test_admin_po_can_access_print_surat_jalan_page(): void
+    {
+        $request = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            $this->projectUser,
+            [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
+        );
+
+        $approvedRequest = $this->requestService->approveRequest($request, $this->adminUser);
+
+        $distribution = $this->distributionService->create([
+            'material_request_id'  => $approvedRequest->id,
+            'from_warehouse_id'    => $this->centralWarehouse->id,
+            'to_warehouse_id'      => $this->projectWarehouse->id,
+            'delivery_date'        => now()->toDateString(),
+            'driver_name'          => 'Budi',
+            'vehicle_number'       => 'B 1234 CD',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 100],
+            ],
+        ], $this->adminUser->id);
+
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        $this->assertTrue($this->adminPOUser->can('view distributions'));
+
+        $response = $this->actingAs($this->adminPOUser)
+            ->get(route('distributions.print', $distribution));
+
+        $response->assertOk();
     }
 }

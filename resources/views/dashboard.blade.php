@@ -105,7 +105,7 @@
                                     {{ $req->request_number }}
                                 </a>
                             </td>
-                            <td>{{ $req->requester?->name ?? '-' }}</td>
+                            <td>{{ $req->requestedBy?->name ?? '-' }}</td>
                             <td>
                                 @php
                                     $statusMap = [

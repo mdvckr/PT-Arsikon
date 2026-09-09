@@ -75,11 +75,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Distributions
     Route::resource('distributions', DistributionController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('/distributions/{distribution}/print', [DistributionController::class, 'print'])->name('distributions.print');
     Route::post('/distributions/{distribution}/ship', [DistributionController::class, 'ship'])->name('distributions.ship');
     Route::post('/distributions/{distribution}/receive', [DistributionController::class, 'receive'])->name('distributions.receive');
 
     // Tool Assignments
     Route::resource('tool-assignments', ToolAssignmentController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('/tool-assignments/{toolAssignment}/approve', [ToolAssignmentController::class, 'approve'])->name('tool-assignments.approve');
+    Route::post('/tool-assignments/{toolAssignment}/reject', [ToolAssignmentController::class, 'reject'])->name('tool-assignments.reject');
     Route::post('/tool-assignments/{toolAssignment}/return', [ToolAssignmentController::class, 'return'])->name('tool-assignments.return');
 
     // Stock Opname

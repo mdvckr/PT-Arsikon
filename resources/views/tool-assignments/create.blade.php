@@ -136,7 +136,7 @@
 
                     <div class="flex gap-2" style="flex-direction:column;">
                         <button type="submit" class="btn btn-primary w-full justify-center" id="submitBtn">
-                            <i class="fas fa-paper-plane"></i> Process Peminjaman Alat
+                            <i class="fas fa-paper-plane"></i> Ajukan Peminjaman (Menunggu Persetujuan Admin)
                         </button>
                         <a href="{{ route('tool-assignments.index') }}" class="btn btn-secondary w-full justify-center">Batal</a>
                     </div>

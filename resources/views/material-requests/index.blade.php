@@ -24,7 +24,7 @@
                     <label class="form-label">Status</label>
                     <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
-                        <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option>
+                        <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                         <option value="approved"  {{ request('status') === 'approved'  ? 'selected' : '' }}>Disetujui</option>
                         <option value="rejected"  {{ request('status') === 'rejected'  ? 'selected' : '' }}>Ditolak</option>
                         <option value="fulfilled" {{ request('status') === 'fulfilled' ? 'selected' : '' }}>Terpenuhi</option>
@@ -55,10 +55,13 @@
                 <tbody>
                     @php
                         $statusMap = [
-                            'pending'  => ['badge-warning', 'clock', 'Pending'],
-                            'approved' => ['badge-success', 'check', 'Disetujui'],
-                            'rejected' => ['badge-danger', 'xmark', 'Ditolak'],
-                            'fulfilled'=> ['badge-info',   'truck', 'Terpenuhi'],
+                            'draft'               => ['badge-gray',   'file',   'Draft'],
+                            'submitted'           => ['badge-warning','clock',  'Menunggu Persetujuan'],
+                            'approved'            => ['badge-success','check',  'Disetujui'],
+                            'partially_fulfilled' => ['badge-info',   'truck',  'Terkirim Sebagian'],
+                            'fulfilled'           => ['badge-info',   'truck',  'Terpenuhi'],
+                            'rejected'            => ['badge-danger', 'xmark',  'Ditolak'],
+                            'cancelled'           => ['badge-gray',   'ban',    'Dibatalkan'],
                         ];
                     @endphp
                     @forelse($requests as $req)
@@ -69,11 +72,11 @@
                                 {{ $req->request_number }}
                             </a>
                         </td>
-                        <td>{{ $req->requester?->name ?? '-' }}</td>
-                        <td>{{ $req->warehouse?->name ?? '-' }}</td>
-                        <td>{{ $req->needed_at ? \Carbon\Carbon::parse($req->needed_at)->format('d/m/Y') : '-' }}</td>
+                        <td>{{ $req->requestedBy?->name ?? '-' }}</td>
+                        <td>{{ $req->fromWarehouse?->name ?? '-' }}</td>
+                        <td>{{ $req->created_at ? \Carbon\Carbon::parse($req->created_at)->format('d/m/Y') : '-' }}</td>
                         <td><span class="badge {{ $cls }}"><i class="fas fa-{{ $icon }}"></i> {{ $label }}</span></td>
-                        <td>{{ $req->approver?->name ?? '-' }}</td>
+                        <td>{{ $req->approvedBy?->name ?? '-' }}</td>
                         <td>
                             <a href="{{ route('material-requests.show', $req) }}" class="btn btn-sm btn-secondary btn-icon">
                                 <i class="fas fa-eye"></i>

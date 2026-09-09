@@ -13,6 +13,8 @@ class DistributionItem extends Model
     protected $fillable = [
         'distribution_id',
         'material_id',
+        'tool_id',
+        'tool_assignment_id',
         'qty_shipped',
         'qty_received',
         'qty_damaged_or_lost',
@@ -33,5 +35,44 @@ class DistributionItem extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function tool(): BelongsTo
+    {
+        return $this->belongsTo(Tool::class);
+    }
+
+    public function toolAssignment(): BelongsTo
+    {
+        return $this->belongsTo(ToolAssignment::class);
+    }
+
+    public function isTool(): bool
+    {
+        return $this->tool_id !== null;
+    }
+
+    public function name(): string
+    {
+        if ($this->isTool()) {
+            return $this->tool?->name ?? 'Alat';
+        }
+        return $this->material?->name ?? 'Material';
+    }
+
+    public function detail(): string
+    {
+        if ($this->isTool()) {
+            return $this->tool?->code ?? '';
+        }
+        return $this->material?->code ?? '';
+    }
+
+    public function unitAbbr(): string
+    {
+        if ($this->isTool()) {
+            return 'unit';
+        }
+        return $this->material?->unit?->abbreviation ?? '';
     }
 }

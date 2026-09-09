@@ -1,10 +1,10 @@
 <x-app-layout>
-    <x-slot name="title">Detail Distribusi: {{ $distribution->delivery_number }}</x-slot>
+    <x-slot name="title">Detail Distribusi: {{ $distribution->distribution_number }}</x-slot>
 
     <div class="breadcrumb">
         <a href="{{ route('distributions.index') }}">Distribusi</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
-        <span>{{ $distribution->delivery_number }}</span>
+        <span>{{ $distribution->distribution_number }}</span>
     </div>
 
     <div class="grid" style="grid-template-columns:1fr 340px;gap:20px;align-items:start;">
@@ -14,13 +14,13 @@
             <div class="card-header">
                 <i class="fas fa-boxes text-primary"></i> <span class="card-title">Item Surat Jalan</span>
             </div>
-            
+
             @if($distribution->status === 'draft')
                 @can('ship distributions')
                 <div class="card-body" style="border-bottom:1px solid #f1f5f9;background:#f8fafc;">
                     <form method="POST" action="{{ route('distributions.ship', $distribution) }}">
                         @csrf
-                        <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim surat jalan ini? Stok di gudang asal akan dikurangi.')">
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim surat jalan ini? Stok di gudang asal akan dikurangi dan peminjaman alat yang pending akan disetujui.')">
                             <i class="fas fa-truck"></i> Proses Pengiriman (Ship)
                         </button>
                     </form>
@@ -28,7 +28,15 @@
                 @endcan
             @endif
 
-            @if(in_array($distribution->status, ['shipped', 'partially_received']))
+            @if(in_array($distribution->status, ['in_transit', 'completed']))
+                <div class="card-body" style="border-bottom:1px solid #f1f5f9;background:#f8fafc;">
+                    <a href="{{ route('distributions.print', $distribution) }}" target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-print"></i> Cetak Surat Jalan
+                    </a>
+                </div>
+            @endif
+
+            @if($distribution->status === 'in_transit')
                 @can('receive distributions')
                 <form method="POST" action="{{ route('distributions.receive', $distribution) }}">
                 @csrf
@@ -39,7 +47,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Material</th>
+                            <th>Barang / Alat</th>
                             <th>Dikirim</th>
                             <th>Diterima Sblmnya</th>
                             <th>Terima Sekarang</th>
@@ -49,19 +57,26 @@
                         @foreach($distribution->items as $i => $item)
                         <tr>
                             <td>
-                                <div class="fw-600">{{ $item->material?->name }}</div>
+                                @if($item->isTool())
+                                <div class="fw-600">{{ $item->tool?->name ?? 'Alat' }}</div>
+                                <div class="text-muted" style="font-size:11px;">{{ $item->tool?->code }} · {{ $item->toolAssignment?->assignment_number }}</div>
+                                @else
+                                <div class="fw-600">{{ $item->material?->name ?? 'Material' }}</div>
                                 <div class="text-muted" style="font-size:11px;">{{ $item->material?->code }}</div>
+                                @endif
                             </td>
-                            <td class="fw-600">{{ $item->quantity }} {{ $item->material?->unit?->abbreviation }}</td>
-                            <td class="text-success fw-600">{{ $item->received_quantity }} {{ $item->material?->unit?->abbreviation }}</td>
+                            <td class="fw-600">{{ $item->qty_shipped }} {{ $item->unitAbbr() }}</td>
+                            <td class="text-success fw-600">{{ $item->qty_received }} {{ $item->unitAbbr() }}</td>
                             <td>
-                                @if(in_array($distribution->status, ['shipped', 'partially_received']) && auth()->user()->can('receive distributions'))
-                                    @php $remaining = $item->quantity - $item->received_quantity; @endphp
+                                @if($distribution->status === 'in_transit' && auth()->user()->can('receive distributions'))
+                                    @php $remaining = (float) $item->qty_shipped - (float) $item->qty_received - (float) $item->qty_damaged_or_lost; @endphp
                                     @if($remaining > 0)
                                     <input type="hidden" name="items[{{ $i }}][distribution_item_id]" value="{{ $item->id }}">
                                     <div class="flex items-center gap-1">
                                         <input type="number" name="items[{{ $i }}][received_quantity]" class="form-control form-control-sm"
                                             value="{{ $remaining }}" min="0" max="{{ $remaining }}" step="0.01" style="width:80px;" required>
+                                        <input type="number" name="items[{{ $i }}][qty_damaged_or_lost]" class="form-control form-control-sm"
+                                            value="0" min="0" step="0.01" style="width:60px;" title="Rusak / Hilang">
                                     </div>
                                     @else
                                     <span class="badge badge-success"><i class="fas fa-check"></i> Selesai</span>
@@ -76,10 +91,10 @@
                 </table>
             </div>
 
-            @if(in_array($distribution->status, ['shipped', 'partially_received']))
+            @if($distribution->status === 'in_transit')
                 @can('receive distributions')
                 <div class="card-body" style="border-top:1px solid #f1f5f9;text-align:right;">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Konfirmasi penerimaan barang di gudang tujuan?')">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Konfirmasi penerimaan barang/alat di gudang tujuan?')">
                         <i class="fas fa-clipboard-check"></i> Konfirmasi Penerimaan
                     </button>
                 </div>
@@ -96,19 +111,20 @@
             <div class="card-body">
                 @php
                     $rows = [
-                        ['No. Surat Jalan', $distribution->delivery_number],
+                        ['No. Surat Jalan', $distribution->distribution_number],
                         ['Gudang Asal', $distribution->fromWarehouse?->name ?? '-'],
                         ['Gudang Tujuan', $distribution->toWarehouse?->name ?? '-'],
                         ['Tgl Kirim', $distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-'],
                         ['Supir', $distribution->driver_name ?? '-'],
                         ['No. Polisi', $distribution->vehicle_number ?? '-'],
+                        ['Dibuat Oleh', $distribution->creator?->name ?? '-'],
                         ['Referensi MR', $distribution->materialRequest?->request_number ?? '-'],
                     ];
                     $statusMap = [
-                        'draft'              => ['badge-warning', 'clock', 'Draft'],
-                        'shipped'            => ['badge-primary', 'truck', 'Dikirim'],
-                        'partially_received' => ['badge-info', 'box-open', 'Diterima Parsial'],
-                        'received'           => ['badge-success', 'check-double', 'Diterima Penuh'],
+                        'draft'     => ['badge-warning', 'clock', 'Draft'],
+                        'in_transit'=> ['badge-primary', 'truck', 'Dalam Pengiriman'],
+                        'completed' => ['badge-success', 'check-double', 'Selesai'],
+                        'cancelled' => ['badge-gray', 'ban', 'Dibatalkan'],
                     ];
                     [$cls, $icon, $label] = $statusMap[$distribution->status] ?? ['badge-gray', 'question', $distribution->status];
                 @endphp

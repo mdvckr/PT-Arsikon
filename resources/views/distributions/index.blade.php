@@ -25,9 +25,9 @@
                     <select name="status" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Status</option>
                         <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="shipped" {{ request('status') === 'shipped' ? 'selected' : '' }}>Dikirim (Shipped)</option>
-                        <option value="partially_received" {{ request('status') === 'partially_received' ? 'selected' : '' }}>Diterima Parsial</option>
-                        <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Diterima Penuh</option>
+                        <option value="in_transit" {{ request('status') === 'in_transit' ? 'selected' : '' }}>Dalam Pengiriman</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai / Diterima</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
                 </div>
                 <div class="flex gap-2">
@@ -55,10 +55,10 @@
                 <tbody>
                     @php
                         $statusMap = [
-                            'draft'              => ['badge-warning', 'clock', 'Draft'],
-                            'shipped'            => ['badge-primary', 'truck', 'Dikirim'],
-                            'partially_received' => ['badge-info', 'box-open', 'Parsial'],
-                            'received'           => ['badge-success', 'check-double', 'Diterima'],
+                            'draft'     => ['badge-warning', 'clock', 'Draft'],
+                            'in_transit'=> ['badge-primary', 'truck', 'Dalam Pengiriman'],
+                            'completed' => ['badge-success', 'check-double', 'Selesai'],
+                            'cancelled' => ['badge-gray', 'ban', 'Dibatalkan'],
                         ];
                     @endphp
                     @forelse($distributions as $dist)
@@ -66,7 +66,7 @@
                     <tr>
                         <td>
                             <a href="{{ route('distributions.show', $dist) }}" class="text-primary fw-600">
-                                {{ $dist->delivery_number }}
+                                {{ $dist->distribution_number }}
                             </a>
                         </td>
                         <td>{{ $dist->fromWarehouse?->name ?? '-' }}</td>

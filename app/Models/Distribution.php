@@ -16,6 +16,10 @@ class Distribution extends Model
         'material_request_id',
         'from_warehouse_id',
         'to_warehouse_id',
+        'delivery_date',
+        'driver_name',
+        'vehicle_number',
+        'created_by_user_id',
         'shipped_by_user_id',
         'received_by_user_id',
         'shipped_at',
@@ -25,6 +29,7 @@ class Distribution extends Model
     ];
 
     protected $casts = [
+        'delivery_date' => 'date',
         'shipped_at' => 'datetime',
         'received_at' => 'datetime',
     ];
@@ -32,6 +37,11 @@ class Distribution extends Model
     public function materialRequest(): BelongsTo
     {
         return $this->belongsTo(MaterialRequest::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     public function fromWarehouse(): BelongsTo

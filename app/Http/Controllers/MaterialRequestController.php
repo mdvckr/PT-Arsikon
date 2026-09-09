@@ -43,7 +43,14 @@ class MaterialRequestController extends Controller
         $materials   = Material::with('unit')->orderBy('name')->get();
         $warehouses  = Warehouse::orderBy('name')->get();
 
-        return view('material-requests.create', compact('materials', 'warehouses', 'warehouseId'));
+        $materialsJson = $materials->map(fn($m) => [
+            'id'   => $m->id,
+            'code' => $m->code,
+            'name' => $m->name,
+            'abbr' => $m->unit?->abbreviation,
+        ]);
+
+        return view('material-requests.create', compact('materials', 'warehouses', 'warehouseId', 'materialsJson'));
     }
 
     public function store(Request $request)
@@ -51,16 +58,29 @@ class MaterialRequestController extends Controller
         $this->authorize('create material requests');
 
         $validated = $request->validate([
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'needed_at'    => 'required|date|after_or_equal:today',
-            'notes'        => 'nullable|string',
-            'items'        => 'required|array|min:1',
-            'items.*.material_id' => 'required|exists:materials,id',
-            'items.*.quantity'    => 'required|numeric|min:0.01',
-            'items.*.notes'       => 'nullable|string',
+            'warehouse_id'       => 'required|exists:warehouses,id',
+            'needed_at'          => 'nullable|date|after_or_equal:today',
+            'notes'              => 'nullable|string',
+            'items'              => 'required|array|min:1',
+            'items.*.material_id'=> 'required|exists:materials,id',
+            'items.*.quantity'   => 'required|numeric|min:0.01',
+            'items.*.notes'      => 'nullable|string',
         ]);
 
-        $mr = $this->service->create($validated, auth()->id());
+        $fromWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
+        $itemsData = collect($validated['items'])->map(fn($item) => [
+            'material_id'   => $item['material_id'],
+            'qty_requested' => $item['quantity'],
+            'notes'         => $item['notes'] ?? null,
+        ])->all();
+
+        $mr = $this->service->createRequest(
+            $fromWarehouse,
+            auth()->user(),
+            $itemsData,
+            true,
+            $validated['notes'] ?? null
+        );
 
         return redirect()->route('material-requests.show', $mr)
             ->with('success', "Permintaan material #{$mr->request_number} berhasil diajukan.");
@@ -69,7 +89,7 @@ class MaterialRequestController extends Controller
     public function show(MaterialRequest $materialRequest)
     {
         $this->authorize('view material requests');
-        $materialRequest->load(['requester', 'warehouse', 'approver', 'items.material.unit']);
+        $materialRequest->load(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy', 'items.material.unit']);
 
         return view('material-requests.show', compact('materialRequest'));
     }
@@ -78,7 +98,7 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('approve material requests');
 
-        $this->service->approve($materialRequest, auth()->id());
+        $this->service->approveRequest($materialRequest, auth()->user());
 
         return back()->with('success', "Permintaan #{$materialRequest->request_number} disetujui.");
     }
@@ -88,7 +108,7 @@ class MaterialRequestController extends Controller
         $this->authorize('approve material requests');
 
         $request->validate(['rejection_reason' => 'required|string']);
-        $this->service->reject($materialRequest, auth()->id(), $request->rejection_reason);
+        $this->service->rejectRequest($materialRequest, auth()->user(), $request->rejection_reason);
 
         return back()->with('success', "Permintaan #{$materialRequest->request_number} ditolak.");
     }

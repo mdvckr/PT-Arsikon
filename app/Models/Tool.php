@@ -51,6 +51,64 @@ class Tool extends Model
         return $this->hasMany(ToolAssignment::class);
     }
 
+    public function maintenances()
+    {
+        return $this->hasMany(Maintenance::class);
+    }
+
+    /**
+     * Apakah alat ini memiliki assignment aktif yang melewati batas waktu.
+     */
+    public function hasOverdue(): bool
+    {
+        return $this->assignments()
+            ->where('status', 'active')
+            ->whereNotNull('expected_return_at')
+            ->where('expected_return_at', '<', now())
+            ->exists();
+    }
+
+    /**
+     * Tentukan status utama alat berdasarkan stok & assignment (bulk inventory).
+     * Status bersifat derived dari data transaksi, tidak disimpan.
+     */
+    public function statusLabel(): string
+    {
+        if ($this->hasOverdue()) {
+            return 'OVERDUE';
+        }
+        if ($this->stock_damaged > 0 && $this->stock_total === $this->stock_damaged) {
+            return 'DAMAGED';
+        }
+        if ($this->stock_maintenance > 0 && $this->stock_total === $this->stock_maintenance) {
+            return 'MAINTENANCE';
+        }
+        if ($this->stock_borrowed > 0 && $this->stock_total === $this->stock_borrowed) {
+            return 'IN USE';
+        }
+        return 'AVAILABLE';
+    }
+
+    /**
+     * Lokasi / proyek dari assignment aktif terakhir.
+     */
+    public function currentAssignmentContext(): array
+    {
+        $active = $this->assignments()
+            ->where('status', 'active')
+            ->latest('assigned_at')
+            ->first();
+
+        if (! $active) {
+            return ['warehouse' => $this->currentWarehouse?->name ?? 'Gudang Utama', 'project' => null];
+        }
+
+        return [
+            'warehouse' => $active->fromWarehouse?->name ?? 'Gudang Utama',
+            'project'   => $active->notes,
+        ];
+    }
+
     /**
      * Tambah stok tersedia ke alat ini.
      */

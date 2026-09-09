@@ -33,10 +33,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div style="display:flex;gap:8px;">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Cari</button>
-                    <a href="{{ route('materials.index') }}" class="btn btn-secondary"><i class="fas fa-rotate-left"></i></a>
-                </div>
+               
             </form>
         </div>
     </div>
@@ -50,11 +47,9 @@
                         <th>#</th>
                         <th>Kode</th>
                         <th>Nama Material</th>
-                        <th>Tipe / Specs</th>
+                        <th style="text-align:center;">Total Stok</th>
                         <th>Kategori</th>
                         <th>Satuan</th>
-                        <th>Supplier</th>
-
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -69,16 +64,18 @@
                             <div class="text-muted" style="font-size:11.5px;">{{ Str::limit($m->description, 50) }}</div>
                             @endif
                         </td>
-                        <td><span class="badge badge-secondary">{{ $m->type ?? '-' }}</span></td>
+                        @php $totalStock = $m->inventories->sum('quantity'); @endphp
+                        <td style="text-align:center;">
+                            <span style="font-weight:700;font-size:15px;color:#0f172a;">{{ number_format($totalStock, 0, ',', '.') }}</span>
+                            @if($m->unit?->abbreviation)
+                            <span class="text-muted" style="font-size:11px;"> {{ $m->unit->abbreviation }}</span>
+                            @endif
+                        </td>
                         <td>{{ $m->category?->name ?? '-' }}</td>
                         <td>{{ $m->unit?->abbreviation ?? $m->unit?->name ?? '-' }}</td>
-                        <td>{{ $m->supplier?->name ?? '-' }}</td>
 
                         <td>
                             <div class="flex gap-1">
-                                <a href="{{ route('materials.show', $m) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail">
-                                    <i class="fas fa-eye"></i>
-                                </a>
                                 @can('edit materials')
                                 <a href="{{ route('materials.edit', $m) }}" class="btn btn-sm btn-warning btn-icon" title="Edit">
                                     <i class="fas fa-pen"></i>
