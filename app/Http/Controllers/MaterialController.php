@@ -13,23 +13,36 @@ class MaterialController extends Controller
     {
         $this->authorize('view materials');
 
-        $query = Material::with(['category', 'unit', 'inventories']);
+        $categoryQuery = Category::query()
+            ->where('type', 'material')
+            ->with(['materials' => function ($q) use ($request) {
+                $q->with(['unit', 'inventories']);
+                if ($request->search) {
+                    $q->where(function ($sub) use ($request) {
+                        $sub->where('name', 'like', "%{$request->search}%")
+                            ->orWhere('sku', 'like', "%{$request->search}%")
+                            ->orWhere('size', 'like', "%{$request->search}%");
+                    });
+                }
+                $q->latest();
+            }]);
+
+        if ($request->category_id) {
+            $categoryQuery->where('id', $request->category_id);
+        }
 
         if ($request->search) {
-            $query->where(function ($q) use ($request) {
+            $categoryQuery->whereHas('materials', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('sku', 'like', "%{$request->search}%");
+                  ->orWhere('sku', 'like', "%{$request->search}%")
+                  ->orWhere('size', 'like', "%{$request->search}%");
             });
         }
 
-        if ($request->category_id) {
-            $query->where('category_id', $request->category_id);
-        }
+        $categoriesData = $categoryQuery->orderBy('name')->get();
+        $filterCategories = Category::query()->where('type', 'material')->orderBy('name')->get();
 
-        $materials  = $query->latest()->paginate(15)->withQueryString();
-        $categories = Category::query()->where('type', 'material')->orderBy('name')->get();
-
-        return view('materials.index', compact('materials', 'categories'));
+        return view('materials.index', compact('categoriesData', 'filterCategories'));
     }
 
     public function create()
@@ -37,8 +50,9 @@ class MaterialController extends Controller
         $this->authorize('create materials');
         $categories = Category::query()->where('type', 'material')->orderBy('name')->get();
         $units      = Unit::orderBy('name')->get();
+        $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
 
-        return view('materials.create', compact('categories', 'units'));
+        return view('materials.create', compact('categories', 'units', 'warehouses'));
     }
 
     public function store(Request $request)
@@ -46,19 +60,42 @@ class MaterialController extends Controller
         $this->authorize('create materials');
 
         $validated = $request->validate([
-            'sku'         => 'required|string|max:50|unique:materials,sku',
-            'name'        => 'required|string|max:255',
-            'type'        => 'nullable|string|max:255',
-            'category_id' => 'nullable|exists:categories,id',
-            'new_category'=> 'nullable|string|max:255',
-            'unit_id'     => 'required|exists:units,id',
-            'description' => 'nullable|string',
+            'sku'             => 'required|string|max:50|unique:materials,sku',
+            'name'            => 'required|string|max:255',
+            'size'            => 'nullable|string|max:255',
+            'type'            => 'nullable|string|max:255',
+            'category_id'     => 'nullable|exists:categories,id',
+            'new_category'    => 'nullable|string|max:255',
+            'unit_id'         => 'required|exists:units,id',
+            'description'     => 'nullable|string',
+            'warehouse_id'    => 'nullable|exists:warehouses,id',
+            'initial_stock'   => 'nullable|numeric|min:0',
+            'min_stock'       => 'nullable|numeric|min:0',
         ]);
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
 
-        Material::create($validated);
+        $material = Material::create($validated);
+
+        if (!empty($validated['warehouse_id']) && isset($validated['initial_stock']) && $validated['initial_stock'] > 0) {
+            $inventory = \App\Models\Inventory::create([
+                'warehouse_id' => $validated['warehouse_id'],
+                'material_id'  => $material->id,
+                'quantity'      => $validated['initial_stock'],
+                'min_stock'     => $validated['min_stock'] ?? 0,
+            ]);
+
+            \App\Models\StockMutation::create([
+                'material_id'        => $material->id,
+                'warehouse_id'       => $validated['warehouse_id'],
+                'qty_change'         => $validated['initial_stock'],
+                'qty_balance_after'  => $validated['initial_stock'],
+                'reference_type'     => 'Initial Stock',
+                'created_by_user_id' => auth()->id(),
+                'notes'              => 'Stok awal saat pendaftaran material',
+            ]);
+        }
 
         return redirect()->route('materials.index')
             ->with('success', "Material '{$validated['name']}' berhasil ditambahkan.");
@@ -88,6 +125,7 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'sku'         => "required|string|max:50|unique:materials,sku,{$material->id}",
             'name'        => 'required|string|max:255',
+            'size'        => 'nullable|string|max:255',
             'type'        => 'nullable|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
             'new_category'=> 'nullable|string|max:255',

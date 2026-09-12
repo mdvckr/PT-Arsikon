@@ -138,17 +138,34 @@
 
     @push('scripts')
     <script>
-        document.querySelectorAll('.group-toggle').forEach(function (row) {
-            var group = row.dataset.group;
-            var rows = document.querySelectorAll('.' + group);
+        function initToolAccordion() {
+            var toggleRows = document.querySelectorAll('.group-toggle');
+            toggleRows.forEach(function (row) {
+                var newRow = row.cloneNode(true);
+                row.parentNode.replaceChild(newRow, row);
 
-            row.addEventListener('click', function () {
-                var collapsed = row.classList.toggle('collapsed');
-                rows.forEach(function (r) { r.style.display = collapsed ? 'none' : ''; });
-                var chev = row.querySelector('.group-chev');
-                if (chev) chev.style.transform = collapsed ? 'rotate(-90deg)' : '';
+                var group = newRow.getAttribute('data-group');
+                newRow.addEventListener('click', function (e) {
+                    if (e.target.closest('.btn')) return;
+
+                    var collapsed = newRow.classList.toggle('collapsed');
+                    var targetRows = document.querySelectorAll('.' + group);
+                    targetRows.forEach(function (r) {
+                        r.style.display = collapsed ? 'none' : '';
+                    });
+                    var chev = newRow.querySelector('.group-chev');
+                    if (chev) {
+                        chev.style.transform = collapsed ? 'rotate(-90deg)' : '';
+                    }
+                });
             });
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initToolAccordion);
+        } else {
+            initToolAccordion();
+        }
     </script>
     @endpush
 </x-app-layout>

@@ -48,7 +48,7 @@
                                 <div class="fw-600">{{ $item->material?->name }}</div>
                                 <div class="text-muted" style="font-size:11.5px;">{{ $item->material?->code }}</div>
                             </td>
-                            <td class="fw-600">{{ number_format($item->qty_requested, 2) }}</td>
+                            <td class="fw-600">{{ number_format($item->qty_requested, 0, ',', '.') }}</td>
                             <td>{{ $item->material?->unit?->abbreviation }}</td>
                             <td class="text-muted">{{ $item->notes ?? '-' }}</td>
                         </tr>

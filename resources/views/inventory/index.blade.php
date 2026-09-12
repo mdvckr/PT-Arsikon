@@ -57,11 +57,11 @@
                         <td>{{ $inv->warehouse?->name ?? '-' }}</td>
                         <td>
                             <span class="fw-700" style="font-size:15px;">
-                                {{ number_format($inv->quantity, 2) }}
+                                {{ number_format($inv->quantity, 0, ',', '.') }}
                             </span>
                             <span class="text-muted" style="font-size:12px;"> {{ $inv->material?->unit?->abbreviation }}</span>
                         </td>
-                        <td>{{ number_format($inv->min_stock, 2) }}</td>
+                        <td>{{ number_format($inv->min_stock, 0, ',', '.') }}</td>
                         <td>
                             @if($inv->quantity <= 0)
                                 <span class="badge badge-danger"><i class="fas fa-exclamation"></i> Habis</span>
@@ -73,9 +73,15 @@
                         </td>
                         <td class="text-muted">{{ $inv->updated_at?->diffForHumans() }}</td>
                         <td>
-                            <a href="{{ route('inventory.show', $inv) }}" class="btn btn-sm btn-secondary btn-icon">
-                                <i class="fas fa-eye"></i>
+                            <a href="{{ route('inventory.edit', $inv) }}" class="btn btn-sm btn-warning btn-icon">
+                                <i class="fas fa-edit"></i>
                             </a>
+                            <form action="{{ route('inventory.destroy', $inv) }}" method="POST" style="display:inline">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger btn-icon" onclick="return confirm('Yakin menghapus inventori ini?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     @empty

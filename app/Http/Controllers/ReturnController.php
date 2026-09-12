@@ -6,11 +6,19 @@ use App\Models\MaterialReturn;
 use App\Models\Material;
 use App\Models\Warehouse;
 use App\Models\Inventory;
-use App\Models\StockMutation;
+use App\Services\StockService;
+use App\Services\NotificationHelper;
 use Illuminate\Http\Request;
 
 class ReturnController extends Controller
 {
+    protected StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->stockService = $stockService;
+    }
+
     public function index(Request $request)
     {
         $query = MaterialReturn::with(['fromWarehouse','toWarehouse','requester']);
@@ -22,12 +30,19 @@ class ReturnController extends Controller
         return view('returns.index', compact('returns'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $warehouses = Warehouse::orderBy('name')->get();
         $materials  = Material::with('unit')->orderBy('name')->get();
         $central    = Warehouse::where('is_central', true)->first();
-        return view('returns.create', compact('warehouses','materials','central'));
+
+        // Ambil stok material aktif per gudang proyek
+        $inventories = Inventory::with('material.unit')
+            ->where('quantity', '>', 0)
+            ->get()
+            ->groupBy('warehouse_id');
+
+        return view('returns.create', compact('warehouses', 'materials', 'central', 'inventories'));
     }
 
     public function store(Request $request)
@@ -64,6 +79,15 @@ class ReturnController extends Controller
             ]);
         }
 
+        // Notifikasi ke Admin & Central Warehouse
+        $fromWhName = Warehouse::find($validated['from_warehouse_id'])?->name ?? 'Gudang Proyek';
+        NotificationHelper::notifyAdmins(
+            "Pengembalian Material Baru: #{$return->return_number}",
+            "Pengembalian material diajukan dari {$fromWhName} menuju Gudang Pusat.",
+            "return_created",
+            route('returns.show', $return)
+        );
+
         return redirect()->route('returns.show', $return)
             ->with('success', "Pengembalian #{$return->return_number} berhasil diajukan.");
     }
@@ -84,6 +108,18 @@ class ReturnController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        // Notifikasi ke pemohon / admin gudang proyek
+        if ($return->requester) {
+            NotificationHelper::notifyUser(
+                $return->requester,
+                "Pengembalian Material Disetujui: #{$return->return_number}",
+                "Pengembalian material #{$return->return_number} telah disetujui. Silakan kirim fisik barang ke Gudang Pusat.",
+                "return_approved",
+                route('returns.show', $return)
+            );
+        }
+
         return back()->with('success', "Pengembalian #{$return->return_number} disetujui.");
     }
 
@@ -95,37 +131,37 @@ class ReturnController extends Controller
 
         foreach ($return->items as $item) {
             if ($item->condition === 'good') {
-                $inv = Inventory::firstOrCreate(
-                    ['material_id' => $item->material_id, 'warehouse_id' => $return->to_warehouse_id],
-                    ['quantity' => 0]
+                $material  = Material::findOrFail($item->material_id);
+                $toWarehouse   = Warehouse::findOrFail($return->to_warehouse_id);
+                $fromWarehouse = Warehouse::findOrFail($return->from_warehouse_id);
+
+                // Tambah stok di Gudang Pusat
+                $this->stockService->addStock(
+                    warehouse: $toWarehouse,
+                    material: $material,
+                    quantity: (float) $item->quantity,
+                    referenceType: 'MaterialReturn',
+                    referenceId: $return->id,
+                    userId: auth()->id(),
+                    notes: "Pengembalian #{$return->return_number} dari " . $fromWarehouse->name
                 );
-                $inv->increment('quantity', $item->quantity);
 
-                StockMutation::create([
-                    'material_id'  => $item->material_id,
-                    'warehouse_id' => $return->to_warehouse_id,
-                    'type'         => 'in',
-                    'quantity'     => $item->quantity,
-                    'reference'    => $return->return_number,
-                    'notes'        => 'Pengembalian dari ' . $return->fromWarehouse->name,
-                    'created_by'   => auth()->id(),
-                ]);
-
+                // Kurangi stok di Gudang Proyek (apabila ada stok tercatat)
                 $fromInv = Inventory::where([
                     'material_id'  => $item->material_id,
                     'warehouse_id' => $return->from_warehouse_id,
                 ])->first();
-                if ($fromInv) {
-                    $fromInv->decrement('quantity', $item->quantity);
-                    StockMutation::create([
-                        'material_id'  => $item->material_id,
-                        'warehouse_id' => $return->from_warehouse_id,
-                        'type'         => 'out',
-                        'quantity'     => $item->quantity,
-                        'reference'    => $return->return_number,
-                        'notes'        => 'Pengembalian ke ' . $return->toWarehouse->name,
-                        'created_by'   => auth()->id(),
-                    ]);
+
+                if ($fromInv && $fromInv->quantity >= $item->quantity) {
+                    $this->stockService->deductStock(
+                        warehouse: $fromWarehouse,
+                        material: $material,
+                        quantity: (float) $item->quantity,
+                        referenceType: 'MaterialReturn',
+                        referenceId: $return->id,
+                        userId: auth()->id(),
+                        notes: "Pengembalian #{$return->return_number} ke " . $toWarehouse->name
+                    );
                 }
             }
             $item->update(['received_qty' => $item->quantity]);
@@ -136,6 +172,17 @@ class ReturnController extends Controller
             'received_by' => auth()->id(),
             'received_at' => now(),
         ]);
+
+        // Notifikasi pengembalian diterima & stok ter-update
+        if ($return->requester) {
+            NotificationHelper::notifyUser(
+                $return->requester,
+                "Pengembalian Material Selesai: #{$return->return_number}",
+                "Material pengembalian #{$return->return_number} telah diterima di Gudang Pusat & stok berhasil diperbarui.",
+                "return_received",
+                route('returns.show', $return)
+            );
+        }
 
         return back()->with('success', "Pengembalian #{$return->return_number} berhasil diterima. Stok diperbarui.");
     }
@@ -149,6 +196,20 @@ class ReturnController extends Controller
             'approved_by'      => auth()->id(),
             'approved_at'      => now(),
         ]);
+
+        // Notifikasi penolakan ke pemohon
+        if ($return->requester) {
+            NotificationHelper::notifyUser(
+                $return->requester,
+                "Pengembalian Material Ditolak: #{$return->return_number}",
+                "Pengembalian material #{$return->return_number} ditolak dengan alasan: {$request->rejection_reason}",
+                "return_rejected",
+                route('returns.show', $return)
+            );
+        }
+
         return back()->with('success', "Pengembalian #{$return->return_number} ditolak.");
     }
 }
+
+

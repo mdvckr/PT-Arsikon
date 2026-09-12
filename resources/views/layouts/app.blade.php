@@ -16,6 +16,7 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     @stack('styles')
 
     <style>
@@ -1110,6 +1111,7 @@
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -1164,7 +1166,11 @@
     </style>
 </head>
 
-<body>
+<body
+    data-notif-count="{{ auth()->user()?->unreadNotifications()->count() ?? 0 }}"
+    data-notif-last-id="{{ auth()->user()?->unreadNotifications()->latest()->first()?->id ?? '' }}"
+    data-notif-url="{{ route('notifications.index') }}"
+    data-notif-fetch-url="{{ route('notifications.unreadCount') }}">
     <!-- TOPBAR (Full Width) -->
     <header class="topbar">
         <div class="topbar-brand">
@@ -1248,7 +1254,7 @@
             }
         @endphp
 
-        <div class="workspace-card">
+        <!-- <div class="workspace-card">
             <div class="workspace-header-row">
                 <span class="workspace-label">WORKSPACE</span>
                 <span class="ws-badge">
@@ -1289,7 +1295,7 @@
                     <span>{{ $subDesc }}</span>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         <nav style="flex:1; padding: 8px 0;">
             <!-- DASHBOARD -->
@@ -1574,8 +1580,8 @@
         }
 
         // Realtime Notification Poller
-        let lastNotifCount = {{ auth()->user()->unreadNotifications()->count() }};
-        let lastNotifId = '{{ auth()->user()->unreadNotifications()->latest()->first()?->id ?? "" }}';
+        let lastNotifCount = parseInt(document.body.dataset.notifCount || '0', 10);
+        let lastNotifId = document.body.dataset.notifLastId || '';
 
         function showNotificationToast(data) {
             const container = document.getElementById('notifToastContainer');
@@ -1598,7 +1604,7 @@
                     setTimeout(() => toast.remove(), 300);
                     return;
                 }
-                window.location.href = data.url || '{{ route("notifications.index") }}';
+                window.location.href = data.url || document.body.dataset.notifUrl;
             };
 
             container.appendChild(toast);
@@ -1616,7 +1622,7 @@
         }
 
         function pollNotifications() {
-            fetch('{{ route("notifications.unreadCount") }}', {
+            fetch(document.body.dataset.notifFetchUrl, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'

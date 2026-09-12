@@ -110,11 +110,19 @@ class MaterialRequestService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
+            // Notify requestedBy and all users assigned to the requesting project warehouse
+            $targetUsers = collect();
             if ($request->requestedBy) {
+                $targetUsers->push($request->requestedBy);
+            }
+            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))->get();
+            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
+
+            foreach ($targetUsers as $targetUser) {
                 NotificationHelper::notifyUser(
-                    $request->requestedBy,
+                    $targetUser,
                     "Permintaan Material Disetujui: #{$request->request_number}",
-                    "Permintaan material Anda telah disetujui oleh {$approvedBy->name}.",
+                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
                     "success",
                     route('material-requests.show', $request)
                 );

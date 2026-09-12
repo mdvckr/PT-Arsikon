@@ -16,6 +16,7 @@ class Material extends Model
         'unit_id',
         'sku',
         'name',
+        'size',
         'type',
         'min_stock_central',
         'is_active',

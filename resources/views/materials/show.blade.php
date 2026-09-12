@@ -23,11 +23,12 @@
                 <table style="width:100%;font-size:13.5px;border-collapse:collapse;">
                     @php
                         $rows = [
-                            ['Kode', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">'.$material->sku.'</code>'],
-                            ['Nama', $material->name],
+                            ['Kode SKU', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">'.$material->sku.'</code>'],
+                            ['Nama Material', $material->name],
+                            ['Ukuran / Dimensi', $material->size ? '<span class="badge bg-light text-dark border">'.$material->size.'</span>' : '-'],
                             ['Kategori', $material->category?->name ?? '-'],
                             ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').') '],
-
+                            ['Waktu Input Data', $material->created_at ? $material->created_at->format('d M Y, H:i') : '-'],
                         ];
                     @endphp
                     @foreach($rows as [$label, $value])
@@ -62,8 +63,8 @@
                             @forelse($material->inventories as $inv)
                             <tr>
                                 <td class="fw-600">{{ $inv->warehouse?->name }}</td>
-                                <td>{{ number_format($inv->quantity, 2) }} {{ $material->unit?->abbreviation }}</td>
-                                <td>{{ number_format($inv->min_stock, 2) }}</td>
+                                <td>{{ number_format($inv->quantity, 0, ',', '.') }} {{ $material->unit?->abbreviation }}</td>
+                                <td>{{ number_format($inv->min_stock, 0, ',', '.') }}</td>
                                 <td>
                                     @if($inv->quantity <= 0)
                                         <span class="badge badge-danger">Habis</span>
@@ -104,7 +105,7 @@
                                         <span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Keluar</span>
                                     @endif
                                 </td>
-                                <td class="fw-600">{{ number_format(abs($mut->quantity), 2) }}</td>
+                                <td class="fw-600">{{ number_format(abs($mut->quantity), 0, ',', '.') }}</td>
                                 <td class="text-muted">{{ $mut->notes ?? '-' }}</td>
                             </tr>
                             @empty

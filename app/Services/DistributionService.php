@@ -36,7 +36,10 @@ class DistributionService
             }
         }
 
-        $taIds = collect($data['tool_assignment_ids'] ?? [])->filter()->unique()->values();
+        $taIds = collect($data['tool_assignment_ids'] ?? [])
+            ->merge(collect($data['items'] ?? [])->pluck('tool_assignment_id'))
+            ->filter()->unique()->values();
+
         $tas = $taIds->isNotEmpty()
             ? ToolAssignment::with(['tool'])->whereIn('id', $taIds)->get()->keyBy('id')
             : collect();
@@ -150,7 +153,16 @@ class DistributionService
                 throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong.");
             }
 
-            return $distribution->load(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse', 'creator', 'materialRequest']);
+            $loaded = $distribution->load(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse', 'creator', 'materialRequest']);
+
+            NotificationHelper::notifyAdmins(
+                "Surat Jalan Baru Dibuat: #{$distribution->distribution_number}",
+                "Surat Jalan #{$distribution->distribution_number} dibuat dari {$fromWarehouse->name} menuju {$toWarehouse->name}.",
+                "info",
+                route('distributions.show', $distribution)
+            );
+
+            return $loaded;
         });
     }
 
@@ -232,6 +244,21 @@ class DistributionService
                 'shipped_at'        => now(),
             ]);
 
+            // Notify destination warehouse users / admins
+            $destUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $distribution->to_warehouse_id))->get();
+            if ($destUsers->isEmpty()) {
+                $destUsers = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
+            }
+            foreach ($destUsers as $destUser) {
+                NotificationHelper::notifyUser(
+                    $destUser,
+                    "Surat Jalan Dalam Pengiriman: #{$distribution->distribution_number}",
+                    "Surat Jalan #{$distribution->distribution_number} sedang dikirim menuju {$distribution->toWarehouse?->name}.",
+                    "info",
+                    route('distributions.show', $distribution)
+                );
+            }
+
             return $distribution->fresh(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse']);
         });
     }
@@ -305,6 +332,17 @@ class DistributionService
                 'received_by_user_id' => $userId,
                 'received_at'         => now(),
             ]);
+
+            // Notify creator & central admins
+            if ($distribution->creator) {
+                NotificationHelper::notifyUser(
+                    $distribution->creator,
+                    "Surat Jalan Selesai: #{$distribution->distribution_number}",
+                    "Barang/alat pada Surat Jalan #{$distribution->distribution_number} telah diterima di {$distribution->toWarehouse?->name}.",
+                    "success",
+                    route('distributions.show', $distribution)
+                );
+            }
 
             return $distribution->fresh(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse', 'receivedBy']);
         });

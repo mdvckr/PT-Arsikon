@@ -125,8 +125,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Estimasi Tanggal Kembali</label>
+                        <label class="form-label">Estimasi Tanggal Kembali <span class="text-muted" style="font-weight:400;">(Opsional — Boleh Dikosongkan)</span></label>
                         <input type="date" name="expected_return_at" class="form-control" value="{{ old('expected_return_at') }}">
+                        <div class="text-muted" style="font-size:11px;margin-top:3px;">Dapat dikosongkan jika peminjaman tidak memiliki batas waktu pengembalian pasti.</div>
                     </div>
 
                     <div class="mb-4">

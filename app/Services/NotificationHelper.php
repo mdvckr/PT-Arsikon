@@ -15,11 +15,20 @@ class NotificationHelper
     public static function notifyAdmins(string $title, string $message, string $type = 'info', ?string $url = null): void
     {
         try {
-            $admins = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
+            // Target users with Admin roles or assigned to Central Warehouse
+            $admins = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Owner', 'Admin', 'Admin Gudang Pusat', 'Super Admin']);
+            })->orWhereHas('warehouses', function ($q) {
+                $q->where('is_central', true);
+            })->get();
+
             if ($admins->isEmpty()) {
                 $admins = User::all();
             }
-            Notification::send($admins, new SystemNotification($title, $message, $type, $url));
+
+            foreach ($admins as $admin) {
+                $admin->notify(new SystemNotification($title, $message, $type, $url));
+            }
         } catch (\Throwable $e) {
             Log::warning('Failed to send admin notification: ' . $e->getMessage());
         }

@@ -17,12 +17,12 @@
                 @php
                     $rows = [
                         ['Material', $inventory->material?->name],
-                        ['Kode', $inventory->material?->code],
+                        ['Kode', $inventory->material?->sku],
                         ['Kategori', $inventory->material?->category?->name ?? '-'],
                         ['Satuan', $inventory->material?->unit?->name ?? '-'],
                         ['Gudang', $inventory->warehouse?->name ?? '-'],
-                        ['Stok Saat Ini', number_format($inventory->quantity, 2).' '.$inventory->material?->unit?->abbreviation],
-                        ['Stok Minimum', number_format($inventory->min_stock, 2)],
+                        ['Stok Saat Ini', number_format($inventory->quantity, 0, ',', '.').' '.$inventory->material?->unit?->abbreviation],
+                        ['Stok Minimum', number_format($inventory->min_stock, 0, ',', '.')],
                     ];
                 @endphp
                 @foreach($rows as [$lbl, $val])
@@ -34,7 +34,7 @@
 
                 <div style="margin-top:16px;text-align:center;">
                     <div style="font-size:40px;font-weight:800;color:{{ $inventory->quantity <= 0 ? '#dc2626' : ($inventory->quantity <= $inventory->min_stock ? '#d97706' : '#059669') }};">
-                        {{ number_format($inventory->quantity, 2) }}
+                        {{ number_format($inventory->quantity, 0, ',', '.') }}
                     </div>
                     <div class="text-muted" style="font-size:13px;">{{ $inventory->material?->unit?->abbreviation }}</div>
                     @if($inventory->quantity <= 0)
@@ -75,7 +75,7 @@
                                     <span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Keluar</span>
                                 @endif
                             </td>
-                            <td class="fw-600">{{ number_format(abs($mut->quantity), 2) }}</td>
+                            <td class="fw-600">{{ number_format(abs($mut->quantity), 0, ',', '.') }}</td>
                             <td class="text-muted">{{ $mut->reference_type ?? '-' }} {{ $mut->reference_id ?? '' }}</td>
                             <td class="text-muted">{{ $mut->notes ?? '-' }}</td>
                         </tr>

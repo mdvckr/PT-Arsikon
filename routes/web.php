@@ -94,6 +94,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Inventory
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
+    Route::get('/inventory/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
+    Route::delete('/inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

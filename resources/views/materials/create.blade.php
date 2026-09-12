@@ -31,11 +31,11 @@
                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div>
-                        <label class="form-label">Tipe / Spesifikasi</label>
-                        <input type="text" name="type" value="{{ old('type') }}"
-                            class="form-control @error('type') is-invalid @enderror"
-                            placeholder="Contoh: 3 Meter / 50 Kg / 10mm">
-                        @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <label class="form-label">Ukuran / Dimensi / Spesifikasi</label>
+                        <input type="text" name="size" value="{{ old('size') }}"
+                            class="form-control @error('size') is-invalid @enderror"
+                            placeholder="Contoh: 10mm x 12m / 50 Kg / 8mm">
+                        @error('size')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div>
                         <label class="form-label">Kategori</label>
@@ -75,6 +75,40 @@
                     </div>
 
                 </div>
+
+                {{-- Stok Awal (Opsional) --}}
+                <div class="mt-4 p-3 border rounded" style="background:#f8fafc;border-color:#e2e8f0 !important;">
+                    <div class="fw-700 mb-2" style="font-size:14px;color:#334155;">
+                        <i class="fas fa-warehouse text-primary me-1"></i> Stok Awal Inventori (Opsional)
+                    </div>
+                    <div class="grid grid-3">
+                        <div>
+                            <label class="form-label">Lokasi Gudang</label>
+                            <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror">
+                                <option value="">-- Pilih Gudang --</option>
+                                @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="form-label">Jumlah Stok Awal</label>
+                            <input type="number" step="1" min="0" name="initial_stock" value="{{ old('initial_stock', 0) }}"
+                                class="form-control @error('initial_stock') is-invalid @enderror" placeholder="0">
+                            @error('initial_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="form-label">Batas Min. Stok</label>
+                            <input type="number" step="1" min="0" name="min_stock" value="{{ old('min_stock', 0) }}"
+                                class="form-control @error('min_stock') is-invalid @enderror" placeholder="0">
+                            @error('min_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mt-3">
                     <label class="form-label">Deskripsi</label>
                     <textarea name="description" class="form-control" rows="3"

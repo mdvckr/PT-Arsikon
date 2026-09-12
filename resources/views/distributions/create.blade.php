@@ -307,7 +307,7 @@
                 <td>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <input type="number" name="items[${rowIndex}][quantity]" class="form-control qty-input"
-                            value="${ta.quantity}" min="0.01" max="${ta.quantity}" step="1" required style="width:110px;">
+                            value="${ta.quantity}" min="1" max="${ta.quantity}" step="1" required style="width:110px;">
                         <span class="text-muted" style="font-size:13px;">unit</span>
                     </div>
                 </td>
@@ -347,6 +347,17 @@
 
         document.querySelectorAll('.ta-check').forEach(chk => {
             chk.addEventListener('change', () => {
+                // remove existing hidden tool_assignment_ids inputs
+                document.querySelectorAll('input[name="tool_assignment_ids[]"]').forEach(el => el.remove());
+                // append hidden inputs for all checked tool assignments
+                document.querySelectorAll('.ta-check:checked').forEach(c => {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'tool_assignment_ids[]';
+                    hidden.value = c.value;
+                    document.getElementById('distribution-form').appendChild(hidden);
+                });
+
                 if (!chk.checked) {
                     const checkedAny = document.querySelector('.ta-check:checked');
                     if (!checkedAny) autoWarehouses();

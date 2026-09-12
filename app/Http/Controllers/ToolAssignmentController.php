@@ -73,7 +73,7 @@ class ToolAssignmentController extends Controller
             'location_name'      => 'required|string|max:255',
             'warehouse_id'       => 'nullable|exists:warehouses,id',
             'assigned_at'        => 'required|date',
-            'expected_return_at' => 'nullable|date|after_or_equal:assigned_at',
+            'expected_return_at' => 'nullable|date',
             'purpose'            => 'nullable|string',
         ]);
 
@@ -88,7 +88,9 @@ class ToolAssignmentController extends Controller
 
         $totalAssignedCount = 0;
 
-        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount) {
+        $createdAssignments = [];
+
+        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount, &$createdAssignments) {
             foreach ($validated['quantities'] as $toolId => $qty) {
                 $qty = (int) $qty;
                 if ($qty <= 0) continue;
@@ -105,7 +107,7 @@ class ToolAssignmentController extends Controller
 
                 // Buat 1 record assignment per tool (status: menunggu persetujuan admin)
                 $assignmentNumber = 'TA-' . strtoupper(substr(uniqid(), -6));
-                ToolAssignment::create([
+                $ta = ToolAssignment::create([
                     'assignment_number'   => $assignmentNumber,
                     'tool_id'             => $tool->id,
                     'quantity'            => $qty,
@@ -117,7 +119,7 @@ class ToolAssignmentController extends Controller
                     'notes'               => $borrowerInfoNotes,
                 ]);
 
-                // Stok BELUM dikurangi; menunggu persetujuan Admin
+                $createdAssignments[] = $ta;
                 $totalAssignedCount += $qty;
             }
         });
@@ -125,6 +127,14 @@ class ToolAssignmentController extends Controller
         if ($totalAssignedCount === 0) {
             return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada alat yang ingin dipinjam.']);
         }
+
+        // Notify Admins & Owner
+        \App\Services\NotificationHelper::notifyAdmins(
+            "Pengajuan Peminjaman Alat",
+            "{$assignedBy->name} mengajukan peminjaman {$totalAssignedCount} unit alat untuk {$validated['borrower_name']} ({$validated['location_name']}).",
+            "approval_needed",
+            route('tool-assignments.index')
+        );
 
         return redirect()->route('tool-assignments.index')
             ->with('success', "Pengajuan pinjam {$totalAssignedCount} unit alat berhasil dibuat & menunggu persetujuan Admin.");
@@ -164,6 +174,26 @@ class ToolAssignmentController extends Controller
             $tool->borrow($toolAssignment->quantity);
         });
 
+        // Notify Borrower / Applicant and all users in that warehouse
+        $targetUsers = collect();
+        if ($toolAssignment->assignedBy) {
+            $targetUsers->push($toolAssignment->assignedBy);
+        }
+        if ($toolAssignment->from_warehouse_id) {
+            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $toolAssignment->from_warehouse_id))->get();
+            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
+        }
+
+        foreach ($targetUsers as $targetUser) {
+            \App\Services\NotificationHelper::notifyUser(
+                $targetUser,
+                "Peminjaman Alat Disetujui: #{$toolAssignment->assignment_number}",
+                "Pengajuan peminjaman alat {$tool->name} ({$toolAssignment->quantity} unit) telah disetujui oleh " . auth()->user()->name . ".",
+                "success",
+                route('tool-assignments.show', $toolAssignment)
+            );
+        }
+
         return back()->with('success', 'Pengajuan peminjaman alat disetujui & stok alat dikurangi.');
     }
 
@@ -183,6 +213,26 @@ class ToolAssignmentController extends Controller
             'status'           => 'rejected',
             'rejection_reason' => $request->rejection_reason,
         ]);
+
+        // Notify Borrower / Applicant and all users in that warehouse
+        $targetUsers = collect();
+        if ($toolAssignment->assignedBy) {
+            $targetUsers->push($toolAssignment->assignedBy);
+        }
+        if ($toolAssignment->from_warehouse_id) {
+            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $toolAssignment->from_warehouse_id))->get();
+            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
+        }
+
+        foreach ($targetUsers as $targetUser) {
+            \App\Services\NotificationHelper::notifyUser(
+                $targetUser,
+                "Peminjaman Alat Ditolak: #{$toolAssignment->assignment_number}",
+                "Pengajuan peminjaman alat {$toolAssignment->tool?->name} ditolak oleh " . auth()->user()->name . ". Alasan: {$request->rejection_reason}",
+                "danger",
+                route('tool-assignments.show', $toolAssignment)
+            );
+        }
 
         return back()->with('success', 'Pengajuan peminjaman alat ditolak.');
     }
@@ -211,6 +261,14 @@ class ToolAssignmentController extends Controller
                 'notes'       => $toolAssignment->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
             ]);
         });
+
+        // Notify Admins
+        \App\Services\NotificationHelper::notifyAdmins(
+            "Pengembalian Alat",
+            "Alat {$toolAssignment->tool?->name} ({$toolAssignment->quantity} unit) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+            "info",
+            route('tool-assignments.show', $toolAssignment)
+        );
 
         return back()->with('success', 'Alat berhasil dikembalikan.');
     }

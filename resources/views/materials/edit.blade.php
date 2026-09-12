@@ -29,6 +29,13 @@
                         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div>
+                        <label class="form-label">Ukuran / Dimensi / Spesifikasi</label>
+                        <input type="text" name="size" value="{{ old('size', $material->size) }}"
+                            class="form-control @error('size') is-invalid @enderror"
+                            placeholder="Contoh: 10mm x 12m / 50 Kg / 8mm">
+                        @error('size')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div>
                         <label class="form-label">Kategori</label>
                         <select name="category_id" id="category_select" class="form-control" onchange="toggleNewCategory()">
                             <option value="">Pilih Kategori</option>

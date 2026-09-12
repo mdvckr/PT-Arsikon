@@ -48,7 +48,7 @@
                                 <div class="text-muted" style="font-size:11.5px;">{{ $item->material?->code }}</div>
                             </td>
                             <td>{{ $item->material?->category?->name ?? '-' }}</td>
-                            <td class="fw-600">{{ number_format($item->quantity, 2) }}</td>
+                            <td class="fw-600">{{ number_format($item->quantity, 0, ',', '.') }}</td>
                             <td>{{ $item->material?->unit?->abbreviation }}</td>
                             <td>Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
                             <td class="fw-600">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>

@@ -28,10 +28,45 @@
                 @endcan
             @endif
 
-            @if(in_array($distribution->status, ['in_transit', 'completed']))
-                <div class="card-body" style="border-bottom:1px solid #f1f5f9;background:#f8fafc;">
-                    <a href="{{ route('distributions.print', $distribution) }}" target="_blank" class="btn btn-secondary">
-                        <i class="fas fa-print"></i> Cetak Surat Jalan
+            @if(in_array($distribution->status, ['draft', 'in_transit', 'completed']))
+                @php
+                    $statusText = match($distribution->status) {
+                        'draft' => 'Draft (Menunggu Pengiriman)',
+                        'in_transit' => 'Dalam Pengiriman (In Transit)',
+                        'completed' => 'Selesai (Sudah Diterima)',
+                        default => strtoupper($distribution->status)
+                    };
+                    $waText = "*LAPORAN SURAT JALAN PENGIRIMAN*\n"
+                            . "----------------------------------------\n"
+                            . "📋 *No. Surat Jalan*: {$distribution->distribution_number}\n"
+                            . "🏢 *Gudang Asal*: " . ($distribution->fromWarehouse?->name ?? '-') . "\n"
+                            . "🏗️ *Gudang Tujuan*: " . ($distribution->toWarehouse?->name ?? '-') . "\n"
+                            . "📅 *Tanggal Kirim*: " . ($distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-') . "\n"
+                            . "🚚 *Kurir/Supir*: " . ($distribution->driver_name ?? '-') . "\n"
+                            . "🚗 *No. Polisi*: " . ($distribution->vehicle_number ?? '-') . "\n"
+                            . "📌 *Status*: {$statusText}\n"
+                            . "----------------------------------------\n"
+                            . "*RINCIAN ITEM (MATERIAL & ALAT)*:\n";
+                    foreach($distribution->items as $idx => $it) {
+                        $name = $it->name();
+                        $qty = number_format((float)$it->qty_shipped, 0, ',', '.') . ' ' . $it->unitAbbr();
+                        $waText .= ($idx+1) . ". *{$name}* — {$qty}\n";
+                    }
+                    if($distribution->notes) {
+                        $waText .= "----------------------------------------\n"
+                                . "💬 *Catatan*: " . $distribution->notes . "\n";
+                    }
+                    $waText .= "----------------------------------------\n"
+                            . "🌐 *Link Surat Jalan*: " . route('distributions.show', $distribution) . "\n"
+                            . "_PT ARSIKON CIPTA KARYA - WMS_";
+                    $waUrl = "https://wa.me/?text=" . urlencode($waText);
+                @endphp
+                <div class="card-body flex gap-2" style="border-bottom:1px solid #f1f5f9;background:#f8fafc;">
+                    <a href="{{ route('distributions.print', $distribution) }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-print"></i> Cetak / PDF Surat Jalan
+                    </a>
+                    <a href="{{ $waUrl }}" target="_blank" class="btn btn-success" style="background:#25d366;border-color:#25d366;">
+                        <i class="fab fa-whatsapp"></i> Kirim ke WhatsApp
                     </a>
                 </div>
             @endif
@@ -65,8 +100,8 @@
                                 <div class="text-muted" style="font-size:11px;">{{ $item->material?->code }}</div>
                                 @endif
                             </td>
-                            <td class="fw-600">{{ $item->qty_shipped }} {{ $item->unitAbbr() }}</td>
-                            <td class="text-success fw-600">{{ $item->qty_received }} {{ $item->unitAbbr() }}</td>
+                            <td class="fw-600">{{ number_format($item->qty_shipped, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
+                            <td class="text-success fw-600">{{ number_format($item->qty_received, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
                             <td>
                                 @if($distribution->status === 'in_transit' && auth()->user()->can('receive distributions'))
                                     @php $remaining = (float) $item->qty_shipped - (float) $item->qty_received - (float) $item->qty_damaged_or_lost; @endphp

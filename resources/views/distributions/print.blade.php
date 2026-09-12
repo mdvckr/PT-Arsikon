@@ -247,7 +247,7 @@
 
         {{-- JUDUL SURAT JALAN --}}
         <div class="doc-title">
-            <h2>Surat Jalan</h2>
+            <h2>SURAT JALAN PENGIRIMAN ALAT & MATERIAL</h2>
             <div class="doc-no">No. {{ $distribution->distribution_number }}</div>
         </div>
 
