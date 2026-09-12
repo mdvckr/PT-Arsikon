@@ -23,6 +23,7 @@ use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReturnController;
+use App\Http\Controllers\PrintTemplateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // Master Data
     Route::resource('materials', MaterialController::class);
@@ -64,9 +68,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/units/{unit}', [CategoryController::class, 'updateUnit'])->name('units.update');
     Route::delete('/units/{unit}', [CategoryController::class, 'destroyUnit'])->name('units.destroy');
 
-    // Goods Receipts
-    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
 
     // Material Requests
     Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
@@ -129,6 +130,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('warehouses', WarehouseController::class)->except(['show']);
     Route::resource('projects', ProjectController::class)->except(['show']);
+
+    // Print Template Manager
+    Route::resource('print-templates', PrintTemplateController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    Route::post('/print-templates/{printTemplate}/set-active',
+        [PrintTemplateController::class, 'setActive'])
+        ->name('print-templates.setActive');
 });
 
 require __DIR__.'/auth.php';

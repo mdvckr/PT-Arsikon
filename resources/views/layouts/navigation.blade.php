@@ -31,12 +31,12 @@
                 @if($activeWarehouse && $userWarehouses)
                     <div class="relative" x-data="{ wsOpen: false }">
                         <button @click="wsOpen = !wsOpen" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-800 text-amber-300 border border-indigo-700 hover:bg-indigo-700 transition">
-                            <svg class="w-3.5 h-3.5 me-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            <span class="mr-1">{{ $activeWarehouse->is_central ? '🏢' : '🏗️' }}</span>
                             <span>{{ $activeWarehouse->name }}</span>
                             <svg class="w-3 h-3 ms-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
 
-                        <div x-show="wsOpen" @click.away="wsOpen = false" class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 text-gray-800">
+                        <div x-show="wsOpen" @click.away="wsOpen = false" class="absolute right-0 mt-2 w-72 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 text-gray-800">
                             <div class="py-1">
                                 <div class="px-4 py-2 text-xs text-gray-500 font-bold border-b">PILIH WORKSPACE / GUDANG</div>
                                 @foreach($userWarehouses as $wh)
@@ -44,9 +44,14 @@
                                         @csrf
                                         <input type="hidden" name="warehouse_id" value="{{ $wh->id }}">
                                         <button type="submit" class="w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-indigo-50 {{ $activeWarehouse->id === $wh->id ? 'font-bold text-indigo-700 bg-indigo-50/50' : 'text-gray-700' }}">
-                                            <span>{{ $wh->name }}</span>
+                                            <span class="flex items-center gap-1.5">
+                                                <span>{{ $wh->is_central ? '🏢' : '🏗️' }}</span>
+                                                <span>{{ $wh->name }}</span>
+                                            </span>
                                             @if($wh->is_central)
                                                 <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">PUSAT</span>
+                                            @else
+                                                <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">PROYEK</span>
                                             @endif
                                         </button>
                                     </form>

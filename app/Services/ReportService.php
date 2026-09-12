@@ -30,7 +30,7 @@ class ReportService
             $query->where('warehouse_id', $selectedWarehouse->id);
         } else {
             // Apply user role scoping
-            if ($user->hasRole('Admin')) {
+            if ($user->hasRole(['Admin', 'Admin Gudang Pusat'])) {
                 $central = Warehouse::where('is_central', true)->first();
                 if ($central) {
                     $query->where('warehouse_id', $central->id);

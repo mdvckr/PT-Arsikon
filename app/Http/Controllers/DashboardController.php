@@ -28,13 +28,6 @@ class DashboardController extends Controller
                                 ->where('quantity', '<=', DB::raw('min_stock'))
                                 ->count();
 
-        // Recent Goods Receipts
-        $recentReceipts = GoodsReceipt::with(['supplier'])
-            ->where('warehouse_id', $warehouseId)
-            ->latest()
-            ->limit(5)
-            ->get();
-
         // Recent Material Requests
         $recentRequests = MaterialRequest::with(['requestedBy', 'toWarehouse', 'fromWarehouse'])
             ->latest()
@@ -67,7 +60,7 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'totalMaterials', 'totalTools', 'pendingRequests', 'lowStockItems',
-            'recentReceipts', 'recentRequests', 'mutations', 'toolStats',
+            'recentRequests', 'mutations', 'toolStats',
             'openOpname', 'inventoryByCategory'
         ));
     }

@@ -81,7 +81,9 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load(['supplier','creator','approver','items.material.unit','payments.creator','procurementRequest']);
-        return view('purchase-orders.show', compact('purchaseOrder'));
+        $printTemplate = \App\Models\PrintTemplate::activeForPO();
+        $allTemplates  = \App\Models\PrintTemplate::latest()->get();
+        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates'));
     }
 
     public function send(PurchaseOrder $purchaseOrder)

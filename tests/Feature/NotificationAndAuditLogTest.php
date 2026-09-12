@@ -60,4 +60,33 @@ class NotificationAndAuditLogTest extends TestCase
             'auditable_id' => $this->adminUser->id,
         ]);
     }
+
+    public function test_can_view_notifications_and_mark_as_read(): void
+    {
+        $this->adminUser->notify(new SystemNotification(
+            'Test Notif',
+            'Ini pesan notifikasi test',
+            'info'
+        ));
+
+        $this->assertEquals(1, $this->adminUser->unreadNotifications()->count());
+
+        $response = $this->actingAs($this->adminUser)->get(route('notifications.index'));
+        $response->assertStatus(200);
+
+        $notif = $this->adminUser->unreadNotifications()->first();
+
+        // Mark single as read
+        $markResponse = $this->actingAs($this->adminUser)->post(route('notifications.markAsRead', $notif->id));
+        $markResponse->assertRedirect();
+        $this->assertEquals(0, $this->adminUser->unreadNotifications()->count());
+
+        // Test mark all as read
+        $this->adminUser->notify(new SystemNotification('Test 2', 'Pesan 2', 'warning'));
+        $this->assertEquals(1, $this->adminUser->unreadNotifications()->count());
+
+        $markAllResponse = $this->actingAs($this->adminUser)->post(route('notifications.markAllAsRead'));
+        $markAllResponse->assertRedirect();
+        $this->assertEquals(0, $this->adminUser->unreadNotifications()->count());
+    }
 }

@@ -63,7 +63,18 @@ class MaterialRequestService
                 ]);
             }
 
-            return $request->load('items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy');
+            $loaded = $request->load('items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy');
+
+            if ($submitImmediately) {
+                NotificationHelper::notifyAdmins(
+                    "Permintaan Material: #{$request->request_number}",
+                    "Permintaan material diajukan oleh {$requestedBy->name} dari {$fromWarehouse->name}.",
+                    "approval_needed",
+                    route('material-requests.show', $request)
+                );
+            }
+
+            return $loaded;
         });
     }
 
@@ -99,6 +110,16 @@ class MaterialRequestService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
+            if ($request->requestedBy) {
+                NotificationHelper::notifyUser(
+                    $request->requestedBy,
+                    "Permintaan Material Disetujui: #{$request->request_number}",
+                    "Permintaan material Anda telah disetujui oleh {$approvedBy->name}.",
+                    "success",
+                    route('material-requests.show', $request)
+                );
+            }
+
             return $request->fresh('items.material');
         });
     }
@@ -120,6 +141,16 @@ class MaterialRequestService
             'approved_by_user_id' => $rejectedBy->id,
             'rejection_reason' => $rejectionReason,
         ]);
+
+        if ($request->requestedBy) {
+            NotificationHelper::notifyUser(
+                $request->requestedBy,
+                "Permintaan Material Ditolak: #{$request->request_number}",
+                "Permintaan material Anda ditolak oleh {$rejectedBy->name}. Alasan: {$rejectionReason}",
+                "danger",
+                route('material-requests.show', $request)
+            );
+        }
 
         return $request->fresh();
     }

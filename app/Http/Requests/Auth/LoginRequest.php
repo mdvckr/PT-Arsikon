@@ -41,8 +41,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credentials = $this->only('email', 'password');
+        $credentials['is_active'] = true;
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            // Specific notification if account is deactivated
+            $inactiveUser = \App\Models\User::where('email', $this->email)->first();
+            if ($inactiveUser && !$inactiveUser->is_active && \Illuminate\Support\Facades\Hash::check($this->password, $inactiveUser->password)) {
+                throw ValidationException::withMessages([
+                    'email' => 'Akun Anda sedang dinonaktifkan oleh Administrator. Hubungi pihak manajemen untuk aktivasi.',
+                ]);
+            }
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

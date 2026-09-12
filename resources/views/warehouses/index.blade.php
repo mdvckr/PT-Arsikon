@@ -54,19 +54,19 @@
                     <tr>
                         <td class="fw-600">{{ $wh->name }}</td>
                         <td>
-                            @if($wh->type === 'main')
+                            @if($wh->is_central || $wh->type === 'central' || $wh->type === 'main')
                                 <span class="badge badge-primary"><i class="fas fa-building"></i> Pusat</span>
                             @else
                                 <span class="badge badge-info"><i class="fas fa-person-digging"></i> Proyek</span>
                             @endif
                         </td>
                         <td>{{ $wh->project?->name ?? '-' }}</td>
-                        <td class="text-muted" style="max-width:250px;font-size:12px;">{{ Str::limit($wh->location, 50) ?: '-' }}</td>
+                        <td class="text-muted" style="max-width:250px;font-size:12px;">{{ Str::limit($wh->address ?? $wh->location, 50) ?: '-' }}</td>
                         <td>
                             @if($wh->is_active)
-                                <span class="badge badge-success">Aktif</span>
+                                <span class="badge badge-success"><i class="fas fa-check-circle" style="font-size:10px;"></i> {{ $wh->status_label }}</span>
                             @else
-                                <span class="badge badge-danger">Nonaktif</span>
+                                <span class="badge badge-secondary"><i class="fas fa-pause-circle" style="font-size:10px;"></i> {{ $wh->status_label }}</span>
                             @endif
                         </td>
                         <td>

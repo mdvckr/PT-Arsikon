@@ -113,7 +113,7 @@
     @push('scripts')
     <script>
         let rowCount = 1;
-        const materials = @json($materials->map(fn($m) => ['id'=>$m->id,'code'=>$m->code,'name'=>$m->name,'abbr'=>$m->unit?->abbreviation,'price'=>$m->unit_price]));
+        const materials = @json($materialsJson);
 
         function buildSelect(idx) {
             let opts = '<option value="">Pilih Material</option>';

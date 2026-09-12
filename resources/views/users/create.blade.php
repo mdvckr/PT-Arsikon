@@ -12,6 +12,17 @@
             <i class="fas fa-user-plus text-primary"></i> <span class="card-title">Form Tambah Pengguna</span>
         </div>
         <div class="card-body">
+            @if ($errors->any())
+                <div class="alert alert-danger mb-3" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px;border-radius:6px;">
+                    <strong style="display:block;margin-bottom:4px;"><i class="fas fa-exclamation-circle"></i> Terjadi kesalahan validasi:</strong>
+                    <ul style="margin:0;padding-left:20px;font-size:13px;">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('users.store') }}">
                 @csrf
                 <div class="mb-3">
@@ -22,22 +33,37 @@
                     <label class="form-label">Email <span class="text-danger">*</span></label>
                     <input type="email" name="email" value="{{ old('email') }}" class="form-control" required>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <input type="password" name="password" class="form-control" required minlength="8">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
-                    <input type="password" name="password_confirmation" class="form-control" required minlength="8">
+                <div class="grid grid-2">
+                    <div class="mb-3">
+                        <label class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" required minlength="8" placeholder="Minimal 8 karakter">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password_confirmation" class="form-control" required minlength="8" placeholder="Ulangi password">
+                    </div>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Role / Peran Akses <span class="text-danger">*</span></label>
-                    <div class="grid grid-2" style="gap:10px;background:#f8fafc;padding:12px;border-radius:6px;">
+                    <div class="grid grid-2" style="gap:10px;background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;">
                         @foreach($roles as $role)
-                        <label class="flex items-center gap-2" style="cursor:pointer;">
+                        <label class="flex items-center gap-2" style="cursor:pointer;font-size:13px;">
                             <input type="checkbox" name="roles[]" value="{{ $role->name }}" 
                                 {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
                             {{ ucfirst($role->name) }}
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Penugasan Gudang Akses</label>
+                    <p class="text-muted" style="font-size:12px;margin-top:-4px;margin-bottom:8px;">Pilih gudang yang dapat diakses oleh pengguna baru ini.</p>
+                    <div class="grid grid-2" style="gap:10px;background:#f8fafc;padding:12px;border-radius:6px;border:1px solid #e2e8f0;">
+                        @foreach($warehouses as $wh)
+                        <label class="flex items-center gap-2" style="cursor:pointer;font-size:13px;">
+                            <input type="checkbox" name="warehouse_ids[]" value="{{ $wh->id }}"
+                                {{ in_array($wh->id, old('warehouse_ids', [])) ? 'checked' : '' }}>
+                            <span>{{ $wh->name }} <span class="badge badge-secondary" style="font-size:10px;">{{ $wh->is_central ? 'Pusat' : 'Proyek' }}</span></span>
                         </label>
                         @endforeach
                     </div>

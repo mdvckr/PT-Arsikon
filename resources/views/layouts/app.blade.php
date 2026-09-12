@@ -16,6 +16,7 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 
     <style>
         :root {
@@ -37,6 +38,12 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: #f1f5f9;
@@ -48,10 +55,12 @@
         /* ===== SIDEBAR ===== */
         .sidebar {
             width: var(--sidebar-width);
-            min-height: 100vh;
-            background: linear-gradient(180deg, #9a3412 0%, #ea580c 100%);
+            height: calc(100vh - var(--topbar-height));
+            background: #ea580c;
             position: fixed;
-            top: 0; left: 0; bottom: 0;
+            top: var(--topbar-height);
+            left: 0;
+            bottom: 0;
             z-index: 1000;
             display: flex;
             flex-direction: column;
@@ -59,84 +68,144 @@
             overflow-y: auto;
         }
 
-        .sidebar-brand {
-            padding: 20px 20px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.18);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sidebar-brand .brand-icon {
-            width: 40px; height: 40px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .sidebar-brand .brand-logo {
-            width: 44px;
-            height: 44px;
-            object-fit: contain;
-            flex-shrink: 0;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
-        }
-
-        .sidebar-brand .brand-text h1 {
-            font-size: 13px;
-            font-weight: 800;
-            color: #fff;
-            line-height: 1.25;
-            letter-spacing: 0.02em;
-        }
-
-        .sidebar-brand .brand-text p {
-            font-size: 10px;
-            color: rgba(255,255,255,0.75);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-top: 2px;
-        }
-
-        /* Workspace Switcher */
-        .workspace-switcher {
-            margin: 12px 16px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 10px;
+        /* Workspace Card */
+        .workspace-card {
+            margin: 12px 14px 10px 14px;
             padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
         }
 
-        .workspace-switcher label {
+        .workspace-card:hover {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .workspace-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+
+        .workspace-card .workspace-label {
             font-size: 10px;
-            color: rgba(255,255,255,0.7);
-            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+            letter-spacing: 0.6px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: block;
-            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .workspace-switcher select {
-            background: transparent;
-            border: none;
-            color: #fff;
+        .ws-badge {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 12px;
+            letter-spacing: 0.4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .workspace-card .workspace-name {
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.35;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .workspace-card .workspace-select-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .workspace-card select.workspace-select {
             width: 100%;
+            background: rgba(0, 0, 0, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
             outline: none;
+            padding: 5px 22px 5px 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: inherit;
         }
 
-        .workspace-switcher select option {
-            background: #9a3412;
-            color: #fff;
+        .workspace-card select.workspace-select:hover {
+            background: rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+
+        .workspace-card select.workspace-select option {
+            background: #1e293b;
+            color: #ffffff;
+            font-weight: 500;
+            padding: 6px;
+        }
+
+        .workspace-card .workspace-arrow {
+            position: absolute;
+            right: 8px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 10px;
+            pointer-events: none;
+        }
+
+        .workspace-sub-row {
+            margin-top: 6px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .workspace-sub-item {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.3;
+        }
+
+        .workspace-sub-item.highlight {
+            color: #fed7aa;
+            font-weight: 600;
+        }
+
+        .workspace-sub-item i {
+            font-size: 10px;
+            opacity: 0.95;
+            flex-shrink: 0;
         }
 
         /* Nav Section */
@@ -209,106 +278,241 @@
 
         .sidebar-footer {
             margin-top: auto;
-            padding: 12px;
-            border-top: 1px solid rgba(255,255,255,0.18);
+            padding: 14px 12px;
         }
 
         .sidebar-user {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.14);
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .sidebar-user:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            transform: translateY(-1px);
         }
 
         .sidebar-user .avatar {
-            width: 34px; height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #7c2d12, #c2410c);
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            font-weight: 700;
-            color: white;
+            font-size: 17px;
+            color: #52525b;
             flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
         }
 
-        .sidebar-user .user-info { flex: 1; min-width: 0; }
-        .sidebar-user .user-name { font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sidebar-user .user-role { font-size: 10px; color: rgba(255,255,255,0.7); }
+        .sidebar-user:hover .avatar {
+            transform: scale(1.08);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+            color: #1e293b;
+        }
+
+        .sidebar-user .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user .user-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.25;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-user .user-role {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
 
         .btn-logout {
-            color: rgba(255,255,255,0.8);
-            background: none;
+            color: #ffffff;
+            background: transparent;
             border: none;
             cursor: pointer;
-            padding: 6px;
-            border-radius: 6px;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-
-        .btn-logout:hover { color: #7f1d1d; background: rgba(255,255,255,0.9); }
-
-        /* ===== MAIN CONTENT ===== */
-        .main-wrapper {
-            margin-left: var(--sidebar-width);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* ===== TOPBAR ===== */
-        .topbar {
-            height: var(--topbar-height);
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            gap: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .topbar-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0f172a;
-            flex: 1;
-        }
-
-        .topbar-actions { display: flex; align-items: center; gap: 8px; }
-
-        .topbar-btn {
-            width: 38px; height: 38px;
-            border: none;
-            background: #f1f5f9;
+            width: 34px;
+            height: 34px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            color: #64748b;
-            font-size: 15px;
-            transition: all 0.2s;
-            position: relative;
-            text-decoration: none;
+            font-size: 19px;
+            transition: all 0.25s ease;
         }
 
-        .topbar-btn:hover { background: #e2e8f0; color: #1e293b; }
+        .btn-logout:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateX(-2px) scale(1.12);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
 
-        .topbar-btn .notif-dot {
-            position: absolute;
-            top: 6px; right: 6px;
-            width: 8px; height: 8px;
-            background: #ef4444;
+        .btn-logout:active {
+            transform: translateX(-4px) scale(1.05);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--topbar-height);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - var(--topbar-height));
+            min-width: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* ===== TOPBAR (Full Width) ===== */
+        .topbar {
+            height: var(--topbar-height);
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            z-index: 1050;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        }
+
+        .topbar-brand {
+            width: var(--sidebar-width);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 18px;
+            background: #fff8f3;
+            border-right: 1px solid #fed7aa;
+            flex-shrink: 0;
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-title {
+            font-size: 14.5px;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.15;
+            letter-spacing: 0.04em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .brand-subtitle {
+            font-size: 9px;
+            font-weight: 800;
+            color: #0284c7;
+            letter-spacing: 0.12em;
+            margin-top: 2px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .topbar-center {
+            flex: 1;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-right: 24px;
+        }
+
+        .topbar-circle-btn {
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            border: 2px solid white;
+            background: #334155;
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            text-decoration: none;
+            position: relative;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+            border: none;
+            cursor: pointer;
+        }
+
+        .topbar-circle-btn:hover {
+            background: #1e293b;
+            color: #ffffff;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .topbar-circle-btn .notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 4px;
+            background: #ef4444;
+            color: #ffffff;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
         }
 
         /* ===== PAGE CONTENT ===== */
@@ -599,18 +803,217 @@
             padding: 4px;
         }
 
+        /* Sidebar backdrop overlay for mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* ===== TABLET (max 1024px) ===== */
         @media (max-width: 1024px) {
             .mobile-toggle { display: flex; align-items: center; justify-content: center; }
+            .topbar-brand { width: auto; border-right: none; padding: 0 12px; }
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .main-wrapper { margin-left: 0; }
             .grid-4 { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: repeat(2, 1fr); }
+
+            /* Card headers with filters should wrap */
+            .card-header {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .card-header form {
+                width: 100%;
+                flex-wrap: wrap;
+            }
         }
 
+        /* ===== SMALL TABLET (max 768px) ===== */
+        @media (max-width: 768px) {
+            .page-content { padding: 16px 14px; }
+
+            /* Page header: title + button should stack */
+            .flex.justify-between.items-center.mb-4,
+            .flex.items-center.justify-between.mb-4 {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+            }
+
+            /* KPI stat cards compact */
+            .grid-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-card { padding: 14px; gap: 10px; }
+            .stat-info .value { font-size: 20px; }
+            .stat-icon { width: 40px; height: 40px; font-size: 16px; border-radius: 10px; }
+
+            /* Card header with search/filter form */
+            .card-header {
+                padding: 14px 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .card-header form {
+                width: 100%;
+                margin-left: 0 !important;
+            }
+            .card-header .flex.gap-2,
+            .card-header form .flex.gap-2,
+            .card-header form.flex {
+                flex-wrap: wrap;
+                width: 100%;
+            }
+            .card-header form .form-control,
+            .card-header form select.form-control,
+            .card-header form input.form-control {
+                width: 100% !important;
+                min-width: 0 !important;
+                flex: 1 1 100%;
+            }
+            .card-header form .flex > input,
+            .card-header form .flex > select {
+                flex: 1;
+                min-width: 0;
+            }
+
+            /* Card body compact */
+            .card-body { padding: 16px; }
+
+            /* Table font size */
+            table.data-table { font-size: 12.5px; }
+            table.data-table th { padding: 10px 10px; font-size: 10px; }
+            table.data-table td { padding: 10px 10px; }
+
+            /* Buttons compact */
+            .btn { padding: 7px 12px; font-size: 12.5px; }
+            .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+            /* Topbar actions compact */
+            .topbar-actions { gap: 8px; padding-right: 14px; }
+            .topbar-circle-btn { width: 34px; height: 34px; font-size: 13px; }
+
+            /* Breadcrumb compact */
+            .breadcrumb { font-size: 12px; margin-bottom: 12px; }
+
+            /* Grid 2 col */
+            .grid-2 { grid-template-columns: 1fr; }
+
+            /* Modal responsive */
+            .modal-box { width: 95%; border-radius: 12px; }
+
+            /* Empty state compact */
+            .empty-state { padding: 32px 16px; }
+            .empty-state i { font-size: 32px; }
+
+            /* Filter form within card-body */
+            .card-body form.flex {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .card-body form.flex > div {
+                min-width: 0 !important;
+                width: 100%;
+            }
+            .card-body form.flex > div[style*="flex:1"] {
+                flex: none !important;
+            }
+            .card-body form .flex.gap-2 {
+                width: 100%;
+            }
+            .card-body form .flex.gap-2 .btn {
+                flex: 1;
+            }
+
+            /* Notifications toast mobile */
+            .notif-toast-container {
+                bottom: 16px;
+                right: 12px;
+                left: 12px;
+            }
+            .notif-toast {
+                max-width: 100%;
+            }
+        }
+
+        /* ===== PHONE (max 640px) ===== */
         @media (max-width: 640px) {
-            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-            .page-content { padding: 16px; }
+            .page-content { padding: 12px 10px; }
+
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; gap: 8px; }
+
+            /* Stat cards: 2-col grid on small phones */
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .stat-card { padding: 12px; gap: 8px; }
+            .stat-info .label { font-size: 10.5px; }
+            .stat-info .value { font-size: 18px; }
+            .stat-info .sub { font-size: 10px; }
+            .stat-icon { width: 36px; height: 36px; font-size: 14px; }
+
+            /* Card header - full stack on phone */
+            .card-header { padding: 12px 14px; }
+            .card-title { font-size: 13.5px; }
+            .card-body { padding: 14px; }
+
+            /* Table */
+            table.data-table { font-size: 12px; }
+            table.data-table th { padding: 8px; font-size: 9.5px; letter-spacing: 0.04em; }
+            table.data-table td { padding: 8px; }
+
+            /* h2 page title */
+            h2.fw-700, h2[style*="font-size:20px"] {
+                font-size: 17px !important;
+            }
+
+            /* Alerts compact */
+            .alert { padding: 10px 12px; font-size: 12.5px; border-radius: 8px; }
+
+            /* Topbar brand text hide subtitle */
+            .brand-subtitle { display: none; }
+            .brand-title { font-size: 13px; }
+            .brand-logo { width: 32px; height: 32px; }
+            .topbar-brand { gap: 8px; }
+
+            /* Tabs scroll */
+            .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .tab-btn { padding: 8px 14px; font-size: 12.5px; white-space: nowrap; }
+
+            /* Form controls compact */
+            .form-control { padding: 8px 10px; font-size: 13px; border-radius: 6px; }
+            .form-label { font-size: 11.5px; margin-bottom: 4px; }
+
+            /* Badges compact */
+            .badge { padding: 2px 7px; font-size: 10.5px; }
+        }
+
+        /* ===== VERY SMALL PHONE (max 400px) ===== */
+        @media (max-width: 400px) {
+            .page-content { padding: 10px 8px; }
+
+            .grid-4 { grid-template-columns: 1fr 1fr; gap: 6px; }
+            .stat-card { padding: 10px; }
+            .stat-info .value { font-size: 16px; }
+
+            .brand-text { display: none; }
+            .topbar-brand { padding: 0 8px; }
+            .topbar-actions { padding-right: 10px; gap: 6px; }
+            .topbar-circle-btn { width: 32px; height: 32px; font-size: 12px; }
+
+            .card-header { padding: 10px 12px; }
+            .card-body { padding: 12px; }
+
+            table.data-table th { padding: 6px; font-size: 9px; }
+            table.data-table td { padding: 6px; font-size: 11.5px; }
         }
 
         /* ===== SCROLLBAR ===== */
@@ -638,51 +1041,266 @@
         .empty-state { text-align: center; padding: 48px 24px; color: #94a3b8; }
         .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.4; }
         .empty-state h3 { font-size: 15px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+
+        /* ===== NOTIFICATION TOAST ===== */
+        .notif-toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .notif-toast {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            cursor: pointer;
+            border-left: 4px solid #ea580c;
+            max-width: 380px;
+            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.3s ease;
+        }
+
+        .notif-toast:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.38);
+        }
+
+        .notif-toast .toast-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(234, 88, 12, 0.2);
+            color: #ea580c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .notif-toast .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notif-toast .toast-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .notif-toast .toast-desc {
+            font-size: 12px;
+            color: #94a3b8;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .notif-toast .toast-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 2px;
+            line-height: 1;
+        }
+
+        .notif-toast .toast-close:hover {
+            color: #ffffff;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateX(50px) scale(0.95); opacity: 0; }
+            to   { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        .toast-out {
+            transform: translateX(50px) scale(0.9);
+            opacity: 0;
+        }
+
+        /* Global Print Rules */
+        @media print {
+            .topbar, .sidebar, .notif-toast-container, .mobile-toggle {
+                display: none !important;
+            }
+            body {
+                display: block !important;
+                background: #ffffff !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
+            .main-wrapper {
+                margin: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                display: block !important;
+            }
+            .page-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <!-- SIDEBAR -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <img src="{{ asset('assets/Logo-Dashboard.png') }}" class="brand-logo" alt="PT ARSIKON CIPTA KARYA" style="background:transparent;padding:0;border-radius:0;">
-            <div class="brand-text">
-                <h1>PT ARSIKON<br>CIPTA KARYA</h1>
-                <p>Warehouse System</p>
-            </div>
+    <!-- TOPBAR (Full Width) -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="{{ route('dashboard') }}" class="brand-link">
+                <img src="{{ asset('assets/Logo-Dashboard.png') }}" class="brand-logo" alt="PT ARSIKON CIPTA KARYA">
+                <div class="brand-text">
+                    <div class="brand-title">PT ARSIKON</div>
+                    <div class="brand-subtitle">CIPTA KARYA</div>
+                </div>
+            </a>
         </div>
+
+        <div class="topbar-center"></div>
 
         @php
-            $warehouses = \App\Models\Warehouse::all();
-            $activeWarehouseId = session('active_warehouse_id');
+            $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
         @endphp
 
-        @if($warehouses->count() > 1)
-        <div class="workspace-switcher">
-            <label>Workspace Aktif</label>
+        <div class="topbar-actions">
+            <a href="{{ route('notifications.index') }}" class="topbar-circle-btn" title="Notifikasi ({{ $unreadNotificationsCount }} belum dibaca)">
+                <i class="fas fa-bell"></i>
+                @if($unreadNotificationsCount > 0)
+                <span class="notif-badge">{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('profile.edit') }}" class="topbar-circle-btn" title="Profil">
+                <i class="fas fa-user"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- SIDEBAR OVERLAY (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        @php
+            $authUser = auth()->user();
+            $warehouses = $authUser->hasRole('Owner') ? \App\Models\Warehouse::all() : $authUser->warehouses;
+            if ($warehouses->isEmpty()) {
+                $warehouses = \App\Models\Warehouse::all();
+            }
+            $activeWarehouse = $authUser->activeWarehouse();
+            $activeWarehouseId = $activeWarehouse?->id ?? session('active_warehouse_id');
+            $activeWarehouseName = $activeWarehouse?->name ?? 'Gudang Pusat PT Arsikon';
+
+            // Menentukan keterangan dan peran akun secara ringkas & rapi
+            if ($authUser->hasRole('Owner')) {
+                $roleLabel = 'Owner / Direksi';
+                $roleBadge = 'Owner';
+                $roleIcon = 'fa-crown';
+                $subHeadline = 'Multi-Gudang (Akses Penuh)';
+                $subDesc = 'Monitoring pusat & seluruh proyek';
+            } elseif ($authUser->hasRole('Admin Gudang Pusat') || ($authUser->hasRole('Admin') && !$authUser->hasRole('Admin Gudang Proyek'))) {
+                $roleLabel = 'Admin Gudang Pusat';
+                $roleBadge = 'Pusat';
+                $roleIcon = 'fa-building';
+                $subHeadline = 'Sentral Logistik Jakarta';
+                $subDesc = 'Distribusi material & stok sentral';
+            } elseif ($authUser->hasRole('Admin Gudang Proyek')) {
+                $roleLabel = 'Admin Gudang Proyek';
+                $roleBadge = 'Proyek';
+                $roleIcon = 'fa-helmet-safety';
+                $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
+                $subDesc = 'Permintaan material & alat proyek';
+            } elseif ($authUser->hasRole('Admin PO')) {
+                $roleLabel = 'Admin Pengadaan (PO)';
+                $roleBadge = 'Pengadaan';
+                $roleIcon = 'fa-truck-ramp-box';
+                $subHeadline = 'Divisi Pembelian & Vendor';
+                $subDesc = 'Purchase order & pembayaran';
+            } else {
+                $roleLabel = $authUser->roles->first()?->name ?? 'User';
+                $roleBadge = 'Petugas';
+                $roleIcon = 'fa-warehouse';
+                $subHeadline = $activeWarehouseName;
+                $subDesc = 'Operasional inventaris';
+            }
+        @endphp
+
+        <div class="workspace-card">
+            <div class="workspace-header-row">
+                <span class="workspace-label">WORKSPACE</span>
+                <span class="ws-badge">
+                    <i class="fas {{ $roleIcon }}"></i> {{ $roleBadge }}
+                </span>
+            </div>
+
+            @if($warehouses->count() > 1)
             <form method="POST" action="{{ route('workspace.switch') }}" id="workspaceForm">
                 @csrf
-                <select name="warehouse_id" onchange="document.getElementById('workspaceForm').submit()">
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $activeWarehouseId == $wh->id ? 'selected' : '' }}>
-                            {{ $wh->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="workspace-select-wrapper">
+                    <select name="warehouse_id" onchange="document.getElementById('workspaceForm').submit()" class="workspace-select" title="Ganti Workspace Gudang">
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $activeWarehouseId == $wh->id ? 'selected' : '' }}>
+                                {{ $wh->is_central ? '🏢 ' : '🏗️ ' }}{{ $wh->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <i class="fas fa-chevron-down workspace-arrow"></i>
+                </div>
             </form>
+            @else
+            <div class="workspace-name" title="{{ $activeWarehouseName }}">
+                <i class="{{ ($activeWarehouse?->is_central ?? false) ? 'fas fa-building' : 'fas fa-helmet-safety' }}" style="font-size:12px; opacity:0.95; flex-shrink:0;"></i>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $activeWarehouseName }}</span>
+            </div>
+            @endif
+
+            <div class="workspace-sub-row">
+                @if($subHeadline)
+                <div class="workspace-sub-item highlight" title="{{ $subHeadline }}">
+                    <i class="{{ ($activeWarehouse?->is_central ?? false) ? 'fas fa-city' : 'fas fa-location-dot' }}"></i>
+                    <span>{{ $subHeadline }}</span>
+                </div>
+                @endif
+                <div class="workspace-sub-item" title="{{ $subDesc }}">
+                    <i class="fas fa-circle-info" style="font-size:9px;"></i>
+                    <span>{{ $subDesc }}</span>
+                </div>
+            </div>
         </div>
-        @endif
 
         <nav style="flex:1; padding: 8px 0;">
             <!-- DASHBOARD -->
             <div class="nav-section">
                 <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-gauge-high"></i> Dashboard
+                    <i class="fas fa-table-cells-large"></i> Dashboard
                 </a>
             </div>
 
             <!-- MASTER DATA -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Master Data</div>
                 <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
@@ -697,16 +1315,11 @@
             <!-- TRANSAKSI -->
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Transaksi</div>
-                @if(auth()->user()->hasAnyRole(['Owner', 'Admin']))
-                <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                    <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
-                </a>
-                @endif
                 <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                     <i class="fas fa-file-circle-plus"></i> Permintaan Material
                 </a>
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                    <i class="fas fa-right-left"></i> Distribusi
+                    <i class="fas fa-right-left"></i> Surat Jalan
                 </a>
             </div>
 
@@ -725,17 +1338,17 @@
             </div>
 
             <!-- PENGADAAN (Admin PO & Owner) -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin PO']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Pengadaan</div>
                 <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
                 </a>
-                <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice"></i> Purchase Order
-                </a>
                 <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave"></i> Pembayaran
+                </a>
+                <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
+                    <i class="fas fa-stamp"></i> Template Kop Surat
                 </a>
             </div>
             @endif
@@ -748,7 +1361,7 @@
             </div>
 
             <!-- LAPORAN -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Laporan</div>
                 <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
@@ -779,15 +1392,17 @@
 
         <div class="sidebar-footer">
             <div class="sidebar-user">
-                <div class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
+                <div class="avatar">
+                    <i class="fas fa-user"></i>
+                </div>
                 <div class="user-info">
                     <div class="user-name">{{ auth()->user()->name }}</div>
-                    <div class="user-role">{{ auth()->user()->roles->first()?->name ?? 'User' }}</div>
+                    <div class="user-role">{{ strtoupper($roleLabel) }}</div>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="btn-logout" title="Logout">
-                        <i class="fas fa-right-from-bracket"></i>
+                        <i class="fas fa-right-from-bracket fa-flip-horizontal"></i>
                     </button>
                 </form>
             </div>
@@ -796,25 +1411,6 @@
 
     <!-- MAIN WRAPPER -->
     <div class="main-wrapper">
-        <!-- TOPBAR -->
-        <header class="topbar">
-            <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="topbar-title">{{ $title ?? 'Dashboard' }}</div>
-            <div class="topbar-actions">
-                <a href="{{ route('notifications.index') }}" class="topbar-btn" title="Notifikasi">
-                    <i class="fas fa-bell"></i>
-                    @if(auth()->user()->unreadNotifications->count() > 0)
-                    <span class="notif-dot"></span>
-                    @endif
-                </a>
-                <a href="{{ route('profile.edit') }}" class="topbar-btn" title="Profil">
-                    <i class="fas fa-user"></i>
-                </a>
-            </div>
-        </header>
-
         <!-- PAGE CONTENT -->
         <main class="page-content">
             @if(session('success'))
@@ -841,13 +1437,43 @@
     </div>
 
     <script>
-        // Close sidebar on outside click (mobile)
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) {
+                const isOpen = sidebar.classList.toggle('open');
+                if (overlay) {
+                    if (isOpen) {
+                        overlay.classList.add('active');
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        overlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                }
+            }
+        }
+
+        // Close sidebar on outside click or resize
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
-            if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('open')) {
                 if (!sidebar.contains(e.target) && !e.target.closest('.mobile-toggle')) {
                     sidebar.classList.remove('open');
+                    if (overlay) overlay.classList.remove('active');
+                    document.body.style.overflow = '';
                 }
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 1024) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
 
@@ -885,5 +1511,181 @@
             });
         });
     </script>
+
+    <!-- Toast Container -->
+    <div class="notif-toast-container" id="notifToastContainer"></div>
+
+    <script>
+        // Web Audio Chime Sound (Two-tone harmony)
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Unlock Web Audio on first user interaction
+        document.addEventListener('click', function unlockAudio() {
+            getAudioContext();
+            document.removeEventListener('click', unlockAudio);
+        }, { once: true });
+
+        function playNotificationChime() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const now = ctx.currentTime;
+
+                // First Note: D5 (587.33 Hz)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now);
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                gain1.gain.setValueAtTime(0.25, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.35);
+
+                // Second Note: A5 -> D6 (880 Hz -> 1174.66 Hz)
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, now + 0.1);
+                osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.28);
+                gain2.gain.setValueAtTime(0, now);
+                gain2.gain.setValueAtTime(0.3, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.1);
+                osc2.stop(now + 0.65);
+            } catch (err) {
+                console.warn('Audio playback error:', err);
+            }
+        }
+
+        // Realtime Notification Poller
+        let lastNotifCount = {{ auth()->user()->unreadNotifications()->count() }};
+        let lastNotifId = '{{ auth()->user()->unreadNotifications()->latest()->first()?->id ?? "" }}';
+
+        function showNotificationToast(data) {
+            const container = document.getElementById('notifToastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'notif-toast';
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fas fa-bell"></i></div>
+                <div class="toast-content">
+                    <div class="toast-title">${escapeHtml(data.title || 'Notifikasi Baru')}</div>
+                    <div class="toast-desc">${escapeHtml(data.message || '')}</div>
+                </div>
+                <button class="toast-close" type="button" title="Tutup">&times;</button>
+            `;
+
+            toast.onclick = function(e) {
+                if (e.target.closest('.toast-close')) {
+                    toast.classList.add('toast-out');
+                    setTimeout(() => toast.remove(), 300);
+                    return;
+                }
+                window.location.href = data.url || '{{ route("notifications.index") }}';
+            };
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 7000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function pollNotifications() {
+            fetch('{{ route("notifications.unreadCount") }}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                const count = res.count || 0;
+                const bell = document.querySelector('.topbar-circle-btn[href*="notifications"]');
+
+                if (bell) {
+                    let badge = bell.querySelector('.notif-badge');
+                    if (count > 0) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.className = 'notif-badge';
+                            bell.appendChild(badge);
+                        }
+                        badge.textContent = count > 99 ? '99+' : count;
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                }
+
+                // If new notification detected
+                if (count > lastNotifCount && res.latest && res.latest.id !== lastNotifId) {
+                    playNotificationChime();
+                    showNotificationToast(res.latest);
+                }
+
+                lastNotifCount = count;
+                if (res.latest) lastNotifId = res.latest.id;
+            })
+            .catch(() => {});
+        }
+
+        // Poll every 15 seconds
+        setInterval(pollNotifications, 15000);
+
+        // Preserve Sidebar Scroll Position
+        (function() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+
+            // Restore scroll position on load
+            const savedScrollPos = sessionStorage.getItem('sidebar_scroll_pos');
+            if (savedScrollPos !== null) {
+                sidebar.scrollTop = parseInt(savedScrollPos, 10);
+            } else {
+                // If first time or no saved position, ensure active item is visible
+                const activeItem = sidebar.querySelector('.nav-item.active');
+                if (activeItem) {
+                    activeItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                }
+            }
+
+            // Save scroll position when scrolling
+            sidebar.addEventListener('scroll', function() {
+                sessionStorage.setItem('sidebar_scroll_pos', sidebar.scrollTop);
+            }, { passive: true });
+
+            // Also save on link click inside sidebar
+            sidebar.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    sessionStorage.setItem('sidebar_scroll_pos', sidebar.scrollTop);
+                });
+            });
+        })();
+    </script>
+    @stack('scripts')
 </body>
 </html>

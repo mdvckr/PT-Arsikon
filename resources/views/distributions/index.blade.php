@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Data Distribusi (Surat Jalan)</x-slot>
+    <x-slot name="title">Data Distribusi Surat Jalan</x-slot>
 
     <div class="flex items-center justify-between mb-4">
         <div>

@@ -75,7 +75,16 @@ class GoodsReceiptService
                 );
             }
 
-            return $receipt->load('items.material', 'supplier', 'warehouse', 'receivedBy');
+            $loaded = $receipt->load('items.material', 'supplier', 'warehouse', 'receivedBy');
+
+            NotificationHelper::notifyAdmins(
+                "Penerimaan Barang: #{$receipt->receipt_number}",
+                "Barang dari {$supplier->name} telah diterima di {$centralWarehouse->name} oleh {$receivedBy->name}.",
+                "system_info",
+                route('goods-receipts.show', $receipt)
+            );
+
+            return $loaded;
         });
     }
 }

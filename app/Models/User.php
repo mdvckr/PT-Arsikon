@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
     ];
 
     /**
@@ -42,6 +43,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
     ];
 
     public function warehouses(): BelongsToMany
@@ -62,7 +64,7 @@ class User extends Authenticatable
         }
 
         // Default fallback for Owner/Admin vs User
-        if ($this->hasRole(['Owner', 'Admin'])) {
+        if ($this->hasRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
             return Warehouse::where('is_central', true)->first() ?? $this->warehouses()->first();
         }
 
@@ -75,7 +77,7 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->hasRole('Admin') && $warehouse->is_central) {
+        if ($this->hasRole(['Admin', 'Admin Gudang Pusat']) && $warehouse->is_central) {
             return true;
         }
 

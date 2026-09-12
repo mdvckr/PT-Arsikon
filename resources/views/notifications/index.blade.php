@@ -6,7 +6,7 @@
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Semua Notifikasi</h2>
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Pusat pemberitahuan aktivitas sistem Anda</p>
         </div>
-        <div>
+        <div class="flex gap-2">
             <form method="POST" action="{{ route('notifications.markAllAsRead') }}">
                 @csrf
                 <button type="submit" class="btn btn-primary" onclick="return confirm('Tandai semua telah dibaca?')">
@@ -30,22 +30,39 @@
                 </thead>
                 <tbody>
                     @forelse($notifications as $notif)
-                    @php $isUnread = is_null($notif->read_at); @endphp
+                    @php
+                        $isUnread = is_null($notif->read_at);
+                        $data = $notif->data ?? [];
+                        $type = $data['type'] ?? $notif->type ?? 'info';
+                        $title = $data['title'] ?? $notif->title ?? null;
+                        $message = $data['message'] ?? $notif->message ?? '-';
+                        $link = $data['url'] ?? $data['link'] ?? $notif->url ?? $notif->link ?? null;
+                    @endphp
                     <tr style="{{ $isUnread ? 'background:#eff6ff;' : '' }}">
-                        <td class="text-muted" style="font-size:12.5px;">{{ $notif->created_at->diffForHumans() }}<br>{{ $notif->created_at->format('d/m H:i') }}</td>
+                        <td class="text-muted" style="font-size:12px; white-space:nowrap;">
+                            {{ $notif->created_at->diffForHumans() }}<br>
+                            <span style="font-size:11px; opacity:0.8;">{{ $notif->created_at->format('d/m/Y H:i') }}</span>
+                        </td>
                         <td>
                             @php
                                 $typeMap = [
                                     'stock_alert' => ['badge-danger', 'triangle-exclamation', 'Stok Kritis'],
                                     'approval_needed' => ['badge-warning', 'clock', 'Butuh Approval'],
                                     'system_info' => ['badge-info', 'info-circle', 'Sistem'],
+                                    'info' => ['badge-info', 'info-circle', 'Informasi'],
+                                    'success' => ['badge-success', 'circle-check', 'Sukses'],
+                                    'warning' => ['badge-warning', 'triangle-exclamation', 'Peringatan'],
+                                    'danger' => ['badge-danger', 'circle-exclamation', 'Bahaya'],
                                 ];
-                                [$cls, $icon, $label] = $typeMap[$notif->type] ?? ['badge-gray', 'bell', $notif->type];
+                                [$cls, $icon, $label] = $typeMap[$type] ?? ['badge-gray', 'bell', ucfirst($type)];
                             @endphp
                             <span class="badge {{ $cls }}"><i class="fas fa-{{ $icon }}"></i> {{ $label }}</span>
                         </td>
-                        <td class="{{ $isUnread ? 'fw-700' : '' }}" style="max-width:400px;font-size:13.5px;">
-                            {{ $notif->message }}
+                        <td style="max-width:420px; font-size:13.5px;">
+                            @if($title)
+                                <div style="font-weight:700; color:#0f172a; margin-bottom:2px;">{{ $title }}</div>
+                            @endif
+                            <div style="color:{{ $isUnread ? '#1e293b' : '#64748b' }}; font-size:13px; line-height:1.4;">{{ $message }}</div>
                         </td>
                         <td>
                             @if($isUnread)
@@ -56,11 +73,11 @@
                         </td>
                         <td>
                             <div class="flex gap-1">
-                                @if($notif->link)
-                                <a href="{{ $notif->link }}" class="btn btn-sm btn-primary btn-icon" title="Buka Tautan"><i class="fas fa-external-link-alt"></i></a>
+                                @if($link)
+                                <a href="{{ $link }}" class="btn btn-sm btn-primary btn-icon" title="Buka Tautan"><i class="fas fa-external-link-alt"></i></a>
                                 @endif
                                 @if($isUnread)
-                                <form method="POST" action="{{ route('notifications.markAsRead', $notif) }}">
+                                <form method="POST" action="{{ route('notifications.markAsRead', $notif->id) }}">
                                     @csrf
                                     <button class="btn btn-sm btn-success btn-icon" title="Tandai Dibaca"><i class="fas fa-check"></i></button>
                                 </form>
@@ -69,7 +86,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="5" class="text-center text-muted p-4">Tidak ada notifikasi baru.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted p-4" style="padding:40px 20px;">Belum ada notifikasi di sistem.</td></tr>
                     @endforelse
                 </tbody>
             </table>

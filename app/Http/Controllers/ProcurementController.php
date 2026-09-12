@@ -54,6 +54,13 @@ class ProcurementController extends Controller
             ]);
         }
 
+        \App\Services\NotificationHelper::notifyAdmins(
+            "Pengajuan Pengadaan Baru: #{$pr->pr_number}",
+            "Pengajuan pengadaan baru diajukan oleh " . (auth()->user()->name ?? 'User') . ".",
+            "approval_needed",
+            route('procurement.show', $pr)
+        );
+
         return redirect()->route('procurement.show', $pr)
             ->with('success', "Pengadaan #{$pr->pr_number} berhasil diajukan.");
     }
@@ -61,7 +68,9 @@ class ProcurementController extends Controller
     public function show(ProcurementRequest $procurement)
     {
         $procurement->load(['requester','approver','items.material.unit','purchaseOrders.supplier']);
-        return view('procurement.show', compact('procurement'));
+        $printTemplate = \App\Models\PrintTemplate::activeForPR();
+        $allTemplates  = \App\Models\PrintTemplate::latest()->get();
+        return view('procurement.show', compact('procurement', 'printTemplate', 'allTemplates'));
     }
 
     public function approve(ProcurementRequest $procurement)

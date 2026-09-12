@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="title">Permintaan Pengadaan</x-slot>
 
     <div class="flex justify-between items-center mb-4">
@@ -15,7 +15,6 @@
 
     <div class="card">
         <div class="card-header">
-            <i class="fas fa-clipboard-list text-primary"></i>
             <span class="card-title">Daftar Permintaan Pengadaan</span>
             <form method="GET" class="flex gap-2 ms-auto">
                 <select name="status" class="form-control" style="width:160px;padding:6px 10px;font-size:13px;" onchange="this.form.submit()">

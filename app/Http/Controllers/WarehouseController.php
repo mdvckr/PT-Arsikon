@@ -28,19 +28,41 @@ class WarehouseController extends Controller
     {
         $this->authorize('view users');
 
-        $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'code'       => 'required|string|max:20|unique:warehouses,code',
-            'type'       => 'required|in:pusat,proyek',
-            'project_id' => 'nullable|exists:projects,id',
-            'address'    => 'nullable|string',
-            'phone'      => 'nullable|string|max:30',
+        // Normalize input
+        $rawType = $request->input('type');
+        $type = in_array($rawType, ['central', 'main', 'pusat']) ? 'central' : 'project';
+        $request->merge([
+            'type'    => $type,
+            'address' => $request->input('address') ?? $request->input('location'),
         ]);
 
-        Warehouse::create($validated);
+        if (!$request->filled('code')) {
+            $request->merge(['code' => 'W-' . strtoupper(\Illuminate\Support\Str::random(5))]);
+        }
+
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'code'       => 'required|string|max:30|unique:warehouses,code',
+            'type'       => 'required|in:central,project',
+            'project_id' => 'nullable|exists:projects,id',
+            'address'    => 'nullable|string',
+            'is_active'  => 'nullable|boolean',
+        ]);
+
+        $isCentral = ($type === 'central');
+
+        $warehouse = Warehouse::create([
+            'name'       => $validated['name'],
+            'code'       => strtoupper($validated['code']),
+            'type'       => $type,
+            'is_central' => $isCentral,
+            'is_active'  => $request->has('is_active') ? $request->boolean('is_active') : true,
+            'project_id' => $isCentral ? null : ($validated['project_id'] ?? null),
+            'address'    => $validated['address'] ?? null,
+        ]);
 
         return redirect()->route('warehouses.index')
-            ->with('success', "Gudang '{$validated['name']}' berhasil ditambahkan.");
+            ->with('success', "Gudang '{$warehouse->name}' berhasil ditambahkan.");
     }
 
     public function edit(Warehouse $warehouse)
@@ -55,16 +77,35 @@ class WarehouseController extends Controller
     {
         $this->authorize('view users');
 
-        $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'code'       => "required|string|max:20|unique:warehouses,code,{$warehouse->id}",
-            'type'       => 'required|in:pusat,proyek',
-            'project_id' => 'nullable|exists:projects,id',
-            'address'    => 'nullable|string',
-            'phone'      => 'nullable|string|max:30',
+        // Normalize input
+        $rawType = $request->input('type');
+        $type = in_array($rawType, ['central', 'main', 'pusat']) ? 'central' : 'project';
+        $request->merge([
+            'type'    => $type,
+            'address' => $request->input('address') ?? $request->input('location'),
+            'code'    => $request->filled('code') ? $request->input('code') : $warehouse->code,
         ]);
 
-        $warehouse->update($validated);
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'code'       => "required|string|max:30|unique:warehouses,code,{$warehouse->id}",
+            'type'       => 'required|in:central,project',
+            'project_id' => 'nullable|exists:projects,id',
+            'address'    => 'nullable|string',
+            'is_active'  => 'nullable|boolean',
+        ]);
+
+        $isCentral = ($type === 'central');
+
+        $warehouse->update([
+            'name'       => $validated['name'],
+            'code'       => strtoupper($validated['code']),
+            'type'       => $type,
+            'is_central' => $isCentral,
+            'is_active'  => $request->has('is_active') ? $request->boolean('is_active') : $warehouse->is_active,
+            'project_id' => $isCentral ? null : ($validated['project_id'] ?? null),
+            'address'    => $validated['address'] ?? null,
+        ]);
 
         return redirect()->route('warehouses.index')
             ->with('success', "Gudang '{$warehouse->name}' berhasil diperbarui.");

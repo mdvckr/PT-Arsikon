@@ -12,21 +12,42 @@
             <i class="fas fa-pen text-warning"></i> <span class="card-title">Form Edit Gudang</span>
         </div>
         <div class="card-body">
+            @if ($errors->any())
+                <div class="alert alert-danger mb-3" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px;border-radius:6px;">
+                    <strong style="display:block;margin-bottom:4px;"><i class="fas fa-exclamation-circle"></i> Terjadi kesalahan validasi:</strong>
+                    <ul style="margin:0;padding-left:20px;font-size:13px;">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('warehouses.update', $warehouse) }}">
                 @csrf @method('PUT')
-                <div class="mb-3">
-                    <label class="form-label">Nama Gudang <span class="text-danger">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $warehouse->name) }}" class="form-control" required>
+                @php
+                    $isCentral = $warehouse->is_central || in_array($warehouse->type, ['central', 'main', 'pusat']);
+                    $currentType = old('type', $isCentral ? 'central' : 'project');
+                @endphp
+                <div class="grid grid-2">
+                    <div class="mb-3">
+                        <label class="form-label">Kode Gudang <span class="text-danger">*</span></label>
+                        <input type="text" name="code" value="{{ old('code', $warehouse->code) }}" class="form-control" required placeholder="mis. W-CENTRAL">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Gudang <span class="text-danger">*</span></label>
+                        <input type="text" name="name" value="{{ old('name', $warehouse->name) }}" class="form-control" required placeholder="mis. Gudang Proyek A">
+                    </div>
                 </div>
                 <div class="grid grid-2">
                     <div class="mb-3">
                         <label class="form-label">Tipe Gudang <span class="text-danger">*</span></label>
                         <select name="type" class="form-control" id="warehouseType" required onchange="toggleProject()">
-                            <option value="main" {{ old('type', $warehouse->type) == 'main' ? 'selected' : '' }}>Gudang Pusat (Main)</option>
-                            <option value="project" {{ old('type', $warehouse->type) == 'project' ? 'selected' : '' }}>Gudang Proyek (Project)</option>
+                            <option value="central" {{ $currentType == 'central' ? 'selected' : '' }}>Gudang Pusat (Central)</option>
+                            <option value="project" {{ $currentType == 'project' ? 'selected' : '' }}>Gudang Proyek (Project)</option>
                         </select>
                     </div>
-                    <div class="mb-3" id="projectWrapper" style="display:{{ old('type', $warehouse->type) == 'project' ? 'block' : 'none' }};">
+                    <div class="mb-3" id="projectWrapper" style="display:{{ $currentType == 'project' ? 'block' : 'none' }};">
                         <label class="form-label">Terkait Proyek</label>
                         <select name="project_id" class="form-control" id="projectId">
                             <option value="">Pilih Proyek</option>
@@ -37,15 +58,15 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Status Gudang</label>
+                    <label class="form-label">Status Operasional</label>
                     <select name="is_active" class="form-control">
-                        <option value="1" {{ old('is_active', $warehouse->is_active) ? 'selected' : '' }}>Aktif</option>
-                        <option value="0" {{ old('is_active', $warehouse->is_active) ? '' : 'selected' }}>Nonaktif</option>
+                        <option value="1" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '1' ? 'selected' : '' }}>Aktif</option>
+                        <option value="0" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '0' ? 'selected' : '' }}>Nonaktif</option>
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label class="form-label">Lokasi / Alamat</label>
-                    <textarea name="location" class="form-control" rows="3">{{ old('location', $warehouse->location) }}</textarea>
+                    <label class="form-label">Alamat / Lokasi Gudang</label>
+                    <textarea name="address" class="form-control" rows="3" placeholder="Alamat lengkap lokasi gudang...">{{ old('address', $warehouse->address ?? $warehouse->location) }}</textarea>
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Perubahan</button>

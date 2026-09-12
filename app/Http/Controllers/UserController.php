@@ -46,22 +46,38 @@ class UserController extends Controller
     {
         $this->authorize('create users');
 
+        // Normalize roles input from array or single string
+        if ($request->has('roles') && !$request->has('role')) {
+            $roles = (array) $request->input('roles');
+            $request->merge(['role' => $roles[0] ?? null]);
+        }
+
         $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|email|unique:users,email',
-            'password'     => 'required|min:8|confirmed',
-            'role'         => 'required|exists:roles,name',
-            'warehouse_ids' => 'nullable|array',
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email|unique:users,email',
+            'password'        => 'required|min:8|confirmed',
+            'role'            => 'nullable|exists:roles,name',
+            'roles'           => 'nullable|array',
+            'roles.*'         => 'exists:roles,name',
+            'is_active'       => 'nullable|boolean',
+            'warehouse_ids'   => 'nullable|array',
             'warehouse_ids.*' => 'exists:warehouses,id',
         ]);
 
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            'password'  => Hash::make($validated['password']),
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
         ]);
 
-        $user->assignRole($validated['role']);
+        $rolesToAssign = $request->input('roles', []);
+        if (empty($rolesToAssign) && !empty($validated['role'])) {
+            $rolesToAssign = [$validated['role']];
+        }
+        if (!empty($rolesToAssign)) {
+            $user->syncRoles($rolesToAssign);
+        }
 
         if (!empty($validated['warehouse_ids'])) {
             $user->warehouses()->sync($validated['warehouse_ids']);
@@ -92,23 +108,45 @@ class UserController extends Controller
     {
         $this->authorize('edit users');
 
+        // Normalize roles input from array or single string
+        if ($request->has('roles') && !$request->has('role')) {
+            $roles = (array) $request->input('roles');
+            $request->merge(['role' => $roles[0] ?? null]);
+        }
+
         $validated = $request->validate([
-            'name'          => 'required|string|max:255',
-            'email'         => "required|email|unique:users,email,{$user->id}",
-            'password'      => 'nullable|min:8|confirmed',
-            'role'          => 'required|exists:roles,name',
-            'warehouse_ids' => 'nullable|array',
+            'name'            => 'required|string|max:255',
+            'email'           => "required|email|unique:users,email,{$user->id}",
+            'password'        => 'nullable|min:8|confirmed',
+            'role'            => 'nullable|exists:roles,name',
+            'roles'           => 'nullable|array',
+            'roles.*'         => 'exists:roles,name',
+            'is_active'       => 'nullable|boolean',
+            'warehouse_ids'   => 'nullable|array',
             'warehouse_ids.*' => 'exists:warehouses,id',
         ]);
 
-        $user->update([
-            'name'  => $validated['name'],
-            'email' => $validated['email'],
-            ...(filled($validated['password']) ? ['password' => Hash::make($validated['password'])] : []),
-        ]);
+        $updateData = [
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : $user->is_active,
+        ];
 
-        $user->syncRoles([$validated['role']]);
-        $user->warehouses()->sync($validated['warehouse_ids'] ?? []);
+        if ($request->filled('password')) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
+
+        $rolesToAssign = $request->input('roles', []);
+        if (empty($rolesToAssign) && !empty($validated['role'])) {
+            $rolesToAssign = [$validated['role']];
+        }
+        if (!empty($rolesToAssign)) {
+            $user->syncRoles($rolesToAssign);
+        }
+
+        $user->warehouses()->sync($request->input('warehouse_ids', []));
 
         return redirect()->route('users.index')
             ->with('success', "Pengguna '{$user->name}' berhasil diperbarui.");
