@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Inventory;
 use App\Models\Warehouse;
 use App\Models\Material;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -15,28 +16,58 @@ class InventoryController extends Controller
 
         $warehouseId = session('active_warehouse_id');
 
-        $query = Inventory::with(['material.category', 'material.unit', 'warehouse'])
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId));
+        $categoryQuery = Category::query()
+            ->where('type', 'material')
+            ->with(['materials' => function ($q) use ($request, $warehouseId) {
+                $q->with(['unit', 'inventories' => function ($invQ) use ($warehouseId) {
+                    if ($warehouseId) {
+                        $invQ->where('warehouse_id', $warehouseId);
+                    }
+                    $invQ->with('warehouse');
+                }]);
 
-        if ($request->search) {
-            $query->whereHas('material', fn($q) => $q->where('name', 'like', "%{$request->search}%")
-                ->orWhere('sku', 'like', "%{$request->search}%"));
-        }
+                if ($request->search) {
+                    $q->where(function ($sub) use ($request) {
+                        $sub->where('materials.name', 'like', "%{$request->search}%")
+                            ->orWhere('materials.sku', 'like', "%{$request->search}%");
+                    });
+                }
+            }]);
 
         if ($request->category_id) {
-            $query->whereHas('material', fn($q) => $q->where('category_id', $request->category_id));
+            $categoryQuery->where('id', $request->category_id);
+        }
+
+        if ($request->search) {
+            $categoryQuery->whereHas('materials', function ($q) use ($request) {
+                $q->where('materials.name', 'like', "%{$request->search}%")
+                  ->orWhere('materials.sku', 'like', "%{$request->search}%");
+            });
         }
 
         if ($request->stock_level === 'low') {
-            $query->whereColumn('quantity', '<=', 'min_stock');
+            $categoryQuery->whereHas('materials.inventories', function ($q) use ($warehouseId) {
+                if ($warehouseId) $q->where('warehouse_id', $warehouseId);
+                $q->whereColumn('quantity', '<=', 'min_stock')->where('quantity', '>', 0);
+            });
         } elseif ($request->stock_level === 'out') {
-            $query->where('quantity', 0);
+            $categoryQuery->whereHas('materials.inventories', function ($q) use ($warehouseId) {
+                if ($warehouseId) $q->where('warehouse_id', $warehouseId);
+                $q->where('quantity', '<=', 0);
+            });
         }
 
-        $inventories = $query->orderBy('quantity')->paginate(20)->withQueryString();
-        $warehouses  = Warehouse::orderBy('name')->get();
+        $categoriesData = $categoryQuery->orderBy('name')->get()
+            ->each(function ($cat) {
+                $cat->setRelation('materials', $cat->materials->filter(fn($m) => $m->inventories->isNotEmpty()));
+            })
+            ->filter(fn($cat) => $cat->materials->isNotEmpty())
+            ->values();
 
-        return view('inventory.index', compact('inventories', 'warehouses', 'warehouseId'));
+        $filterCategories = Category::query()->where('type', 'material')->orderBy('name')->get();
+        $warehouses = Warehouse::orderBy('name')->get();
+
+        return view('inventory.index', compact('categoriesData', 'filterCategories', 'warehouses', 'warehouseId'));
     }
 
     public function show(Inventory $inventory)
