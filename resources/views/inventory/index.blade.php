@@ -33,10 +33,6 @@
                         <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Stok Habis</option>
                     </select>
                 </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
-                    <a href="{{ route('inventory.index') }}" class="btn btn-secondary"><i class="fas fa-rotate-left"></i></a>
-                </div>
             </form>
         </div>
     </div>

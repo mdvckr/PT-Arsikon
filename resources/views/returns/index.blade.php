@@ -29,12 +29,6 @@
                         <option value="rejected" {{ request('status')=='rejected' ? 'selected':'' }}>Ditolak</option>
                     </select>
                 </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Cari</button>
-                    @if(request()->hasAny(['search', 'status']))
-                        <a href="{{ route('returns.index') }}" class="btn btn-secondary"><i class="fas fa-rotate-left"></i></a>
-                    @endif
-                </div>
             </form>
         </div>
     </div>

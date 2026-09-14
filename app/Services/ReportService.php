@@ -132,9 +132,122 @@ class ReportService
                     'name' => $tool->name,
                     'brand' => $tool->brand,
                     'serial_number' => $tool->serial_number,
-                    'category' => $tool->category->name,
+                    'category' => $tool->category?->name ?? '-',
+                    'category_name' => $tool->category?->name ?? '-',
                     'current_warehouse' => $tool->currentWarehouse?->name ?? 'N/A',
+                    'condition' => $tool->condition ?? 'good',
                     'status' => $tool->status,
+                ];
+            });
+    }
+
+    /**
+     * Controller-facing stock report method.
+     */
+    public function stockReport(?int $warehouseId = null, ?int $categoryId = null): Collection
+    {
+        $query = Inventory::with(['material.category', 'material.unit', 'warehouse']);
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+        if ($categoryId) {
+            $query->whereHas('material', fn($q) => $q->where('category_id', $categoryId));
+        }
+
+        return $query->get()->map(function ($inventory) {
+            $minStock = (float) ($inventory->min_stock ?? 0);
+            return (object) [
+                'warehouse_name' => $inventory->warehouse?->name ?? '-',
+                'material_name'  => $inventory->material?->name ?? '-',
+                'material_code'  => $inventory->material?->sku ?? $inventory->material?->code ?? '',
+                'category_name'  => $inventory->material?->category?->name ?? '-',
+                'unit_abbr'      => $inventory->material?->unit?->abbreviation ?? $inventory->material?->unit?->name ?? '',
+                'unit_price'     => (float) ($inventory->material?->unit_price ?? 0),
+                'quantity'       => (float) $inventory->quantity,
+                'min_stock'      => $minStock,
+                'qty_allocated'  => (float) $inventory->qty_allocated,
+                'qty_in_transit' => (float) $inventory->qty_in_transit,
+                'is_low_stock'   => $inventory->quantity < $minStock,
+            ];
+        });
+    }
+
+    /**
+     * Controller-facing stock mutation report method.
+     */
+    public function mutationReport(?int $warehouseId = null, ?string $dateFrom = null, ?string $dateTo = null): Collection
+    {
+        $query = StockMutation::with(['material.unit', 'warehouse', 'createdBy'])
+            ->orderBy('created_at', 'desc');
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        return $query->get()->map(function ($m) {
+            return (object) [
+                'created_at'     => $m->created_at,
+                'material_name'  => $m->material?->name ?? '-',
+                'warehouse_name' => $m->warehouse?->name ?? '-',
+                'type'           => $m->qty_change >= 0 ? 'in' : 'out',
+                'reference_type' => $m->reference_type,
+                'quantity'       => $m->qty_change,
+                'notes'          => $m->notes ?? '-',
+            ];
+        });
+    }
+
+    /**
+     * Controller-facing discrepancy report method.
+     */
+    public function discrepancyReport(?int $warehouseId = null): Collection
+    {
+        $query = \App\Models\StockOpnameItem::with(['stockOpname.warehouse', 'material'])
+            ->whereHas('stockOpname', function ($q) use ($warehouseId) {
+                if ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            })
+            ->latest();
+
+        return $query->get()->map(function ($item) {
+            return (object) [
+                'opname_date'       => $item->stockOpname?->conducted_at ?? $item->created_at,
+                'warehouse_name'    => $item->stockOpname?->warehouse?->name ?? '-',
+                'material_name'     => $item->material?->name ?? '-',
+                'system_quantity'   => (float) $item->qty_system,
+                'physical_quantity' => (float) $item->qty_physical,
+                'difference'        => (float) $item->qty_difference,
+                'notes'             => $item->notes ?? '-',
+            ];
+        });
+    }
+
+    /**
+     * Controller-facing tool report method.
+     */
+    public function toolReport(): Collection
+    {
+        return Tool::with(['category', 'currentWarehouse'])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($tool) {
+                return (object) [
+                    'code'              => $tool->code,
+                    'name'              => $tool->name,
+                    'brand'             => $tool->brand,
+                    'serial_number'     => $tool->serial_number,
+                    'category_name'     => $tool->category?->name ?? '-',
+                    'current_warehouse' => $tool->currentWarehouse?->name ?? '-',
+                    'condition'         => $tool->condition ?? 'good',
+                    'status'            => $tool->status,
                 ];
             });
     }

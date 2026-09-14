@@ -142,10 +142,10 @@ class RoleAndPermissionSeeder extends Seeder
             ['code' => 'W-PRJ-001'],
             [
                 'project_id' => $sampleProjectA->id,
-                'name' => 'Gudang Proyek Gedung A',
+                'name' => 'Gudang Proyek FK Teknik',
                 'type' => 'project',
                 'is_central' => false,
-                'address' => 'Site Office Gedung A, Jakarta Selatan',
+                'address' => 'Site Office FK Teknik, Ciamis',
             ]
         );
 
@@ -201,7 +201,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminProyek1 = User::firstOrCreate(
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
-                'name' => 'Admin Gudang Proyek A',
+                'name' => 'Admin Gudang Proyek FK Teknik',
                 'password' => Hash::make('password123'),
             ]
         );

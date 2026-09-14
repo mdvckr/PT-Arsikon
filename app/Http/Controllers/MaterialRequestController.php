@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\MaterialRequest;
 use App\Models\Material;
 use App\Models\Warehouse;
@@ -39,18 +40,30 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('create material requests');
 
-        $warehouseId = session('active_warehouse_id');
-        $materials   = Material::with('unit')->orderBy('name')->get();
-        $warehouses  = Warehouse::orderBy('name')->get();
+        $warehouseId = session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
 
-        $materialsJson = $materials->map(fn($m) => [
-            'id'   => $m->id,
-            'code' => $m->code,
-            'name' => $m->name,
-            'abbr' => $m->unit?->abbreviation,
-        ]);
+        // Material dikelompokkan per kategori, dengan total stok dari semua gudang
+        $materialCategories = Category::where('type', 'material')
+            ->with(['materials' => function ($q) {
+                $q->where('is_active', true)
+                  ->with(['unit', 'inventories'])
+                  ->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn($cat) => $cat->materials->isNotEmpty())
+            ->values();
 
-        return view('material-requests.create', compact('materials', 'warehouses', 'warehouseId', 'materialsJson'));
+        // Material tanpa kategori
+        $uncategorizedMaterials = Material::where('is_active', true)
+            ->whereNull('category_id')
+            ->with(['unit', 'inventories'])
+            ->orderBy('name')
+            ->get();
+
+        $warehouses = Warehouse::orderBy('name')->get();
+
+        return view('material-requests.create', compact('materialCategories', 'uncategorizedMaterials', 'warehouses', 'warehouseId'));
     }
 
     public function store(Request $request)
@@ -61,18 +74,26 @@ class MaterialRequestController extends Controller
             'warehouse_id'       => 'required|exists:warehouses,id',
             'needed_at'          => 'nullable|date|after_or_equal:today',
             'notes'              => 'nullable|string',
-            'items'              => 'required|array|min:1',
-            'items.*.material_id'=> 'required|exists:materials,id',
-            'items.*.quantity'   => 'required|numeric|min:0.01',
-            'items.*.notes'      => 'nullable|string',
+            'quantities'         => 'required|array',
         ]);
 
+        // Build items dari quantities[material_id] => qty
+        $itemsData = [];
+        foreach ($validated['quantities'] as $materialId => $qty) {
+            $qty = (float) $qty;
+            if ($qty <= 0) continue;
+            $itemsData[] = [
+                'material_id'   => $materialId,
+                'qty_requested' => $qty,
+                'notes'         => null,
+            ];
+        }
+
+        if (empty($itemsData)) {
+            return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta.']);
+        }
+
         $fromWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
-        $itemsData = collect($validated['items'])->map(fn($item) => [
-            'material_id'   => $item['material_id'],
-            'qty_requested' => $item['quantity'],
-            'notes'         => $item['notes'] ?? null,
-        ])->all();
 
         $mr = $this->service->createRequest(
             $fromWarehouse,

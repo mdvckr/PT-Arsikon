@@ -31,10 +31,6 @@
                         <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
                     </select>
                 </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Cari</button>
-                    <a href="{{ route('tool-assignments.index') }}" class="btn btn-secondary"><i class="fas fa-rotate-left"></i></a>
-                </div>
             </form>
         </div>
     </div>

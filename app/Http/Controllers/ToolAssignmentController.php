@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Tool;
 use App\Models\ToolAssignment;
 use App\Models\Warehouse;
@@ -15,7 +16,7 @@ class ToolAssignmentController extends Controller
     {
         $this->authorize('view tool assignments');
 
-        $query = ToolAssignment::with(['tool', 'assignedTo', 'fromWarehouse']);
+        $query = ToolAssignment::with(['tool.category', 'assignedTo', 'fromWarehouse']);
 
         if ($request->status) {
             // Normalisasi 'assigned' (legacy UI) menjadi 'active'
@@ -31,9 +32,24 @@ class ToolAssignmentController extends Controller
             });
         }
 
-        $assignments = $query->latest()->paginate(15)->withQueryString();
+        if ($request->category_id) {
+            $query->whereHas('tool', fn($q) => $q->where('category_id', $request->category_id));
+        }
 
-        return view('tool-assignments.index', compact('assignments'));
+        $assignments = $query->latest()->paginate(25)->withQueryString();
+
+        // Kelompokkan berdasarkan kategori alat
+        $grouped = $assignments->getCollection()->groupBy(function ($a) {
+            return $a->tool?->category?->name ?? 'Tanpa Kategori';
+        })->sortKeys();
+
+        // Kategori untuk dropdown filter (hanya yang ada alat)
+        $filterCategories = Category::query()
+            ->where('type', 'tool')
+            ->orderBy('name')
+            ->get();
+
+        return view('tool-assignments.index', compact('assignments', 'grouped', 'filterCategories'));
     }
 
     public function create()
@@ -42,25 +58,30 @@ class ToolAssignmentController extends Controller
 
         $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
 
-        // Ambil semua alat aktif yang punya stok tersedia
-        $toolsQuery = Tool::where('is_active', true)->where('stock_available', '>', 0);
+        // Ambil semua alat aktif yang punya stok tersedia, dikelompokkan per kategori
+        $toolCategories = Category::where('type', 'tool')
+            ->with(['tools' => function ($q) {
+                $q->where('is_active', true)
+                  ->where('stock_available', '>', 0)
+                  ->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn($cat) => $cat->tools->isNotEmpty())
+            ->values();
 
-        $groupedTools = $toolsQuery->get()->map(function ($tool) {
-            return [
-                'id'                => $tool->id,
-                'name'              => $tool->name,
-                'code'              => $tool->code,
-                'category'          => $tool->type ?? 'Lainnya',
-                'current_warehouse' => $tool->currentWarehouse?->name ?? 'Gudang Utama',
-                'stock_available'   => $tool->stock_available,
-            ];
-        });
+        // Alat tanpa kategori yang masih punya stok
+        $uncategorizedTools = Tool::where('is_active', true)
+            ->where('stock_available', '>', 0)
+            ->whereNull('category_id')
+            ->orderBy('name')
+            ->get();
 
         $users      = User::orderBy('name')->get();
         $warehouses = Warehouse::orderBy('name')->get();
         $selectedWarehouseId = $activeWarehouseId;
 
-        return view('tool-assignments.create', compact('groupedTools', 'users', 'warehouses', 'selectedWarehouseId'));
+        return view('tool-assignments.create', compact('toolCategories', 'uncategorizedTools', 'users', 'warehouses', 'selectedWarehouseId'));
     }
 
     public function store(Request $request)
