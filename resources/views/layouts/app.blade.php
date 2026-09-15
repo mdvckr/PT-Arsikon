@@ -1306,7 +1306,7 @@
             </div>
 
             <!-- MASTER DATA -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'User']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Master Data</div>
                 <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
@@ -1493,7 +1493,6 @@
         }, 4000);
     </script>
 
-    @stack('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInputs = document.querySelectorAll('input[name="search"]');

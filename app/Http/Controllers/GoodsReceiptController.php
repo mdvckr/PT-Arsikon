@@ -44,12 +44,14 @@ class GoodsReceiptController extends Controller
 
         $suppliers  = Supplier::orderBy('name')->get();
         $warehouses = Warehouse::where('type', 'pusat')->get();
-        $materials  = Material::with('unit')->orderBy('name')->get();
+        $materials  = Material::with(['unit', 'category'])->orderBy('name')->get();
         $materialsJson = $materials->map(function ($m) {
             return [
                 'id'    => $m->id,
                 'code'  => $m->code,
                 'name'  => $m->name,
+                'type'  => $m->type,
+                'category_name' => $m->category?->name ?? 'Lainnya',
                 'abbr'  => $m->unit?->abbreviation,
                 'price' => $m->unit_price,
             ];

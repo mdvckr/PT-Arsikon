@@ -14,40 +14,51 @@ class ToolController extends Controller
     {
         $this->authorize('view tools');
 
-        // Kategori beserta alat di dalamnya (untuk tabel yang dikelompokkan per kategori)
-        $categories = Category::query()
+        // Kategori beserta alat di dalamnya (untuk tabel berjenjang Kategori -> Kelompok Alat -> Varian)
+        $categoryQuery = Category::query()
             ->where('type', 'tool')
             ->with(['tools' => function ($q) use ($request) {
-                $q->orderBy('name');
-
                 if ($request->search) {
                     $q->where(function ($qq) use ($request) {
                         $qq->where('name', 'like', "%{$request->search}%")
-                           ->orWhere('code', 'like', "%{$request->search}%");
+                           ->orWhere('code', 'like', "%{$request->search}%")
+                           ->orWhere('brand', 'like', "%{$request->search}%")
+                           ->orWhere('type', 'like', "%{$request->search}%")
+                           ->orWhere('size', 'like', "%{$request->search}%");
                     });
                 }
+                $q->orderBy('type')->orderBy('name');
+            }]);
 
-                if ($request->category_id) {
-                    $q->where('category_id', $request->category_id);
-                }
-            }])
-            ->orderBy('name')
-            ->get()
-            ->filter(function ($cat) {
-                return $cat->tools->isNotEmpty();
-            })
-            ->values();
+        if ($request->category_id) {
+            $categoryQuery->where('id', $request->category_id);
+        }
+
+        if ($request->search) {
+            $categoryQuery->whereHas('tools', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('code', 'like', "%{$request->search}%")
+                  ->orWhere('brand', 'like', "%{$request->search}%")
+                  ->orWhere('type', 'like', "%{$request->search}%")
+                  ->orWhere('size', 'like', "%{$request->search}%");
+            });
+        }
+
+        $categoriesData = $categoryQuery->orderBy('name')->get();
+        // Alias untuk kompatibilitas
+        $categories = $categoriesData;
 
         // Kategori untuk dropdown filter
         $filterCategories = Category::query()->where('type', 'tool')->orderBy('name')->get();
 
-        return view('tools.index', compact('categories', 'filterCategories'));
+        return view('tools.index', compact('categoriesData', 'categories', 'filterCategories'));
     }
 
     public function create(Request $request)
     {
         $this->authorize('create tools');
         $categories = Category::query()->where('type', 'tool')->orderBy('name')->get();
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
         // Kategori yang dipilih lewat query (mis. klik "Tambah Alat" pada baris kategori)
         $selectedCategoryId = $request->query('category_id');
@@ -57,7 +68,17 @@ class ToolController extends Controller
             $selectedCategoryId = null;
         }
 
-        return view('tools.create', compact('categories', 'selectedCategoryId'));
+        // Ambil daftar kelompok nama alat (type) per kategori untuk Dropdown bertingkat
+        $existingGroups = Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        return view('tools.create', compact('categories', 'selectedCategoryId', 'existingGroups', 'warehouses'));
     }
 
     public function store(Request $request)
@@ -65,31 +86,59 @@ class ToolController extends Controller
         $this->authorize('create tools');
 
         $validated = $request->validate([
-            'code'          => 'required|string|max:50|unique:tools,code',
-            'name'          => 'required|string|max:255',
-            'category_id'   => 'nullable|integer|exists:categories,id',
-            'new_category'  => 'nullable|string|max:255',
-            'brand'         => 'nullable|string|max:100',
-            'stock_total'   => 'required|integer|min:0',
+            'code'            => 'required|string|max:50|unique:tools,code',
+            'name'            => 'required|string|max:255',
+            'type'            => 'nullable|string|max:255',
+            'size'            => 'nullable|string|max:255',
+            'brand'           => 'nullable|string|max:100',
+            'category_id'     => 'nullable|integer|exists:categories,id',
+            'new_category'    => 'nullable|string|max:255',
+            'warehouse_id'    => 'nullable|integer|exists:warehouses,id',
+            'notes'           => 'nullable|string',
+            'stock_total'     => 'nullable|integer|min:0',
+            'incoming_stages' => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
+        $incomingStages = $this->parseIncomingStages($request);
+
+        $stockTotal = isset($validated['stock_total']) ? (int) $validated['stock_total'] : 0;
+        $receivedStagesQty = $incomingStages ? (int) collect($incomingStages)->where('status', 'received')->sum('qty') : 0;
+
+        // Jika stock_total belum diisi manual tapi ada tahap berstatus 'received', otomatis sinkronkan
+        if ($stockTotal <= 0 && $receivedStagesQty > 0) {
+            $stockTotal = $receivedStagesQty;
+        }
+
+        $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
+        if (empty($typeVal) && !empty($validated['name'])) {
+            if (!empty($validated['size']) && str_ends_with($validated['name'], $validated['size'])) {
+                $typeVal = trim(substr($validated['name'], 0, -strlen($validated['size'])));
+            }
+        }
+        if (empty($typeVal)) {
+            $typeVal = $category?->name ?? 'Lainnya';
+        }
 
         $tool = Tool::create([
-            'code'           => strtoupper(trim($validated['code'])),
-            'name'           => $validated['name'],
-            'category_id'    => $category?->id,
-            'type'           => $category?->name,
-            'brand'          => $validated['brand'] ?? null,
-            'stock_total'    => $validated['stock_total'],
-            'stock_available'=> $validated['stock_total'],
-            'stock_borrowed' => 0,
-            'stock_maintenance' => 0,
-            'stock_damaged'  => 0,
+            'code'                 => strtoupper(trim($validated['code'])),
+            'name'                 => $validated['name'],
+            'type'                 => $typeVal,
+            'size'                 => $validated['size'] ?? null,
+            'brand'                => $validated['brand'] ?? null,
+            'category_id'          => $category?->id,
+            'current_warehouse_id' => $validated['warehouse_id'] ?? null,
+            'notes'                => $validated['notes'] ?? null,
+            'incoming_stages'      => $incomingStages,
+            'stock_total'          => $stockTotal,
+            'stock_available'      => $stockTotal,
+            'stock_borrowed'       => 0,
+            'stock_maintenance'    => 0,
+            'stock_damaged'        => 0,
         ]);
 
         return redirect()->route('tools.index')
-            ->with('success', "Alat '{$tool->name}' berhasil ditambahkan dengan stok {$tool->stock_total} unit.");
+            ->with('success', "Alat '{$tool->name}' berhasil ditambahkan dengan total stok {$tool->stock_total} unit.");
     }
 
     public function addStock(Request $request, Tool $tool)
@@ -108,7 +157,7 @@ class ToolController extends Controller
     public function show(Tool $tool)
     {
         $this->authorize('view tools');
-        $tool->load(['category']);
+        $tool->load(['category', 'currentWarehouse', 'assignments.project', 'maintenances']);
 
         return view('tools.show', compact('tool'));
     }
@@ -117,8 +166,18 @@ class ToolController extends Controller
     {
         $this->authorize('edit tools');
         $categories = Category::query()->where('type', 'tool')->orderBy('name')->get();
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
 
-        return view('tools.edit', compact('tool', 'categories'));
+        $existingGroups = Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        return view('tools.edit', compact('tool', 'categories', 'warehouses', 'existingGroups'));
     }
 
     public function update(Request $request, Tool $tool)
@@ -126,29 +185,53 @@ class ToolController extends Controller
         $this->authorize('edit tools');
 
         $validated = $request->validate([
-            'code'          => "required|string|max:50|unique:tools,code,{$tool->id}",
-            'name'          => 'required|string|max:255',
-            'category_id'   => 'nullable|integer|exists:categories,id',
-            'new_category'  => 'nullable|string|max:255',
-            'brand'         => 'nullable|string|max:100',
-            'stock_total'   => 'required|integer|min:0',
-            'stock_available' => 'required|integer|min:0',
+            'code'              => "required|string|max:50|unique:tools,code,{$tool->id}",
+            'name'              => 'required|string|max:255',
+            'type'              => 'nullable|string|max:255',
+            'size'              => 'nullable|string|max:255',
+            'brand'             => 'nullable|string|max:100',
+            'category_id'       => 'nullable|integer|exists:categories,id',
+            'new_category'      => 'nullable|string|max:255',
+            'warehouse_id'      => 'nullable|integer|exists:warehouses,id',
+            'notes'             => 'nullable|string',
+            'stock_total'       => 'required|integer|min:0',
+            'stock_available'   => 'required|integer|min:0',
             'stock_maintenance' => 'nullable|integer|min:0',
-            'stock_damaged' => 'nullable|integer|min:0',
+            'stock_damaged'     => 'nullable|integer|min:0',
+            'incoming_stages'   => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
+        $incomingStages = $this->parseIncomingStages($request);
+
+        // Pertahankan kelompok alat (type) jika tidak sengaja terkirim kosong saat edit
+        $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
+        if (empty($typeVal) && !empty($tool->type)) {
+            $typeVal = $tool->type;
+        }
+        if (empty($typeVal) && !empty($validated['name'])) {
+            if (!empty($validated['size']) && str_ends_with($validated['name'], $validated['size'])) {
+                $typeVal = trim(substr($validated['name'], 0, -strlen($validated['size'])));
+            }
+        }
+        if (empty($typeVal)) {
+            $typeVal = $category?->name ?? 'Lainnya';
+        }
 
         $tool->update([
-            'code'             => strtoupper(trim($validated['code'])),
-            'name'             => $validated['name'],
-            'category_id'      => $category?->id,
-            'type'             => $category?->name,
-            'brand'            => $validated['brand'] ?? null,
-            'stock_total'      => $validated['stock_total'],
-            'stock_available'  => $validated['stock_available'],
-            'stock_maintenance'=> $validated['stock_maintenance'] ?? 0,
-            'stock_damaged'    => $validated['stock_damaged'] ?? 0,
+            'code'                 => strtoupper(trim($validated['code'])),
+            'name'                 => $validated['name'],
+            'type'                 => $typeVal,
+            'size'                 => $validated['size'] ?? null,
+            'brand'                => $validated['brand'] ?? null,
+            'category_id'          => $category?->id,
+            'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
+            'notes'                => $validated['notes'] ?? null,
+            'incoming_stages'      => $incomingStages,
+            'stock_total'          => $validated['stock_total'],
+            'stock_available'      => $validated['stock_available'],
+            'stock_maintenance'    => $validated['stock_maintenance'] ?? 0,
+            'stock_damaged'        => $validated['stock_damaged'] ?? 0,
         ]);
 
         return redirect()->route('tools.index')
@@ -168,6 +251,30 @@ class ToolController extends Controller
 
         return redirect()->route('tools.index')
             ->with('success', "Alat '{$name}' berhasil dihapus.");
+    }
+
+    private function parseIncomingStages(Request $request): ?array
+    {
+        if (!$request->has('incoming_stages') || !is_array($request->incoming_stages)) {
+            return null;
+        }
+
+        $stages = [];
+        foreach ($request->incoming_stages as $item) {
+            $qty = isset($item['qty']) && $item['qty'] !== '' ? (int) $item['qty'] : 0;
+            $stageName = trim($item['stage'] ?? '');
+            if ($qty > 0 || $stageName !== '' || !empty($item['date']) || !empty($item['notes'])) {
+                $stages[] = [
+                    'stage'  => $stageName ?: 'T' . (count($stages) + 1),
+                    'date'   => !empty($item['date']) ? $item['date'] : null,
+                    'qty'    => $qty,
+                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
+                    'notes'  => trim($item['notes'] ?? ''),
+                ];
+            }
+        }
+
+        return !empty($stages) ? $stages : null;
     }
 
     /**

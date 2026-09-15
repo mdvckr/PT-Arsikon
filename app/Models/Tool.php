@@ -17,6 +17,7 @@ class Tool extends Model
         'code',
         'name',
         'type',
+        'size',
         'brand',
         'stock_total',
         'stock_available',
@@ -25,6 +26,7 @@ class Tool extends Model
         'stock_damaged',
         'is_active',
         'notes',
+        'incoming_stages',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class Tool extends Model
         'stock_borrowed'   => 'integer',
         'stock_maintenance'=> 'integer',
         'stock_damaged'    => 'integer',
+        'incoming_stages'  => 'array',
     ];
 
     public function category(): BelongsTo

@@ -34,12 +34,16 @@
                             <tbody id="itemsBody">
                                 <tr id="row-0">
                                     <td>
-                                        <select name="items[0][material_id]" class="form-control" required>
+                                        <select name="items[0][material_id]" class="form-control" required onchange="setPrice(this, 0)">
                                             <option value="">Pilih Material</option>
-                                            @foreach($materials as $mat)
-                                            <option value="{{ $mat->id }}" data-price="{{ $mat->unit_price }}">
-                                                {{ $mat->code }} - {{ $mat->name }} ({{ $mat->unit?->abbreviation }})
-                                            </option>
+                                            @foreach($materials->groupBy(fn($m) => $m->category?->name ?? 'Lainnya') as $categoryName => $catMaterials)
+                                            <optgroup label="📁 {{ $categoryName }}">
+                                                @foreach($catMaterials as $mat)
+                                                <option value="{{ $mat->id }}" data-price="{{ $mat->unit_price }}">
+                                                    {{ $mat->code }} - {{ $mat->name }} ({{ $mat->unit?->abbreviation }})
+                                                </option>
+                                                @endforeach
+                                            </optgroup>
                                             @endforeach
                                         </select>
                                     </td>
@@ -117,9 +121,19 @@
 
         function buildSelect(idx) {
             let opts = '<option value="">Pilih Material</option>';
+            const grouped = {};
             materials.forEach(m => {
-                opts += `<option value="${m.id}" data-price="${m.price}">${m.code} - ${m.name} (${m.abbr ?? ''})</option>`;
+                const cat = m.category_name || 'Lainnya';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(m);
             });
+            for (const [cat, items] of Object.entries(grouped)) {
+                opts += `<optgroup label="📁 ${cat}">`;
+                items.forEach(m => {
+                    opts += `<option value="${m.id}" data-price="${m.price}">${m.code} - ${m.name} (${m.abbr ?? ''})</option>`;
+                });
+                opts += `</optgroup>`;
+            }
             return `<select name="items[${idx}][material_id]" class="form-control" required onchange="setPrice(this, ${idx})">${opts}</select>`;
         }
 

@@ -16,12 +16,13 @@ class MaterialController extends Controller
         $categoryQuery = Category::query()
             ->where('type', 'material')
             ->with(['materials' => function ($q) use ($request) {
-                $q->with(['unit', 'inventories']);
+                $q->with(['unit', 'inventories', 'stockMutations']);
                 if ($request->search) {
                     $q->where(function ($sub) use ($request) {
                         $sub->where('name', 'like', "%{$request->search}%")
                             ->orWhere('sku', 'like', "%{$request->search}%")
-                            ->orWhere('size', 'like', "%{$request->search}%");
+                            ->orWhere('size', 'like', "%{$request->search}%")
+                            ->orWhere('type', 'like', "%{$request->search}%");
                     });
                 }
                 $q->latest();
@@ -35,7 +36,8 @@ class MaterialController extends Controller
             $categoryQuery->whereHas('materials', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('sku', 'like', "%{$request->search}%")
-                  ->orWhere('size', 'like', "%{$request->search}%");
+                  ->orWhere('size', 'like', "%{$request->search}%")
+                  ->orWhere('type', 'like', "%{$request->search}%");
             });
         }
 
@@ -52,7 +54,17 @@ class MaterialController extends Controller
         $units      = Unit::orderBy('name')->get();
         $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
 
-        return view('materials.create', compact('categories', 'units', 'warehouses'));
+        // Ambil daftar kelompok nama barang (type) per kategori untuk Dropdown 2 bertingkat
+        $existingGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        return view('materials.create', compact('categories', 'units', 'warehouses', 'existingGroups'));
     }
 
     public function store(Request $request)
@@ -71,10 +83,32 @@ class MaterialController extends Controller
             'warehouse_id'    => 'nullable|exists:warehouses,id',
             'initial_stock'   => 'nullable|numeric|min:0',
             'min_stock'       => 'nullable|numeric|min:0',
+            'incoming_stages' => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+
+        $incomingStages = $this->parseIncomingStages($request);
+        $validated['incoming_stages'] = $incomingStages;
+
+        // Jika initial_stock belum diisi manual tapi ada tahap berstatus 'received', otomatis sinkronkan
+        $receivedStagesQty = $incomingStages ? collect($incomingStages)->where('status', 'received')->sum('qty') : 0;
+        if ((empty($validated['initial_stock']) || $validated['initial_stock'] == 0) && $receivedStagesQty > 0) {
+            $validated['initial_stock'] = $receivedStagesQty;
+        }
+
+        // Pastikan kelompok barang (type) tidak kosong
+        $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
+        if (empty($typeVal) && !empty($validated['name'])) {
+            if (!empty($validated['size']) && str_ends_with($validated['name'], $validated['size'])) {
+                $typeVal = trim(substr($validated['name'], 0, -strlen($validated['size'])));
+            }
+        }
+        if (empty($typeVal)) {
+            $typeVal = $category?->name ?? 'Lainnya';
+        }
+        $validated['type'] = $typeVal;
 
         $material = Material::create($validated);
 
@@ -93,7 +127,7 @@ class MaterialController extends Controller
                 'qty_balance_after'  => $validated['initial_stock'],
                 'reference_type'     => 'Initial Stock',
                 'created_by_user_id' => auth()->id(),
-                'notes'              => 'Stok awal saat pendaftaran material',
+                'notes'              => 'Stok awal saat pendaftaran material' . ($receivedStagesQty > 0 ? ' (dari akumulasi tahap T-masuk)' : ''),
             ]);
         }
 
@@ -114,8 +148,19 @@ class MaterialController extends Controller
         $this->authorize('edit materials');
         $categories = Category::query()->where('type', 'material')->orderBy('name')->get();
         $units      = Unit::orderBy('name')->get();
+        $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
 
-        return view('materials.edit', compact('material', 'categories', 'units'));
+        // Ambil daftar kelompok nama barang (type) per kategori untuk Dropdown 2 bertingkat
+        $existingGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        return view('materials.edit', compact('material', 'categories', 'units', 'warehouses', 'existingGroups'));
     }
 
     public function update(Request $request, Material $material)
@@ -123,23 +168,64 @@ class MaterialController extends Controller
         $this->authorize('edit materials');
 
         $validated = $request->validate([
-            'sku'         => "required|string|max:50|unique:materials,sku,{$material->id}",
-            'name'        => 'required|string|max:255',
-            'size'        => 'nullable|string|max:255',
-            'type'        => 'nullable|string|max:255',
-            'category_id' => 'nullable|exists:categories,id',
-            'new_category'=> 'nullable|string|max:255',
-            'unit_id'     => 'required|exists:units,id',
-            'description' => 'nullable|string',
+            'sku'             => "required|string|max:50|unique:materials,sku,{$material->id}",
+            'name'            => 'required|string|max:255',
+            'size'            => 'nullable|string|max:255',
+            'type'            => 'nullable|string|max:255',
+            'category_id'     => 'nullable|exists:categories,id',
+            'new_category'    => 'nullable|string|max:255',
+            'unit_id'         => 'required|exists:units,id',
+            'description'     => 'nullable|string',
+            'incoming_stages' => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+        $validated['incoming_stages'] = $this->parseIncomingStages($request);
+
+        // Pertahankan kelompok barang (type) jika tidak sengaja terkirim kosong saat edit
+        $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
+        if (empty($typeVal) && !empty($material->type)) {
+            $typeVal = $material->type;
+        }
+        if (empty($typeVal) && !empty($validated['name'])) {
+            if (!empty($validated['size']) && str_ends_with($validated['name'], $validated['size'])) {
+                $typeVal = trim(substr($validated['name'], 0, -strlen($validated['size'])));
+            }
+        }
+        if (empty($typeVal)) {
+            $typeVal = $category?->name ?? 'Lainnya';
+        }
+        $validated['type'] = $typeVal;
 
         $material->update($validated);
 
         return redirect()->route('materials.index')
             ->with('success', "Material '{$material->name}' berhasil diperbarui.");
+    }
+
+    private function parseIncomingStages(Request $request): ?array
+    {
+        if (!$request->has('incoming_stages') || !is_array($request->incoming_stages)) {
+            return null;
+        }
+
+        $stages = [];
+        foreach ($request->incoming_stages as $item) {
+            $qty = isset($item['qty']) && $item['qty'] !== '' ? (float) $item['qty'] : 0;
+            $stageName = trim($item['stage'] ?? '');
+            if ($qty > 0 || $stageName !== '' || !empty($item['date']) || !empty($item['notes'])) {
+                $stages[] = [
+                    'stage'  => $stageName ?: 'T' . (count($stages) + 1),
+                    'date'   => !empty($item['date']) ? $item['date'] : null,
+                    'qty'    => $qty,
+                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
+                    'notes'  => trim($item['notes'] ?? ''),
+                ];
+            }
+        }
+
+        return !empty($stages) ? $stages : null;
     }
 
     public function destroy(Material $material)

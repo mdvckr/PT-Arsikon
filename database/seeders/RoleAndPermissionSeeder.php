@@ -31,11 +31,13 @@ class RoleAndPermissionSeeder extends Seeder
             'tools.manage', 'view tools', 'create tools', 'edit tools', 'delete tools',
             'goods_receipts.create', 'view goods receipts', 'create goods receipts', 'confirm goods receipts',
             'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
-            'distributions.create', 'view distributions', 'create distributions', 'distributions.receive',
+            'distributions.create', 'view distributions', 'create distributions', 'distributions.receive', 'ship distributions', 'receive distributions',
             'tools.assign', 'view tool assignments', 'create tool assignments', 'return tool assignments', 'approve tool assignments', 'tools.inspect_return',
             'stock_opname.create', 'view stock opname', 'create stock opname', 'stock_opname.approve', 'approve stock opname',
             'reports.view_all', 'view reports',
-            'audit_logs.view', 'view audit logs', 'view inventory',
+            'audit_logs.view', 'view audit logs', 'view inventory', 'delete inventory',
+            // Categories
+            'view categories', 'create categories', 'edit categories', 'delete categories',
             // Procurement & PO
             'view procurement', 'create procurement', 'approve procurement',
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
@@ -84,23 +86,32 @@ class RoleAndPermissionSeeder extends Seeder
         $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
         $userRole = Role::firstOrCreate(['name' => 'User']); // Backwards-compatible alias
         $proyekPermissions = [
-            'view material requests',
-            'create material requests',
-            'material_requests.create',
-            'view distributions',
-            'distributions.receive',
-            'view tool assignments',
-            'create tool assignments',
-            'tools.assign',
-            'return tool assignments',
-            'view stock opname',
-            'create stock opname',
-            'stock_opname.create',
-            'view inventory',
-            'create procurement',
-            'view procurement',
-            'create returns',
-            'view returns',
+            // Material & Tool CRUD (full access di gudang proyek)
+            'view materials', 'create materials', 'edit materials', 'delete materials',
+            'view tools', 'create tools', 'edit tools', 'delete tools',
+            'view categories', 'create categories', 'edit categories', 'delete categories',
+            // Goods Receipts
+            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
+            'goods_receipts.create',
+            // Material Requests
+            'view material requests', 'create material requests', 'material_requests.create',
+            // Distributions
+            'view distributions', 'create distributions', 'distributions.create',
+            'distributions.receive', 'receive distributions',
+            // Tool Assignments
+            'view tool assignments', 'create tool assignments',
+            'tools.assign', 'return tool assignments', 'approve tool assignments',
+            'tools.inspect_return',
+            // Stock Opname
+            'view stock opname', 'create stock opname', 'stock_opname.create',
+            // Inventory
+            'view inventory', 'delete inventory',
+            // Procurement
+            'create procurement', 'view procurement',
+            // Returns
+            'create returns', 'view returns', 'receive returns',
+            // Reports
+            'view reports',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
         $userRole->syncPermissions($proyekPermissions);

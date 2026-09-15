@@ -21,11 +21,13 @@ class Material extends Model
         'min_stock_central',
         'is_active',
         'description',
+        'incoming_stages',
     ];
 
     protected $casts = [
         'min_stock_central' => 'decimal:2',
         'is_active' => 'boolean',
+        'incoming_stages' => 'array',
     ];
 
     public function category(): BelongsTo
@@ -41,5 +43,10 @@ class Material extends Model
     public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function stockMutations(): HasMany
+    {
+        return $this->hasMany(StockMutation::class);
     }
 }
