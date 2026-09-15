@@ -110,20 +110,27 @@ class MaterialRequestService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
-            // Notify requestedBy and all users assigned to the requesting project warehouse
-            $targetUsers = collect();
+            // Notify requestedBy directly and then other warehouse users
             if ($request->requestedBy) {
-                $targetUsers->push($request->requestedBy);
+                NotificationHelper::notifyUser(
+                    $request->requestedBy,
+                    "Permintaan Material Disetujui: #{$request->request_number}",
+                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
+                    "success",
+                    route('material-requests.show', $request)
+                );
             }
             $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))->get();
-            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
-
-            foreach ($targetUsers as $targetUser) {
+            $allTargets = collect($projectUsers)->merge($request->requestedBy ? [$request->requestedBy] : [])->unique('id');
+            foreach ($allTargets as $targetUser) {
+                if ($request->requestedBy && $targetUser->id === $request->requestedBy->id) {
+                    continue; // already notified
+                }
                 NotificationHelper::notifyUser(
                     $targetUser,
                     "Permintaan Material Disetujui: #{$request->request_number}",
                     "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
-                    "success",
+                    "info",
                     route('material-requests.show', $request)
                 );
             }

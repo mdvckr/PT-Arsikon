@@ -54,13 +54,9 @@ class DistributionService
             }
         }
 
-        if (!$mr && $tas->isEmpty()) {
-            throw new Exception("Pilih minimal satu sumber: Permintaan Material atau Pengajuan Peminjaman Alat.");
-        }
-
         $items = (array) ($data['items'] ?? []);
         if (empty($items)) {
-            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong.");
+            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong. Pilih permintaan material, peminjaman alat, atau tambahkan item.");
         }
 
         $fromWarehouse = Warehouse::findOrFail($data['from_warehouse_id']);
@@ -87,23 +83,25 @@ class DistributionService
                 }
 
                 if (($item['type'] ?? 'material') === 'tool' && !empty($item['tool_id'])) {
-                    $ta = $tas->get($item['tool_assignment_id'] ?? null);
-                    if (!$ta || (int) $ta->tool_id !== (int) $item['tool_id']) {
-                        throw new Exception("Sumber pengajuan alat tidak sesuai.");
-                    }
-                    if ($qty > $ta->quantity) {
-                        throw new Exception(sprintf(
-                            "Jumlah alat %s (%s) melebihi jumlah pengajuan (%s).",
-                            $ta->tool?->name,
-                            $qty,
-                            $ta->quantity
-                        ));
+                    $ta = !empty($item['tool_assignment_id']) ? $tas->get($item['tool_assignment_id']) : null;
+                    if ($ta) {
+                        if ((int) $ta->tool_id !== (int) $item['tool_id']) {
+                            throw new Exception("Sumber pengajuan alat tidak sesuai.");
+                        }
+                        if ($qty > $ta->quantity) {
+                            throw new Exception(sprintf(
+                                "Jumlah alat %s (%s) melebihi jumlah pengajuan (%s).",
+                                $ta->tool?->name,
+                                $qty,
+                                $ta->quantity
+                            ));
+                        }
                     }
 
                     DistributionItem::create([
                         'distribution_id'     => $distribution->id,
-                        'tool_id'             => $ta->tool_id,
-                        'tool_assignment_id'  => $ta->id,
+                        'tool_id'             => (int) $item['tool_id'],
+                        'tool_assignment_id'  => $ta?->id,
                         'qty_shipped'         => $qty,
                         'qty_received'        => 0,
                         'qty_damaged_or_lost' => 0,
@@ -112,32 +110,30 @@ class DistributionService
                     continue;
                 }
 
-                // Item material -> harus cocok dengan MR
-                if (!$mr) {
-                    throw new Exception("Item material tidak dapat dikirim tanpa permintaan material.");
-                }
+                // Item material
                 if (!empty($item['material_id'])) {
-                    $requestItem = MaterialRequestItem::where('material_request_id', $mr->id)
-                        ->where('material_id', $item['material_id'])
-                        ->first();
-                    if (!$requestItem) {
-                        throw new Exception("Material tersebut tidak ada dalam permintaan material.");
-                    }
+                    if ($mr) {
+                        $requestItem = MaterialRequestItem::where('material_request_id', $mr->id)
+                            ->where('material_id', $item['material_id'])
+                            ->first();
 
-                    $remaining = (float) $requestItem->qty_approved - (float) $requestItem->qty_fulfilled;
-                    if ($qty > $remaining) {
-                        $material = $requestItem->material;
-                        throw new Exception(sprintf(
-                            "Jumlah pengiriman %s (%s) melebihi sisa persetujuan (%s).",
-                            $material?->name,
-                            $qty,
-                            $remaining
-                        ));
+                        if ($requestItem) {
+                            $remaining = (float) $requestItem->qty_approved - (float) $requestItem->qty_fulfilled;
+                            if ($qty > $remaining) {
+                                $material = $requestItem->material;
+                                throw new Exception(sprintf(
+                                    "Jumlah pengiriman %s (%s) melebihi sisa persetujuan (%s).",
+                                    $material?->name,
+                                    $qty,
+                                    $remaining
+                                ));
+                            }
+                        }
                     }
 
                     DistributionItem::create([
                         'distribution_id'     => $distribution->id,
-                        'material_id'         => $requestItem->material_id,
+                        'material_id'         => (int) $item['material_id'],
                         'qty_shipped'         => $qty,
                         'qty_received'        => 0,
                         'qty_damaged_or_lost' => 0,
@@ -193,6 +189,12 @@ class DistributionService
                             'approved_at'         => now(),
                         ]);
                         $tool->borrow((int) $item->qty_shipped);
+                    } elseif ($item->tool) {
+                        $tool = $item->tool;
+                        if ((int) $tool->stock_available < (int) $item->qty_shipped) {
+                            throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
+                        }
+                        $tool->borrow((int) $item->qty_shipped);
                     }
                     continue;
                 }
@@ -222,10 +224,12 @@ class DistributionService
                 );
                 $projectInventory->increment('qty_in_transit', (float) $item->qty_shipped);
 
-                // Update qty_fulfilled pada item permintaan
-                MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
-                    ->where('material_id', $item->material_id)
-                    ->increment('qty_fulfilled', (float) $item->qty_shipped);
+                // Update qty_fulfilled pada item permintaan jika terhubung dengan MR
+                if ($distribution->material_request_id) {
+                    MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
+                        ->where('material_id', $item->material_id)
+                        ->increment('qty_fulfilled', (float) $item->qty_shipped);
+                }
             }
 
             // Perbarui status MR keseluruhan
@@ -258,6 +262,17 @@ class DistributionService
                     route('distributions.show', $distribution)
                 );
             }
+            // Notify the creator (applicant) that the surat jalan has been shipped
+            if ($distribution->creator) {
+                NotificationHelper::notifyUser(
+                    $distribution->creator,
+                    "Surat Jalan Dikirim: #{$distribution->distribution_number}",
+                    "Surat Jalan #{$distribution->distribution_number} yang Anda ajukan telah dikirim ke {$distribution->toWarehouse?->name}.",
+                    "success",
+                    route('distributions.show', $distribution)
+                );
+            }
+
 
             return $distribution->fresh(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse']);
         });
@@ -310,9 +325,11 @@ class DistributionService
 
                 $projectInventory = Inventory::where('warehouse_id', $distribution->to_warehouse_id)
                     ->where('material_id', $distributionItem->material_id)
-                    ->firstOrFail();
+                    ->first();
 
-                $projectInventory->decrement('qty_in_transit', $qtyShipped);
+                if ($projectInventory) {
+                    $projectInventory->decrement('qty_in_transit', min($qtyShipped, (float) $projectInventory->qty_in_transit));
+                }
 
                 if ($qtyReceived > 0) {
                     $this->stockService->addStock(

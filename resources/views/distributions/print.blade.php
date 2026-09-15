@@ -240,8 +240,8 @@
             <img src="{{ asset('assets/Logo-Dashboard.png') }}" alt="PT ARSIKON CIPTA KARYA" class="kop-logo">
             <div class="kop-text">
                 <div class="company">PT ARSIKON CIPTA KARYA</div>
-                <div class="tagline">Warehouse Management System</div>
-                <div class="address">Jl. Industri Utama No. 1, Jakarta &middot; Telp: (021) 555-1234 &middot; Email: info@arsikon.co.id</div>
+                <div class="tagline">General Contractor </div>
+                <div class="address">Jl. Menuju Cinta &middot; Telp: (021) 555-1234 &middot; Email: info@arsikon.co.id</div>
             </div>
         </div>
 

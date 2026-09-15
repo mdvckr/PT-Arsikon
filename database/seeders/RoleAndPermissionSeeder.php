@@ -64,6 +64,10 @@ class RoleAndPermissionSeeder extends Seeder
             'material_requests.approve',
             'approve material requests',
             'distributions.create',
+            'view distributions',
+            'create distributions',
+            'ship distributions',
+            'receive distributions',
             'tools.assign',
             'view tool assignments',
             'create tool assignments',
@@ -97,7 +101,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view material requests', 'create material requests', 'material_requests.create',
             // Distributions
             'view distributions', 'create distributions', 'distributions.create',
-            'distributions.receive', 'receive distributions',
+            'ship distributions', 'distributions.receive', 'receive distributions',
             // Tool Assignments
             'view tool assignments', 'create tool assignments',
             'tools.assign', 'return tool assignments', 'approve tool assignments',
@@ -115,6 +119,23 @@ class RoleAndPermissionSeeder extends Seeder
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
         $userRole->syncPermissions($proyekPermissions);
+
+        // 2.1 Create Karyawan Role
+        $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
+        $karyawanPermissions = [
+            'view materials',
+            'view tools',
+            'view inventory',
+            'view reports',
+            'view tool assignments',
+            'create tool assignments',
+            'view material requests',
+            'create material requests',
+            'view distributions',
+            'create distributions',
+            'distributions.create',
+        ];
+        $karyawanRole->syncPermissions($karyawanPermissions);
 
         $adminPORole = Role::firstOrCreate(['name' => 'Admin PO']);
         $adminPORole->syncPermissions([
@@ -208,38 +229,17 @@ class RoleAndPermissionSeeder extends Seeder
         $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
         $adminPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
-        // 3. Admin Gudang Proyek 1 (Proyek A)
+        // 3. Admin Gudang Proyek  (Proyek A)
         $adminProyek1 = User::firstOrCreate(
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
-                'name' => 'Admin Gudang Proyek FK Teknik',
+                'name' => 'Admin Gudang Proyek FK Teknik UGM',
                 'password' => Hash::make('password123'),
             ]
         );
         $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
         $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
-        // Backward compatibility for legacy tests and scripts
-        $oldProjectUser = User::firstOrCreate(
-            ['email' => 'user.proyek@arsikon.co.id'],
-            [
-                'name' => 'Petugas Gudang Proyek A',
-                'password' => Hash::make('password123'),
-            ]
-        );
-        $oldProjectUser->syncRoles([$adminProyekRole, $userRole]);
-        $oldProjectUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 4. Admin Gudang Proyek 2 (Proyek B)
-        $adminProyek2 = User::firstOrCreate(
-            ['email' => 'admin.proyek2@arsikon.co.id'],
-            [
-                'name' => 'Admin Gudang Proyek B',
-                'password' => Hash::make('password123'),
-            ]
-        );
-        $adminProyek2->syncRoles([$adminProyekRole, $userRole]);
-        $adminProyek2->warehouses()->syncWithoutDetaching([$projectWarehouseB->id]);
 
         // 5. Admin PO (Pengadaan)
         $adminPOUser = User::firstOrCreate(
@@ -251,5 +251,16 @@ class RoleAndPermissionSeeder extends Seeder
         );
         $adminPOUser->syncRoles([$adminPORole]);
         $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
+
+        // 6. Karyawan (User Terbatas: View, Pinjam Alat, Request Material, Buat Surat Jalan)
+        $karyawanUser = User::firstOrCreate(
+            ['email' => 'karyawan@arsikon.co.id'],
+            [
+                'name'     => 'Pekerja Lapangan',
+                'password' => Hash::make('password123'),
+            ]
+        );
+        $karyawanUser->syncRoles([$karyawanRole]);
+        $karyawanUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
     }
 }

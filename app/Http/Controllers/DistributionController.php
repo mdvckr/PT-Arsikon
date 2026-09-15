@@ -57,8 +57,10 @@ class DistributionController extends Controller
             ->get();
 
         $warehouses = Warehouse::orderBy('name')->get();
+        $materials  = \App\Models\Material::with('unit', 'category')->orderBy('name')->get();
+        $tools      = \App\Models\Tool::orderBy('name')->get();
 
-        return view('distributions.create', compact('materialRequests', 'toolAssignments', 'warehouses'));
+        return view('distributions.create', compact('materialRequests', 'toolAssignments', 'warehouses', 'materials', 'tools'));
     }
 
     public function store(Request $request)
@@ -85,20 +87,31 @@ class DistributionController extends Controller
 
         $validated['tool_assignment_ids'] = $validated['tool_assignment_ids'] ?? [];
 
-        $dist = $this->service->create($validated, auth()->id());
+        try {
+            $dist = $this->service->create($validated, auth()->id());
 
-        if ($request->wantsJson() || $request->ajax()) {
-            $dist->load(['fromWarehouse', 'toWarehouse', 'creator', 'items.material.unit', 'items.tool']);
-            return response()->json([
-                'success' => true,
-                'message' => "Surat Jalan #{$dist->distribution_number} berhasil dibuat.",
-                'distribution' => $dist,
-                'redirect_url' => route('distributions.show', $dist)
-            ]);
+            if ($request->wantsJson() || $request->ajax()) {
+                $dist->load(['fromWarehouse', 'toWarehouse', 'creator', 'items.material.unit', 'items.tool']);
+                return response()->json([
+                    'success' => true,
+                    'message' => "Surat Jalan #{$dist->distribution_number} berhasil dibuat.",
+                    'distribution' => $dist,
+                    'redirect_url' => route('distributions.show', $dist)
+                ]);
+            }
+
+            return redirect()->route('distributions.show', $dist)
+                ->with('success', "Surat Jalan #{$dist->distribution_number} berhasil dibuat.");
+        } catch (\Throwable $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+
+            return back()->withInput()->with('error', $e->getMessage());
         }
-
-        return redirect()->route('distributions.show', $dist)
-            ->with('success', "Surat Jalan #{$dist->distribution_number} berhasil dibuat.");
     }
 
     public function show(Distribution $distribution)

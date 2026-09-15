@@ -205,16 +205,28 @@ class ToolAssignmentController extends Controller
             $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
         }
 
-        foreach ($targetUsers as $targetUser) {
+        // Notify the applicant directly
+        if ($toolAssignment->assignedBy) {
             \App\Services\NotificationHelper::notifyUser(
-                $targetUser,
+                $toolAssignment->assignedBy,
                 "Peminjaman Alat Disetujui: #{$toolAssignment->assignment_number}",
                 "Pengajuan peminjaman alat {$tool->name} ({$toolAssignment->quantity} unit) telah disetujui oleh " . auth()->user()->name . ".",
                 "success",
                 route('tool-assignments.show', $toolAssignment)
             );
         }
-
+        // Also notify other warehouse users (if any)
+        foreach ($targetUsers as $targetUser) {
+            if ($targetUser->id !== $toolAssignment->assignedBy?->id) {
+                \App\Services\NotificationHelper::notifyUser(
+                    $targetUser,
+                    "Peminjaman Alat Disetujui: #{$toolAssignment->assignment_number}",
+                    "Pengajuan peminjaman alat {$tool->name} ({$toolAssignment->quantity} unit) telah disetujui oleh " . auth()->user()->name . ".",
+                    "info",
+                    route('tool-assignments.show', $toolAssignment)
+                );
+            }
+        }
         return back()->with('success', 'Pengajuan peminjaman alat disetujui & stok alat dikurangi.');
     }
 
