@@ -1308,7 +1308,7 @@
             <!-- MASTER DATA -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'User']))
             <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Master Data</div>
+                <div class="nav-section-label" style="padding: 8px 20px 4px;">Logistik</div>
                 <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
                     <i class="fas fa-boxes-stacked"></i> Material
                 </a>

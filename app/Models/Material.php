@@ -13,9 +13,12 @@ class Material extends Model
 
     protected $fillable = [
         'category_id',
+        'supplier_id',
+        'supplier_name',
         'unit_id',
         'sku',
         'name',
+        'brand',
         'size',
         'type',
         'min_stock_central',
@@ -33,6 +36,11 @@ class Material extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function unit(): BelongsTo

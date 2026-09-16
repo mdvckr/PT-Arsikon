@@ -233,7 +233,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminProyek1 = User::firstOrCreate(
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
-                'name' => 'Admin Gudang Proyek FK Teknik UGM',
+                'name' => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
                 'password' => Hash::make('password123'),
             ]
         );

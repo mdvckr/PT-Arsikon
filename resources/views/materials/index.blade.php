@@ -1,58 +1,63 @@
 <x-app-layout>
     <x-slot name="title">Data Material</x-slot>
 
-    <div class="flex items-center justify-between mb-4">
+    {{-- Page Header --}}
+    <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:12px;">
         <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Material</h2>
-            <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola semua material konstruksi terdaftar</p>
+            <div class="breadcrumb" style="margin-bottom:4px;">
+                <a href="{{ route('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+                <span>Data Material</span>
+            </div>
+            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Material</h2>
+            <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Daftar seluruh master material konstruksi, spesifikasi, dan stok</p>
         </div>
         @can('create materials')
-        <a href="{{ route('materials.create') }}" class="btn btn-primary">
+        <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:38px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
             <i class="fas fa-plus"></i> Tambah Material
         </a>
         @endcan
     </div>
 
-    {{-- Filter --}}
-    <div class="card mb-4">
-        <div class="card-body" style="padding:16px 20px;">
-            <form method="GET" class="flex gap-3" style="flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:200px;">
-                    <label class="form-label">Cari Material</label>
+    {{-- Simple Search Bar (Filter Kategori Dihapus) --}}
+    <div class="card mb-3" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
+        <div class="card-body" style="padding:12px 16px;">
+            <form method="GET" style="display:flex;gap:10px;align-items:center;">
+                <div style="flex:1;position:relative;">
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control"
-                        placeholder="Nama, kode SKU, atau ukuran...">
+                        placeholder="Cari material berdasarkan nama, SKU, atau ukuran..."
+                        style="height:38px;border-radius:6px;font-size:13px;padding-left:34px;border:1px solid #cbd5e1;">
+                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;"></i>
                 </div>
-                <div style="min-width:180px;">
-                    <label class="form-label">Kategori</label>
-                    <select name="category_id" class="form-control" onchange="this.form.submit()">
-                        <option value="">Semua Kategori</option>
-                        @foreach($filterCategories as $cat)
-                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
-                            {{ $cat->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
+                <button type="submit" class="btn btn-secondary" style="height:38px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;">
+                    Cari
+                </button>
+                @if(request('search'))
+                <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:13px;color:#64748b;" title="Reset Pencarian">
+                    Reset
+                </a>
+                @endif
             </form>
         </div>
     </div>
 
     {{-- Grouped Accordion Table --}}
-    <div class="card">
+    <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
         <div class="table-wrap">
-            <table class="data-table mb-0">
+            <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
                 <thead>
-                    <tr>
-                        <th style="width:40px;text-align:center;">#</th>
-                        <th>Kode SKU</th>
-                        <th>Nama Material & Model</th>
-                        <th>Ukuran & Dimensi</th>
-                        <th>Keterangan (masih ada tambahan)</th>
-                        <th>Tgl Input</th>
-                        <th style="text-align:center;">Total Stock</th>
-                        <th style="text-align:center;">Pemakaian</th>
-                        <th style="text-align:center;">Stock Sisa</th>
-                        <th style="text-align:center;width:95px;">Aksi</th>
+                    <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                        <th style="width:40px;text-align:center;padding:11px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">#</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Kode SKU</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Nama Material</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Supplier</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Ukuran</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Keterangan & Jadwal</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tgl Input</th>
+                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Total Stok</th>
+                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Pemakaian</th>
+                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Stok Sisa</th>
+                        <th style="text-align:center;width:95px;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,26 +77,23 @@
                         $totalMaterials = $category->materials->count();
                         $totalGroups = $typeGroups->count();
                     @endphp
-                    {{-- Level 1: Category Header --}}
-                    <tr class="group-toggle" data-group="group-cat-{{ $category->id }}" style="background:#f1f5f9 !important;cursor:pointer;">
-                        <td colspan="10" style="padding:10px 20px !important;">
-                            <div class="flex items-center justify-between" style="gap:12px;flex-wrap:nowrap;">
-                                <div class="flex items-center" style="gap:8px;min-width:0;">
-                                    <i class="fas fa-chevron-down group-chev" style="font-size:11px;color:#64748b;transition:transform .2s;" aria-hidden="true"></i>
-                                    <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;white-space:nowrap;">
+                    {{-- Level 1: Category Header (Clean, minimal, no excessive colors) --}}
+                    <tr class="group-toggle" data-group="group-cat-{{ $category->id }}" style="background:#f1f5f9 !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                        <td colspan="11" style="padding:9px 16px !important;">
+                            <div class="flex items-center justify-between" style="gap:10px;">
+                                <div class="flex items-center" style="gap:8px;">
+                                    <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;" aria-hidden="true"></i>
+                                    <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">
                                         {{ $category->name }}
                                     </span>
-                                    <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;white-space:nowrap;">
-                                        {{ $totalMaterials }} material
-                                    </span>
-                                    <span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;white-space:nowrap;font-size:10px;">
-                                        {{ $totalGroups }} kelompok
+                                    <span class="text-muted" style="font-size:12px;font-weight:500;">
+                                        ({{ $totalMaterials }} material)
                                     </span>
                                 </div>
-                                <div class="flex items-center" style="gap:16px;flex-shrink:0;">
+                                <div>
                                     @can('create materials')
-                                    <a href="{{ route('materials.create', ['category_id' => $category->id]) }}" class="btn btn-sm btn-primary" title="Tambah Material pada {{ $category->name }}" onclick="event.stopPropagation();">
-                                        <i class="fas fa-plus"></i> Tambah
+                                    <a href="{{ route('materials.create', ['category_id' => $category->id]) }}" class="text-muted" style="font-size:12px;font-weight:600;text-decoration:none;padding:2px 6px;" title="Tambah Material pada {{ $category->name }}" onclick="event.stopPropagation();">
+                                        + Tambah
                                     </a>
                                     @endcan
                                 </div>
@@ -101,22 +103,21 @@
 
                     @foreach($typeGroups as $typeName => $materialsInType)
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($typeName); @endphp
-                    {{-- Level 2: Sub-Group Header (Kelompok Barang / Type) --}}
-                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle" data-group="{{ $subKey }}" style="background:#f8fafc !important;cursor:pointer;border-left:3px solid #3b82f6;">
-                        <td colspan="10" style="padding:8px 20px 8px 40px !important;">
+                    {{-- Level 2: Sub-Group Header (Simple indentation, clean typography, no random icons) --}}
+                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle" data-group="{{ $subKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-bottom:1px solid #edf2f7;">
+                        <td colspan="11" style="padding:7px 16px 7px 34px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
-                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:10px;color:#94a3b8;transition:transform .2s;" aria-hidden="true"></i>
-                                    <i class="fas fa-cubes" style="font-size:11px;color:#3b82f6;"></i>
+                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;" aria-hidden="true"></i>
                                     <span class="fw-600" style="font-size:12.5px;color:#334155;">
                                         {{ $typeName }}
                                     </span>
-                                    <span class="badge" style="background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe;font-size:10px;">
-                                        {{ $materialsInType->count() }} varian
+                                    <span class="text-muted" style="font-size:11.5px;">
+                                        ({{ $materialsInType->count() }})
                                     </span>
                                 </div>
-                                <span class="text-muted" style="font-size:10.5px;opacity:0.7;">
-                                    <i class="fas fa-chevron-down me-1" style="font-size:9px;"></i> Klik untuk buka / tutup
+                                <span class="text-muted" style="font-size:11px;">
+                                    Tutup / Buka
                                 </span>
                             </div>
                         </td>
@@ -124,47 +125,45 @@
 
                     {{-- Level 3: Individual Material Rows --}}
                     @foreach($materialsInType as $m)
-                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-rows {{ $subKey }}">
-                        <td class="text-muted" style="text-align:center;">{{ $loop->iteration }}</td>
-                        <td><code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;font-size:12px;font-weight:600;">{{ $m->sku }}</code></td>
-                        <td>
-                            <div class="fw-600" style="color:#0f172a;">{{ $m->name }}</div>
-                            @if($m->type)
-                            <div class="text-muted" style="font-size:11px;"><i class="fas fa-tag me-1 text-muted"></i>{{ $m->type }}</div>
-                            @endif
-                        </td>
-                        <td>
-                            @if($m->size)
-                            <span class="badge bg-light text-dark border" style="font-size:12px;font-weight:600;">
-                                <i class="fas fa-ruler-combined text-muted me-1"></i> {{ $m->size }}
+                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-rows {{ $subKey }}" style="border-bottom:1px solid #f1f5f9;">
+                        <td class="text-muted" style="text-align:center;font-size:12px;padding:9px 10px;">{{ $loop->iteration }}</td>
+                        <td style="padding:9px 14px;">
+                            <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;color:#334155;background:#f1f5f9;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">
+                                {{ $m->sku }}
                             </span>
-                            @else
-                            <span class="text-muted" style="font-size:12px;">-</span>
+                        </td>
+                        <td style="padding:9px 14px;">
+                            <a href="{{ route('materials.show', $m) }}" style="color:#0f172a;font-weight:600;text-decoration:none;font-size:13px;display:inline-block;">
+                                {{ $m->name }}
+                            </a>
+                            @if($m->brand)
+                            <div class="text-muted" style="font-size:11px;margin-top:1px;">
+                                Merek: {{ $m->brand }}
+                            </div>
                             @endif
                         </td>
-                        <td style="max-width:280px;min-width:180px;">
+                        <td style="padding:9px 14px;font-size:12.5px;color:#334155;">
+                            {{ $m->supplier?->name ?? $m->supplier_name ?? '-' }}
+                        </td>
+                        <td style="padding:9px 14px;font-size:12.5px;color:#334155;">
+                            {{ $m->size ?: '-' }}
+                        </td>
+                        <td style="padding:9px 14px;max-width:280px;min-width:180px;">
                             @if($m->description)
                             <div style="font-size:12px;color:#334155;line-height:1.4;">{{ $m->description }}</div>
                             @endif
 
                             @if(!empty($m->incoming_stages) && count($m->incoming_stages) > 0)
-                            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
                                 @foreach($m->incoming_stages as $stg)
                                     @php
                                         $isReceived = ($stg['status'] ?? 'received') === 'received';
                                     @endphp
-                                    <span class="inline-flex items-center" 
-                                          style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10.5px;line-height:1.2;
-                                                 background:{{ $isReceived ? '#f0fdf4' : '#fffbeb' }};
-                                                 border:1px solid {{ $isReceived ? '#bbf7d0' : '#fde68a' }};
-                                                 color:{{ $isReceived ? '#166534' : '#92400e' }};"
-                                          title="{{ $stg['stage'] ?? 'T' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $m->unit?->abbreviation ?? '' }} ({{ $isReceived ? 'Sudah Masuk' : 'Rencana Kedatangan' }}) {{ !empty($stg['notes']) ? '- ' . $stg['notes'] : '' }}">
-                                        <strong style="margin-right:3px;">{{ $stg['stage'] ?? ('T'.($loop->iteration)) }}</strong>:
-                                        <span>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</span>
-                                        @if(!empty($stg['date']))
-                                        <span style="opacity:0.75;font-size:9.5px;margin-left:3px;">{{ \Carbon\Carbon::parse($stg['date'])->format('d/m') }}</span>
-                                        @endif
-                                        <i class="fas {{ $isReceived ? 'fa-check text-success' : 'fa-clock text-warning' }}" style="font-size:9px;margin-left:4px;" aria-hidden="true"></i>
+                                    <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10.5px;background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;"
+                                          title="{{ $stg['stage'] ?? 'T' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $m->unit?->abbreviation ?? '' }} ({{ $isReceived ? 'Sudah Masuk' : 'Rencana Kedatangan' }})">
+                                        <strong>{{ $stg['stage'] ?? ('T'.$loop->iteration) }}</strong>:
+                                        {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}
+                                        <span class="text-muted" style="font-size:9.5px;">({{ $isReceived ? 'Masuk' : 'Rencana' }})</span>
                                     </span>
                                 @endforeach
                             </div>
@@ -172,9 +171,8 @@
                             <span class="text-muted" style="font-size:12px;">-</span>
                             @endif
                         </td>
-                        <td style="font-size:12px;color:#64748b;white-space:nowrap;">
-                            <div>{{ $m->created_at ? $m->created_at->format('d M Y') : '-' }}</div>
-                            <div style="font-size:10.5px;" class="text-muted">{{ $m->created_at ? $m->created_at->format('H:i') : '' }}</div>
+                        <td style="padding:9px 14px;font-size:12px;color:#64748b;white-space:nowrap;">
+                            {{ $m->created_at ? $m->created_at->format('d/m/Y') : '-' }}
                         </td>
                         @php 
                             $stockSisa = (float) $m->inventories->sum('quantity'); 
@@ -186,62 +184,57 @@
                             $plannedStages = !empty($m->incoming_stages) ? collect($m->incoming_stages)->where('status', 'planned') : collect();
                             $totalPlanned = (float) $plannedStages->sum('qty');
                         @endphp
-                        <td style="text-align:center;">
-                            <span style="font-weight:700;font-size:14px;color:#0f172a;">{{ number_format($totalStock, 0, ',', '.') }}</span>
+                        <td style="text-align:center;padding:9px 14px;">
+                            <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ number_format($totalStock, 0, ',', '.') }}</span>
                             @if($m->unit?->abbreviation || $m->unit?->name)
-                            <span class="text-muted" style="font-size:11px;"> {{ $m->unit->abbreviation ?? $m->unit->name }}</span>
+                            <span class="text-muted" style="font-size:11px;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                             @endif
-
                             @if($totalPlanned > 0)
-                            <div style="font-size:10px;color:#b45309;margin-top:2px;" title="Jadwal Rencana Kedatangan Mendatang">
-                                <i class="fas fa-clock me-1"></i>+{{ number_format($totalPlanned, 0, ',', '.') }} rencana
+                            <div class="text-muted" style="font-size:10.5px;margin-top:1px;">
+                                +{{ number_format($totalPlanned, 0, ',', '.') }} rencana
                             </div>
                             @endif
                         </td>
-                        <td style="text-align:center;">
-                            @if($pemakaian > 0)
-                                <span style="font-weight:700;font-size:14px;color:#e11d48;">{{ number_format($pemakaian, 0, ',', '.') }}</span>
-                            @else
-                                <span class="text-muted" style="font-size:13px;font-weight:500;">0</span>
-                            @endif
+                        <td style="text-align:center;padding:9px 14px;">
+                            <span style="font-size:13px;color:#334155;">{{ number_format($pemakaian, 0, ',', '.') }}</span>
                             @if($m->unit?->abbreviation || $m->unit?->name)
-                            <span class="text-muted" style="font-size:11px;"> {{ $m->unit->abbreviation ?? $m->unit->name }}</span>
+                            <span class="text-muted" style="font-size:11px;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                             @endif
                         </td>
-                        <td style="text-align:center;">
-                            <div style="font-weight:700;font-size:14px;color:#16a34a;">
+                        <td style="text-align:center;padding:9px 14px;">
+                            <div style="font-weight:700;font-size:13.5px;color:#0f172a;">
                                 {{ number_format($stockSisa, 0, ',', '.') }}
                                 @if($m->unit?->abbreviation || $m->unit?->name)
-                                <span class="text-muted" style="font-size:11px;font-weight:normal;"> {{ $m->unit->abbreviation ?? $m->unit->name }}</span>
+                                <span class="text-muted" style="font-size:11px;font-weight:normal;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                                 @endif
                             </div>
                             @if($stockSisa > 0)
-                                <span class="badge bg-success-subtle text-success" style="font-size:10px;" title="{{ $activeInventories->count() }} Gudang/Lokasi">
-                                    <i class="fas fa-warehouse me-1"></i> {{ $activeInventories->count() }} Lokasi
-                                </span>
+                                <div style="font-size:11px;color:#16a34a;margin-top:1px;font-weight:500;">
+                                    Tersedia
+                                </div>
                             @else
-                                <span class="badge bg-danger-subtle text-danger" style="font-size:10px;">
-                                    <i class="fas fa-box-open me-1"></i> Habis
-                                </span>
+                                <div style="font-size:11px;color:#dc2626;margin-top:1px;font-weight:500;">
+                                    Habis
+                                </div>
                             @endif
                         </td>
 
-                        <td style="text-align:center;">
+                        <td style="text-align:center;padding:9px 14px;">
                             <div class="flex items-center justify-center gap-1">
-                                <a href="{{ route('materials.show', $m) }}" class="btn btn-sm btn-info btn-icon" title="Detail">
-                                    <i class="fas fa-eye"></i>
+                                <a href="{{ route('materials.show', $m) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;" title="Detail Material">
+                                    <i class="fas fa-eye" style="font-size:11px;"></i>
                                 </a>
                                 @can('edit materials')
-                                <a href="{{ route('materials.edit', $m) }}" class="btn btn-sm btn-warning btn-icon" title="Edit">
-                                    <i class="fas fa-pen"></i>
+                                <a href="{{ route('materials.edit', $m) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;" title="Edit Material">
+                                    <i class="fas fa-pen" style="font-size:11px;"></i>
                                 </a>
                                 @endcan
                                 @can('delete materials')
                                 <form method="POST" action="{{ route('materials.destroy', $m) }}"
-                                    onsubmit="return confirm('Hapus material {{ addslashes($m->name) }}?')">
+                                    onsubmit="return confirm('Hapus material {{ addslashes($m->name) }}?')" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="submit" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;" title="Hapus Material">
+                                        <i class="fas fa-trash" style="font-size:11px;"></i>
                                     </button>
                                 </form>
                                 @endcan
@@ -252,11 +245,15 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10">
-                            <div class="empty-state">
-                                <i class="fas fa-boxes-stacked"></i>
-                                <h3>Belum Ada Material</h3>
-                                <p>Tambahkan material pertama untuk memulai.</p>
+                        <td colspan="11" style="padding:40px 20px;text-align:center;">
+                            <div class="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;">Belum Ada Material</h3>
+                                <p class="text-muted" style="font-size:13px;max-width:320px;margin-bottom:14px;">Tambahkan material pertama Anda untuk mulai mengelola stok dan inventori.</p>
+                                @can('create materials')
+                                <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:36px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;">
+                                    Tambah Material
+                                </a>
+                                @endcan
                             </div>
                         </td>
                     </tr>
@@ -288,7 +285,6 @@
                             if (r.classList.contains('subgroup-toggle')) {
                                 r.style.display = '';
                             } else if (r.classList.contains('subgroup-rows')) {
-                                // Hanya tampilkan baris item jika subgroup-nya tidak sedang tertutup
                                 var subKey = null;
                                 r.classList.forEach(function (cls) {
                                     if (cls.startsWith('sub-')) subKey = cls;

@@ -1,82 +1,168 @@
 <x-app-layout>
     <x-slot name="title">Detail Material: {{ $material->name }}</x-slot>
 
-    <div class="breadcrumb">
+    {{-- Breadcrumb --}}
+    <div class="breadcrumb no-print" style="margin-bottom:8px;">
         <a href="{{ route('materials.index') }}">Material</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
         <span>{{ $material->name }}</span>
     </div>
 
-    <div class="grid" style="grid-template-columns:340px 1fr;gap:20px;align-items:start;">
-        {{-- Info Card --}}
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-box text-primary"></i>
-                <span class="card-title">Informasi Material</span>
-                @can('edit materials')
-                <a href="{{ route('materials.edit', $material) }}" class="btn btn-sm btn-warning">
-                    <i class="fas fa-pen"></i> Edit
-                </a>
-                @endcan
+    {{-- Action Bar --}}
+    <div class="flex items-center justify-between mb-4 no-print" style="flex-wrap:wrap;gap:12px;">
+        <div>
+            <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">{{ $material->name }}</h2>
+                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:#475569;background:#f1f5f9;padding:2px 7px;border-radius:4px;border:1px solid #e2e8f0;">
+                    {{ $material->sku }}
+                </span>
+                @if($material->category)
+                <span class="text-muted" style="font-size:12.5px;">
+                    · {{ $material->category->name }}
+                </span>
+                @endif
             </div>
-            <div class="card-body">
-                <table style="width:100%;font-size:13.5px;border-collapse:collapse;">
+            <p class="text-muted" style="font-size:12.5px;margin:3px 0 0;">
+                Terdaftar sejak {{ $material->created_at ? $material->created_at->format('d M Y, H:i') : '-' }}
+            </p>
+        </div>
+        <div class="flex gap-2 items-center">
+            @can('edit materials')
+            <a href="{{ route('materials.edit', $material) }}" class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;">
+                Edit
+            </a>
+            @endcan
+            <button type="button" class="btn btn-primary" onclick="printMaterial()" id="btn-print-material" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;">
+                Cetak / Print
+            </button>
+            <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;">
+                Kembali
+            </a>
+        </div>
+    </div>
+
+    {{-- Print Header (only visible when printing) --}}
+    <div class="print-only" style="display:none;margin-bottom:20px;border-bottom:2px solid #0f172a;padding-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <div style="font-size:18px;font-weight:800;color:#0f172a;">PT Arsikon Cipta Karya</div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">Informasi & Kartu Data Material</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:11px;color:#64748b;">Dicetak pada:</div>
+                <div style="font-size:12px;font-weight:600;" id="print-date-time"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:360px 1fr;gap:20px;align-items:start;" id="material-detail-grid">
+        {{-- Info Card --}}
+        <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
+            <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                <div class="fw-700" style="font-size:14px;color:#0f172a;">Informasi Material</div>
+                <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Spesifikasi dan identitas material</div>
+            </div>
+            <div class="card-body" style="padding:18px;">
+                <table style="width:100%;font-size:13px;border-collapse:collapse;">
                     @php
+                        $displaySupplier = $material->supplier?->name ?? $material->supplier_name;
                         $rows = [
-                            ['Kode SKU', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">'.$material->sku.'</code>'],
-                            ['Nama Material', $material->name],
-                            ['Ukuran / Dimensi', $material->size ? '<span class="badge bg-light text-dark border">'.$material->size.'</span>' : '-'],
+                            ['Kode SKU', '<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:#334155;background:#f1f5f9;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">'.$material->sku.'</span>'],
+                            ['Nama Material', '<span style="font-weight:600;color:#0f172a;">'.$material->name.'</span>'],
+                            ['Kelompok Barang', $material->type ?: '-'],
+                            ['Merek / Brand', $material->brand ?: '-'],
+                            ['Ukuran / Dimensi', $material->size ?: '-'],
+                            ['Supplier / Pemasok', $displaySupplier ?: '-'],
                             ['Kategori', $material->category?->name ?? '-'],
-                            ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').') '],
+                            ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').')'],
                             ['Waktu Input Data', $material->created_at ? $material->created_at->format('d M Y, H:i') : '-'],
                         ];
                     @endphp
                     @foreach($rows as [$label, $value])
-                    <tr>
-                        <td style="padding:8px 0;color:#64748b;font-weight:500;width:40%;vertical-align:top;">{{ $label }}</td>
-                        <td style="padding:8px 0;color:#1e293b;font-weight:600;">{!! $value !!}</td>
+                    <tr style="border-bottom:1px solid #f8fafc;">
+                        <td style="padding:8px 0;color:#64748b;font-weight:500;width:40%;vertical-align:top;font-size:12px;">{{ $label }}</td>
+                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;">{!! $value !!}</td>
                     </tr>
                     @endforeach
                     @if($material->description)
+                    <tr style="border-bottom:1px solid #f8fafc;">
+                        <td style="padding:8px 0;color:#64748b;font-weight:500;vertical-align:top;font-size:12px;">Keterangan</td>
+                        <td style="padding:8px 0;color:#334155;line-height:1.45;">{{ $material->description }}</td>
+                    </tr>
+                    @endif
+                    {{-- Incoming Stages (shown in print too) --}}
+                    @if(!empty($material->incoming_stages) && count($material->incoming_stages) > 0)
                     <tr>
-                        <td style="padding:8px 0;color:#64748b;font-weight:500;vertical-align:top;">Deskripsi</td>
-                        <td style="padding:8px 0;color:#475569;">{{ $material->description }}</td>
+                        <td style="padding:10px 0 4px;color:#64748b;font-weight:500;vertical-align:top;font-size:12px;">Tahap Kedatangan</td>
+                        <td style="padding:10px 0 4px;">
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                            @foreach($material->incoming_stages as $stg)
+                                @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:4px;font-size:11.5px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
+                                    <div>
+                                        <strong>{{ $stg['stage'] ?? ('Tahap '.$loop->iteration) }}</strong>
+                                        @if(!empty($stg['date']))
+                                        <span class="text-muted" style="font-size:10.5px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
+                                        @endif
+                                        <span style="font-size:10px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};margin-left:4px;">
+                                            [{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}]
+                                        </span>
+                                    </div>
+                                    <div style="font-weight:600;">
+                                        {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $material->unit?->abbreviation ?? '' }}
+                                    </div>
+                                </div>
+                            @endforeach
+                            </div>
+                        </td>
                     </tr>
                     @endif
                 </table>
             </div>
         </div>
 
-        <div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
             {{-- Inventory per Warehouse --}}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-layer-group text-primary"></i>
-                    <span class="card-title">Stok per Gudang</span>
+            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;">Stok per Lokasi / Gudang</div>
+                    <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Kuantitas stok fisik yang tersimpan di masing-masing gudang</div>
                 </div>
                 <div class="table-wrap">
-                    <table class="data-table">
+                    <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
                         <thead>
-                            <tr><th>Gudang</th><th>Qty</th><th>Min. Stok</th><th>Status</th></tr>
+                            <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Gudang / Lokasi</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Qty Tersedia</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Min. Stok</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:center;">Status</th>
+                            </tr>
                         </thead>
                         <tbody>
                             @forelse($material->inventories as $inv)
-                            <tr>
-                                <td class="fw-600">{{ $inv->warehouse?->name }}</td>
-                                <td>{{ number_format($inv->quantity, 0, ',', '.') }} {{ $material->unit?->abbreviation }}</td>
-                                <td>{{ number_format($inv->min_stock, 0, ',', '.') }}</td>
-                                <td>
+                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                <td style="padding:10px 16px;font-weight:600;color:#0f172a;">
+                                    {{ $inv->warehouse?->name ?? 'Gudang Utama' }}
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;">
+                                    <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
+                                    <span class="text-muted" style="font-size:11.5px;">{{ $material->unit?->abbreviation ?? $material->unit?->name }}</span>
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;color:#64748b;font-size:12.5px;">
+                                    {{ number_format($inv->min_stock, 0, ',', '.') }}
+                                </td>
+                                <td style="padding:10px 16px;text-align:center;font-size:12px;">
                                     @if($inv->quantity <= 0)
-                                        <span class="badge badge-danger">Habis</span>
+                                        <span style="color:#dc2626;font-weight:500;">Habis</span>
                                     @elseif($inv->quantity <= $inv->min_stock)
-                                        <span class="badge badge-warning">Rendah</span>
+                                        <span style="color:#b45309;font-weight:500;">Rendah</span>
                                     @else
-                                        <span class="badge badge-success">Normal</span>
+                                        <span style="color:#16a34a;font-weight:500;">Normal</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px;">Belum ada stok</td></tr>
+                            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px;font-size:13px;">Belum ada stok fisik terdaftar di gudang manapun.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -84,32 +170,42 @@
             </div>
 
             {{-- Recent Mutations --}}
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-arrows-up-down text-primary"></i>
-                    <span class="card-title">Riwayat Mutasi Stok (20 Terakhir)</span>
+            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;">Riwayat Mutasi Stok (20 Terakhir)</div>
+                    <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Log pergerakan barang masuk dan pemakaian keluar</div>
                 </div>
                 <div class="table-wrap">
-                    <table class="data-table">
+                    <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
                         <thead>
-                            <tr><th>Tanggal</th><th>Tipe</th><th>Qty</th><th>Keterangan</th></tr>
+                            <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tanggal</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tipe</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Jumlah</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Keterangan</th>
+                            </tr>
                         </thead>
                         <tbody>
                             @forelse($material->stockMutations as $mut)
-                            <tr>
-                                <td class="text-muted">{{ $mut->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
+                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                <td style="padding:9px 16px;color:#64748b;font-size:12px;white-space:nowrap;">
+                                    {{ $mut->created_at->format('d/m/Y H:i') }}
+                                </td>
+                                <td style="padding:9px 16px;font-size:12px;">
                                     @if($mut->type === 'in')
-                                        <span class="badge badge-success"><i class="fas fa-arrow-up"></i> Masuk</span>
+                                        <span style="color:#16a34a;font-weight:600;">Masuk</span>
                                     @else
-                                        <span class="badge badge-danger"><i class="fas fa-arrow-down"></i> Keluar</span>
+                                        <span style="color:#dc2626;font-weight:600;">Keluar</span>
                                     @endif
                                 </td>
-                                <td class="fw-600">{{ number_format(abs($mut->quantity), 0, ',', '.') }}</td>
-                                <td class="text-muted">{{ $mut->notes ?? '-' }}</td>
+                                <td style="padding:9px 16px;text-align:right;font-weight:600;font-size:13px;color:#0f172a;">
+                                    {{ number_format(abs($mut->quantity), 0, ',', '.') }}
+                                    <span class="text-muted" style="font-size:11px;font-weight:normal;">{{ $material->unit?->abbreviation ?? '' }}</span>
+                                </td>
+                                <td style="padding:9px 16px;color:#64748b;font-size:12px;">{{ $mut->notes ?? '-' }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px;">Belum ada mutasi</td></tr>
+                            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px;font-size:13px;">Belum ada catatan mutasi stok untuk material ini.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -117,4 +213,69 @@
             </div>
         </div>
     </div>
+
+    @push('styles')
+    <style>
+        @media print {
+            .no-print,
+            .sidebar,
+            nav,
+            header,
+            .breadcrumb,
+            #btn-print-material,
+            .btn,
+            footer {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            body {
+                background: #fff !important;
+                font-size: 12px !important;
+            }
+
+            .card {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+                margin-bottom: 12px !important;
+            }
+
+            #material-detail-grid {
+                display: block !important;
+            }
+
+            #material-detail-grid > div {
+                width: 100% !important;
+            }
+
+            .data-table {
+                font-size: 11px !important;
+            }
+
+            @page {
+                margin: 15mm 12mm;
+                size: A4;
+            }
+        }
+    </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        function printMaterial() {
+            var el = document.getElementById('print-date-time');
+            if (el) {
+                var now = new Date();
+                el.textContent = now.toLocaleDateString('id-ID', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                }) + ', ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            }
+            window.print();
+        }
+    </script>
+    @endpush
 </x-app-layout>

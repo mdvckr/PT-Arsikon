@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Material;
 use App\Models\Category;
 use App\Models\Unit;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 
 class MaterialController extends Controller
@@ -16,13 +17,16 @@ class MaterialController extends Controller
         $categoryQuery = Category::query()
             ->where('type', 'material')
             ->with(['materials' => function ($q) use ($request) {
-                $q->with(['unit', 'inventories', 'stockMutations']);
+                $q->with(['unit', 'inventories', 'stockMutations', 'supplier']);
                 if ($request->search) {
                     $q->where(function ($sub) use ($request) {
                         $sub->where('name', 'like', "%{$request->search}%")
                             ->orWhere('sku', 'like', "%{$request->search}%")
+                            ->orWhere('brand', 'like', "%{$request->search}%")
                             ->orWhere('size', 'like', "%{$request->search}%")
-                            ->orWhere('type', 'like', "%{$request->search}%");
+                            ->orWhere('type', 'like', "%{$request->search}%")
+                            ->orWhere('supplier_name', 'like', "%{$request->search}%")
+                            ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$request->search}%"));
                     });
                 }
                 $q->latest();
@@ -36,8 +40,11 @@ class MaterialController extends Controller
             $categoryQuery->whereHas('materials', function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('sku', 'like', "%{$request->search}%")
+                  ->orWhere('brand', 'like', "%{$request->search}%")
                   ->orWhere('size', 'like', "%{$request->search}%")
-                  ->orWhere('type', 'like', "%{$request->search}%");
+                  ->orWhere('type', 'like', "%{$request->search}%")
+                  ->orWhere('supplier_name', 'like', "%{$request->search}%")
+                  ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$request->search}%"));
             });
         }
 
@@ -64,7 +71,9 @@ class MaterialController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
-        return view('materials.create', compact('categories', 'units', 'warehouses', 'existingGroups'));
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+
+        return view('materials.create', compact('categories', 'units', 'warehouses', 'existingGroups', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -74,9 +83,12 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'sku'             => 'required|string|max:50|unique:materials,sku',
             'name'            => 'required|string|max:255',
+            'brand'           => 'nullable|string|max:255',
             'size'            => 'nullable|string|max:255',
             'type'            => 'nullable|string|max:255',
             'category_id'     => 'nullable|exists:categories,id',
+            'supplier'        => 'nullable|string|max:255',
+            'supplier_id'     => 'nullable|exists:suppliers,id',
             'new_category'    => 'nullable|string|max:255',
             'unit_id'         => 'required|exists:units,id',
             'description'     => 'nullable|string',
@@ -88,6 +100,10 @@ class MaterialController extends Controller
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+
+        $supplier = $this->resolveSupplier($request->supplier ?? null);
+        $validated['supplier_id'] = $supplier?->id;
+        $validated['supplier_name'] = !empty($request->supplier) ? trim($request->supplier) : null;
 
         $incomingStages = $this->parseIncomingStages($request);
         $validated['incoming_stages'] = $incomingStages;
@@ -138,7 +154,7 @@ class MaterialController extends Controller
     public function show(Material $material)
     {
         $this->authorize('view materials');
-        $material->load(['category', 'unit', 'inventories.warehouse', 'stockMutations' => fn($q) => $q->latest()->limit(20)]);
+        $material->load(['category', 'unit', 'supplier', 'inventories.warehouse', 'stockMutations' => fn($q) => $q->latest()->limit(20)]);
 
         return view('materials.show', compact('material'));
     }
@@ -160,7 +176,9 @@ class MaterialController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
-        return view('materials.edit', compact('material', 'categories', 'units', 'warehouses', 'existingGroups'));
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+
+        return view('materials.edit', compact('material', 'categories', 'units', 'warehouses', 'existingGroups', 'suppliers'));
     }
 
     public function update(Request $request, Material $material)
@@ -170,9 +188,12 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'sku'             => "required|string|max:50|unique:materials,sku,{$material->id}",
             'name'            => 'required|string|max:255',
+            'brand'           => 'nullable|string|max:255',
             'size'            => 'nullable|string|max:255',
             'type'            => 'nullable|string|max:255',
             'category_id'     => 'nullable|exists:categories,id',
+            'supplier'        => 'nullable|string|max:255',
+            'supplier_id'     => 'nullable|exists:suppliers,id',
             'new_category'    => 'nullable|string|max:255',
             'unit_id'         => 'required|exists:units,id',
             'description'     => 'nullable|string',
@@ -181,6 +202,10 @@ class MaterialController extends Controller
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+
+        $supplier = $this->resolveSupplier($request->supplier ?? null);
+        $validated['supplier_id'] = $supplier?->id;
+        $validated['supplier_name'] = !empty($request->supplier) ? trim($request->supplier) : null;
         $validated['incoming_stages'] = $this->parseIncomingStages($request);
 
         // Pertahankan kelompok barang (type) jika tidak sengaja terkirim kosong saat edit
@@ -277,5 +302,36 @@ class MaterialController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Selesaikan supplier terpilih dari input teks user.
+     * Jika supplier belum terdaftar, otomatis daftarkan supplier baru ke master data.
+     */
+    protected function resolveSupplier(?string $supplierName): ?Supplier
+    {
+        if (empty($supplierName)) {
+            return null;
+        }
+
+        $name = trim($supplierName);
+        $supplier = Supplier::where('name', $name)->first();
+
+        if (! $supplier) {
+            $code = 'SUP-' . strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $name), 0, 6));
+            $base = $code;
+            $i = 1;
+            while (Supplier::where('code', $code)->exists()) {
+                $code = $base . '-' . $i++;
+            }
+
+            $supplier = Supplier::create([
+                'code' => $code,
+                'name' => $name,
+                'is_active' => true,
+            ]);
+        }
+
+        return $supplier;
     }
 }
