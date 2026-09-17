@@ -26,8 +26,8 @@ class MaterialUsageController extends Controller
         $user = auth()->user();
         $query = MaterialUsage::with(['warehouse', 'project', 'issuedBy', 'items.material.unit']);
 
-        // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
+        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
             $userWarehouseIds = $user->warehouses->pluck('id')->toArray();
             $query->whereIn('warehouse_id', $userWarehouseIds);
         }
@@ -96,7 +96,12 @@ class MaterialUsageController extends Controller
             })->values()->toArray();
         }
 
-        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData'));
+        $approvedMRs = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
+            ->with(['items.material.unit', 'fromWarehouse', 'toWarehouse'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'approvedMRs'));
     }
 
     public function store(Request $request)
@@ -104,12 +109,13 @@ class MaterialUsageController extends Controller
         $this->authorize('create material usages');
 
         $validated = $request->validate([
-            'warehouse_id'   => 'required|exists:warehouses,id',
-            'recipient_name' => 'required|string|max:255',
-            'job_section'    => 'nullable|string|max:255',
-            'usage_date'     => 'required|date',
-            'notes'          => 'nullable|string',
-            'items'          => 'required|array|min:1',
+            'warehouse_id'        => 'required|exists:warehouses,id',
+            'material_request_id' => 'nullable|exists:material_requests,id',
+            'recipient_name'      => 'required|string|max:255',
+            'job_section'         => 'nullable|string|max:255',
+            'usage_date'          => 'required|date',
+            'notes'               => 'nullable|string',
+            'items'               => 'required|array|min:1',
             'items.*.material_id' => 'required|exists:materials,id',
             'items.*.quantity'    => 'required|numeric|min:0.01',
             'items.*.notes'       => 'nullable|string|max:255',

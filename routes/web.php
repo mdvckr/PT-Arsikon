@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseReceiptController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
@@ -128,6 +129,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
     Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
     Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+
+    // Nota Pembelian Harian / Purchase Receipts
+    Route::resource('purchase-receipts', PurchaseReceiptController::class);
 
     // Payments
     Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);

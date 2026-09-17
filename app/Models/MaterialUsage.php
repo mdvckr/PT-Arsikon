@@ -15,6 +15,7 @@ class MaterialUsage extends Model
         'usage_number',
         'warehouse_id',
         'project_id',
+        'material_request_id',
         'issued_by_user_id',
         'recipient_name',
         'job_section',
@@ -30,6 +31,11 @@ class MaterialUsage extends Model
         'usage_date'   => 'date',
         'cancelled_at' => 'datetime',
     ];
+
+    public function materialRequest(): BelongsTo
+    {
+        return $this->belongsTo(MaterialRequest::class);
+    }
 
     public function cancelledBy(): BelongsTo
     {

@@ -42,6 +42,7 @@ class RoleAndPermissionSeeder extends Seeder
             // Procurement & PO
             'view procurement', 'create procurement', 'approve procurement',
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
             'view returns', 'create returns', 'approve returns', 'receive returns',
         ];
@@ -150,10 +151,17 @@ class RoleAndPermissionSeeder extends Seeder
         $adminPORole->syncPermissions([
             'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials',
+            'view tools',
+            'view inventory',
+            'view tool assignments',
+            'view stock opname',
+            'view material requests',
+            'view material usages',
             'view procurement', 'approve procurement',
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
-            'view distributions',
+            'view distributions', 'create distributions', 'distributions.create', 'ship distributions', 'receive distributions', 'distributions.receive',
             'view reports',
             'audit_logs.view',
         ]);

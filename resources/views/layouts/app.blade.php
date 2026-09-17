@@ -1356,6 +1356,12 @@
                 <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
                 </a>
+                <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                </a>
+                <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
+                    <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                </a>
                 <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
                     <i class="fas fa-money-bill-wave"></i> Pembayaran
                 </a>

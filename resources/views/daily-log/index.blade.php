@@ -194,7 +194,7 @@
                                     @foreach($dist->items as $dItem)
                                     <div style="font-size:12.5px;">
                                         <i class="fas fa-circle-dot text-primary" style="font-size:8px;margin-right:4px;"></i>
-                                        <strong>{{ format_quantity($dItem->quantity) }} {{ $dItem->material?->unit?->abbreviation }}</strong>
+                                        <strong>{{ format_quantity($dItem->qty_received) }} {{ $dItem->material?->unit?->abbreviation }}</strong>
                                         — {{ $dItem->material?->name ?? $dItem->tool?->name }}
                                     </div>
                                     @endforeach
@@ -233,13 +233,146 @@
                         </tr>
                         @endforeach
 
-                        @if(!$hasIncoming)
+                        @if(!$hasIncoming && $materialReturns->isEmpty() && $outgoingDistributions->isEmpty())
                         <tr>
                             <td colspan="4" class="text-center text-muted p-3" style="font-size:13px;">
                                 Tidak ada penerimaan barang masuk pada tanggal {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}.
                             </td>
                         </tr>
-                        @endif
+                    @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2b: Distribusi Keluar ke Gudang Lain -->
+    <div class="card mb-4">
+        <div class="card-header flex justify-between items-center" style="background:#fffbeb;">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-right-right text-warning"></i>
+                <span class="card-title" style="color:#92400e;">2b. Distribusi Keluar ke Gudang Lain (Outgoing)</span>
+            </div>
+            <span class="badge badge-warning">{{ $outgoingDistributions->count() }} Distribusi</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="data-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:140px;">No. Surat Jalan</th>
+                            <th style="width:180px;">Tujuan Pengiriman</th>
+                            <th style="width:100px;text-align:center;">Tanggal Kirim</th>
+                            <th>Material & Kuantitas Dikirim</th>
+                            <th style="width:140px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($outgoingDistributions as $dist)
+                        <tr>
+                            <td>
+                                <a href="{{ route('distributions.show', $dist) }}" class="fw-700 text-primary">
+                                    {{ $dist->distribution_number }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="fw-600">{{ $dist->toWarehouse?->name ?? 'Gudang Lain' }}</div>
+                                <div class="text-muted" style="font-size:11px;">Supir: {{ $dist->driver_name ?? '-' }}</div>
+                            </td>
+                            <td style="text-align:center;">
+                                <span>{{ \Carbon\Carbon::parse($dist->shipped_at)->format('d/m/Y') }}</span>
+                            </td>
+                            <td>
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    @foreach($dist->items as $dItem)
+                                    <div style="font-size:12.5px;">
+                                        <i class="fas fa-circle-dot text-warning" style="font-size:8px;margin-right:4px;"></i>
+                                        <strong>{{ format_quantity($dItem->qty_shipped) }} {{ $dItem->material?->unit?->abbreviation }}</strong>
+                                        — {{ $dItem->material?->name ?? $dItem->tool?->name }}
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ $dist->status === 'received' ? 'success' : 'info' }}">
+                                    {{ $dist->status === 'received' ? 'Diterima' : 'Dikirim' }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted p-3" style="font-size:13px;">
+                                Tidak ada distribusi keluar pada tanggal {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2c: Retur Material dari Lapangan -->
+    <div class="card mb-4">
+        <div class="card-header flex justify-between items-center" style="background:#f0fdf4;">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-rotate-left text-success"></i>
+                <span class="card-title" style="color:#166534;">2c. Retur Material dari Lapangan (Returns)</span>
+            </div>
+            <span class="badge badge-success">{{ $materialReturns->count() }} Retur Diterima</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-wrap">
+                <table class="data-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:140px;">No. Retur</th>
+                            <th style="width:180px;">Sumber Retur</th>
+                            <th style="width:100px;text-align:center;">Tanggal Terima</th>
+                            <th>Material & Kuantitas Diterima</th>
+                            <th style="width:140px;">Alasan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($materialReturns as $ret)
+                        <tr>
+                            <td>
+                                <a href="{{ route('returns.show', $ret) }}" class="fw-700 text-primary">
+                                    {{ $ret->return_number }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="fw-600">{{ $ret->fromWarehouse?->name ?? 'Lapangan' }}</div>
+                                <div class="text-muted" style="font-size:11px;">Penerima: {{ $ret->receiver?->name ?? '-' }}</div>
+                            </td>
+                            <td style="text-align:center;">
+                                <span>{{ \Carbon\Carbon::parse($ret->received_at)->format('d/m/Y') }}</span>
+                            </td>
+                            <td>
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    @foreach($ret->items as $rItem)
+                                    <div style="font-size:12.5px;">
+                                        <i class="fas fa-circle-dot text-success" style="font-size:8px;margin-right:4px;"></i>
+                                        <strong>{{ format_quantity($rItem->received_qty) }} {{ $rItem->material?->unit?->abbreviation }}</strong>
+                                        — {{ $rItem->material?->name }}
+                                        <span class="text-muted">({{ ucfirst($rItem->condition ?? 'good') }})</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ $ret->status === 'received' ? 'success' : 'warning' }}">
+                                    {{ $ret->reason_label ?? $ret->getReasonLabel() }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted p-3" style="font-size:13px;">
+                                Tidak ada retur material diterima pada tanggal {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}.
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

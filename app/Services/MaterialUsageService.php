@@ -79,15 +79,16 @@ class MaterialUsageService
 
             // Create MaterialUsage header
             $usage = MaterialUsage::create([
-                'usage_number'      => MaterialUsage::generateUsageNumber(),
-                'warehouse_id'      => $warehouse->id,
-                'project_id'        => $warehouse->project_id,
-                'issued_by_user_id' => $issuedBy->id,
-                'recipient_name'    => $data['recipient_name'],
-                'job_section'       => $data['job_section'] ?? null,
-                'usage_date'        => $data['usage_date'] ?? now()->toDateString(),
-                'status'            => 'completed',
-                'notes'             => $data['notes'] ?? null,
+                'usage_number'        => MaterialUsage::generateUsageNumber(),
+                'warehouse_id'        => $warehouse->id,
+                'project_id'          => $warehouse->project_id,
+                'material_request_id' => $data['material_request_id'] ?? null,
+                'issued_by_user_id'   => $issuedBy->id,
+                'recipient_name'      => $data['recipient_name'],
+                'job_section'         => $data['job_section'] ?? null,
+                'usage_date'          => $data['usage_date'] ?? now()->toDateString(),
+                'status'              => 'completed',
+                'notes'               => $data['notes'] ?? null,
             ]);
 
             // Save items and deduct stock

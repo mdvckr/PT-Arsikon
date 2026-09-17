@@ -330,6 +330,78 @@
             </tbody>
         </table>
 
+        <!-- 2b. Distribusi Keluar ke Gudang Lain -->
+        <div class="section-header">
+            <span>2b. Distribusi Keluar ke Gudang Lain (Outgoing)</span>
+            <span style="font-weight:600;font-size:10px;">{{ $outgoingDistributions->count() }} Dokumen</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px;text-align:center;">No</th>
+                    <th style="width:110px;">No. Surat Jalan</th>
+                    <th style="width:150px;">Tujuan</th>
+                    <th style="width:90px;text-align:center;">Tgl Kirim</th>
+                    <th>Material & Kuantitas Dikirim</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $outCount = 0; @endphp
+                @forelse($outgoingDistributions as $dist)
+                @php $outCount++; @endphp
+                <tr>
+                    <td style="text-align:center;">{{ $outCount }}</td>
+                    <td><strong>{{ $dist->distribution_number }}</strong></td>
+                    <td>{{ $dist->toWarehouse?->name ?? 'Gudang Tujuan' }} (Supir: {{ $dist->driver_name ?? '-' }})</td>
+                    <td style="text-align:center;">{{ $dist->shipped_at ? \Carbon\Carbon::parse($dist->shipped_at)->format('d/m/Y') : '-' }}</td>
+                    <td>
+                        @foreach($dist->items as $dItem)
+                        <div>• <strong>{{ format_quantity($dItem->quantity) }} {{ $dItem->material?->unit?->abbreviation }}</strong> — {{ $dItem->material?->name ?? $dItem->tool?->name }}</div>
+                        @endforeach
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" style="text-align:center;color:#64748b;"> Tidak ada distribusi keluar pada tanggal ini.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <!-- 2c. Retur Material dari Lapangan -->
+        <div class="section-header">
+            <span>2c. Retur Material dari Lapangan (Returns)</span>
+            <span style="font-weight:600;font-size:10px;">{{ $materialReturns->count() }} Retur</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px;text-align:center;">No</th>
+                    <th style="width:110px;">No. Retur</th>
+                    <th style="width:140px;">Sumber Retur</th>
+                    <th style="width:90px;text-align:center;">Tgl Terima</th>
+                    <th>Material & Kuantitas Diterima</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $retCount = 0; @endphp
+                @forelse($materialReturns as $ret)
+                @php $retCount++; @endphp
+                <tr>
+                    <td style="text-align:center;">{{ $retCount }}</td>
+                    <td><strong>{{ $ret->return_number }}</strong></td>
+                    <td>{{ $ret->fromWarehouse?->name ?? 'Lapangan' }} (Penerima: {{ $ret->receiver?->name ?? '-' }})</td>
+                    <td style="text-align:center;">{{ $ret->received_at ? \Carbon\Carbon::parse($ret->received_at)->format('d/m/Y') : '-' }}</td>
+                    <td>
+                        @foreach($ret->items as $rItem)
+                        <div>• <strong>{{ format_quantity($rItem->received_qty) }} {{ $rItem->material?->unit?->abbreviation }}</strong> — {{ $rItem->material?->name }} ({{ ucfirst($rItem->condition ?? 'good') }})</div>
+                        @endforeach
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" style="text-align:center;color:#64748b;">Tidak ada retur material pada tanggal ini.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
         <!-- 3. Status Alat Kerja -->
         <div class="section-header">
             <span>3. Pantauan Alat Kerja di Lapangan (Tools Monitoring)</span>

@@ -6,6 +6,7 @@ use App\Models\Distribution;
 use App\Models\GoodsReceipt;
 use App\Models\Inventory;
 use App\Models\Material;
+use App\Models\MaterialReturn;
 use App\Models\MaterialUsage;
 use App\Models\StockMutation;
 use App\Models\ToolAssignment;
@@ -82,11 +83,31 @@ class DailyLogController extends Controller
             ->whereDate('receipt_date', $date)
             ->get();
 
-        // 2. Pemakaian Material Lapangan Hari Ini (Usage / Outgoing)
+        // C. Dari Material Return (Pengembalian ke Gudang)
+        $materialReturns = MaterialReturn::with(['fromWarehouse', 'items.material.unit'])
+            ->where('to_warehouse_id', $selectedWarehouse->id)
+            ->where('status', 'received')
+            ->whereDate('received_at', $date)
+            ->get();
+
+        // 2. Pemakaian & Pengiriman Keluar Hari Ini (Usage / Outgoing)
+        // A. Pemakaian Lapangan (Usage)
         $usages = MaterialUsage::with(['issuedBy', 'items.material.unit'])
             ->where('warehouse_id', $selectedWarehouse->id)
             ->whereDate('usage_date', $date)
             ->where('status', '!=', 'cancelled')
+            ->get();
+
+        // B. Distribusi Keluar (Outgoing Distribution)
+        $outgoingDistributions = Distribution::with(['toWarehouse', 'items.material.unit'])
+            ->where('from_warehouse_id', $selectedWarehouse->id)
+            ->where(function ($q) use ($date) {
+                $q->whereDate('shipped_at', $date)
+                  ->orWhere(function ($q2) use ($date) {
+                      $q2->where('status', 'received')
+                         ->whereDate('updated_at', $date);
+                  });
+            })
             ->get();
 
         // 3. Status Alat Kerja Hari Ini (Tools Activity)
@@ -130,42 +151,63 @@ class DailyLogController extends Controller
             ->whereDate('receipt_date', '>', $date)
             ->get();
 
+        // Outgoing Distribution strictly after $date
+        $outgoingDistributionsAfterDate = Distribution::with('items')
+            ->where('from_warehouse_id', $selectedWarehouse->id)
+            ->where(function($q) use ($date) {
+                $q->whereDate('shipped_at', '>', $date)
+                  ->orWhere(fn($q2) => $q2->where('status', 'received')->whereDate('updated_at', '>', $date));
+            })->get();
+
+        // Material Return strictly after $date
+        $materialReturnsAfterDate = MaterialReturn::with('items')
+            ->where('to_warehouse_id', $selectedWarehouse->id)
+            ->where('status', 'received')
+            ->whereDate('received_at', '>', $date)
+            ->get();
+
         $inventories = Inventory::with('material.unit')
             ->where('warehouse_id', $selectedWarehouse->id)
             ->get();
 
-        $stockBalance = $inventories->map(function ($inv) use ($usages, $usagesAfterDate, $incomingDistributions, $incomingGoodsReceipts, $distInAfterDate, $grInAfterDate) {
+        // Pre-aggregate quantities per material_id to avoid nested foreach loops
+        $sumQtyByMaterial = function ($transactions, string $valueKey) {
+            return collect($transactions)
+                ->flatMap(fn($t) => $t->items ?? collect())
+                ->filter(fn($i) => isset($i->material_id))
+                ->groupBy('material_id')
+                ->map(fn($group) => (float) $group->sum($valueKey));
+        };
+
+        $qtyOutMat         = $sumQtyByMaterial($usages, 'quantity');
+        $qtyOutDistMat     = $sumQtyByMaterial($outgoingDistributions, 'qty_shipped');
+        $qtyInDistMat      = $sumQtyByMaterial($incomingDistributions, 'qty_received');
+        $qtyInGrMat        = $sumQtyByMaterial($incomingGoodsReceipts, 'quantity_received');
+        $qtyInReturnMat    = $sumQtyByMaterial($materialReturns, 'received_qty');
+        $qtyOutAfterMat    = $sumQtyByMaterial($usagesAfterDate, 'quantity');
+        $qtyOutDistAfterMat= $sumQtyByMaterial($outgoingDistributionsAfterDate, 'qty_shipped');
+        $qtyInDistAfterMat = $sumQtyByMaterial($distInAfterDate, 'qty_received');
+        $qtyInGrAfterMat   = $sumQtyByMaterial($grInAfterDate, 'quantity_received');
+        $qtyInReturnAfterMat = $sumQtyByMaterial($materialReturnsAfterDate, 'received_qty');
+
+        $stockBalance = $inventories->map(function ($inv) use (
+            $qtyOutMat,
+            $qtyOutDistMat,
+            $qtyInDistMat,
+            $qtyInGrMat,
+            $qtyInReturnMat,
+            $qtyOutAfterMat,
+            $qtyOutDistAfterMat,
+            $qtyInDistAfterMat,
+            $qtyInGrAfterMat,
+            $qtyInReturnAfterMat
+        ) {
             $matId = $inv->material_id;
 
-            // Qty Out on date
-            $qtyOut = 0;
-            foreach ($usages as $u) {
-                $qtyOut += (float) $u->items->where('material_id', $matId)->sum('quantity');
-            }
-
-            // Qty In on date
-            $qtyIn = 0;
-            foreach ($incomingDistributions as $d) {
-                $qtyIn += (float) $d->items->where('material_id', $matId)->sum('quantity');
-            }
-            foreach ($incomingGoodsReceipts as $g) {
-                $qtyIn += (float) $g->items->where('material_id', $matId)->sum('quantity_received');
-            }
-
-            // Qty Out after date
-            $qtyOutAfter = 0;
-            foreach ($usagesAfterDate as $u) {
-                $qtyOutAfter += (float) $u->items->where('material_id', $matId)->sum('quantity');
-            }
-
-            // Qty In after date
-            $qtyInAfter = 0;
-            foreach ($distInAfterDate as $d) {
-                $qtyInAfter += (float) $d->items->where('material_id', $matId)->sum('quantity');
-            }
-            foreach ($grInAfterDate as $g) {
-                $qtyInAfter += (float) $g->items->where('material_id', $matId)->sum('quantity_received');
-            }
+            $qtyOut = ($qtyOutMat[$matId] ?? 0) + ($qtyOutDistMat[$matId] ?? 0);
+            $qtyIn  = ($qtyInDistMat[$matId] ?? 0) + ($qtyInGrMat[$matId] ?? 0) + ($qtyInReturnMat[$matId] ?? 0);
+            $qtyOutAfter = ($qtyOutAfterMat[$matId] ?? 0) + ($qtyOutDistAfterMat[$matId] ?? 0);
+            $qtyInAfter  = ($qtyInDistAfterMat[$matId] ?? 0) + ($qtyInGrAfterMat[$matId] ?? 0) + ($qtyInReturnAfterMat[$matId] ?? 0);
 
             $currentStock = (float) $inv->quantity;
             $closingStock = $currentStock + $qtyOutAfter - $qtyInAfter;
@@ -285,8 +327,12 @@ class DailyLogController extends Controller
         foreach ($incomingGoodsReceipts as $gr) {
             $totalItemsIn += $gr->items->count();
         }
+        foreach ($materialReturns as $r) {
+            $totalItemsIn += $r->items->count();
+        }
 
-        $totalItemsOut = $usages->sum(fn($u) => $u->items->count());
+        $totalItemsOut = $usages->sum(fn($u) => $u->items->count())
+            + $outgoingDistributions->sum(fn($d) => $d->items->count());
         $totalToolsActive = $toolAssignments->where('status', 'active')->count();
         $totalRecipients = $usages->pluck('recipient_name')->unique()->count();
 
@@ -300,6 +346,8 @@ class DailyLogController extends Controller
             'date',
             'incomingDistributions',
             'incomingGoodsReceipts',
+            'materialReturns',
+            'outgoingDistributions',
             'usages',
             'toolAssignments',
             'stockBalance',

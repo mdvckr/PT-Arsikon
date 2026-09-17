@@ -37,6 +37,7 @@ class PurchaseOrder extends Model
     public function procurementRequest() { return $this->belongsTo(ProcurementRequest::class); }
     public function items()              { return $this->hasMany(PurchaseOrderItem::class); }
     public function payments()           { return $this->hasMany(Payment::class); }
+    public function receipts()           { return $this->hasMany(PurchaseReceipt::class); }
 
     public function getRemainingAmountAttribute(): float
     {

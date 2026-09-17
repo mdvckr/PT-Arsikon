@@ -83,6 +83,21 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Tarik dari Nomor Permintaan (MR) <span class="text-muted" style="font-weight:400;">(Opsional)</span></label>
+                        <select name="material_request_id" id="mrSelect" class="form-control" onchange="autoFillFromMR(this)">
+                            <option value="">-- Pilih Permintaan Material (Disetujui) --</option>
+                            @foreach($approvedMRs as $mr)
+                            <option value="{{ $mr->id }}" data-items='@json($mr->items)'>
+                                {{ $mr->request_number }} - {{ $mr->toWarehouse?->name ?? 'Gudang' }} ({{ $mr->items->count() }} item)
+                            </option>
+                            @endforeach
+                        </select>
+                        <div class="text-muted" style="font-size:11px;margin-top:3px;">
+                            Memilih MR akan mengisi rincian material yang disetujui secara otomatis.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Nama Penerima / Mandor / Tukang <span class="text-danger">*</span></label>
                         <input type="text" name="recipient_name" class="form-control"
                                placeholder="Contoh: Pak Supri (Mandor Besi)"
@@ -215,6 +230,26 @@
             }
             if (document.getElementById('itemsBody').children.length === 0) {
                 addRow();
+            }
+        }
+
+        function autoFillFromMR(select) {
+            const selectedOpt = select.options[select.selectedIndex];
+            const itemsData = selectedOpt.getAttribute('data-items');
+            if (!itemsData) return;
+
+            try {
+                const items = JSON.parse(itemsData);
+                const tbody = document.getElementById('itemsBody');
+                tbody.innerHTML = ''; // Clear existing rows
+
+                items.forEach(it => {
+                    const materialId = it.material_id;
+                    const qty = parseFloat(it.qty_approved || it.quantity || 1);
+                    addRow(materialId, qty);
+                });
+            } catch (e) {
+                console.error(e);
             }
         }
 
