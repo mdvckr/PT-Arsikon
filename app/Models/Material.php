@@ -57,4 +57,9 @@ class Material extends Model
     {
         return $this->hasMany(StockMutation::class);
     }
+
+    public function getCodeAttribute(): ?string
+    {
+        return $this->sku;
+    }
 }

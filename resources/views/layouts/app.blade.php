@@ -1327,6 +1327,12 @@
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                     <i class="fas fa-right-left"></i> Surat Jalan
                 </a>
+                <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
+                    <i class="fas fa-dolly"></i> Pemakaian Material
+                </a>
+                <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check"></i> Log Harian Proyek
+                </a>
             </div>
 
             <!-- ALAT & STOK -->

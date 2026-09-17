@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="title">Pinjamkan Alat (Input Jumlah & Stok)</x-slot>
 
     <div class="breadcrumb">
@@ -140,6 +140,12 @@
                         <input type="text" name="borrower_name" class="form-control"
                                placeholder="Ketik nama peminjam (misal: Pak Joko)..."
                                value="{{ old('borrower_name') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No. Telepon / Kontak <span class="text-muted" style="font-weight:400;">(Opsional)</span></label>
+                        <input type="text" name="borrower_phone" class="form-control"
+                               placeholder="Contoh: 0812-3456-7890"
+                               value="{{ old('borrower_phone') }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Lokasi Pekerjaan / Site <span class="text-danger">*</span></label>

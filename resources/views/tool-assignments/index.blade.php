@@ -56,8 +56,18 @@
                             <div class="fw-600">{{ $assign->tool?->name ?? '-' }}</div>
                             <div class="text-muted" style="font-size:11.5px;">{{ $assign->tool?->code ?? '' }}</div>
                         </td>
-                        <td>{{ $assign->assignedTo?->name ?? '-' }}</td>
-                        <td>{{ $assign->fromWarehouse?->name ?? '-' }}</td>
+                        <td>
+                            <div class="fw-600" style="color:#0f172a;">{{ $assign->borrower_display }}</div>
+                            @if($assign->borrower_phone)
+                            <div class="text-muted" style="font-size:11px;"><i class="fas fa-phone" style="font-size:9px;"></i> {{ $assign->borrower_phone }}</div>
+                            @endif
+                        </td>
+                        <td>
+                            <div>{{ $assign->location_display }}</div>
+                            @if($assign->location_name && $assign->fromWarehouse)
+                            <div class="text-muted" style="font-size:11px;">Asal: {{ $assign->fromWarehouse->name }}</div>
+                            @endif
+                        </td>
                         <td>{{ \Carbon\Carbon::parse($assign->assigned_at)->format('d/m/Y') }}</td>
                         <td>
                             @if($assign->expected_return_at)
@@ -82,6 +92,8 @@
                             <span class="badge badge-danger"><i class="fas fa-clock"></i> Terlambat</span>
                         @elseif($assign->status === 'rejected')
                             <span class="badge badge-danger"><i class="fas fa-xmark"></i> Ditolak</span>
+                        @elseif($assign->status === 'cancelled')
+                            <span class="badge badge-gray"><i class="fas fa-ban"></i> Dibatalkan</span>
                         @else
                             <span class="badge badge-purple"><i class="fas fa-hand-holding"></i> Dipinjam</span>
                         @endif

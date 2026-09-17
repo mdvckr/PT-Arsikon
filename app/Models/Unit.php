@@ -24,4 +24,9 @@ class Unit extends Model
     {
         return $this->hasMany(Material::class);
     }
+
+    public function getAbbreviationAttribute(): string
+    {
+        return $this->code ?? $this->name ?? 'Unit';
+    }
 }

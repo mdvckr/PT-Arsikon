@@ -31,8 +31,9 @@ class RoleAndPermissionSeeder extends Seeder
             'tools.manage', 'view tools', 'create tools', 'edit tools', 'delete tools',
             'goods_receipts.create', 'view goods receipts', 'create goods receipts', 'confirm goods receipts',
             'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
+            'view material usages', 'create material usages', 'cancel material usages',
             'distributions.create', 'view distributions', 'create distributions', 'distributions.receive', 'ship distributions', 'receive distributions',
-            'tools.assign', 'view tool assignments', 'create tool assignments', 'return tool assignments', 'approve tool assignments', 'tools.inspect_return',
+            'tools.assign', 'view tool assignments', 'create tool assignments', 'return tool assignments', 'approve tool assignments', 'tools.inspect_return', 'cancel tool assignments',
             'stock_opname.create', 'view stock opname', 'create stock opname', 'stock_opname.approve', 'approve stock opname',
             'reports.view_all', 'view reports',
             'audit_logs.view', 'view audit logs', 'view inventory', 'delete inventory',
@@ -65,6 +66,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view categories', 'create categories', 'edit categories', 'delete categories',
             'goods_receipts.create', 'view goods receipts', 'create goods receipts', 'confirm goods receipts',
             'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
+            'view material usages', 'create material usages', 'cancel material usages',
             'distributions.create',
             'view distributions',
             'create distributions',
@@ -76,6 +78,7 @@ class RoleAndPermissionSeeder extends Seeder
             'return tool assignments',
             'approve tool assignments',
             'tools.inspect_return',
+            'cancel tool assignments',
             'view stock opname',
             'create stock opname',
             'stock_opname.create',
@@ -103,13 +106,15 @@ class RoleAndPermissionSeeder extends Seeder
             'goods_receipts.create',
             // Material Requests
             'view material requests', 'create material requests', 'material_requests.create',
+            // Material Usages
+            'view material usages', 'create material usages', 'cancel material usages',
             // Distributions
             'view distributions', 'create distributions', 'distributions.create',
             'ship distributions', 'distributions.receive', 'receive distributions',
             // Tool Assignments
             'view tool assignments', 'create tool assignments',
             'tools.assign', 'return tool assignments', 'approve tool assignments',
-            'tools.inspect_return',
+            'tools.inspect_return', 'cancel tool assignments',
             // Stock Opname
             'view stock opname', 'create stock opname', 'stock_opname.create',
             // Inventory

@@ -7,6 +7,36 @@
         <span>Detail Transaksi</span>
     </div>
 
+    @if (session('success'))
+    <div class="alert alert-success mb-4">
+        <i class="fas fa-circle-check"></i> {{ session('success') }}
+    </div>
+    @endif
+
+    @if (session('error'))
+    <div class="alert alert-danger mb-4">
+        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+    </div>
+    @endif
+
+    @if($toolAssignment->status === 'cancelled')
+    <div class="alert alert-danger mb-4" style="display:flex;align-items:center;gap:10px;border:1px solid #fecaca;background:#fef2f2;">
+        <i class="fas fa-ban" style="font-size:18px;color:#dc2626;"></i>
+        <div>
+            <strong style="color:#991b1b;">Peminjaman Ini Telah Dibatalkan</strong>
+            <div class="text-muted" style="font-size:12.5px;margin-top:2px;">
+                Oleh {{ $toolAssignment->cancelledBy?->name ?? '-' }}
+                pada {{ $toolAssignment->cancelled_at?->format('d/m/Y H:i') ?? '-' }}.
+            </div>
+            @if($toolAssignment->cancellation_reason)
+            <div style="font-size:12.5px;margin-top:4px;color:#991b1b;">
+                <strong>Alasan:</strong> {{ $toolAssignment->cancellation_reason }}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <div class="grid" style="grid-template-columns:1fr 340px;gap:24px;align-items:start;">
 
         <div class="card">
@@ -21,14 +51,18 @@
                         'overdue'   => '<span class="badge badge-danger"><i class="fas fa-clock"></i> Terlambat</span>',
                         'rejected'  => '<span class="badge badge-danger"><i class="fas fa-xmark"></i> Ditolak</span>',
                         'lost'      => '<span class="badge badge-danger"><i class="fas fa-eye-slash"></i> Hilang</span>',
+                        'cancelled' => '<span class="badge badge-gray"><i class="fas fa-ban"></i> Dibatalkan</span>',
                         default     => '<span class="badge badge-purple"><i class="fas fa-hand-holding"></i> Dipinjam</span>',
                     };
                     $rows = [
                         ['Alat', $toolAssignment->tool?->name . ' (' . $toolAssignment->tool?->code . ')'],
-                        ['Peminjam', $toolAssignment->assignedTo?->name ?? ($toolAssignment->notes ? explode('|', $toolAssignment->notes)[0] : '-')],
-                        ['Lokasi / Gudang', $toolAssignment->fromWarehouse?->name ?? '-'],
+                        ['Jumlah Dipinjam', '<strong>' . ($toolAssignment->quantity ?? 1) . ' Unit</strong>'],
+                        ['Nama Peminjam', '<strong style="color:#0f172a;">' . e($toolAssignment->borrower_display) . '</strong>'],
+                        ['No. Kontak / HP', e($toolAssignment->borrower_phone ?? '-')],
+                        ['Lokasi / Site Pekerjaan', e($toolAssignment->location_display)],
+                        ['Gudang Asal Alat', e($toolAssignment->fromWarehouse?->name ?? '-')],
                         ['Tgl Pinjam', \Carbon\Carbon::parse($toolAssignment->assigned_at)->format('d/m/Y')],
-                        ['Batas Waktu', $toolAssignment->expected_return_at ? \Carbon\Carbon::parse($toolAssignment->expected_return_at)->format('d/m/Y') : '-'],
+                        ['Batas Waktu Kembali', $toolAssignment->expected_return_at ? \Carbon\Carbon::parse($toolAssignment->expected_return_at)->format('d/m/Y') : '-'],
                         ['Catatan / Tujuan', $toolAssignment->notes ?? '-'],
                         ['Status', $statusBadge],
                     ];
@@ -151,6 +185,48 @@
                         </div>
                         <button type="submit" class="btn btn-success w-full" style="justify-content:center;height:38px;font-weight:600;font-size:13px;" onclick="return confirm('Konfirmasi pengembalian alat?')">
                             <i class="fas fa-check-circle me-1"></i> Konfirmasi Pengembalian Alat
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @endcan
+        @endif
+
+        {{-- Cancel Card: for pending or active assignments --}}
+        @if(in_array($toolAssignment->status, ['pending', 'active']))
+            @can('cancel tool assignments')
+            <div class="card" style="border:2px solid #f87171;border-radius:10px;">
+                <div class="card-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:14px 18px;">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-ban" style="color:#dc2626;font-size:14px;"></i>
+                        <span class="card-title" style="font-size:14px;font-weight:700;color:#991b1b;">Batalkan Peminjaman</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:18px;">
+                    <p class="text-muted mb-3" style="font-size:12.5px;line-height:1.5;">
+                        @if($toolAssignment->status === 'active')
+                            Membatalkan peminjaman aktif ini akan <strong>mengembalikan stok alat</strong> ke gudang asal.
+                        @else
+                            Membatalkan pengajuan ini akan membatalkan permintaan peminjaman. Stok alat tidak berubah karena belum disetujui.
+                        @endif
+                        Tindakan ini <strong>tidak dapat dibatalkan</strong>.
+                    </p>
+                    <form method="POST" action="{{ route('tool-assignments.cancel', $toolAssignment) }}">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.03em;">
+                                Alasan Pembatalan <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="cancellation_reason" class="form-control" rows="3" required
+                                placeholder="Contoh: Alat tidak jadi dipakai, salah input, dll..."
+                                style="border-radius:6px;font-size:13px;border-color:#fca5a5;"></textarea>
+                            @error('cancellation_reason')
+                                <div class="text-danger" style="font-size:12px;margin-top:4px;">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <button type="submit" class="btn btn-danger w-full" style="justify-content:center;height:38px;font-weight:600;font-size:13px;"
+                            onclick="return confirm('⚠️ PERHATIAN!\n\nApakah Anda yakin ingin MEMBATALKAN peminjaman alat ini?\n{{ $toolAssignment->status === 'active' ? '\nStok alat akan dikembalikan ke gudang asal.' : '' }}\nTindakan ini tidak dapat dibatalkan.\n\nLanjutkan?')">
+                            <i class="fas fa-ban me-1"></i> Batalkan Peminjaman Ini
                         </button>
                     </form>
                 </div>

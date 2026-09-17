@@ -90,7 +90,8 @@ class MaterialController extends Controller
             'supplier'        => 'nullable|string|max:255',
             'supplier_id'     => 'nullable|exists:suppliers,id',
             'new_category'    => 'nullable|string|max:255',
-            'unit_id'         => 'required|exists:units,id',
+            'unit_id'         => 'nullable|string',
+            'new_unit'        => 'nullable|string|max:100',
             'description'     => 'nullable|string',
             'warehouse_id'    => 'nullable|exists:warehouses,id',
             'initial_stock'   => 'nullable|numeric|min:0',
@@ -100,6 +101,12 @@ class MaterialController extends Controller
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+
+        $unit = $this->resolveUnit($request);
+        if (!$unit) {
+            return back()->withErrors(['unit_id' => 'Satuan wajib dipilih atau diisi pada kolom Satuan Baru.'])->withInput();
+        }
+        $validated['unit_id'] = $unit->id;
 
         $supplier = $this->resolveSupplier($request->supplier ?? null);
         $validated['supplier_id'] = $supplier?->id;
@@ -195,13 +202,20 @@ class MaterialController extends Controller
             'supplier'        => 'nullable|string|max:255',
             'supplier_id'     => 'nullable|exists:suppliers,id',
             'new_category'    => 'nullable|string|max:255',
-            'unit_id'         => 'required|exists:units,id',
+            'unit_id'         => 'nullable|string',
+            'new_unit'        => 'nullable|string|max:100',
             'description'     => 'nullable|string',
             'incoming_stages' => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
+
+        $unit = $this->resolveUnit($request);
+        if (!$unit) {
+            return back()->withErrors(['unit_id' => 'Satuan wajib dipilih atau diisi pada kolom Satuan Baru.'])->withInput();
+        }
+        $validated['unit_id'] = $unit->id;
 
         $supplier = $this->resolveSupplier($request->supplier ?? null);
         $validated['supplier_id'] = $supplier?->id;
@@ -227,6 +241,41 @@ class MaterialController extends Controller
 
         return redirect()->route('materials.index')
             ->with('success', "Material '{$material->name}' berhasil diperbarui.");
+    }
+
+    /**
+     * Selesaikan satuan terpilih atau buat satuan baru jika user menginputkan satuan baru on-the-fly.
+     */
+    protected function resolveUnit(Request $request): ?Unit
+    {
+        if ($request->filled('new_unit')) {
+            $name = trim($request->new_unit);
+            $unit = Unit::where('name', $name)->orWhere('code', strtolower($name))->first();
+
+            if (! $unit) {
+                $clean = preg_replace('/[^a-zA-Z0-9]/', '', $name);
+                $code  = strtolower(substr($clean, 0, 4)) ?: 'unt';
+                $base  = $code;
+                $i     = 1;
+                while (Unit::where('code', $code)->exists()) {
+                    $code = $base . $i++;
+                }
+
+                $unit = Unit::create([
+                    'code'       => $code,
+                    'name'       => $name,
+                    'is_decimal' => true,
+                ]);
+            }
+
+            return $unit;
+        }
+
+        if ($request->filled('unit_id') && $request->unit_id !== '__new__') {
+            return Unit::find($request->unit_id);
+        }
+
+        return null;
     }
 
     private function parseIncomingStages(Request $request): ?array

@@ -23,6 +23,8 @@ use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReturnController;
+use App\Http\Controllers\MaterialUsageController;
+use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PrintTemplateController;
 use Illuminate\Support\Facades\Route;
 
@@ -80,11 +82,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/distributions/{distribution}/ship', [DistributionController::class, 'ship'])->name('distributions.ship');
     Route::post('/distributions/{distribution}/receive', [DistributionController::class, 'receive'])->name('distributions.receive');
 
+    // Material Usages (Pemakaian Material Proyek / Lapangan)
+    Route::resource('material-usages', MaterialUsageController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('/material-usages/{materialUsage}/print', [MaterialUsageController::class, 'print'])->name('material-usages.print');
+    Route::post('/material-usages/{materialUsage}/cancel', [MaterialUsageController::class, 'cancel'])->name('material-usages.cancel');
+
+    // Daily Site Activity & Material Log (Laporan / Log Harian Proyek)
+    Route::get('/daily-log', [DailyLogController::class, 'index'])->name('daily-log.index');
+    Route::get('/daily-log/print', [DailyLogController::class, 'print'])->name('daily-log.print');
+
     // Tool Assignments
     Route::resource('tool-assignments', ToolAssignmentController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('/tool-assignments/{toolAssignment}/approve', [ToolAssignmentController::class, 'approve'])->name('tool-assignments.approve');
     Route::post('/tool-assignments/{toolAssignment}/reject', [ToolAssignmentController::class, 'reject'])->name('tool-assignments.reject');
     Route::post('/tool-assignments/{toolAssignment}/return', [ToolAssignmentController::class, 'return'])->name('tool-assignments.return');
+    Route::post('/tool-assignments/{toolAssignment}/cancel', [ToolAssignmentController::class, 'cancel'])->name('tool-assignments.cancel');
 
     // Stock Opname
     Route::resource('stock-opnames', StockOpnameController::class)->only(['index', 'create', 'store', 'show']);

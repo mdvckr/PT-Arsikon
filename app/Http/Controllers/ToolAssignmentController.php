@@ -99,6 +99,7 @@ class ToolAssignmentController extends Controller
         $validated = $request->validate([
             'quantities'         => 'required|array',
             'borrower_name'      => 'required|string|max:255',
+            'borrower_phone'     => 'nullable|string|max:50',
             'location_name'      => 'required|string|max:255',
             'warehouse_id'       => 'nullable|exists:warehouses,id',
             'assigned_at'        => 'required|date',
@@ -111,6 +112,9 @@ class ToolAssignmentController extends Controller
         $assignedBy  = auth()->user();
 
         $borrowerInfoNotes = "Peminjam: {$validated['borrower_name']} | Lokasi: {$validated['location_name']}";
+        if (!empty($validated['borrower_phone'])) {
+            $borrowerInfoNotes .= " | Kontak: {$validated['borrower_phone']}";
+        }
         if (!empty($validated['purpose'])) {
             $borrowerInfoNotes .= " | " . $validated['purpose'];
         }
@@ -142,6 +146,9 @@ class ToolAssignmentController extends Controller
                     'quantity'            => $qty,
                     'from_warehouse_id'   => $warehouse->id,
                     'assigned_by_user_id' => $assignedBy->id,
+                    'borrower_name'       => $validated['borrower_name'],
+                    'borrower_phone'      => $validated['borrower_phone'] ?? null,
+                    'location_name'       => $validated['location_name'],
                     'assigned_at'         => $validated['assigned_at'],
                     'expected_return_at'  => $validated['expected_return_at'] ?? null,
                     'status'              => 'pending',
@@ -318,5 +325,49 @@ class ToolAssignmentController extends Controller
         );
 
         return back()->with('success', 'Alat berhasil dikembalikan.');
+    }
+
+    public function cancel(Request $request, ToolAssignment $toolAssignment)
+    {
+        $this->authorize('cancel tool assignments');
+
+        if (!in_array($toolAssignment->status, ['pending', 'active'])) {
+            return back()->with('error', 'Hanya pengajuan berstatus Menunggu Persetujuan atau Aktif (Dipinjam) yang dapat dibatalkan.');
+        }
+
+        $request->validate([
+            'cancellation_reason' => 'required|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($request, $toolAssignment) {
+            // If active (stock was already deducted), reverse the borrow
+            if ($toolAssignment->status === 'active') {
+                $tool = $toolAssignment->tool;
+                $warehouse = $toolAssignment->fromWarehouse ?? $tool->currentWarehouse;
+                $qty = (int) $toolAssignment->quantity;
+
+                if ($warehouse && $tool) {
+                    $this->toolInvService->returnStock($warehouse, $tool, $qty, 'good');
+                }
+            }
+
+            $toolAssignment->update([
+                'status'               => 'cancelled',
+                'cancelled_at'         => now(),
+                'cancelled_by_user_id' => auth()->id(),
+                'cancellation_reason'  => $request->cancellation_reason,
+            ]);
+        });
+
+        // Notify
+        \App\Services\NotificationHelper::notifyAdmins(
+            "Pembatalan Peminjaman Alat: #{$toolAssignment->assignment_number}",
+            "Peminjaman alat {$toolAssignment->tool?->name} ({$toolAssignment->quantity} unit) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
+            "warning",
+            route('tool-assignments.show', $toolAssignment)
+        );
+
+        return back()->with('success', "Peminjaman alat #{$toolAssignment->assignment_number} berhasil dibatalkan." .
+            ($toolAssignment->getOriginal('status') === 'active' ? ' Stok alat telah dikembalikan ke gudang.' : ''));
     }
 }

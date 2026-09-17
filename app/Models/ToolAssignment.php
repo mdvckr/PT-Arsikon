@@ -18,6 +18,9 @@ class ToolAssignment extends Model
         'from_warehouse_id',
         'to_warehouse_id',
         'assigned_to_user_id',
+        'borrower_name',
+        'borrower_phone',
+        'location_name',
         'assigned_by_user_id',
         'assigned_at',
         'expected_return_at',
@@ -27,14 +30,23 @@ class ToolAssignment extends Model
         'approved_by_user_id',
         'approved_at',
         'rejection_reason',
+        'cancelled_at',
+        'cancelled_by_user_id',
+        'cancellation_reason',
     ];
 
     protected $casts = [
-        'assigned_at' => 'datetime',
+        'assigned_at'        => 'datetime',
         'expected_return_at' => 'date',
-        'returned_at' => 'datetime',
-        'approved_at' => 'datetime',
+        'returned_at'        => 'datetime',
+        'approved_at'        => 'datetime',
+        'cancelled_at'       => 'datetime',
     ];
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by_user_id');
+    }
 
     public function tool(): BelongsTo
     {
@@ -64,6 +76,44 @@ class ToolAssignment extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by_user_id');
+    }
+
+    public function getBorrowerDisplayAttribute(): string
+    {
+        if (!empty($this->borrower_name)) {
+            return $this->borrower_name;
+        }
+
+        if ($this->assignedTo) {
+            return $this->assignedTo->name;
+        }
+
+        if (!empty($this->notes)) {
+            $parts = explode('|', $this->notes);
+            $first = trim($parts[0]);
+            if (str_starts_with($first, 'Peminjam:')) {
+                return trim(substr($first, 9));
+            }
+        }
+
+        return '-';
+    }
+
+    public function getLocationDisplayAttribute(): string
+    {
+        if (!empty($this->location_name)) {
+            return $this->location_name;
+        }
+
+        if ($this->toWarehouse) {
+            return $this->toWarehouse->name;
+        }
+
+        if ($this->fromWarehouse) {
+            return $this->fromWarehouse->name;
+        }
+
+        return '-';
     }
 
     public function inspections(): HasMany
