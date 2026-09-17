@@ -47,7 +47,7 @@
                         <th>Kode Alat</th>
                         <th>Nama Alat & Model</th>
                         <th>Merk & Spesifikasi</th>
-                        <th>Keterangan (masih ada tambahan)</th>
+                        <th>Keterangan</th>
                         <th>Tgl Input</th>
                         <th style="text-align:center;">Total Stock</th>
                         <th style="text-align:center;">Dipinjam</th>
@@ -91,8 +91,8 @@
                                 </div>
                                 <div class="flex items-center" style="gap:16px;flex-shrink:0;">
                                     @can('create tools')
-                                    <a href="{{ route('tools.create', ['category_id' => $category->id]) }}" class="btn btn-sm btn-primary" title="Tambah Alat pada {{ $category->name }}" onclick="event.stopPropagation();">
-                                        <i class="fas fa-plus"></i> Tambah
+                                    <a href="{{ route('tools.create', ['category_id' => $category->id]) }}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #cbd5e1;color:#2563eb;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);" title="Tambah Alat pada {{ $category->name }}" onclick="event.stopPropagation();">
+                                        <i class="fas fa-plus" style="font-size:9.5px;"></i> Tambah
                                     </a>
                                     @endcan
                                 </div>
@@ -125,128 +125,85 @@
 
                     {{-- Level 3: Individual Tool Rows --}}
                     @foreach($toolsInType as $tool)
-                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-rows {{ $subKey }}">
-                        <td class="text-muted" style="text-align:center;">{{ $loop->iteration }}</td>
-                        <td><code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;font-size:12px;font-weight:600;">{{ $tool->code }}</code></td>
-                        <td>
-                            <div class="fw-600" style="color:#0f172a;">{{ $tool->name }}</div>
+                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-rows {{ $subKey }}" style="border-bottom:1px solid #f1f5f9;">
+                        <td class="text-muted" style="text-align:center;font-size:12px;padding:10px;vertical-align:middle;">{{ $loop->iteration }}</td>
+                        <td style="padding:10px 14px;vertical-align:middle;"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#f8fafc;padding:2px 6px;border-radius:4px;font-size:11.5px;font-weight:500;border:1px solid #e2e8f0;color:#475569;">{{ $tool->code }}</span></td>
+                        <td style="padding:10px 14px;vertical-align:middle;">
+                            <div class="fw-600" style="color:#0f172a;font-size:13px;">{{ $tool->name }}</div>
                             @if($tool->type)
-                            <div class="text-muted" style="font-size:11px;"><i class="fas fa-tag me-1 text-muted"></i>{{ $tool->type }}</div>
+                            <div class="text-muted" style="font-size:11px;margin-top:2px;">{{ $tool->type }}</div>
                             @endif
                         </td>
-                        <td>
+                        <td style="padding:10px 14px;vertical-align:middle;">
                             <div>
                                 @if($tool->brand)
                                 <span class="fw-600" style="font-size:12.5px;color:#334155;">{{ $tool->brand }}</span>
                                 @endif
                                 @if($tool->size)
-                                <span class="badge bg-light text-dark border ms-1" style="font-size:11px;font-weight:600;">
-                                    <i class="fas fa-ruler-combined text-muted me-1"></i> {{ $tool->size }}
+                                <span class="badge" style="font-size:10.5px;font-weight:600;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;margin-left:4px;">
+                                    {{ $tool->size }}
                                 </span>
                                 @elseif(!$tool->brand)
                                 <span class="text-muted" style="font-size:12px;">-</span>
                                 @endif
                             </div>
                         </td>
-                        <td style="max-width:280px;min-width:180px;">
+                        <td style="padding:10px 14px;max-width:280px;min-width:180px;vertical-align:middle;">
                             @if($tool->notes)
                             <div style="font-size:12px;color:#334155;line-height:1.4;">{{ $tool->notes }}</div>
-                            @endif
-
-                            @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
-                            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                                @foreach($tool->incoming_stages as $stg)
-                                    @php
-                                        $isReceived = ($stg['status'] ?? 'received') === 'received';
-                                    @endphp
-                                    <span class="inline-flex items-center" 
-                                          style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10.5px;line-height:1.2;
-                                                 background:{{ $isReceived ? '#f0fdf4' : '#fffbeb' }};
-                                                 border:1px solid {{ $isReceived ? '#bbf7d0' : '#fde68a' }};
-                                                 color:{{ $isReceived ? '#166534' : '#92400e' }};"
-                                          title="{{ $stg['stage'] ?? 'T' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} unit ({{ $isReceived ? 'Sudah Masuk' : 'Rencana Kedatangan' }}) {{ !empty($stg['notes']) ? '- ' . $stg['notes'] : '' }}">
-                                        <strong style="margin-right:3px;">{{ $stg['stage'] ?? ('T'.($loop->iteration)) }}</strong>:
-                                        <span>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</span>
-                                        @if(!empty($stg['date']))
-                                        <span style="opacity:0.75;font-size:9.5px;margin-left:3px;">{{ \Carbon\Carbon::parse($stg['date'])->format('d/m') }}</span>
-                                        @endif
-                                        <i class="fas {{ $isReceived ? 'fa-check text-success' : 'fa-clock text-warning' }}" style="font-size:9px;margin-left:4px;" aria-hidden="true"></i>
-                                    </span>
-                                @endforeach
-                            </div>
-                            @elseif(!$tool->notes)
+                            @else
                             <span class="text-muted" style="font-size:12px;">-</span>
                             @endif
                         </td>
-                        <td style="font-size:12px;color:#64748b;white-space:nowrap;">
-                            <div>{{ $tool->created_at ? $tool->created_at->format('d M Y') : '-' }}</div>
-                            <div style="font-size:10.5px;" class="text-muted">{{ $tool->created_at ? $tool->created_at->format('H:i') : '' }}</div>
+                        <td style="padding:10px 14px;font-size:12px;color:#64748b;white-space:nowrap;vertical-align:middle;">
+                            <div>{{ $tool->created_at ? $tool->created_at->format('d/m/Y') : '-' }}</div>
                         </td>
-                        @php 
-                            $plannedStages = !empty($tool->incoming_stages) ? collect($tool->incoming_stages)->where('status', 'planned') : collect();
-                            $totalPlanned = (float) $plannedStages->sum('qty');
-                        @endphp
-                        <td style="text-align:center;">
-                            <span style="font-weight:700;font-size:14px;color:#0f172a;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>
-                            <span class="text-muted" style="font-size:11px;"> unit</span>
 
-                            @if($totalPlanned > 0)
-                            <div style="font-size:10px;color:#b45309;margin-top:2px;" title="Jadwal Rencana Kedatangan Mendatang">
-                                <i class="fas fa-clock me-1"></i>+{{ number_format($totalPlanned, 0, ',', '.') }} rencana
-                            </div>
-                            @endif
+
+                        <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
+                            <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>
+                            <span class="text-muted" style="font-size:11px;"> unit</span>
                         </td>
-                        <td style="text-align:center;">
+                        <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
                             @if($tool->stock_borrowed > 0)
-                                <span style="font-weight:700;font-size:14px;color:#e11d48;">{{ number_format($tool->stock_borrowed, 0, ',', '.') }}</span>
+                                <span style="font-weight:600;font-size:13.5px;color:#e11d48;">{{ number_format($tool->stock_borrowed, 0, ',', '.') }}</span>
                             @else
-                                <span class="text-muted" style="font-size:13px;font-weight:500;">0</span>
+                                <span class="text-muted" style="font-size:13px;">0</span>
                             @endif
                             <span class="text-muted" style="font-size:11px;"> unit</span>
-
-                            @if($tool->stock_maintenance > 0 || $tool->stock_damaged > 0)
-                            <div style="font-size:9.5px;margin-top:2px;display:flex;justify-content:center;gap:3px;">
-                                @if($tool->stock_maintenance > 0)
-                                <span class="badge bg-warning-subtle text-warning-emphasis" title="Dalam Perawatan">{{ $tool->stock_maintenance }} maint</span>
-                                @endif
-                                @if($tool->stock_damaged > 0)
-                                <span class="badge bg-danger-subtle text-danger-emphasis" title="Rusak">{{ $tool->stock_damaged }} rusak</span>
-                                @endif
-                            </div>
-                            @endif
                         </td>
-                        <td style="text-align:center;">
-                            <div style="font-weight:700;font-size:14px;color:#16a34a;">
+                        <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
+                            <div style="font-weight:700;font-size:13.5px;color:#0f172a;">
                                 {{ number_format($tool->stock_available, 0, ',', '.') }}
                                 <span class="text-muted" style="font-size:11px;font-weight:normal;"> unit</span>
                             </div>
                             @if($tool->stock_available > 0)
-                                <span class="badge bg-success-subtle text-success" style="font-size:10px;">
-                                    <i class="fas fa-check-circle me-1"></i> Tersedia
+                                <span style="display:inline-block;margin-top:3px;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">
+                                    Tersedia
                                 </span>
                             @else
-                                <span class="badge bg-danger-subtle text-danger" style="font-size:10px;">
-                                    <i class="fas fa-circle-xmark me-1"></i> Habis
+                                <span style="display:inline-block;margin-top:3px;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">
+                                    Habis
                                 </span>
                             @endif
                         </td>
 
-                        <td style="text-align:center;">
-                            <div class="flex items-center justify-center gap-1">
-                                <a href="{{ route('tools.show', $tool) }}" class="btn btn-sm btn-info btn-icon" title="Detail">
-                                    <i class="fas fa-eye"></i>
+                        <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
+                            <div class="flex items-center justify-center" style="gap:4px;">
+                                <a href="{{ route('tools.show', $tool) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Detail Alat">
+                                    <i class="fas fa-eye" style="font-size:11px;"></i>
                                 </a>
                                 @can('edit tools')
-                                <a href="{{ route('tools.edit', $tool) }}" class="btn btn-sm btn-warning btn-icon" title="Edit">
-                                    <i class="fas fa-pen"></i>
+                                <a href="{{ route('tools.edit', $tool) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Edit Alat">
+                                    <i class="fas fa-pen" style="font-size:11px;"></i>
                                 </a>
                                 @endcan
                                 @can('delete tools')
                                 <form method="POST" action="{{ route('tools.destroy', $tool) }}"
-                                    onsubmit="return confirm('Hapus alat {{ addslashes($tool->name) }}?')">
+                                    onsubmit="return confirm('Hapus alat {{ addslashes($tool->name) }}?')" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus">
-                                        <i class="fas fa-trash"></i>
+                                    <button type="submit" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;border-radius:6px;background:#ffffff;" title="Hapus Alat">
+                                        <i class="fas fa-trash" style="font-size:11px;"></i>
                                     </button>
                                 </form>
                                 @endcan

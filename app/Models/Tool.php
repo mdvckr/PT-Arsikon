@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -54,9 +55,83 @@ class Tool extends Model
         return $this->hasMany(ToolAssignment::class);
     }
 
+    /**
+     * Per-warehouse inventory records for this tool (multi-warehouse support).
+     */
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(ToolInventory::class);
+    }
+
     public function maintenances()
     {
         return $this->hasMany(Maintenance::class);
+    }
+
+    /**
+     * Accessor: aggregate total stock across all warehouses.
+     */
+    public function getStockTotalAttribute(): int
+    {
+        $cached = $this->getRelationValue('inventories') ?? null;
+        if ($cached !== null) {
+            return (int) $cached->sum('stock_total');
+        }
+        return (int) ($this->getAttributeFromArray('stock_total') ?? 0);
+    }
+
+    public function getStockAvailableAttribute(): int
+    {
+        $cached = $this->getRelationValue('inventories') ?? null;
+        if ($cached !== null) {
+            return (int) $cached->sum('stock_available');
+        }
+        return (int) ($this->getAttributeFromArray('stock_available') ?? 0);
+    }
+
+    public function getStockBorrowedAttribute(): int
+    {
+        $cached = $this->getRelationValue('inventories') ?? null;
+        if ($cached !== null) {
+            return (int) $cached->sum('stock_borrowed');
+        }
+        return (int) ($this->getAttributeFromArray('stock_borrowed') ?? 0);
+    }
+
+    public function getStockMaintenanceAttribute(): int
+    {
+        $cached = $this->getRelationValue('inventories') ?? null;
+        if ($cached !== null) {
+            return (int) $cached->sum('stock_maintenance');
+        }
+        return (int) ($this->getAttributeFromArray('stock_maintenance') ?? 0);
+    }
+
+    public function getStockDamagedAttribute(): int
+    {
+        $cached = $this->getRelationValue('inventories') ?? null;
+        if ($cached !== null) {
+            return (int) $cached->sum('stock_damaged');
+        }
+        return (int) ($this->getAttributeFromArray('stock_damaged') ?? 0);
+    }
+
+    /**
+     * Get (or create) the inventory record for a specific warehouse.
+     */
+    public function inventoryFor(?Warehouse $warehouse): ?ToolInventory
+    {
+        if (!$warehouse) {
+            return null;
+        }
+
+        return $this->inventories()
+            ->where('warehouse_id', $warehouse->id)
+            ->get()
+            ->first(fn($i) => true)
+            ?? ToolInventory::where('tool_id', $this->id)
+                ->where('warehouse_id', $warehouse->id)
+                ->first();
     }
 
     /**
@@ -71,9 +146,8 @@ class Tool extends Model
             ->exists();
     }
 
-    /**
-     * Tentukan status utama alat berdasarkan stok & assignment (bulk inventory).
-     * Status bersifat derived dari data transaksi, tidak disimpan.
+/**
+     * Get computed status label based on stock levels and overdue assignments.
      */
     public function statusLabel(): string
     {
@@ -90,6 +164,26 @@ class Tool extends Model
             return 'IN USE';
         }
         return 'AVAILABLE';
+    }
+
+    /**
+     * Magic getter for status - returns computed statusLabel for backward compatibility.
+     */
+    public function getStatusAttribute(): string
+    {
+        return $this->statusLabel();
+    }
+
+    /**
+     * Validate that total stock equals the sum of all derived stock columns.
+     * Throws an Exception if invariant is violated.
+     */
+    protected function ensureInvariant(): void
+    {
+        $calc = $this->stock_available + $this->stock_borrowed + $this->stock_maintenance + $this->stock_damaged;
+        if ($calc !== $this->stock_total) {
+            throw new Exception("Invariant violation: stock_total ({$this->stock_total}) tidak sama dengan jumlah detail stok ({$calc}).");
+        }
     }
 
     /**

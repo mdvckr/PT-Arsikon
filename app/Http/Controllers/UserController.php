@@ -55,7 +55,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|unique:users,email',
-            'password'        => 'required|min:8|confirmed',
+            'password'        => ['required', 'string', 'min:12', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',
@@ -117,7 +117,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => "required|email|unique:users,email,{$user->id}",
-            'password'        => 'nullable|min:8|confirmed',
+            'password'        => ['nullable', 'string', 'min:12', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',

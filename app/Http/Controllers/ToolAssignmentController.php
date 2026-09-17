@@ -7,11 +7,19 @@ use App\Models\Tool;
 use App\Models\ToolAssignment;
 use App\Models\Warehouse;
 use App\Models\User;
+use App\Services\ToolInventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ToolAssignmentController extends Controller
 {
+    protected ToolInventoryService $toolInvService;
+
+    public function __construct(ToolInventoryService $toolInvService)
+    {
+        $this->toolInvService = $toolInvService;
+    }
+
     public function index(Request $request)
     {
         $this->authorize('view tool assignments');
@@ -191,8 +199,12 @@ class ToolAssignmentController extends Controller
                 'approved_at'         => now(),
             ]);
 
-            // Kurangi stok tersedia hanya setelah disetujui
-            $tool->borrow($toolAssignment->quantity);
+            // Borrow stock via ToolInventoryService on the source warehouse
+            $qty = (int) $toolAssignment->quantity;
+            $warehouse = $toolAssignment->fromWarehouse ?? $toolAssignment->tool?->currentWarehouse;
+            if ($warehouse) {
+                $this->toolInvService->borrow($warehouse, $tool, $qty);
+            }
         });
 
         // Notify Borrower / Applicant and all users in that warehouse
@@ -283,9 +295,11 @@ class ToolAssignmentController extends Controller
         DB::transaction(function () use ($request, $toolAssignment) {
             $qty  = $toolAssignment->quantity ?? 1;
             $tool = $toolAssignment->tool;
+            $warehouse = $toolAssignment->fromWarehouse ?? $tool->currentWarehouse;
 
-            // Kembalikan stok sesuai kondisi
-            $tool->returnStock($qty, $request->condition);
+            if ($warehouse) {
+                $this->toolInvService->returnStock($warehouse, $tool, $qty, $request->condition);
+            }
 
             // Update status assignment
             $toolAssignment->update([

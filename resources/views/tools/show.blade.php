@@ -74,54 +74,7 @@
             </div>
         </div>
 
-        <div>
-            {{-- Tahap Kedatangan Barang --}}
-            <div class="card mb-4">
-                <div class="card-header flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-truck-ramp-box text-primary"></i> <span class="card-title">Jadwal & Riwayat Tahap Kedatangan (Flow T1, T2...)</span>
-                    </div>
-                    @if(!empty($tool->incoming_stages))
-                    <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
-                        {{ count($tool->incoming_stages) }} Tahap
-                    </span>
-                    @endif
-                </div>
-                <div class="table-wrap">
-                    <table class="data-table mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width:80px;">Tahap</th>
-                                <th>Tanggal</th>
-                                <th style="text-align:center;">Qty Unit</th>
-                                <th>Status</th>
-                                <th>Keterangan / Ref</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
-                                @foreach($tool->incoming_stages as $stg)
-                                @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
-                                <tr>
-                                    <td><strong class="font-monospace" style="color:#2563eb;">{{ $stg['stage'] ?? ('T'.($loop->iteration)) }}</strong></td>
-                                    <td>{{ !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d M Y') : '-' }}</td>
-                                    <td style="text-align:center;"><strong>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</strong> unit</td>
-                                    <td>
-                                        <span class="badge" style="background:{{ $isReceived ? '#f0fdf4' : '#fffbeb' }};color:{{ $isReceived ? '#166534' : '#b45309' }};border:1px solid {{ $isReceived ? '#bbf7d0' : '#fde68a' }};">
-                                            <i class="fas {{ $isReceived ? 'fa-check-circle text-success' : 'fa-clock text-warning' }} me-1"></i>
-                                            {{ $isReceived ? 'Sudah Masuk' : 'Rencana Kedatangan' }}
-                                        </span>
-                                    </td>
-                                    <td class="text-muted">{{ $stg['notes'] ?? '-' }}</td>
-                                </tr>
-                                @endforeach
-                            @else
-                                <tr><td colspan="5" class="text-center text-muted p-3">Belum ada rincian tahap kedatangan bertahap yang dicatat.</td></tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
 
             {{-- Riwayat Peminjaman --}}
             <div class="card mb-4">

@@ -154,7 +154,7 @@ class MaterialController extends Controller
     public function show(Material $material)
     {
         $this->authorize('view materials');
-        $material->load(['category', 'unit', 'supplier', 'inventories.warehouse', 'stockMutations' => fn($q) => $q->latest()->limit(20)]);
+        $material->load(['category', 'unit', 'supplier', 'inventories.warehouse', 'stockMutations' => fn($q) => $q->with('warehouse')->latest()->limit(20)]);
 
         return view('materials.show', compact('material'));
     }

@@ -61,7 +61,16 @@ class MaterialRequestController extends Controller
             ->orderBy('name')
             ->get();
 
-        $warehouses = Warehouse::orderBy('name')->get();
+        // Gudang pemohon harus merupakan Gudang Proyek (bukan Gudang Pusat)
+        $warehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
+        if ($warehouseId) {
+            $selectedWh = Warehouse::find($warehouseId);
+            if ($selectedWh && $selectedWh->is_central) {
+                $warehouseId = $warehouses->first()?->id;
+            }
+        } else {
+            $warehouseId = $warehouses->first()?->id;
+        }
 
         return view('material-requests.create', compact('materialCategories', 'uncategorizedMaterials', 'warehouses', 'warehouseId'));
     }
@@ -95,13 +104,21 @@ class MaterialRequestController extends Controller
 
         $fromWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
 
-        $mr = $this->service->createRequest(
-            $fromWarehouse,
-            auth()->user(),
-            $itemsData,
-            true,
-            $validated['notes'] ?? null
-        );
+        if ($fromWarehouse->is_central) {
+            return back()->withInput()->withErrors(['warehouse_id' => 'Permintaan material hanya dapat diajukan dari Gudang Proyek.']);
+        }
+
+        try {
+            $mr = $this->service->createRequest(
+                $fromWarehouse,
+                auth()->user(),
+                $itemsData,
+                true,
+                $validated['notes'] ?? null
+            );
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors(['warehouse_id' => $e->getMessage()]);
+        }
 
         return redirect()->route('material-requests.show', $mr)
             ->with('success', "Permintaan material #{$mr->request_number} berhasil diajukan.");

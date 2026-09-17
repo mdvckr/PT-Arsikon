@@ -180,32 +180,45 @@
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tanggal</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Gudang</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tipe</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Jumlah</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Stok Akhir</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($material->stockMutations as $mut)
+                            @php
+                                $qty = (float) ($mut->qty_change ?? $mut->quantity ?? 0);
+                                $isIn = $qty >= 0;
+                            @endphp
                             <tr style="border-bottom:1px solid #f1f5f9;">
-                                <td style="padding:9px 16px;color:#64748b;font-size:12px;white-space:nowrap;">
-                                    {{ $mut->created_at->format('d/m/Y H:i') }}
+                                <td style="padding:10px 16px;color:#64748b;font-size:12px;white-space:nowrap;vertical-align:middle;">
+                                    {{ $mut->created_at ? $mut->created_at->format('d/m/Y H:i') : '-' }}
                                 </td>
-                                <td style="padding:9px 16px;font-size:12px;">
-                                    @if($mut->type === 'in')
-                                        <span style="color:#16a34a;font-weight:600;">Masuk</span>
+                                <td style="padding:10px 16px;color:#334155;font-size:12.5px;font-weight:500;vertical-align:middle;">
+                                    {{ $mut->warehouse?->name ?? '-' }}
+                                </td>
+                                <td style="padding:10px 16px;font-size:12px;vertical-align:middle;">
+                                    @if($isIn)
+                                        <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">Masuk</span>
                                     @else
-                                        <span style="color:#dc2626;font-weight:600;">Keluar</span>
+                                        <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">Keluar</span>
                                     @endif
                                 </td>
-                                <td style="padding:9px 16px;text-align:right;font-weight:600;font-size:13px;color:#0f172a;">
-                                    {{ number_format(abs($mut->quantity), 0, ',', '.') }}
+                                <td style="padding:10px 16px;text-align:right;font-weight:700;font-size:13px;color:#0f172a;vertical-align:middle;">
+                                    {{ $isIn ? '+' : '-' }}{{ number_format(abs($qty), 0, ',', '.') }}
+                                    <span class="text-muted" style="font-size:11px;font-weight:normal;">{{ $material->unit?->abbreviation ?? $material->unit?->name ?? '' }}</span>
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;font-weight:600;font-size:12.5px;color:#475569;vertical-align:middle;">
+                                    {{ number_format((float)($mut->qty_balance_after ?? 0), 0, ',', '.') }}
                                     <span class="text-muted" style="font-size:11px;font-weight:normal;">{{ $material->unit?->abbreviation ?? '' }}</span>
                                 </td>
-                                <td style="padding:9px 16px;color:#64748b;font-size:12px;">{{ $mut->notes ?? '-' }}</td>
+                                <td style="padding:10px 16px;color:#64748b;font-size:12px;vertical-align:middle;">{{ $mut->notes ?? '-' }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px;font-size:13px;">Belum ada catatan mutasi stok untuk material ini.</td></tr>
+                            <tr><td colspan="6" class="text-muted" style="text-align:center;padding:24px;font-size:13px;">Belum ada catatan mutasi stok untuk material ini.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

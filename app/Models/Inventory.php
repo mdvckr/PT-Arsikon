@@ -47,4 +47,14 @@ class Inventory extends Model
         return $this->hasMany(StockMutation::class, 'material_id', 'material_id')
             ->where('stock_mutations.warehouse_id', $this->warehouse_id);
     }
+
+    /**
+     * Validate inventory invariants (e.g., no negative quantities).
+     */
+    public function validateInvariants(): void
+    {
+        if ((float) $this->quantity < 0) {
+            throw new \Exception("Invariant violation: Kuantitas stok material tidak boleh negatif ({$this->quantity}).");
+        }
+    }
 }

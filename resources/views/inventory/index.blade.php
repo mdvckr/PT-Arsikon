@@ -147,11 +147,11 @@
                     @foreach($materialsInType as $material)
                         @foreach($material->inventories as $inv)
                         <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-rows {{ $subKey }}" style="border-bottom:1px solid #f1f5f9;">
-                            <td class="text-muted" style="text-align:center;font-size:12px;padding:9px 10px;">{{ $loop->iteration }}</td>
-                            <td style="padding:9px 14px;">
+                            <td class="text-muted" style="text-align:center;font-size:12px;padding:10px;vertical-align:middle;">{{ $loop->iteration }}</td>
+                            <td style="padding:10px 14px;vertical-align:middle;">
                                 <div class="fw-600" style="color:#0f172a;font-size:13px;">{{ $material->name }}</div>
                                 <div style="margin-top:2px;">
-                                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #e2e8f0;">
+                                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;color:#475569;background:#f8fafc;padding:1px 5px;border-radius:3px;border:1px solid #e2e8f0;font-weight:500;">
                                         {{ $material->sku ?? '-' }}
                                     </span>
                                     @if($material->brand)
@@ -161,39 +161,39 @@
                                     @endif
                                 </div>
                             </td>
-                            <td style="padding:9px 14px;font-size:12.5px;color:#334155;">
+                            <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
                                 {{ $material->type ?: '-' }}
                                 @if($material->size)
                                 <span class="text-muted" style="font-size:11.5px;">· {{ $material->size }}</span>
                                 @endif
                             </td>
-                            <td style="padding:9px 14px;font-size:12.5px;color:#475569;">
+                            <td style="padding:10px 14px;font-size:12.5px;color:#475569;vertical-align:middle;">
                                 {{ $category->name }}
                             </td>
-                            <td style="padding:9px 14px;font-size:12.5px;color:#334155;font-weight:500;">
+                            <td style="padding:10px 14px;font-size:12.5px;color:#334155;font-weight:500;vertical-align:middle;">
                                 {{ $inv->warehouse?->name ?? '-' }}
                             </td>
-                            <td style="text-align:center;padding:9px 14px;">
+                            <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
                                 <span class="fw-700" style="font-size:13.5px;color:#0f172a;">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
                                 <span class="text-muted" style="font-size:11px;"> {{ $material->unit?->abbreviation ?? $material->unit?->name }}</span>
                             </td>
-                            <td style="text-align:center;padding:9px 14px;font-size:12.5px;color:#64748b;">
+                            <td style="text-align:center;padding:10px 14px;font-size:12.5px;color:#64748b;vertical-align:middle;">
                                 {{ number_format($inv->min_stock, 0, ',', '.') }}
                             </td>
-                            <td style="padding:9px 14px;font-size:12px;">
+                            <td style="padding:10px 14px;vertical-align:middle;">
                                 @if($inv->quantity <= 0)
-                                    <span style="color:#dc2626;font-weight:600;">Habis</span>
+                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">Habis</span>
                                 @elseif($inv->quantity <= $inv->min_stock)
-                                    <span style="color:#b45309;font-weight:600;">Rendah</span>
+                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fffbeb;color:#b45309;border:1px solid #fde68a;">Rendah</span>
                                 @else
-                                    <span style="color:#16a34a;font-weight:600;">Normal</span>
+                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">Normal</span>
                                 @endif
                             </td>
-                            <td class="text-muted" style="padding:9px 14px;font-size:12px;white-space:nowrap;">
+                            <td class="text-muted" style="padding:10px 14px;font-size:12px;white-space:nowrap;vertical-align:middle;">
                                 {{ $inv->updated_at ? $inv->updated_at->format('d/m/Y') : '-' }}
                             </td>
-                            <td style="text-align:center;padding:9px 14px;">
-                                <a href="{{ route('inventory.show', $inv) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;" title="Detail Riwayat Stok">
+                            <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
+                                <a href="{{ route('inventory.show', $inv) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Detail Riwayat Stok">
                                     <i class="fas fa-eye" style="font-size:11px;"></i>
                                 </a>
                             </td>

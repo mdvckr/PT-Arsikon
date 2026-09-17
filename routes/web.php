@@ -139,6 +139,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/print-templates/{printTemplate}/set-active',
         [PrintTemplateController::class, 'setActive'])
         ->name('print-templates.setActive');
+    Route::get('/print-templates/{printTemplate}/file',
+        [PrintTemplateController::class, 'file'])
+        ->name('print-templates.file')
+        ->middleware('signed');
 });
 
 require __DIR__.'/auth.php';

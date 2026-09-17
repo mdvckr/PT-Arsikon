@@ -15,7 +15,7 @@
                 </div>
                 <div>
                     <h2 class="card-title" style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Edit Alat</h2>
-                    <div style="font-size:11.5px;color:#64748b;">Perbarui detail alat, spesifikasi, stok, dan jadwal flow kedatangan bertahap</div>
+                    <div style="font-size:11.5px;color:#64748b;">Perbarui detail alat, spesifikasi, dan stok</div>
                 </div>
             </div>
         </div>
@@ -154,60 +154,7 @@
                     </div>
                 </div>
 
-                {{-- Tahap Kedatangan Alat (Flow Masuk T1, T2, T3, ...) --}}
-                <div class="mt-4 border rounded" style="background:#ffffff;border-color:#e2e8f0 !important;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-                    <div class="flex items-center justify-between p-3" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-                        <div class="flex items-center gap-2">
-                            <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#2563eb;">
-                                <i class="fas fa-truck-ramp-box" style="font-size:13px;"></i>
-                            </div>
-                            <div>
-                                <span class="fw-700" style="font-size:13.5px;color:#0f172a;">
-                                    Tahap Kedatangan Alat (Flow Masuk T1, T2, T3...)
-                                </span>
-                                <div class="text-muted" style="font-size:11px;margin-top:1px;">
-                                    Catat jadwal kedatangan bertahap pengadaan alat kerja (sudah masuk maupun rencana)
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="addStageRow()" style="padding:5px 12px;font-size:12px;">
-                            <i class="fas fa-plus me-1"></i> Tambah Tahap (T-angka)
-                        </button>
-                    </div>
 
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%;font-size:12px;border-collapse:collapse;" id="stages_table">
-                            <thead>
-                                <tr style="background:#f1f5f9;color:#475569;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;">
-                                    <th style="padding:8px 12px;width:100px;">Tahap</th>
-                                    <th style="padding:8px 12px;width:150px;">Tanggal</th>
-                                    <th style="padding:8px 12px;width:130px;">Qty Unit</th>
-                                    <th style="padding:8px 12px;width:170px;">Status</th>
-                                    <th style="padding:8px 12px;">Keterangan / No. PO / Truk</th>
-                                    <th style="padding:8px 12px;width:40px;text-align:center;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="stages_tbody">
-                                {{-- Baris dinamis --}}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- Summary Bar --}}
-                    <div class="flex items-center justify-between p-3 border-top" style="background:#f8fafc;border-color:#e2e8f0;gap:12px;flex-wrap:wrap;">
-                        <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                            <div style="padding:4px 10px;border-radius:6px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:11.5px;color:#166534;">
-                                <i class="fas fa-check-circle me-1 text-success"></i> Sudah Masuk: <strong id="summary_received">0</strong> unit
-                            </div>
-                            <div style="padding:4px 10px;border-radius:6px;background:#fffbeb;border:1px solid #fde68a;font-size:11.5px;color:#b45309;">
-                                <i class="fas fa-clock me-1 text-warning"></i> Rencana: <strong id="summary_planned">0</strong> unit
-                            </div>
-                            <div style="padding:4px 10px;border-radius:6px;background:#eff6ff;border:1px solid #bfdbfe;font-size:11.5px;color:#1d4ed8;">
-                                <i class="fas fa-layer-group me-1 text-primary"></i> Total Keseluruhan: <strong id="summary_total">0</strong> unit
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 {{-- Kelola Stok --}}
                 <div class="mt-4 p-3 border rounded" style="background:#f8fafc;border-color:#e2e8f0 !important;">
@@ -259,25 +206,7 @@
                 </div>
             </form>
 
-            {{-- Tambah Stok Cepat --}}
-            @can('edit tools')
-            <div style="border-top:2px dashed #e2e8f0;margin-top:24px;padding-top:16px;">
-                <form method="POST" action="{{ route('tools.addStock', $tool) }}" class="flex gap-3 items-end" style="flex-wrap:wrap;">
-                    @csrf
-                    <div>
-                        <div class="text-muted mb-1" style="font-size:12px;">
-                            <i class="fas fa-boxes-stacked text-success me-1"></i> Stok saat ini: <strong>{{ $tool->stock_total }} unit</strong> · <span class="text-success">{{ $tool->stock_available }} tersedia</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <label class="form-label mb-0">Tambah Cepat</label>
-                            <input type="number" name="quantity" class="form-control" value="1" min="1" max="500" style="width:80px;" required>
-                            <label class="form-label mb-0">unit lagi</label>
-                            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Tambah Stok</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
+
         </div>
     </div>
 
@@ -451,134 +380,7 @@
 
         onCategoryChange();
 
-        // Dynamic Incoming Stages Logic
-        var stageIndex = 0;
 
-        function updateSelectStyle(select) {
-            if (select.value === 'received') {
-                select.style.background = '#f0fdf4';
-                select.style.color = '#166534';
-                select.style.borderColor = '#bbf7d0';
-                select.style.fontWeight = '600';
-            } else {
-                select.style.background = '#fffbeb';
-                select.style.color = '#b45309';
-                select.style.borderColor = '#fde68a';
-                select.style.fontWeight = '600';
-            }
-        }
-
-        function addStageRow(data) {
-            data = data || {};
-            var tbody = document.getElementById('stages_tbody');
-            var tr = document.createElement('tr');
-            tr.id = 'stage_row_' + stageIndex;
-            tr.style.borderBottom = '1px solid #f1f5f9';
-
-            var stageNum = tbody.children.length + 1;
-            var defaultName = 'T' + stageNum;
-            var stageVal = data.stage !== undefined ? data.stage : defaultName;
-            var dateVal = data.date || '';
-            var qtyVal = data.qty !== undefined ? data.qty : '';
-            var statusVal = data.status || 'received';
-            var notesVal = data.notes || '';
-
-            tr.innerHTML = `
-                <td style="padding:8px 12px;">
-                    <div style="position:relative;">
-                        <input type="text" name="incoming_stages[${stageIndex}][stage]" value="${stageVal}" 
-                               class="form-control form-control-sm font-monospace" placeholder="T${stageNum}" 
-                               style="font-size:12px;font-weight:700;color:#1e293b;background:#f8fafc;">
-                    </div>
-                </td>
-                <td style="padding:8px 12px;">
-                    <input type="date" name="incoming_stages[${stageIndex}][date]" value="${dateVal}" 
-                           class="form-control form-control-sm" style="font-size:12px;">
-                </td>
-                <td style="padding:8px 12px;">
-                    <input type="number" step="1" min="0" name="incoming_stages[${stageIndex}][qty]" value="${qtyVal}" 
-                           class="form-control form-control-sm stage-qty-input" placeholder="0" 
-                           style="font-size:12px;font-weight:600;" oninput="updateStagesSummary()">
-                </td>
-                <td style="padding:8px 12px;">
-                    <select name="incoming_stages[${stageIndex}][status]" class="form-control form-control-sm stage-status-select" 
-                            style="font-size:12px;" onchange="updateSelectStyle(this); updateStagesSummary();">
-                        <option value="received" ${statusVal === 'received' ? 'selected' : ''}>✓ Sudah Masuk</option>
-                        <option value="planned" ${statusVal === 'planned' ? 'selected' : ''}>⏳ Rencana</option>
-                    </select>
-                </td>
-                <td style="padding:8px 12px;">
-                    <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}" 
-                           class="form-control form-control-sm" placeholder="Contoh: No. PO / DO / Vendor / Truk" style="font-size:12px;">
-                </td>
-                <td style="padding:8px 12px;text-align:center;">
-                    <button type="button" class="btn btn-sm text-danger" 
-                            style="padding:4px 8px;border-radius:6px;background:#fef2f2;border:1px solid #fee2e2;transition:all .15s;" 
-                            onclick="removeStageRow(${stageIndex})" title="Hapus Baris Tahap">
-                        <i class="fas fa-trash-alt" style="font-size:11px;"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-
-            var select = tr.querySelector('.stage-status-select');
-            if (select) updateSelectStyle(select);
-
-            stageIndex++;
-            updateStagesSummary();
-        }
-
-        function removeStageRow(index) {
-            var row = document.getElementById('stage_row_' + index);
-            if (row) {
-                row.remove();
-                updateStagesSummary();
-            }
-        }
-
-        function updateStagesSummary() {
-            var tbody = document.getElementById('stages_tbody');
-            var rows = tbody.querySelectorAll('tr');
-            var totalReceived = 0;
-            var totalPlanned = 0;
-
-            rows.forEach(function(r) {
-                var qtyInput = r.querySelector('.stage-qty-input');
-                var statusSelect = r.querySelector('.stage-status-select');
-                var qty = parseInt(qtyInput ? qtyInput.value : 0, 10) || 0;
-                var status = statusSelect ? statusSelect.value : 'received';
-
-                if (status === 'received') {
-                    totalReceived += qty;
-                } else {
-                    totalPlanned += qty;
-                }
-            });
-
-            var recElem = document.getElementById('summary_received');
-            var planElem = document.getElementById('summary_planned');
-            var totElem = document.getElementById('summary_total');
-
-            if (recElem) recElem.innerText = totalReceived.toLocaleString();
-            if (planElem) planElem.innerText = totalPlanned.toLocaleString();
-            if (totElem) totElem.innerText = (totalReceived + totalPlanned).toLocaleString();
-        }
-
-        (function initStages() {
-            var tbody = document.getElementById('stages_tbody');
-            tbody.innerHTML = '';
-            stageIndex = 0;
-
-            @php
-                $stagesToLoad = old('incoming_stages', $tool->incoming_stages ?? []);
-            @endphp
-            var loadedStages = {!! json_encode($stagesToLoad) !!};
-            if (Array.isArray(loadedStages) && loadedStages.length > 0) {
-                loadedStages.forEach(function(stg) {
-                    addStageRow(stg);
-                });
-            }
-        })();
     </script>
     @endpush
 </x-app-layout>

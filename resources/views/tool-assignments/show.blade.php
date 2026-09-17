@@ -120,31 +120,37 @@
 
         @if(in_array($toolAssignment->status, ['active', 'overdue']))
             @can('return tool assignments')
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-undo text-primary"></i> <span class="card-title">Proses Pengembalian</span>
+            <div class="card" style="border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.05);border-radius:8px;">
+                <div class="card-header" style="background:#f8fafc;padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-undo text-primary" style="font-size:14px;"></i> 
+                        <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;">Proses Pengembalian Alat</span>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="padding:18px;">
                     <form method="POST" action="{{ route('tool-assignments.return', $toolAssignment) }}">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label">Tanggal Kembali <span class="text-danger">*</span></label>
-                            <input type="datetime-local" name="returned_at" class="form-control" value="{{ date('Y-m-d\TH:i') }}" required>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.03em;">Tanggal & Jam Kembali <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="returned_at" class="form-control" value="{{ date('Y-m-d\TH:i') }}" style="height:38px;border-radius:6px;font-size:13px;" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Kondisi Alat Saat Kembali <span class="text-danger">*</span></label>
-                            <select name="condition" class="form-control" required>
-                                <option value="good">Baik (Good)</option>
-                                <option value="damaged">Rusak (Damaged)</option>
-                                <option value="under_maintenance">Perlu Perbaikan</option>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.03em;">Kondisi Alat Saat Pengembalian <span class="text-danger">*</span></label>
+                            <select name="condition" class="form-control" style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" required>
+                                <option value="good" style="color:#047857;font-weight:600;">🟢 Baik (Siap Pakai / Ready)</option>
+                                <option value="under_maintenance" style="color:#b45309;font-weight:600;">🟡 Perlu Perbaikan (Under Maintenance)</option>
+                                <option value="damaged" style="color:#b91c1c;font-weight:600;">🔴 Rusak / Rusak Total (Damaged)</option>
                             </select>
+                            <div class="text-muted" style="font-size:11px;margin-top:4px;line-height:1.4;">
+                                Jika memilih <strong>Rusak</strong> / <strong>Perbaikan</strong>, stok terpinjam akan dipindahkan ke kategori stok rusak/maintenance tanpa mengurangi stok total.
+                            </div>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Catatan Pengembalian</label>
-                            <textarea name="notes" class="form-control" rows="2"></textarea>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.03em;">Catatan / Rincian Kerusakan</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Jelaskan kondisi alat, kelengkapan, atau kronologi jika ada kerusakan..." style="border-radius:6px;font-size:13px;"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-success w-full" style="justify-content:center;" onclick="return confirm('Konfirmasi pengembalian alat?')">
-                            <i class="fas fa-check-circle"></i> Konfirmasi Pengembalian
+                        <button type="submit" class="btn btn-success w-full" style="justify-content:center;height:38px;font-weight:600;font-size:13px;" onclick="return confirm('Konfirmasi pengembalian alat?')">
+                            <i class="fas fa-check-circle me-1"></i> Konfirmasi Pengembalian Alat
                         </button>
                     </form>
                 </div>

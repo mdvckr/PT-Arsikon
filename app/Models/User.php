@@ -73,11 +73,7 @@ class User extends Authenticatable
 
     public function hasAccessToWarehouse(Warehouse $warehouse): bool
     {
-        if ($this->hasRole('Owner')) {
-            return true;
-        }
-
-        if ($this->hasRole(['Admin', 'Admin Gudang Pusat']) && $warehouse->is_central) {
+        if ($this->hasRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
             return true;
         }
 

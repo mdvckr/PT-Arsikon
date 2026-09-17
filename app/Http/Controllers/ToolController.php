@@ -5,11 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Tool;
 use App\Models\Category;
 use App\Models\ToolAssignment;
+use App\Models\ToolInventory;
 use App\Models\Warehouse;
+use App\Services\ToolInventoryService;
 use Illuminate\Http\Request;
 
 class ToolController extends Controller
 {
+    protected ToolInventoryService $toolInvService;
+
+    public function __construct(ToolInventoryService $toolInvService)
+    {
+        $this->toolInvService = $toolInvService;
+    }
+
     public function index(Request $request)
     {
         $this->authorize('view tools');
@@ -96,19 +105,11 @@ class ToolController extends Controller
             'warehouse_id'    => 'nullable|integer|exists:warehouses,id',
             'notes'           => 'nullable|string',
             'stock_total'     => 'nullable|integer|min:0',
-            'incoming_stages' => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
-        $incomingStages = $this->parseIncomingStages($request);
 
         $stockTotal = isset($validated['stock_total']) ? (int) $validated['stock_total'] : 0;
-        $receivedStagesQty = $incomingStages ? (int) collect($incomingStages)->where('status', 'received')->sum('qty') : 0;
-
-        // Jika stock_total belum diisi manual tapi ada tahap berstatus 'received', otomatis sinkronkan
-        if ($stockTotal <= 0 && $receivedStagesQty > 0) {
-            $stockTotal = $receivedStagesQty;
-        }
 
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
         if (empty($typeVal) && !empty($validated['name'])) {
@@ -130,12 +131,23 @@ class ToolController extends Controller
             'current_warehouse_id' => $validated['warehouse_id'] ?? null,
             'notes'                => $validated['notes'] ?? null,
             'incoming_stages'      => $incomingStages,
-            'stock_total'          => $stockTotal,
-            'stock_available'      => $stockTotal,
+            'stock_total'          => 0,
+            'stock_available'      => 0,
             'stock_borrowed'       => 0,
             'stock_maintenance'    => 0,
             'stock_damaged'        => 0,
         ]);
+
+        // Populate per-warehouse inventory for the initial stock
+        if ($stockTotal > 0) {
+            $warehouse = $validated['warehouse_id']
+                ? Warehouse::find($validated['warehouse_id'])
+                : ($tool->currentWarehouse ?? Warehouse::where('is_central', true)->first());
+
+            if ($warehouse) {
+                $this->toolInvService->addStock($warehouse, $tool, $stockTotal);
+            }
+        }
 
         return redirect()->route('tools.index')
             ->with('success', "Alat '{$tool->name}' berhasil ditambahkan dengan total stok {$tool->stock_total} unit.");
@@ -148,10 +160,17 @@ class ToolController extends Controller
         $request->validate(['quantity' => 'required|integer|min:1|max:500']);
 
         $qty = (int) $request->quantity;
-        $tool->addStock($qty);
+        $warehouse = $tool->currentWarehouse ?? Warehouse::where('is_central', true)->first();
+
+        if (!$warehouse) {
+            return redirect()->route('tools.edit', $tool)
+                ->with('error', 'Gudang untuk alat ini tidak ditemukan.');
+        }
+
+        $this->toolInvService->addStock($warehouse, $tool, $qty);
 
         return redirect()->route('tools.edit', $tool)
-            ->with('success', "Stok '{$tool->name}' berhasil ditambah {$qty} unit. Total stok sekarang: {$tool->fresh()->stock_total} unit.");
+            ->with('success', "Stok '{$tool->name}' berhasil ditambah {$qty} unit. Total stok sekarang: {$tool->stock_total} unit.");
     }
 
     public function show(Tool $tool)
@@ -198,11 +217,9 @@ class ToolController extends Controller
             'stock_available'   => 'required|integer|min:0',
             'stock_maintenance' => 'nullable|integer|min:0',
             'stock_damaged'     => 'nullable|integer|min:0',
-            'incoming_stages'   => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
-        $incomingStages = $this->parseIncomingStages($request);
 
         // Pertahankan kelompok alat (type) jika tidak sengaja terkirim kosong saat edit
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
@@ -228,11 +245,29 @@ class ToolController extends Controller
             'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
             'notes'                => $validated['notes'] ?? null,
             'incoming_stages'      => $incomingStages,
-            'stock_total'          => $validated['stock_total'],
-            'stock_available'      => $validated['stock_available'],
-            'stock_maintenance'    => $validated['stock_maintenance'] ?? 0,
-            'stock_damaged'        => $validated['stock_damaged'] ?? 0,
+            'stock_total'          => 0,
+            'stock_available'      => 0,
+            'stock_borrowed'       => 0,
+            'stock_maintenance'    => 0,
+            'stock_damaged'        => 0,
         ]);
+
+        // Sync aggregate stock snapshot to the active warehouse inventory
+        $warehouse = $validated['warehouse_id']
+            ? Warehouse::find($validated['warehouse_id'])
+            : $tool->currentWarehouse;
+
+        if ($warehouse) {
+            $this->toolInvService->syncStock(
+                $warehouse,
+                $tool,
+                (int) $validated['stock_total'],
+                (int) $validated['stock_available'],
+                0,
+                (int) ($validated['stock_maintenance'] ?? 0),
+                (int) ($validated['stock_damaged'] ?? 0)
+            );
+        }
 
         return redirect()->route('tools.index')
             ->with('success', "Alat '{$tool->name}' berhasil diperbarui.");
@@ -253,29 +288,6 @@ class ToolController extends Controller
             ->with('success', "Alat '{$name}' berhasil dihapus.");
     }
 
-    private function parseIncomingStages(Request $request): ?array
-    {
-        if (!$request->has('incoming_stages') || !is_array($request->incoming_stages)) {
-            return null;
-        }
-
-        $stages = [];
-        foreach ($request->incoming_stages as $item) {
-            $qty = isset($item['qty']) && $item['qty'] !== '' ? (int) $item['qty'] : 0;
-            $stageName = trim($item['stage'] ?? '');
-            if ($qty > 0 || $stageName !== '' || !empty($item['date']) || !empty($item['notes'])) {
-                $stages[] = [
-                    'stage'  => $stageName ?: 'T' . (count($stages) + 1),
-                    'date'   => !empty($item['date']) ? $item['date'] : null,
-                    'qty'    => $qty,
-                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
-                    'notes'  => trim($item['notes'] ?? ''),
-                ];
-            }
-        }
-
-        return !empty($stages) ? $stages : null;
-    }
 
     /**
      * Selesaikan kategori terpilih. Jika user mengisi kategori baru (new_category),

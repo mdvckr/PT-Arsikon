@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PrintTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
 class PrintTemplateController extends Controller
@@ -36,8 +37,8 @@ class PrintTemplateController extends Controller
         ]);
 
         $file    = $request->file('file');
-        $path    = $file->store('print-templates', 'public');
-        $imgInfo = @getimagesize(Storage::disk('public')->path($path));
+        $path    = $file->store('print-templates', 'local');
+        $imgInfo = @getimagesize(Storage::disk('local')->path($path));
 
         PrintTemplate::create([
             'name'             => $request->name,
@@ -91,14 +92,33 @@ class PrintTemplateController extends Controller
     public function destroy(PrintTemplate $printTemplate)
     {
         // Delete physical file
-        if (Storage::disk('public')->exists($printTemplate->file_path)) {
-            Storage::disk('public')->delete($printTemplate->file_path);
+        if (Storage::disk('local')->exists($printTemplate->file_path)) {
+            Storage::disk('local')->delete($printTemplate->file_path);
         }
 
         $name = $printTemplate->name;
         $printTemplate->delete();
 
         return back()->with('success', 'Template "' . $name . '" berhasil dihapus.');
+    }
+
+    /**
+     * Serve the template file via signed URL.
+     */
+    public function file(PrintTemplate $printTemplate)
+    {
+        $disk = Storage::disk('local');
+        if (!$disk->exists($printTemplate->file_path)) {
+            abort(404, 'File template tidak ditemukan.');
+        }
+
+        $file = $disk->get($printTemplate->file_path);
+        $mimeType = $disk->mimeType($printTemplate->file_path) ?: 'application/octet-stream';
+
+        return Response::make($file, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $printTemplate->file_name . '"',
+        ]);
     }
 
     /**

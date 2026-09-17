@@ -1,0 +1,197 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\ToolInventory;
+use App\Models\Tool;
+use App\Models\Warehouse;
+use Exception;
+use Illuminate\Support\Facades\DB;
+
+class ToolInventoryService
+{
+    /**
+     * Add stock for a tool in a specific warehouse.
+     */
+    public function addStock(Warehouse $warehouse, Tool $tool, int $quantity, ?string $notes = null): ToolInventory
+    {
+        if ($quantity <= 0) {
+            throw new Exception('Quantity must be positive.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $quantity, $notes) {
+            $inventory = ToolInventory::firstOrCreate(
+                [
+                    'warehouse_id' => $warehouse->id,
+                    'tool_id'      => $tool->id,
+                ],
+                [
+                    'stock_total'      => 0,
+                    'stock_available'  => 0,
+                    'stock_borrowed'   => 0,
+                    'stock_maintenance'=> 0,
+                    'stock_damaged'    => 0,
+                ]
+            );
+
+            $inventory->increment('stock_total', $quantity);
+            $inventory->increment('stock_available', $quantity);
+            $inventory->validateInvariants();
+
+            return $inventory->fresh();
+        });
+    }
+
+    /**
+     * Borrow (decrease available, increase borrowed) stock.
+     */
+    public function borrow(Warehouse $warehouse, Tool $tool, int $quantity): ToolInventory
+    {
+        if ($quantity <= 0) {
+            throw new Exception('Quantity must be positive.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $quantity) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($inventory->stock_available < $quantity) {
+                throw new Exception("Insufficient available stock for tool {$tool->name}.");
+            }
+
+            $inventory->decrement('stock_available', $quantity);
+            $inventory->increment('stock_borrowed', $quantity);
+            $inventory->validateInvariants();
+
+            return $inventory->fresh();
+        });
+    }
+
+    /**
+     * Return stock with condition handling.
+     */
+    public function returnStock(Warehouse $warehouse, Tool $tool, int $quantity, string $condition = 'good'): ToolInventory
+    {
+        if ($quantity <= 0) {
+            throw new Exception('Quantity must be positive.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $quantity, $condition) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $inventory->decrement('stock_borrowed', $quantity);
+            $field = match ($condition) {
+                'damaged'           => 'stock_damaged',
+                'under_maintenance' => 'stock_maintenance',
+                default             => 'stock_available',
+            };
+            $inventory->increment($field, $quantity);
+            $inventory->validateInvariants();
+
+            return $inventory->fresh();
+        });
+    }
+
+    /**
+     * Sync an entire stock snapshot for a tool in a specific warehouse.
+     * Accepts optional deltas for total, available, borrowed, maintenance, damaged.
+     */
+    public function syncStock(
+        Warehouse $warehouse,
+        Tool $tool,
+        int $total = null,
+        int $available = null,
+        int $borrowed = null,
+        int $maintenance = null,
+        int $damaged = null
+    ): ToolInventory {
+        return DB::transaction(function () use ($warehouse, $tool, $total, $available, $borrowed, $maintenance, $damaged) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->firstOrCreate([
+                    'warehouse_id' => $warehouse->id,
+                    'tool_id'      => $tool->id,
+                ], [
+                    'stock_total'      => 0,
+                    'stock_available'  => 0,
+                    'stock_borrowed'   => 0,
+                    'stock_maintenance'=> 0,
+                    'stock_damaged'    => 0,
+                ]);
+
+            $lockInv = ToolInventory::where('id', $inventory->id)->lockForUpdate()->first();
+
+            $lockInv->update([
+                'stock_total'      => $total ?? $lockInv->stock_total,
+                'stock_available'  => $available ?? $lockInv->stock_available,
+                'stock_borrowed'   => $borrowed ?? $lockInv->stock_borrowed,
+                'stock_maintenance'=> $maintenance ?? $lockInv->stock_maintenance,
+                'stock_damaged'    => $damaged ?? $lockInv->stock_damaged,
+            ]);
+
+            $lockInv->validateInvariants();
+
+            return $lockInv->fresh();
+        });
+    }
+
+    /**
+     * Move stock from available to maintenance (e.g., scheduled maintenance).
+     */
+    public function moveToMaintenance(Warehouse $warehouse, Tool $tool, int $quantity): ToolInventory
+    {
+        if ($quantity <= 0) {
+            throw new Exception('Quantity must be positive.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $quantity) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($inventory->stock_available < $quantity) {
+                throw new Exception("Insufficient available stock for tool {$tool->name}.");
+            }
+
+            $inventory->decrement('stock_available', $quantity);
+            $inventory->increment('stock_maintenance', $quantity);
+            $inventory->validateInvariants();
+
+            return $inventory->fresh();
+        });
+    }
+
+    /**
+     * Restore stock from maintenance back to available (e.g., maintenance completed).
+     */
+    public function restoreFromMaintenance(Warehouse $warehouse, Tool $tool, int $quantity): ToolInventory
+    {
+        if ($quantity <= 0) {
+            throw new Exception('Quantity must be positive.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $quantity) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($inventory->stock_maintenance < $quantity) {
+                throw new Exception("Insufficient maintenance stock for tool {$tool->name}.");
+            }
+
+            $inventory->decrement('stock_maintenance', $quantity);
+            $inventory->increment('stock_available', $quantity);
+            $inventory->validateInvariants();
+
+            return $inventory->fresh();
+        });
+    }
+}

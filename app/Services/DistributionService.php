@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class DistributionService
 {
-    public function __construct(protected StockService $stockService)
-    {
+    public function __construct(
+        protected StockService $stockService,
+        protected ToolInventoryService $toolInvService
+    ) {
     }
 
     /**
@@ -183,18 +185,22 @@ class DistributionService
                         if ((int) $tool->stock_available < (int) $item->qty_shipped) {
                             throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
                         }
-                        $ta->update([
+                         $ta->update([
                             'status'              => 'active',
                             'approved_by_user_id' => $userId,
                             'approved_at'         => now(),
                         ]);
-                        $tool->borrow((int) $item->qty_shipped);
+                        // Borrow via service
+                        $warehouse = $distribution->fromWarehouse;
+                        $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
                     } elseif ($item->tool) {
                         $tool = $item->tool;
                         if ((int) $tool->stock_available < (int) $item->qty_shipped) {
                             throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
                         }
-                        $tool->borrow((int) $item->qty_shipped);
+                        // Borrow via service
+                        $warehouse = $distribution->fromWarehouse;
+                        $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
                     }
                     continue;
                 }

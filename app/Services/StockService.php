@@ -56,6 +56,8 @@ class StockService
                 'quantity' => $newQty,
             ]);
 
+            $inventory->validateInvariants();
+
             // Log mutation
             StockMutation::create([
                 'warehouse_id' => $warehouse->id,
@@ -112,6 +114,8 @@ class StockService
             $inventory->update([
                 'quantity' => $newQty,
             ]);
+
+            $inventory->validateInvariants();
 
             StockMutation::create([
                 'warehouse_id' => $warehouse->id,

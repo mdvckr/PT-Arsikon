@@ -13,26 +13,35 @@ use Illuminate\Support\Facades\DB;
 
 class ToolManagementService
 {
-    /**
-     * Assign tool to Project Warehouse or Worker.
-     */
+    protected ToolInventoryService $toolInvService;
+
+    public function __construct(ToolInventoryService $toolInvService)
+    {
+        $this->toolInvService = $toolInvService;
+    }
     public function assignTool(
         Tool $tool,
         Warehouse $fromWarehouse,
         User $assignedBy,
+        int $quantity = 1,
         ?Warehouse $toWarehouse = null,
         ?User $assignedToUser = null,
         ?string $expectedReturnAt = null,
         ?string $notes = null
     ): ToolAssignment {
-        if ($tool->status !== 'available') {
-            throw new Exception("Alat dengan status '{$tool->status}' tidak dapat dipinjamkan / didistribusikan.");
-        }
+        return DB::transaction(function () use ($tool, $fromWarehouse, $assignedBy, $toWarehouse, $assignedToUser, $expectedReturnAt, $notes, $quantity) {
+            // Lock tool record for update
+            $tool = Tool::where('id', $tool->id)->lockForUpdate()->first();
 
-        return DB::transaction(function () use ($tool, $fromWarehouse, $assignedBy, $toWarehouse, $assignedToUser, $expectedReturnAt, $notes) {
+            // Ensure enough available stock (re-check inside transaction with lock)
+            if ($tool->stock_available < $quantity) {
+                throw new Exception("Stok tidak mencukupi untuk alat '{$tool->name}'. Tersedia: {$tool->stock_available}, diminta: {$quantity}.");
+            }
+
             $assignment = ToolAssignment::create([
                 'assignment_number' => ToolAssignment::generateAssignmentNumber(),
                 'tool_id' => $tool->id,
+                'quantity' => $quantity,
                 'from_warehouse_id' => $fromWarehouse->id,
                 'to_warehouse_id' => $toWarehouse?->id,
                 'assigned_to_user_id' => $assignedToUser?->id,
@@ -43,10 +52,14 @@ class ToolManagementService
                 'notes' => $notes,
             ]);
 
+            // Use ToolInventoryService to borrow stock
+            $this->toolInvService->borrow($fromWarehouse, $tool, $quantity);
+
+            // Update current warehouse reference on tool record (still keeps historical assignment)
             $tool->update([
-                'status' => 'assigned',
                 'current_warehouse_id' => $toWarehouse?->id ?? $tool->current_warehouse_id,
             ]);
+
 
             return $assignment->load('tool', 'fromWarehouse', 'toWarehouse', 'assignedTo', 'assignedBy');
         });
@@ -66,7 +79,9 @@ class ToolManagementService
         }
 
         return DB::transaction(function () use ($assignment, $inspectedBy, $condition, $notes) {
-            $tool = $assignment->tool;
+            // Lock tool record
+            $tool = Tool::where('id', $assignment->tool_id)->lockForUpdate()->first();
+            $qty = (int) ($assignment->quantity ?? 1);
 
             $actionTaken = match ($condition) {
                 'good' => 'returned_to_stock',
@@ -78,6 +93,7 @@ class ToolManagementService
             $inspection = ToolInspection::create([
                 'tool_assignment_id' => $assignment->id,
                 'tool_id' => $tool->id,
+                'quantity' => $qty,
                 'inspected_by_user_id' => $inspectedBy->id,
                 'condition' => $condition,
                 'action_taken' => $actionTaken,
@@ -90,17 +106,22 @@ class ToolManagementService
                 'status' => $condition === 'lost' ? 'lost' : 'returned',
             ]);
 
-            $newToolStatus = match ($condition) {
-                'good' => 'available',
-                'damaged' => 'maintenance',
-                'lost' => 'lost',
-                default => 'available',
+            $mapCondition = match ($condition) {
+                'damaged' => 'damaged',
+                'lost' => 'damaged',
+                default => 'good',
             };
+            if ($condition === 'damaged') {
+                $mapCondition = 'under_maintenance';
+            }
+            // Use ToolInventoryService to return stock with condition mapping
+            $this->toolInvService->returnStock($assignment->fromWarehouse, $tool, $qty, $mapCondition);
 
+            // Adjust status and location
             $tool->update([
-                'status' => $newToolStatus,
-                'current_warehouse_id' => $assignment->from_warehouse_id, // Returns to original warehouse
+                'current_warehouse_id' => $assignment->from_warehouse_id,
             ]);
+
 
             if ($condition === 'damaged') {
                 $this->createMaintenance(
@@ -108,7 +129,8 @@ class ToolManagementService
                     $inspectedBy,
                     'Perbaikan setelah pengembalian alat (kondisi rusak)',
                     0.0,
-                    $notes
+                    $notes,
+                    $qty
                 );
             }
 
@@ -124,12 +146,14 @@ class ToolManagementService
         User $reportedBy,
         string $maintenanceType = 'repair',
         float $cost = 0.0,
-        ?string $notes = null
+        ?string $notes = null,
+        int $quantity = 1
     ): Maintenance {
-        return DB::transaction(function () use ($tool, $reportedBy, $maintenanceType, $cost, $notes) {
+        return DB::transaction(function () use ($tool, $reportedBy, $maintenanceType, $cost, $notes, $quantity) {
             $maintenance = Maintenance::create([
                 'maintenance_number' => Maintenance::generateMaintenanceNumber(),
                 'tool_id' => $tool->id,
+                'quantity' => $quantity,
                 'reported_by_user_id' => $reportedBy->id,
                 'maintenance_type' => $maintenanceType,
                 'cost' => $cost,
@@ -138,9 +162,11 @@ class ToolManagementService
                 'notes' => $notes,
             ]);
 
-            $tool->update([
-                'status' => 'maintenance',
-            ]);
+            // Move stock from available to maintenance via ToolInventoryService
+            $warehouse = $tool->currentWarehouse;
+            if ($warehouse) {
+                $this->toolInvService->moveToMaintenance($warehouse, $tool, $quantity);
+            }
 
             return $maintenance->load('tool', 'reportedBy');
         });
@@ -166,9 +192,12 @@ class ToolManagementService
                 'notes' => $notes ?? $maintenance->notes,
             ]);
 
-            $maintenance->tool->update([
-                'status' => 'available',
-            ]);
+            $tool = $maintenance->tool;
+            $qty = (int) ($maintenance->quantity ?? 1);
+            $warehouse = $tool->currentWarehouse;
+
+            // Restore stock from maintenance back to available via ToolInventoryService
+            $this->toolInvService->restoreFromMaintenance($warehouse, $tool, $qty);
 
             return $maintenance->fresh('tool');
         });
