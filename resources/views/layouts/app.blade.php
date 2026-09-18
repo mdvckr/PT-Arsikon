@@ -1321,8 +1321,14 @@
             <!-- TRANSAKSI -->
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Transaksi</div>
+                @can('view goods receipts')
+                <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+                    <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
+                </a>
+                @endcan
                 <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                     <i class="fas fa-file-circle-plus"></i> Permintaan Material
+
                 </a>
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                     <i class="fas fa-right-left"></i> Surat Jalan

@@ -127,7 +127,16 @@ class MaterialRequestController extends Controller
     public function show(MaterialRequest $materialRequest)
     {
         $this->authorize('view material requests');
-        $materialRequest->load(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy', 'items.material.unit']);
+        $materialRequest->load([
+            'requestedBy', 
+            'fromWarehouse', 
+            'toWarehouse', 
+            'approvedBy', 
+            'items.material.unit', 
+            'items.material.category',
+            'materialUsages.issuedBy',
+            'materialUsages.warehouse'
+        ]);
 
         return view('material-requests.show', compact('materialRequest'));
     }

@@ -12,6 +12,7 @@ class GoodsReceiptItem extends Model
 
     protected $fillable = [
         'goods_receipt_id',
+        'purchase_order_item_id',
         'material_id',
         'qty_received',
         'unit_price',
@@ -20,7 +21,7 @@ class GoodsReceiptItem extends Model
 
     protected $casts = [
         'qty_received' => 'decimal:2',
-        'unit_price' => 'decimal:2',
+        'unit_price'   => 'decimal:2',
     ];
 
     public function goodsReceipt(): BelongsTo
@@ -31,5 +32,22 @@ class GoodsReceiptItem extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function purchaseOrderItem(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrderItem::class);
+    }
+
+    // Alias attribute agar DailyLogController yang pakai 'quantity_received' tetap bisa berjalan
+    public function getQuantityReceivedAttribute(): float
+    {
+        return (float) $this->qty_received;
+    }
+
+    // Alias untuk 'quantity' dipakai di show.blade.php
+    public function getQuantityAttribute(): float
+    {
+        return (float) $this->qty_received;
     }
 }

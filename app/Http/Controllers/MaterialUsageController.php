@@ -96,12 +96,78 @@ class MaterialUsageController extends Controller
             })->values()->toArray();
         }
 
-        $approvedMRs = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
-            ->with(['items.material.unit', 'fromWarehouse', 'toWarehouse'])
-            ->orderBy('id', 'desc')
-            ->get();
+        $mrQuery = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
+            ->with(['items.material.unit', 'items.material.category', 'fromWarehouse', 'toWarehouse', 'requestedBy', 'approvedBy']);
+
+        if ($selectedWarehouse) {
+            $mrQuery->where(function ($q) use ($selectedWarehouse) {
+                $q->where('from_warehouse_id', $selectedWarehouse->id)
+                  ->orWhere('to_warehouse_id', $selectedWarehouse->id);
+            });
+        }
+
+        $approvedMRs = $mrQuery->orderBy('id', 'desc')->get();
 
         return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'approvedMRs'));
+    }
+
+    public function getMRDetails(Request $request, \App\Models\MaterialRequest $materialRequest)
+    {
+        $warehouseId = $request->query('warehouse_id');
+
+        $materialRequest->load([
+            'items.material.unit',
+            'items.material.category',
+            'fromWarehouse',
+            'toWarehouse',
+            'requestedBy',
+            'approvedBy',
+        ]);
+
+        $stocks = [];
+        if ($warehouseId) {
+            $materialIds = $materialRequest->items->pluck('material_id')->toArray();
+            $stocks = Inventory::where('warehouse_id', $warehouseId)
+                ->whereIn('material_id', $materialIds)
+                ->pluck('quantity', 'material_id')
+                ->toArray();
+        }
+
+        $items = $materialRequest->items->map(function ($item) use ($stocks) {
+            $approved = (float) $item->qty_approved;
+            $fulfilled = (float) $item->qty_fulfilled;
+            $remaining = max(0, $approved - $fulfilled);
+            $stock = isset($stocks[$item->material_id]) ? (float) $stocks[$item->material_id] : 0.0;
+
+            return [
+                'id'            => $item->id,
+                'material_id'   => $item->material_id,
+                'name'          => $item->material?->name ?? '-',
+                'code'          => $item->material?->code ?? '-',
+                'category'      => $item->material?->category?->name ?? 'Umum',
+                'unit'          => $item->material?->unit?->abbreviation ?? 'unit',
+                'qty_requested' => (float) $item->qty_requested,
+                'qty_approved'  => $approved,
+                'qty_fulfilled' => $fulfilled,
+                'qty_remaining' => $remaining,
+                'stock'         => $stock,
+                'max_allowed'   => min($remaining, $stock),
+                'notes'         => $item->notes,
+            ];
+        });
+
+        return response()->json([
+            'id'             => $materialRequest->id,
+            'request_number' => $materialRequest->request_number,
+            'status'         => $materialRequest->status,
+            'requested_by'   => $materialRequest->requestedBy?->name ?? '-',
+            'approved_by'    => $materialRequest->approvedBy?->name ?? '-',
+            'from_warehouse' => $materialRequest->fromWarehouse?->name ?? '-',
+            'to_warehouse'   => $materialRequest->toWarehouse?->name ?? '-',
+            'created_at'     => $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y') : '-',
+            'notes'          => $materialRequest->notes,
+            'items'          => $items,
+        ]);
     }
 
     public function store(Request $request)
@@ -142,7 +208,7 @@ class MaterialUsageController extends Controller
     {
         $this->authorize('view material usages');
 
-        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'items.material.unit']);
+        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit', 'cancelledBy']);
 
         return view('material-usages.show', compact('materialUsage'));
     }
@@ -151,7 +217,7 @@ class MaterialUsageController extends Controller
     {
         $this->authorize('view material usages');
 
-        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'items.material.unit']);
+        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit']);
 
         return view('material-usages.print', compact('materialUsage'));
     }

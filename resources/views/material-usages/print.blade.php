@@ -246,6 +246,17 @@
                     <span class="meta-label">Petugas Gudang</span>
                     <span class="meta-val">: {{ $materialUsage->issuedBy?->name ?? '-' }}</span>
                 </div>
+                @if($materialUsage->materialRequest)
+                <div class="meta-row">
+                    <span class="meta-label">Ref. No. Permintaan (MR)</span>
+                    <span class="meta-val">: <strong>#{{ $materialUsage->materialRequest->request_number }}</strong> (Disetujui Site Manager)</span>
+                </div>
+                @else
+                <div class="meta-row">
+                    <span class="meta-label">Jenis Pengeluaran</span>
+                    <span class="meta-val">: Input Bebas / Insidentil (Tanpa MR)</span>
+                </div>
+                @endif
             </div>
         </div>
 

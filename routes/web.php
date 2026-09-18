@@ -72,6 +72,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/units/{unit}', [CategoryController::class, 'destroyUnit'])->name('units.destroy');
 
 
+    // Goods Receipts
+    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
+    Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
+
     // Material Requests
     Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('/material-requests/{materialRequest}/approve', [MaterialRequestController::class, 'approve'])->name('material-requests.approve');
@@ -84,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/distributions/{distribution}/receive', [DistributionController::class, 'receive'])->name('distributions.receive');
 
     // Material Usages (Pemakaian Material Proyek / Lapangan)
+    Route::get('/material-requests/{materialRequest}/details', [MaterialUsageController::class, 'getMRDetails'])->name('material-requests.details');
     Route::resource('material-usages', MaterialUsageController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('/material-usages/{materialUsage}/print', [MaterialUsageController::class, 'print'])->name('material-usages.print');
     Route::post('/material-usages/{materialUsage}/cancel', [MaterialUsageController::class, 'cancel'])->name('material-usages.cancel');

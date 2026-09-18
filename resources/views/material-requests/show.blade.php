@@ -14,9 +14,17 @@
             <div class="card-header">
                 <i class="fas fa-list text-primary"></i>
                 <span class="card-title">Item Permintaan</span>
-                @if($materialRequest->status === 'submitted')
-                    @can('approve material requests')
-                    <div class="flex gap-2">
+                <div class="flex gap-2 items-center">
+                    @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']))
+                        @can('create material usages')
+                        <a href="{{ route('material-usages.create', ['warehouse_id' => $materialRequest->from_warehouse_id]) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-boxes-packing me-1"></i> Catat Pengeluaran Material
+                        </a>
+                        @endcan
+                    @endif
+
+                    @if($materialRequest->status === 'submitted')
+                        @can('approve material requests')
                         <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}">
                             @csrf
                             <button type="submit" class="btn btn-success btn-sm"
@@ -27,30 +35,60 @@
                         <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('rejectModal').classList.add('show')">
                             <i class="fas fa-xmark"></i> Tolak
                         </button>
-                    </div>
-                    @endcan
-                @endif
+                        @endcan
+                    @endif
+                </div>
             </div>
             <div class="table-wrap">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Material</th>
-                            <th>Qty Diminta</th>
-                            <th>Satuan</th>
+                            <th style="text-align:right;">Qty Diminta</th>
+                            @if(!in_array($materialRequest->status, ['draft', 'submitted']))
+                            <th style="text-align:right;">Qty Disetujui</th>
+                            <th style="text-align:right;">Sudah Keluar</th>
+                            <th style="text-align:right;">Sisa Kuota</th>
+                            @endif
+                            <th style="text-align:center;">Satuan</th>
+                            <th style="text-align:center;">Status Item</th>
                             <th>Catatan</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($materialRequest->items as $item)
+                        @php
+                            $approved = (float) $item->qty_approved;
+                            $fulfilled = (float) $item->qty_fulfilled;
+                            $remaining = max(0, $approved - $fulfilled);
+                            $unit = $item->material?->unit?->abbreviation ?? 'unit';
+                        @endphp
                         <tr>
                             <td>
                                 <div class="fw-600">{{ $item->material?->name }}</div>
-                                <div class="text-muted" style="font-size:11.5px;">{{ $item->material?->code }}</div>
+                                <div class="text-muted" style="font-size:11.5px;">Kode: {{ $item->material?->code ?? '-' }}</div>
                             </td>
-                            <td class="fw-600">{{ number_format($item->qty_requested, 0, ',', '.') }}</td>
-                            <td>{{ $item->material?->unit?->abbreviation }}</td>
-                            <td class="text-muted">{{ $item->notes ?? '-' }}</td>
+                            <td class="fw-600" style="text-align:right;">{{ format_quantity($item->qty_requested) }}</td>
+                            @if(!in_array($materialRequest->status, ['draft', 'submitted']))
+                            <td class="fw-700 text-primary" style="text-align:right;">{{ format_quantity($approved) }}</td>
+                            <td class="fw-600 text-muted" style="text-align:right;">{{ format_quantity($fulfilled) }}</td>
+                            <td class="fw-700 {{ $remaining > 0 ? 'text-success' : 'text-muted' }}" style="text-align:right;">
+                                {{ format_quantity($remaining) }}
+                            </td>
+                            @endif
+                            <td style="text-align:center;">{{ $unit }}</td>
+                            <td style="text-align:center;">
+                                @if(in_array($materialRequest->status, ['draft', 'submitted']))
+                                    <span class="badge badge-warning" style="font-size:11px;">Menunggu Persetujuan</span>
+                                @elseif($fulfilled >= $approved && $approved > 0)
+                                    <span class="badge badge-success" style="font-size:11px;"><i class="fas fa-check-circle"></i> Terpenuhi</span>
+                                @elseif($fulfilled > 0)
+                                    <span class="badge badge-info" style="font-size:11px;"><i class="fas fa-clock"></i> Sebagian</span>
+                                @else
+                                    <span class="badge badge-secondary" style="font-size:11px;">Belum Keluar</span>
+                                @endif
+                            </td>
+                            <td class="text-muted" style="font-size:12.5px;">{{ $item->notes ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -66,6 +104,63 @@
             </div>
             @endif
         </div>
+
+        {{-- Riwayat Pengeluaran Material (Material Usages) --}}
+        @if($materialRequest->materialUsages->isNotEmpty())
+        <div class="card mb-4" style="grid-column: 1 / -1;">
+            <div class="card-header flex justify-between items-center" style="background:#f8fafc;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-clipboard-check text-success"></i>
+                    <span class="card-title fw-700">Riwayat Bukti Pengeluaran Lapangan (Material Usages)</span>
+                </div>
+                <span class="badge badge-purple">{{ $materialRequest->materialUsages->count() }} Transaksi</span>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>No. Bukti Pengeluaran</th>
+                            <th>Tanggal</th>
+                            <th>Gudang Sumber</th>
+                            <th>Penerima (Mandor/Tukang)</th>
+                            <th>Bagian Pekerjaan / Zona</th>
+                            <th>Petugas Gudang</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($materialRequest->materialUsages as $usage)
+                        <tr>
+                            <td>
+                                <a href="{{ route('material-usages.show', $usage) }}" class="fw-700 text-primary">
+                                    {{ $usage->usage_number }}
+                                </a>
+                            </td>
+                            <td>{{ \Carbon\Carbon::parse($usage->usage_date)->format('d/m/Y') }}</td>
+                            <td>{{ $usage->warehouse?->name ?? '-' }}</td>
+                            <td><strong>{{ $usage->recipient_name }}</strong></td>
+                            <td>{{ $usage->job_section ?? '-' }}</td>
+                            <td>{{ $usage->issuedBy?->name ?? '-' }}</td>
+                            <td style="text-align:center;">
+                                @if($usage->status === 'completed')
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Selesai</span>
+                                @else
+                                    <span class="badge badge-danger"><i class="fas fa-ban"></i> Dibatalkan</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                <a href="{{ route('material-usages.show', $usage) }}" class="btn btn-sm btn-light border">
+                                    <i class="fas fa-eye"></i> Rincian
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
 
         {{-- Info Card --}}
         <div class="card">

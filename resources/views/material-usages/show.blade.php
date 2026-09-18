@@ -63,6 +63,22 @@
             </div>
             @endif
 
+            @if($materialUsage->materialRequest)
+            <div class="alert alert-info mb-3" style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border:1px solid #bbf7d0;">
+                <i class="fas fa-file-circle-check" style="font-size:20px;color:#16a34a;"></i>
+                <div>
+                    <strong style="color:#15803d;">Pengeluaran Material Terkontrol (Sesuai Permintaan)</strong>
+                    <div style="font-size:12.5px;color:#166534;margin-top:2px;">
+                        Pengeluaran ini ditarik dari Permintaan Material 
+                        <a href="{{ route('material-requests.show', $materialUsage->materialRequest) }}" class="fw-700 text-primary" style="text-decoration:underline;">
+                            #{{ $materialUsage->materialRequest->request_number }}
+                        </a> 
+                        yang diajukan oleh <strong>{{ $materialUsage->materialRequest->requestedBy?->name ?? 'User' }}</strong> dan telah disetujui Site Manager.
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="card" style="{{ $materialUsage->status === 'cancelled' ? 'opacity:0.65;' : '' }}">
                 <div class="card-header flex justify-between items-center" style="background:#f8fafc;">
                     <div class="flex items-center gap-2">
@@ -125,9 +141,14 @@
                             ? '<span class="badge badge-danger"><i class="fas fa-ban"></i> Dibatalkan</span>'
                             : '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Selesai (Tercatat)</span>';
 
+                        $mrVal = $materialUsage->materialRequest
+                            ? '<a href="' . route('material-requests.show', $materialUsage->materialRequest) . '" class="fw-700 text-primary" style="text-decoration:underline;">#' . $materialUsage->materialRequest->request_number . '</a> <span class="badge badge-success" style="font-size:10px;margin-left:4px;">Terkontrol MR</span>'
+                            : '<span class="badge badge-warning" style="font-size:10px;">Input Manual</span>';
+
                         $infoRows = [
                             ['No. Bukti', '<span class="fw-700 text-primary">' . $materialUsage->usage_number . '</span>'],
                             ['Status', $statusBadge],
+                            ['Surat Permintaan (MR)', $mrVal],
                             ['Tanggal Pengeluaran', \Carbon\Carbon::parse($materialUsage->usage_date)->format('d/m/Y')],
                             ['Gudang Sumber', $materialUsage->warehouse?->name ?? '-'],
                             ['Proyek', $materialUsage->project?->name ?? ($materialUsage->warehouse?->is_central ? 'Gudang Pusat' : '-')],
@@ -140,7 +161,7 @@
 
                     @foreach($infoRows as [$label, $val])
                     <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">
-                        <span class="text-muted fw-500" style="width:130px;flex-shrink:0;">{{ $label }}</span>
+                        <span class="text-muted fw-500" style="width:135px;flex-shrink:0;">{{ $label }}</span>
                         <span class="text-end">{!! $val !!}</span>
                     </div>
                     @endforeach
