@@ -23,19 +23,33 @@ class ToolManagementService
         Tool $tool,
         Warehouse $fromWarehouse,
         User $assignedBy,
-        int $quantity = 1,
-        ?Warehouse $toWarehouse = null,
-        ?User $assignedToUser = null,
-        ?string $expectedReturnAt = null,
-        ?string $notes = null
+        int|Warehouse $quantityOrToWarehouse = 1,
+        mixed $arg5 = null,
+        mixed $arg6 = null,
+        mixed $arg7 = null,
+        mixed $arg8 = null
     ): ToolAssignment {
+        if ($quantityOrToWarehouse instanceof Warehouse) {
+            $quantity = 1;
+            $toWarehouse = $quantityOrToWarehouse;
+            $assignedToUser = $arg5 instanceof User ? $arg5 : null;
+            $expectedReturnAt = is_string($arg6) ? $arg6 : null;
+            $notes = is_string($arg7) ? $arg7 : null;
+        } else {
+            $quantity = (int) $quantityOrToWarehouse;
+            $toWarehouse = $arg5 instanceof Warehouse ? $arg5 : null;
+            $assignedToUser = $arg6 instanceof User ? $arg6 : null;
+            $expectedReturnAt = is_string($arg7) ? $arg7 : null;
+            $notes = is_string($arg8) ? $arg8 : null;
+        }
+
         return DB::transaction(function () use ($tool, $fromWarehouse, $assignedBy, $toWarehouse, $assignedToUser, $expectedReturnAt, $notes, $quantity) {
             // Lock tool record for update
             $tool = Tool::where('id', $tool->id)->lockForUpdate()->first();
 
             // Ensure enough available stock (re-check inside transaction with lock)
             if ($tool->stock_available < $quantity) {
-                throw new Exception("Stok tidak mencukupi untuk alat '{$tool->name}'. Tersedia: {$tool->stock_available}, diminta: {$quantity}.");
+                throw new Exception("Alat '{$tool->name}' sedang tidak dapat dipinjamkan / stok tidak mencukupi (tersedia: {$tool->stock_available}, diminta: {$quantity}).");
             }
 
             $assignment = ToolAssignment::create([
@@ -52,14 +66,15 @@ class ToolManagementService
                 'notes' => $notes,
             ]);
 
+            // Update current warehouse reference on tool record
+            if ($toWarehouse) {
+                $tool->update([
+                    'current_warehouse_id' => $toWarehouse->id,
+                ]);
+            }
+
             // Use ToolInventoryService to borrow stock
             $this->toolInvService->borrow($fromWarehouse, $tool, $quantity);
-
-            // Update current warehouse reference on tool record (still keeps historical assignment)
-            $tool->update([
-                'current_warehouse_id' => $toWarehouse?->id ?? $tool->current_warehouse_id,
-            ]);
-
 
             return $assignment->load('tool', 'fromWarehouse', 'toWarehouse', 'assignedTo', 'assignedBy');
         });
@@ -114,14 +129,14 @@ class ToolManagementService
             if ($condition === 'damaged') {
                 $mapCondition = 'under_maintenance';
             }
-            // Use ToolInventoryService to return stock with condition mapping
-            $this->toolInvService->returnStock($assignment->fromWarehouse, $tool, $qty, $mapCondition);
 
             // Adjust status and location
             $tool->update([
                 'current_warehouse_id' => $assignment->from_warehouse_id,
             ]);
 
+            // Use ToolInventoryService to return stock with condition mapping
+            $this->toolInvService->returnStock($assignment->fromWarehouse, $tool, $qty, $mapCondition);
 
             if ($condition === 'damaged') {
                 $this->createMaintenance(
@@ -130,7 +145,8 @@ class ToolManagementService
                     'Perbaikan setelah pengembalian alat (kondisi rusak)',
                     0.0,
                     $notes,
-                    $qty
+                    $qty,
+                    false // Stock already moved to maintenance via returnStock
                 );
             }
 
@@ -147,9 +163,10 @@ class ToolManagementService
         string $maintenanceType = 'repair',
         float $cost = 0.0,
         ?string $notes = null,
-        int $quantity = 1
+        int $quantity = 1,
+        bool $moveStock = true
     ): Maintenance {
-        return DB::transaction(function () use ($tool, $reportedBy, $maintenanceType, $cost, $notes, $quantity) {
+        return DB::transaction(function () use ($tool, $reportedBy, $maintenanceType, $cost, $notes, $quantity, $moveStock) {
             $maintenance = Maintenance::create([
                 'maintenance_number' => Maintenance::generateMaintenanceNumber(),
                 'tool_id' => $tool->id,
@@ -162,10 +179,12 @@ class ToolManagementService
                 'notes' => $notes,
             ]);
 
-            // Move stock from available to maintenance via ToolInventoryService
-            $warehouse = $tool->currentWarehouse;
-            if ($warehouse) {
-                $this->toolInvService->moveToMaintenance($warehouse, $tool, $quantity);
+            // Move stock from available to maintenance via ToolInventoryService if required
+            if ($moveStock) {
+                $warehouse = $tool->currentWarehouse;
+                if ($warehouse) {
+                    $this->toolInvService->moveToMaintenance($warehouse, $tool, $quantity);
+                }
             }
 
             return $maintenance->load('tool', 'reportedBy');

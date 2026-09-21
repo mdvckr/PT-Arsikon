@@ -40,6 +40,11 @@ class StockOpnameTest extends TestCase
         $this->supplier = Supplier::firstOrFail();
         $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
 
+        // Reset inventory for test isolation
+        \App\Models\Inventory::where('warehouse_id', $this->centralWarehouse->id)
+            ->where('material_id', $this->semenMaterial->id)
+            ->delete();
+
         // Populate Central Warehouse with 100 bags of Semen
         $this->goodsReceiptService->processGoodsReceipt(
             $this->supplier,
@@ -81,7 +86,7 @@ class StockOpnameTest extends TestCase
         // Stock in database MUST NOT change before approval!
         $stockBeforeApprove = Inventory::where('warehouse_id', $this->centralWarehouse->id)
             ->where('material_id', $this->semenMaterial->id)
-            ->value('qty_on_hand');
+            ->value('quantity');
         $this->assertEquals(100, $stockBeforeApprove);
 
         // 3. Owner/Admin Approves Opname
@@ -95,7 +100,7 @@ class StockOpnameTest extends TestCase
         // Stock in database MUST be adjusted to 95 after approval
         $stockAfterApprove = Inventory::where('warehouse_id', $this->centralWarehouse->id)
             ->where('material_id', $this->semenMaterial->id)
-            ->value('qty_on_hand');
+            ->value('quantity');
         $this->assertEquals(95, $stockAfterApprove);
 
         // Check Stock Mutation recorded

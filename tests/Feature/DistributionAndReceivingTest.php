@@ -227,4 +227,101 @@ class DistributionAndReceivingTest extends TestCase
 
         $response->assertOk();
     }
+
+    public function test_central_warehouse_admin_can_ship_distribution_via_http(): void
+    {
+        $distribution = $this->distributionService->create([
+            'from_warehouse_id'    => $this->centralWarehouse->id,
+            'to_warehouse_id'      => $this->projectWarehouse->id,
+            'delivery_date'        => now()->toDateString(),
+            'driver_name'          => 'Supir Pengiriman Pusat',
+            'vehicle_number'       => 'B 9999 ACK',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 50],
+            ],
+        ], $this->adminUser->id);
+
+        $this->assertEquals('draft', $distribution->status);
+
+        // Admin Pusat ships the distribution via HTTP POST
+        $response = $this->actingAs($this->adminUser)
+            ->post(route('distributions.ship', $distribution));
+
+        $response->assertRedirect(route('distributions.show', $distribution));
+        $response->assertSessionHas('success');
+
+        $distribution->refresh();
+        $this->assertEquals('in_transit', $distribution->status);
+        $this->assertEquals($this->adminUser->id, $distribution->shipped_by_user_id);
+    }
+
+    public function test_can_create_and_receive_distribution_with_custom_item(): void
+    {
+        $postData = [
+            'from_warehouse_id' => $this->centralWarehouse->id,
+            'to_warehouse_id'   => $this->projectWarehouse->id,
+            'delivery_date'     => now()->toDateString(),
+            'driver_name'       => 'Pak Joko Driver',
+            'vehicle_number'    => 'B 5555 XYZ',
+            'notes'             => 'Pengiriman item custom non-master',
+            'items'             => [
+                [
+                    'type'             => 'custom',
+                    'custom_item_name' => 'Kabel Roll Ekstra 50m',
+                    'custom_item_unit' => 'roll',
+                    'quantity'         => 2,
+                ],
+            ],
+        ];
+
+        // 1. Create distribution with custom item via HTTP POST
+        $response = $this->actingAs($this->adminUser)->post(route('distributions.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        $distribution = \App\Models\Distribution::where('vehicle_number', 'B 5555 XYZ')->first();
+        $this->assertNotNull($distribution);
+        $response->assertRedirect(route('distributions.show', $distribution));
+
+        $item = $distribution->items()->first();
+        $this->assertNotNull($item);
+        $this->assertTrue($item->isCustom());
+        $this->assertEquals('Kabel Roll Ekstra 50m', $item->custom_item_name);
+        $this->assertEquals('roll', $item->custom_item_unit);
+        $this->assertEquals('Kabel Roll Ekstra 50m', $item->name());
+        $this->assertEquals('roll', $item->unitAbbr());
+        $this->assertEquals(2.0, (float) $item->qty_shipped);
+
+        // 2. Ship distribution
+        $shipResponse = $this->actingAs($this->adminUser)->post(route('distributions.ship', $distribution));
+        $shipResponse->assertSessionHasNoErrors();
+        $distribution->refresh();
+        $this->assertEquals('in_transit', $distribution->status);
+
+        // 3. Check show & print pages render the custom item
+        $showRes = $this->actingAs($this->adminUser)->get(route('distributions.show', $distribution));
+        $showRes->assertOk();
+        $showRes->assertSee('Kabel Roll Ekstra 50m');
+
+        $printRes = $this->actingAs($this->adminUser)->get(route('distributions.print', $distribution));
+        $printRes->assertOk();
+        $printRes->assertSee('Kabel Roll Ekstra 50m');
+
+        // 4. Project warehouse receives custom item
+        $receiveData = [
+            'items' => [
+                [
+                    'distribution_item_id' => $item->id,
+                    'received_quantity'    => 2,
+                    'qty_damaged_or_lost'  => 0,
+                ],
+            ],
+        ];
+        $receiveRes = $this->actingAs($this->projectUser)->post(route('distributions.receive', $distribution), $receiveData);
+        $receiveRes->assertSessionHasNoErrors();
+
+        $item->refresh();
+        $this->assertEquals(2.0, (float) $item->qty_received);
+        $distribution->refresh();
+        $this->assertEquals('completed', $distribution->status);
+    }
 }

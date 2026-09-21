@@ -15,6 +15,8 @@ class DistributionItem extends Model
         'material_id',
         'tool_id',
         'tool_assignment_id',
+        'custom_item_name',
+        'custom_item_unit',
         'qty_shipped',
         'qty_received',
         'qty_damaged_or_lost',
@@ -22,8 +24,8 @@ class DistributionItem extends Model
     ];
 
     protected $casts = [
-        'qty_shipped' => 'decimal:2',
-        'qty_received' => 'decimal:2',
+        'qty_shipped'         => 'decimal:2',
+        'qty_received'        => 'decimal:2',
         'qty_damaged_or_lost' => 'decimal:2',
     ];
 
@@ -52,8 +54,20 @@ class DistributionItem extends Model
         return $this->tool_id !== null;
     }
 
+    /**
+     * Indicates whether this is a custom (non-inventory) item —
+     * i.e. neither a system material nor a registered tool.
+     */
+    public function isCustom(): bool
+    {
+        return $this->material_id === null && $this->tool_id === null;
+    }
+
     public function name(): string
     {
+        if ($this->isCustom()) {
+            return $this->custom_item_name ?? '(Item Custom)';
+        }
         if ($this->isTool()) {
             return $this->tool?->name ?? 'Alat';
         }
@@ -62,6 +76,9 @@ class DistributionItem extends Model
 
     public function detail(): string
     {
+        if ($this->isCustom()) {
+            return '-';
+        }
         if ($this->isTool()) {
             return $this->tool?->code ?? '';
         }
@@ -70,6 +87,9 @@ class DistributionItem extends Model
 
     public function unitAbbr(): string
     {
+        if ($this->isCustom()) {
+            return $this->custom_item_unit ?? 'unit';
+        }
         if ($this->isTool()) {
             return 'unit';
         }

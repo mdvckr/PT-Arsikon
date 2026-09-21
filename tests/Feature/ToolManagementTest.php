@@ -26,12 +26,34 @@ class ToolManagementTest extends TestCase
         parent::setUp();
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
 
-        $this->toolService = new ToolManagementService();
+        $this->toolService = app(ToolManagementService::class);
         $this->centralWarehouse = Warehouse::where('is_central', true)->firstOrFail();
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->projectUser = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
         $this->gensetTool = Tool::where('code', 'TOOL-GEN-01')->firstOrFail();
+
+        // Reset all inventories and assignments for this tool and isolate 1 unit at central warehouse
+        \App\Models\ToolInventory::where('tool_id', $this->gensetTool->id)->delete();
+        \App\Models\ToolAssignment::where('tool_id', $this->gensetTool->id)->delete();
+
+        $this->gensetTool->update([
+            'stock_total' => 1,
+            'stock_available' => 1,
+            'stock_borrowed' => 0,
+            'stock_maintenance' => 0,
+            'stock_damaged' => 0,
+        ]);
+
+        \App\Models\ToolInventory::create([
+            'warehouse_id' => $this->centralWarehouse->id,
+            'tool_id' => $this->gensetTool->id,
+            'stock_total' => 1,
+            'stock_available' => 1,
+            'stock_borrowed' => 0,
+            'stock_maintenance' => 0,
+            'stock_damaged' => 0,
+        ]);
     }
 
     public function test_can_assign_available_tool_to_project(): void

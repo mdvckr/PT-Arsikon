@@ -42,17 +42,21 @@ class ReportService
         }
 
         return $query->get()->map(function ($inventory) {
-            $minStock = (float) ($inventory->min_stock ?? 0);
+            $minStock = (float) ($inventory->min_stock > 0
+                ? $inventory->min_stock
+                : ($inventory->warehouse?->is_central ? ($inventory->material?->min_stock_central ?? 0) : 0));
             $isLowStock = $inventory->quantity < $minStock;
 
             return [
                 'warehouse_name'      => $inventory->warehouse->name,
                 'material_name'       => $inventory->material->name,
-                'material_code'       => $inventory->material->code ?? '',
+                'sku'                 => $inventory->material->sku ?? '',
+                'material_code'       => $inventory->material->sku ?? '',
                 'category_name'       => $inventory->material->category?->name ?? '-',
                 'unit_abbr'           => $inventory->material->unit?->abbreviation ?? '',
                 'unit_price'          => (float) ($inventory->material->unit_price ?? 0),
                 'quantity'            => (float) $inventory->quantity,
+                'qty_on_hand'         => (float) $inventory->quantity,
                 'min_stock'           => $minStock,
                 'qty_allocated'       => (float) $inventory->qty_allocated,
                 'qty_in_transit'      => (float) $inventory->qty_in_transit,

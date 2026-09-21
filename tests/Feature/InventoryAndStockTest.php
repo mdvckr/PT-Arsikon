@@ -27,6 +27,11 @@ class InventoryAndStockTest extends TestCase
         $this->stockService = new StockService();
         $this->centralWarehouse = Warehouse::where('is_central', true)->firstOrFail();
         $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+
+        // Reset inventory for test isolation
+        Inventory::where('warehouse_id', $this->centralWarehouse->id)
+            ->where('material_id', $this->semenMaterial->id)
+            ->delete();
     }
 
     public function test_can_add_stock_and_record_mutation(): void

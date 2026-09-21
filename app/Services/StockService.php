@@ -36,11 +36,15 @@ class StockService
                 ->first();
 
             if (!$inventory) {
+                $defaultMinStock = $warehouse->is_central
+                    ? ($material->min_stock_central ?? 0)
+                    : ($material->min_stock ?? 0);
+
                 $inventory = Inventory::create([
                     'warehouse_id' => $warehouse->id,
                     'material_id' => $material->id,
                     'quantity' => 0,
-                    'min_stock' => 0,
+                    'min_stock' => $defaultMinStock,
                     'qty_allocated' => 0,
                     'qty_in_transit' => 0,
                 ]);

@@ -139,11 +139,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view reports',
             'view tool assignments',
             'create tool assignments',
-            'view material requests',
-            'create material requests',
-            'view distributions',
-            'create distributions',
-            'distributions.create',
+            'view material usages',
+            'create material usages',
         ];
         $karyawanRole->syncPermissions($karyawanPermissions);
 
@@ -256,6 +253,16 @@ class RoleAndPermissionSeeder extends Seeder
         );
         $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
         $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
+
+        $userProyek = User::firstOrCreate(
+            ['email' => 'user.proyek@arsikon.co.id'],
+            [
+                'name' => 'User Proyek FAKULTAS Teknik UGM',
+                'password' => Hash::make('password123'),
+            ]
+        );
+        $userProyek->syncRoles([$userRole, $adminProyekRole]);
+        $userProyek->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
 
         // 5. Admin PO (Pengadaan)

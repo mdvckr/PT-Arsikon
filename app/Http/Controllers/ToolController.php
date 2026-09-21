@@ -108,6 +108,7 @@ class ToolController extends Controller
         ]);
 
         $category = $this->resolveCategory($request);
+        $incomingStages = $this->parseIncomingStages($request);
 
         $stockTotal = isset($validated['stock_total']) ? (int) $validated['stock_total'] : 0;
 
@@ -146,6 +147,7 @@ class ToolController extends Controller
 
             if ($warehouse) {
                 $this->toolInvService->addStock($warehouse, $tool, $stockTotal);
+                $tool->refresh();
             }
         }
 
@@ -168,6 +170,7 @@ class ToolController extends Controller
         }
 
         $this->toolInvService->addStock($warehouse, $tool, $qty);
+        $tool->refresh();
 
         return redirect()->route('tools.edit', $tool)
             ->with('success', "Stok '{$tool->name}' berhasil ditambah {$qty} unit. Total stok sekarang: {$tool->stock_total} unit.");
@@ -220,6 +223,7 @@ class ToolController extends Controller
         ]);
 
         $category = $this->resolveCategory($request);
+        $incomingStages = $this->parseIncomingStages($request);
 
         // Pertahankan kelompok alat (type) jika tidak sengaja terkirim kosong saat edit
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
@@ -245,11 +249,6 @@ class ToolController extends Controller
             'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
             'notes'                => $validated['notes'] ?? null,
             'incoming_stages'      => $incomingStages,
-            'stock_total'          => 0,
-            'stock_available'      => 0,
-            'stock_borrowed'       => 0,
-            'stock_maintenance'    => 0,
-            'stock_damaged'        => 0,
         ]);
 
         // Sync aggregate stock snapshot to the active warehouse inventory
@@ -323,5 +322,32 @@ class ToolController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Parse incoming stages payload from request.
+     */
+    protected function parseIncomingStages(Request $request): ?array
+    {
+        if (!$request->has('incoming_stages') || !is_array($request->incoming_stages)) {
+            return null;
+        }
+
+        $stages = [];
+        foreach ($request->incoming_stages as $item) {
+            $qty = isset($item['qty']) && $item['qty'] !== '' ? (float) $item['qty'] : 0;
+            $stageName = trim($item['stage'] ?? '');
+            if ($qty > 0 || $stageName !== '' || !empty($item['date']) || !empty($item['notes'])) {
+                $stages[] = [
+                    'stage'  => $stageName ?: 'T' . (count($stages) + 1),
+                    'date'   => !empty($item['date']) ? $item['date'] : null,
+                    'qty'    => $qty,
+                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
+                    'notes'  => trim($item['notes'] ?? ''),
+                ];
+            }
+        }
+
+        return !empty($stages) ? $stages : null;
     }
 }

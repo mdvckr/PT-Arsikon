@@ -104,17 +104,22 @@
                                 <tr>
                                     <td style="text-align:center;">{{ $index + 1 }}</td>
                                     <td>
-                                        <div class="fw-600" style="color:#0f172a;">{{ $item->material?->name }}</div>
-                                        <div class="text-muted" style="font-size:11px;">Kode: {{ $item->material?->code ?? '-' }}</div>
+                                        @if($item->isCustom())
+                                            <div class="fw-600" style="color:#0f172a;">{{ $item->displayName() }} <span class="badge badge-info" style="font-size:10px;margin-left:4px;">Item Custom</span></div>
+                                            <div class="text-muted" style="font-size:11px;">Input Bebas / Non-Master</div>
+                                        @else
+                                            <div class="fw-600" style="color:#0f172a;">{{ $item->displayName() }}</div>
+                                            <div class="text-muted" style="font-size:11px;">Kode: {{ $item->material?->code ?? '-' }}</div>
+                                        @endif
                                     </td>
                                     <td>
-                                        <span class="badge badge-gray">{{ $item->material?->category?->name ?? 'Umum' }}</span>
+                                        <span class="badge badge-gray">{{ $item->isCustom() ? 'Custom' : ($item->material?->category?->name ?? 'Umum') }}</span>
                                     </td>
                                     <td style="text-align:right;">
                                         <span class="fw-700" style="font-size:14px;color:#0f172a;">
                                             {{ format_quantity($item->quantity) }}
                                         </span>
-                                        <span class="text-muted" style="font-size:12px;">{{ $item->material?->unit?->abbreviation ?? '' }}</span>
+                                        <span class="text-muted" style="font-size:12px;">{{ $item->displayUnit() }}</span>
                                     </td>
                                     <td>
                                         <span class="text-muted" style="font-size:12.5px;">{{ $item->notes ?? '-' }}</span>

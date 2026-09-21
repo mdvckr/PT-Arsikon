@@ -79,4 +79,18 @@ class User extends Authenticatable
 
         return $this->warehouses()->where('warehouses.id', $warehouse->id)->exists();
     }
+
+    /**
+     * Mengembalikan array ID warehouse yang boleh diakses user.
+     * Owner/Admin/Admin Gudang Pusat/Admin PO mendapat akses ke semua warehouse.
+     * Role lain (Admin Gudang Proyek, Karyawan, dll) hanya ke warehouse yang ditugaskan.
+     */
+    public function accessibleWarehouseIds(): array
+    {
+        if ($this->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return Warehouse::pluck('id')->toArray();
+        }
+
+        return $this->warehouses()->pluck('warehouses.id')->toArray();
+    }
 }

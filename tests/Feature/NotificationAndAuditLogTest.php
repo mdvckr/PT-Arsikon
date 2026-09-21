@@ -63,6 +63,8 @@ class NotificationAndAuditLogTest extends TestCase
 
     public function test_can_view_notifications_and_mark_as_read(): void
     {
+        $this->adminUser->notifications()->delete();
+
         $this->adminUser->notify(new SystemNotification(
             'Test Notif',
             'Ini pesan notifikasi test',

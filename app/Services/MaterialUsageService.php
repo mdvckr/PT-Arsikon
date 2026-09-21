@@ -53,10 +53,28 @@ class MaterialUsageService
             // First pass: validate all items and check stock availability & MR quota
             $validatedItems = [];
             foreach ($items as $item) {
-                $materialId = (int) ($item['material_id'] ?? 0);
+                $materialId = isset($item['material_id']) && $item['material_id'] !== '' ? (int) $item['material_id'] : null;
                 $qty = (float) ($item['quantity'] ?? 0);
+                $isCustom = $materialId === null;
 
                 if ($qty <= 0) {
+                    continue;
+                }
+
+                if ($isCustom) {
+                    // Custom item: validate name, skip inventory/MR checks
+                    $customName = trim($item['custom_item_name'] ?? '');
+                    if (empty($customName)) {
+                        throw new Exception("Item custom harus memiliki nama.");
+                    }
+                    $validatedItems[] = [
+                        'material'         => null,
+                        'custom_item_name' => $customName,
+                        'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                        'quantity'         => $qty,
+                        'notes'            => $item['notes'] ?? null,
+                        'is_custom'        => true,
+                    ];
                     continue;
                 }
 
@@ -107,9 +125,12 @@ class MaterialUsageService
                 }
 
                 $validatedItems[] = [
-                    'material' => $material,
-                    'quantity' => $qty,
-                    'notes'    => $item['notes'] ?? null,
+                    'material'         => $material,
+                    'custom_item_name' => null,
+                    'custom_item_unit' => null,
+                    'quantity'         => $qty,
+                    'notes'            => $item['notes'] ?? null,
+                    'is_custom'        => false,
                 ];
             }
 
@@ -135,10 +156,17 @@ class MaterialUsageService
             foreach ($validatedItems as $vItem) {
                 MaterialUsageItem::create([
                     'material_usage_id' => $usage->id,
-                    'material_id'       => $vItem['material']->id,
+                    'material_id'       => $vItem['is_custom'] ? null : $vItem['material']->id,
+                    'custom_item_name'  => $vItem['custom_item_name'],
+                    'custom_item_unit'  => $vItem['custom_item_unit'],
                     'quantity'          => $vItem['quantity'],
                     'notes'             => $vItem['notes'],
                 ]);
+
+                // Custom items: skip stock deduction and MR quota update
+                if ($vItem['is_custom']) {
+                    continue;
+                }
 
                 // Deduct stock via StockService (updates quantity & creates StockMutation)
                 $mutationNotes = sprintf(

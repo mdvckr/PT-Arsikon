@@ -15,7 +15,24 @@ class InventoryController extends Controller
     {
         $this->authorize('view inventory');
 
-        $warehouseId = session('active_warehouse_id');
+        $user = auth()->user();
+
+        // Non-admin users: force scope ke warehouse mereka sendiri
+        $isAdmin = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
+
+        if ($isAdmin) {
+            $warehouseId = session('active_warehouse_id');
+        } else {
+            // Untuk Admin Proyek / Karyawan: paksa ke active warehouse user,
+            // atau warehouse pertama yang dimiliki jika sesi belum di-set.
+            $warehouseId = session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
+
+            // Pastikan warehouseId yang dipilih memang milik user ini
+            $userWhIds = $user->accessibleWarehouseIds();
+            if ($warehouseId && !in_array($warehouseId, $userWhIds)) {
+                $warehouseId = $userWhIds[0] ?? null;
+            }
+        }
         $itemType    = $request->query('item_type'); // 'material', 'tool', or empty (semua)
         $categoryId  = $request->query('category_id');
         $type        = $request->query('type');
@@ -216,7 +233,7 @@ class InventoryController extends Controller
         }
 
         $filterCategories = Category::orderBy('name')->get();
-        $warehouses = Warehouse::orderBy('name')->get();
+        $warehouses = $this->accessibleWarehouses();
 
         return view('inventory.index', compact(
             'categoriesData',
@@ -255,5 +272,18 @@ class InventoryController extends Controller
 
         return redirect()->route('inventory.index')
             ->with('success', 'Data inventori berhasil dihapus.');
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────
+
+    protected function accessibleWarehouses()
+    {
+        $user = auth()->user();
+
+        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return Warehouse::orderBy('name')->get();
+        }
+
+        return $user->warehouses()->orderBy('name')->get();
     }
 }

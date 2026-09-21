@@ -33,6 +33,28 @@ class MasterDataSeeder extends Seeder
         $catAlatBerat = Category::firstOrCreate(['code' => 'CAT-TOOL-01'], ['name' => 'Alat Berat & Elektrik', 'type' => 'tool', 'description' => 'Genset, molen, bor listrik']);
         $catAlatTangan = Category::firstOrCreate(['code' => 'CAT-TOOL-02'], ['name' => 'Alat Tangan', 'type' => 'tool', 'description' => 'Cangkul, sekop, gerobak dorong']);
 
+        // 3. Seed Suppliers
+        Supplier::firstOrCreate(
+            ['code' => 'SUP-001'],
+            [
+                'name' => 'PT Semen Indonesia Distributor',
+                'email' => 'sales@semenindonesia.co.id',
+                'phone' => '081234567890',
+                'address' => 'Kawasan Industri Pulogadung, Jakarta',
+                'is_active' => true,
+            ]
+        );
+        Supplier::firstOrCreate(
+            ['code' => 'SUP-002'],
+            [
+                'name' => 'CV Baja Mandiri Perkasa',
+                'email' => 'marketing@bajamandiri.com',
+                'phone' => '081398765432',
+                'address' => 'Jl. Daan Mogot KM 12, Jakarta Barat',
+                'is_active' => true,
+            ]
+        );
+
         // 4. Seed Materials & Initial Inventories
         $materialsData = [
             // Semen & Pengikat -> Semen Portland (PCC)

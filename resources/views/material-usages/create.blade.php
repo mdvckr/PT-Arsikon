@@ -160,9 +160,14 @@
                                 <i class="fas fa-rotate-left me-1"></i> Reset Qty
                             </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="display: none;">
-                            <i class="fas fa-plus"></i> Tambah Material
-                        </button>
+                        <div id="manualButtonsGroup" style="display: none; gap: 8px;">
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()">
+                                <i class="fas fa-plus"></i> Tambah Material
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border: 1px solid #3b82f6; background: #eff6ff; color: #2563eb; font-weight: 600;">
+                                <i class="fas fa-pen-to-square"></i> + Item Custom
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -341,7 +346,7 @@
             const cardManual = document.getElementById('modeCardManual');
             const mrPicker = document.getElementById('mrPickerWrapper');
             const manualAlert = document.getElementById('manualModeAlert');
-            const btnAddManual = document.getElementById('btnAddManualRow');
+            const manualButtonsGroup = document.getElementById('manualButtonsGroup');
             const mrQuickActions = document.getElementById('mrQuickActions');
             const mrCols = document.querySelectorAll('.col-mr-only');
             const mrSelect = document.getElementById('mrSelect');
@@ -353,7 +358,7 @@
 
                 mrPicker.style.display = 'block';
                 manualAlert.style.display = 'none';
-                btnAddManual.style.display = 'none';
+                if (manualButtonsGroup) manualButtonsGroup.style.display = 'none';
                 mrCols.forEach(el => el.style.display = '');
 
                 if (mrSelect.value) {
@@ -371,7 +376,7 @@
 
                 mrPicker.style.display = 'none';
                 manualAlert.style.display = 'block';
-                btnAddManual.style.display = 'inline-flex';
+                if (manualButtonsGroup) manualButtonsGroup.style.display = 'inline-flex';
                 mrQuickActions.style.display = 'none';
                 emptyState.style.display = 'none';
                 mrCols.forEach(el => el.style.display = 'none');
@@ -584,24 +589,32 @@
             updateTableSummary();
         }
 
-        function addManualRow(preselectedId = null, qtyVal = '') {
+        function addManualRow(preselectedId = null, qtyVal = '', isCustom = false) {
             const tbody = document.getElementById('itemsBody');
             const rowId = 'row-' + rowIndex;
 
             let optionsHtml = '<option value="">— Pilih Material Tersedia —</option>';
             availableMaterials.forEach(m => {
-                const selected = preselectedId && preselectedId == m.id ? 'selected' : '';
+                const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
                 optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
             });
+            optionsHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ + Item Custom (Tulis Manual / Bebas)</option>`;
 
             const tr = document.createElement('tr');
             tr.id = rowId;
             tr.style.borderBottom = '1px solid #f1f5f9';
             tr.innerHTML = `
                 <td style="padding: 10px 16px;">
-                    <select name="items[${rowIndex}][material_id]" class="form-control material-select" required onchange="onManualMaterialChange(this, '${rowId}')" style="font-size: 12.5px; height: 34px; border-radius: 6px;">
+                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="">
+                    <select id="${rowId}-select" class="form-control material-select" onchange="onManualMaterialChange(this, '${rowId}')" style="font-size: 12.5px; height: 34px; border-radius: 6px;">
                         ${optionsHtml}
                     </select>
+                    <div id="${rowId}-custom-box" style="display: ${isCustom ? 'block' : 'none'}; margin-top: 6px;">
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" class="form-control" placeholder="Nama item/barang custom..." style="font-size: 12px; height: 32px; border-radius: 6px;" ${isCustom ? 'required' : ''}>
+                            <input type="text" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" class="form-control" placeholder="Satuan (misal: pcs)" style="font-size: 12px; height: 32px; width: 130px; border-radius: 6px;" oninput="onCustomUnitChange(this, '${rowId}')">
+                        </div>
+                    </div>
                 </td>
                 <td style="padding: 10px 12px; text-align: center;">
                     <span class="badge badge-gray" id="${rowId}-stock" style="font-size: 11.5px; font-weight: 700; padding: 3px 8px;">-</span>
@@ -628,20 +641,36 @@
             tbody.appendChild(tr);
             rowIndex++;
 
-            if (preselectedId) {
-                const sel = tr.querySelector('.material-select');
-                onManualMaterialChange(sel, rowId);
-            }
+            const sel = tr.querySelector('.material-select');
+            onManualMaterialChange(sel, rowId);
             updateTableSummary();
         }
 
         function onManualMaterialChange(select, rowId) {
-            const selectedOpt = select.options[select.selectedIndex];
+            const val = select.value;
             const stockBadge = document.getElementById(rowId + '-stock');
             const unitLabel = document.getElementById(rowId + '-unit');
             const qtyInput = document.getElementById(rowId + '-qty');
+            const customBox = document.getElementById(rowId + '-custom-box');
+            const customName = document.getElementById(rowId + '-custom-name');
+            const customUnit = document.getElementById(rowId + '-custom-unit');
+            const hiddenMaterialId = document.getElementById(rowId + '-material-id');
 
-            if (selectedOpt && selectedOpt.value) {
+            if (val === '__custom__') {
+                hiddenMaterialId.value = '';
+                customBox.style.display = 'block';
+                customName.required = true;
+                stockBadge.className = 'badge badge-info';
+                stockBadge.innerText = 'Custom';
+                unitLabel.innerText = customUnit.value.trim() || 'unit';
+                qtyInput.removeAttribute('max');
+            } else if (val) {
+                hiddenMaterialId.value = val;
+                customBox.style.display = 'none';
+                customName.required = false;
+                customName.value = '';
+                
+                const selectedOpt = select.options[select.selectedIndex];
                 const stock = parseFloat(selectedOpt.getAttribute('data-stock') || 0);
                 const unit = selectedOpt.getAttribute('data-unit') || '';
 
@@ -650,12 +679,22 @@
                 unitLabel.innerText = unit;
                 qtyInput.max = stock;
             } else {
+                hiddenMaterialId.value = '';
+                customBox.style.display = 'none';
+                customName.required = false;
                 stockBadge.className = 'badge badge-gray';
                 stockBadge.innerText = '-';
                 unitLabel.innerText = '-';
                 qtyInput.removeAttribute('max');
             }
             validateManualQty(rowId);
+        }
+
+        function onCustomUnitChange(input, rowId) {
+            const unitLabel = document.getElementById(rowId + '-unit');
+            if (unitLabel) {
+                unitLabel.innerText = input.value.trim() || 'unit';
+            }
         }
 
         function validateManualQty(rowId) {

@@ -167,11 +167,26 @@ class Tool extends Model
     }
 
     /**
-     * Magic getter for status - returns computed statusLabel for backward compatibility.
+     * Magic getter for status - returns lowercase canonical status for backward compatibility.
      */
     public function getStatusAttribute(): string
     {
-        return $this->statusLabel();
+        if ($this->hasOverdue()) {
+            return 'overdue';
+        }
+        if ($this->stock_damaged > 0 && ($this->stock_total === $this->stock_damaged || $this->stock_available === 0)) {
+            return 'damaged';
+        }
+        if ($this->stock_maintenance > 0 && ($this->stock_total === $this->stock_maintenance || $this->stock_available === 0)) {
+            return 'maintenance';
+        }
+        if ($this->stock_borrowed > 0 && ($this->stock_total === $this->stock_borrowed || $this->stock_available === 0)) {
+            return 'assigned';
+        }
+        if ($this->stock_available > 0) {
+            return 'available';
+        }
+        return strtolower($this->statusLabel());
     }
 
     /**

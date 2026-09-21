@@ -6,6 +6,8 @@ use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptItem;
 use App\Models\Material;
 use App\Models\PurchaseOrder;
+use App\Models\Supplier;
+use App\Models\User;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +15,45 @@ use Illuminate\Support\Facades\DB;
 class GoodsReceiptService
 {
     public function __construct(protected StockService $stockService) {}
+
+    /**
+     * Helper untuk memproses Goods Receipt secara langsung (create + confirm).
+     * Memvalidasi bahwa penerimaan barang dari supplier hanya boleh di Gudang Pusat.
+     */
+    public function processGoodsReceipt(
+        Supplier $supplier,
+        Warehouse $warehouse,
+        User $user,
+        array $items,
+        ?string $receiptDate = null,
+        ?string $notes = null
+    ): GoodsReceipt {
+        if (!$warehouse->is_central) {
+            throw new Exception("Penerimaan barang dari supplier hanya boleh dilakukan di Gudang Pusat.");
+        }
+
+        $formattedItems = [];
+        foreach ($items as $item) {
+            $formattedItems[] = [
+                'material_id'            => $item['material_id'],
+                'quantity'               => $item['qty_received'] ?? $item['quantity'] ?? 0,
+                'unit_price'             => $item['unit_price'] ?? 0,
+                'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
+            ];
+        }
+
+        $receipt = $this->create([
+            'supplier_id'         => $supplier->id,
+            'warehouse_id'        => $warehouse->id,
+            'received_at'         => $receiptDate ?? now()->toDateString(),
+            'notes'               => $notes,
+            'purchase_order_id'   => null,
+            'invoice_number'      => null,
+            'items'               => $formattedItems,
+        ], $user->id);
+
+        return $this->confirm($receipt, $user->id);
+    }
 
     /**
      * Buat dokumen Goods Receipt baru (status = draft).

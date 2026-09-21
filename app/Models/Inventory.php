@@ -49,6 +49,14 @@ class Inventory extends Model
     }
 
     /**
+     * Accessor qty_on_hand for compatibility with services and tests.
+     */
+    public function getQtyOnHandAttribute(): float
+    {
+        return (float) ($this->attributes['quantity'] ?? 0);
+    }
+
+    /**
      * Validate inventory invariants (e.g., no negative quantities).
      */
     public function validateInvariants(): void

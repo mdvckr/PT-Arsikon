@@ -97,6 +97,9 @@
                                 @if($item->isTool())
                                 <div class="fw-600">{{ $item->tool?->name ?? 'Alat' }}</div>
                                 <div class="text-muted" style="font-size:11px;">{{ $item->tool?->code }} · {{ $item->toolAssignment?->assignment_number }}</div>
+                                @elseif($item->isCustom())
+                                <div class="fw-600">{{ $item->name() }} <span class="badge badge-info" style="font-size:10px;margin-left:4px;">Custom</span></div>
+                                <div class="text-muted" style="font-size:11px;">Item Bebas · Non-Master</div>
                                 @else
                                 <div class="fw-600">{{ $item->material?->name ?? 'Material' }}</div>
                                 <div class="text-muted" style="font-size:11px;">{{ $item->material?->code }}</div>
@@ -184,7 +187,6 @@
             </div>
         </div>
     </div>
-</x-app-layout>
 
 {{-- Ship Confirmation Modal --}}
 <div id="shipModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shipModalTitle">
@@ -308,3 +310,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+</x-app-layout>

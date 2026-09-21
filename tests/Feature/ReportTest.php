@@ -43,6 +43,11 @@ class ReportTest extends TestCase
         $this->supplier = Supplier::firstOrFail();
         $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
 
+        // Reset inventory for test isolation
+        \App\Models\Inventory::where('warehouse_id', $this->centralWarehouse->id)
+            ->where('material_id', $this->semenMaterial->id)
+            ->delete();
+
         // Add 50 bags of Semen to Central Warehouse (Min stock is 100 -> triggers low stock warning)
         $this->goodsReceiptService->processGoodsReceipt(
             $this->supplier,
@@ -59,7 +64,7 @@ class ReportTest extends TestCase
         $report = $this->reportService->getStockReport($this->ownerUser);
 
         $this->assertNotEmpty($report);
-        $semenItem = $report->firstWhere('sku', 'MAT-SEM-001');
+        $semenItem = $report->where('warehouse_name', $this->centralWarehouse->name)->firstWhere('sku', 'MAT-SEM-001');
 
         $this->assertNotNull($semenItem);
         $this->assertEquals(50, $semenItem['qty_on_hand']);

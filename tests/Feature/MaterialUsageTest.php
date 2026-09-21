@@ -197,4 +197,96 @@ class MaterialUsageTest extends TestCase
         $this->assertEquals('Lantai 3 Gedung A', $assignment->location_name);
         $this->assertEquals('Pak Joko Santoso', $assignment->borrower_display);
     }
+
+    public function test_karyawan_can_access_create_and_record_material_usage(): void
+    {
+        $karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+
+        // 1. Karyawan can access create page
+        $response = $this->actingAs($karyawan)->get(route('material-usages.create'));
+        $response->assertOk();
+
+        // Ensure projectWarehouse has enough stock
+        $this->stockService->addStock(
+            $this->projectWarehouse,
+            $this->material,
+            50,
+            'initial_karyawan_test',
+            null,
+            $karyawan->id,
+            'Stok pengujian karyawan'
+        );
+
+        // 2. Karyawan can submit material usage store
+        $postData = [
+            'warehouse_id'   => $this->projectWarehouse->id,
+            'recipient_name' => 'Tukang Cat (Pak Yanto)',
+            'job_section'    => 'Pengecatan Lantai 1',
+            'usage_date'     => now()->toDateString(),
+            'notes'          => 'Kebutuhan finishing',
+            'items'          => [
+                [
+                    'material_id' => $this->material->id,
+                    'quantity'    => 5,
+                    'notes'       => 'Pekerjaan dinding',
+                ],
+            ],
+        ];
+
+        $storeResponse = $this->actingAs($karyawan)->post(route('material-usages.store'), $postData);
+        $storeResponse->assertSessionHasNoErrors();
+
+        $usage = MaterialUsage::where('recipient_name', 'Tukang Cat (Pak Yanto)')->first();
+        $this->assertNotNull($usage);
+        $storeResponse->assertRedirect(route('material-usages.show', $usage));
+        $this->assertEquals($this->projectWarehouse->id, $usage->warehouse_id);
+    }
+
+    public function test_can_record_custom_item_usage_without_material_id(): void
+    {
+        $postData = [
+            'warehouse_id'   => $this->projectWarehouse->id,
+            'recipient_name' => 'Mandor Besi (Pak Udin)',
+            'job_section'    => 'Pemasangan Terpal Pelindung',
+            'usage_date'     => now()->toDateString(),
+            'notes'          => 'Barang non-database',
+            'items'          => [
+                [
+                    'material_id'      => null,
+                    'custom_item_name' => 'Terpal Plastik Biru 4x6',
+                    'custom_item_unit' => 'lembar',
+                    'quantity'         => 3,
+                    'notes'            => 'Kebutuhan hujan mendadak',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->adminProyek)->post(route('material-usages.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        $usage = MaterialUsage::where('recipient_name', 'Mandor Besi (Pak Udin)')->first();
+        $this->assertNotNull($usage);
+        $response->assertRedirect(route('material-usages.show', $usage));
+
+        $item = $usage->items()->first();
+        $this->assertNotNull($item);
+        $this->assertNull($item->material_id);
+        $this->assertEquals('Terpal Plastik Biru 4x6', $item->custom_item_name);
+        $this->assertEquals('lembar', $item->custom_item_unit);
+        $this->assertEquals(3.0, (float) $item->quantity);
+        $this->assertTrue($item->isCustom());
+        $this->assertEquals('Terpal Plastik Biru 4x6', $item->displayName());
+        $this->assertEquals('lembar', $item->displayUnit());
+
+        // Verify show page renders custom item
+        $showRes = $this->actingAs($this->adminProyek)->get(route('material-usages.show', $usage));
+        $showRes->assertOk();
+        $showRes->assertSee('Terpal Plastik Biru 4x6');
+        $showRes->assertSee('Item Custom');
+
+        // Verify print page renders custom item
+        $printRes = $this->actingAs($this->adminProyek)->get(route('material-usages.print', $usage));
+        $printRes->assertOk();
+        $printRes->assertSee('Terpal Plastik Biru 4x6');
+    }
 }

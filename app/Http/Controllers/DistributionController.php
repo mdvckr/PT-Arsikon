@@ -17,13 +17,25 @@ class DistributionController extends Controller
     {
         $this->authorize('view distributions');
 
+        $user        = auth()->user();
         $warehouseId = session('active_warehouse_id');
 
-        $query = Distribution::with(['fromWarehouse', 'toWarehouse', 'materialRequest', 'creator', 'items.tool'])
-            ->when($warehouseId, fn($q) => $q->where(function ($q2) use ($warehouseId) {
+        $query = Distribution::with(['fromWarehouse', 'toWarehouse', 'materialRequest', 'creator', 'items.tool']);
+
+        // Non-admin: wajib scope ke warehouse yang dimiliki user
+        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $userWhIds = $user->accessibleWarehouseIds();
+            $query->where(function ($q) use ($userWhIds) {
+                $q->whereIn('from_warehouse_id', $userWhIds)
+                  ->orWhereIn('to_warehouse_id', $userWhIds);
+            });
+        } elseif ($warehouseId) {
+            // Admin: filter opsional berdasarkan active warehouse session
+            $query->where(function ($q2) use ($warehouseId) {
                 $q2->where('from_warehouse_id', $warehouseId)
                    ->orWhere('to_warehouse_id', $warehouseId);
-            }));
+            });
+        }
 
         if ($request->status) {
             $query->where('status', $request->status);
@@ -56,7 +68,7 @@ class DistributionController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        $warehouses = Warehouse::orderBy('name')->get();
+        $warehouses = $this->accessibleWarehouses();
         $materials  = \App\Models\Material::with('unit', 'category')->orderBy('name')->get();
         $tools      = \App\Models\Tool::orderBy('name')->get();
 
@@ -77,12 +89,14 @@ class DistributionController extends Controller
             'driver_name'          => 'nullable|string|max:150',
             'vehicle_number'       => 'nullable|string|max:30',
             'notes'                => 'nullable|string',
-            'items'                => 'required|array|min:1',
-            'items.*.type'         => 'sometimes|in:material,tool',
-            'items.*.material_id'  => 'required_without:items.*.tool_id|nullable|exists:materials,id',
-            'items.*.tool_id'      => 'required_without:items.*.material_id|nullable|exists:tools,id',
+            'items'                      => 'required|array|min:1',
+            'items.*.type'               => 'sometimes|in:material,tool,custom',
+            'items.*.material_id'        => 'nullable|exists:materials,id',
+            'items.*.tool_id'            => 'nullable|exists:tools,id',
             'items.*.tool_assignment_id' => 'nullable|exists:tool_assignments,id',
-            'items.*.quantity'     => 'required|numeric|min:0.01',
+            'items.*.custom_item_name'   => 'required_if:items.*.type,custom|nullable|string|max:255',
+            'items.*.custom_item_unit'   => 'nullable|string|max:50',
+            'items.*.quantity'           => 'required|numeric|min:0.01',
         ]);
 
         $validated['tool_assignment_ids'] = $validated['tool_assignment_ids'] ?? [];
@@ -171,5 +185,18 @@ class DistributionController extends Controller
         $this->service->receive($distribution, $request->items, auth()->id());
 
         return back()->with('success', 'Penerimaan distribusi dicatat.');
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────
+
+    protected function accessibleWarehouses()
+    {
+        $user = auth()->user();
+
+        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return Warehouse::orderBy('name')->get();
+        }
+
+        return $user->warehouses()->orderBy('name')->get();
     }
 }

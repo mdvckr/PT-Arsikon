@@ -185,4 +185,49 @@ class MaterialRequestService
 
         return $request->fresh();
     }
+
+    /**
+     * Get Eloquent query for MaterialRequest scoped to the user's role and warehouse access.
+     */
+    public function getScopedRequestsQuery(User $user, ?int $activeWarehouseId = null)
+    {
+        $query = MaterialRequest::query()->with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy', 'items.material.unit']);
+
+        // Owner & Admin can view everything, optionally filtered by active warehouse
+        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+            if ($activeWarehouseId) {
+                $query->where(function ($q) use ($activeWarehouseId) {
+                    $q->where('from_warehouse_id', $activeWarehouseId)
+                      ->orWhere('to_warehouse_id', $activeWarehouseId);
+                });
+            }
+            return $query;
+        }
+
+        // Admin Gudang Pusat: hanya melihat pengajuan yang melibatkan Gudang Pusat
+        if ($user->hasRole('Admin Gudang Pusat')) {
+            $centralWarehouseIds = Warehouse::where('is_central', true)->pluck('id')->toArray();
+            $query->where(function ($q) use ($centralWarehouseIds) {
+                $q->whereIn('to_warehouse_id', $centralWarehouseIds)
+                  ->orWhereIn('from_warehouse_id', $centralWarehouseIds);
+            });
+            return $query;
+        }
+
+        // Gudang Proyek / Karyawan / Admin Proyek: hanya melihat data gudang proyek mereka
+        $userWarehouseIds = $user->warehouses->pluck('id')->toArray();
+        if ($activeWarehouseId && in_array($activeWarehouseId, $userWarehouseIds)) {
+            $query->where(function ($q) use ($activeWarehouseId) {
+                $q->where('from_warehouse_id', $activeWarehouseId)
+                  ->orWhere('to_warehouse_id', $activeWarehouseId);
+            });
+        } else {
+            $query->where(function ($q) use ($userWarehouseIds) {
+                $q->whereIn('from_warehouse_id', $userWarehouseIds)
+                  ->orWhereIn('to_warehouse_id', $userWarehouseIds);
+            });
+        }
+
+        return $query;
+    }
 }

@@ -37,6 +37,11 @@ class GoodsReceiptTest extends TestCase
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
         $this->besiMaterial = Material::where('sku', 'MAT-BES-001')->firstOrFail();
+
+        // Reset inventory for test isolation
+        Inventory::where('warehouse_id', $this->centralWarehouse->id)
+            ->whereIn('material_id', [$this->semenMaterial->id, $this->besiMaterial->id])
+            ->delete();
     }
 
     public function test_can_process_goods_receipt_at_central_warehouse(): void

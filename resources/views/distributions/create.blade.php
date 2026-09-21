@@ -178,13 +178,26 @@
                                 <select id="manual-type" class="form-control" onchange="updateManualSelect()">
                                     <option value="material">Material</option>
                                     <option value="tool">Alat Kerja</option>
+                                    <option value="custom">Item Custom</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="manual-select-container">
                                 <label class="form-label" style="font-size:12px;margin-bottom:4px;">Pilih Barang / Alat</label>
                                 <select id="manual-item-select" class="form-control">
                                     <option value="">-- Pilih --</option>
                                 </select>
+                            </div>
+                            <div id="manual-custom-container" style="display:none;">
+                                <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;">
+                                    <div>
+                                        <label class="form-label" style="font-size:12px;margin-bottom:4px;">Nama Barang / Item <span class="text-danger">*</span></label>
+                                        <input type="text" id="manual-custom-name" class="form-control" placeholder="Contoh: Terpal Plastik Biru 4x6">
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:12px;margin-bottom:4px;">Satuan</label>
+                                        <input type="text" id="manual-custom-unit" class="form-control" placeholder="pcs" value="pcs">
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:12px;margin-bottom:4px;">Jumlah (Qty)</label>
@@ -456,6 +469,21 @@
 
         function updateManualSelect() {
             const type = manualType.value;
+            const selectContainer = document.getElementById('manual-select-container');
+            const customContainer = document.getElementById('manual-custom-container');
+
+            if (type === 'custom') {
+                if (selectContainer) selectContainer.style.display = 'none';
+                if (customContainer) customContainer.style.display = 'block';
+                manualQty.step = "0.01";
+                manualQty.min = "0.01";
+                manualHint.textContent = "Item bebas / custom tidak memotong stok inventori master.";
+                return;
+            }
+
+            if (selectContainer) selectContainer.style.display = 'block';
+            if (customContainer) customContainer.style.display = 'none';
+
             manualItemSelect.innerHTML = '<option value="">-- Pilih --</option>';
             if (type === 'material') {
                 allMaterials.forEach(m => {
@@ -489,14 +517,8 @@
 
         function addManualItem() {
             const type = manualType.value;
-            const select = manualItemSelect;
-            const opt = select.selectedOptions[0];
             const qty = parseFloat(manualQty.value);
 
-            if (!select.value) {
-                alert("Pilih barang atau alat terlebih dahulu.");
-                return;
-            }
             if (isNaN(qty) || qty <= 0) {
                 alert("Masukkan jumlah (qty) yang valid.");
                 return;
@@ -505,6 +527,55 @@
             const tr = document.createElement('tr');
             tr.dataset.kind = type;
             tr.dataset.source = 'manual';
+
+            if (type === 'custom') {
+                const customNameInput = document.getElementById('manual-custom-name');
+                const customUnitInput = document.getElementById('manual-custom-unit');
+                const customName = customNameInput ? customNameInput.value.trim() : '';
+                const customUnit = (customUnitInput && customUnitInput.value.trim()) ? customUnitInput.value.trim() : 'unit';
+
+                if (!customName) {
+                    alert("Nama barang/alat custom wajib diisi.");
+                    if (customNameInput) customNameInput.focus();
+                    return;
+                }
+
+                tr.innerHTML = `
+                    <td><span class="badge badge-info" style="background:#e0f2fe;color:#0369a1;"><i class="fas fa-pen-nib"></i> Custom</span></td>
+                    <td>
+                        <input type="hidden" name="items[${rowIndex}][type]" value="custom">
+                        <input type="hidden" name="items[${rowIndex}][custom_item_name]" value="${customName}">
+                        <input type="hidden" name="items[${rowIndex}][custom_item_unit]" value="${customUnit}">
+                        <div class="fw-600">${customName}</div>
+                        <div class="text-muted" style="font-size:11.5px;">Item Custom / Bebas · Non-Master Stok</div>
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <input type="number" name="items[${rowIndex}][quantity]" class="form-control qty-input"
+                                value="${qty}" min="0.01" step="0.01" required style="width:110px;">
+                            <span class="text-muted" style="font-size:13px;">${customUnit}</span>
+                        </div>
+                    </td>
+                    <td style="text-align:center;">
+                        <button type="button" class="btn btn-sm btn-danger btn-icon" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus item">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>`;
+
+                itemsBody.appendChild(tr);
+                rowIndex++;
+                updateBadge();
+                if (customNameInput) customNameInput.value = '';
+                return;
+            }
+
+            const select = manualItemSelect;
+            const opt = select.selectedOptions[0];
+
+            if (!select.value) {
+                alert("Pilih barang atau alat terlebih dahulu.");
+                return;
+            }
 
             if (type === 'material') {
                 tr.innerHTML = `

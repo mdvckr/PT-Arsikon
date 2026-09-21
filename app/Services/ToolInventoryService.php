@@ -38,13 +38,13 @@ class ToolInventoryService
             $inventory->increment('stock_available', $quantity);
             $inventory->validateInvariants();
 
+            $tool->increment('stock_total', $quantity);
+            $tool->increment('stock_available', $quantity);
+
             return $inventory->fresh();
         });
     }
 
-    /**
-     * Borrow (decrease available, increase borrowed) stock.
-     */
     /**
      * Borrow (decrease available, increase borrowed) stock.
      */
@@ -81,6 +81,9 @@ class ToolInventoryService
             $inventory->decrement('stock_available', $quantity);
             $inventory->increment('stock_borrowed', $quantity);
             $inventory->validateInvariants();
+
+            $tool->decrement('stock_available', $quantity);
+            $tool->increment('stock_borrowed', $quantity);
 
             return $inventory->fresh();
         });
@@ -121,6 +124,9 @@ class ToolInventoryService
             };
             $inventory->increment($field, $quantity);
             $inventory->validateInvariants();
+
+            $tool->decrement('stock_borrowed', min($quantity, (int) $tool->stock_borrowed));
+            $tool->increment($field, $quantity);
 
             return $inventory->fresh();
         });

@@ -68,13 +68,16 @@ class MaterialUsageController extends Controller
         $this->authorize('create material usages');
 
         $user = auth()->user();
-        $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
-
         $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])
             ? Warehouse::orderBy('name')->get()
             : $user->warehouses;
 
-        $selectedWarehouse = Warehouse::find($activeWarehouseId) ?? $warehouses->first();
+        $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
+        $selectedWarehouse = Warehouse::find($activeWarehouseId);
+
+        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
+            $selectedWarehouse = $warehouses->first();
+        }
 
         // Get materials that have stock > 0 in this warehouse
         $materialsData = [];
@@ -181,10 +184,12 @@ class MaterialUsageController extends Controller
             'job_section'         => 'nullable|string|max:255',
             'usage_date'          => 'required|date',
             'notes'               => 'nullable|string',
-            'items'               => 'required|array|min:1',
-            'items.*.material_id' => 'required|exists:materials,id',
-            'items.*.quantity'    => 'required|numeric|min:0.01',
-            'items.*.notes'       => 'nullable|string|max:255',
+            'items'                    => 'required|array|min:1',
+            'items.*.material_id'      => 'nullable|exists:materials,id',
+            'items.*.custom_item_name' => 'required_if:items.*.material_id,null|nullable|string|max:255',
+            'items.*.custom_item_unit' => 'nullable|string|max:50',
+            'items.*.quantity'         => 'required|numeric|min:0.01',
+            'items.*.notes'            => 'nullable|string|max:255',
         ]);
 
         $warehouse = Warehouse::findOrFail($validated['warehouse_id']);

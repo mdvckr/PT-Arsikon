@@ -276,12 +276,17 @@
                 @foreach($materialUsage->items as $idx => $item)
                 <tr>
                     <td style="text-align:center;">{{ $idx + 1 }}</td>
-                    <td>{{ $item->material?->code ?? '-' }}</td>
-                    <td><strong>{{ $item->material?->name }}</strong></td>
+                    <td>{{ $item->isCustom() ? 'CUSTOM' : ($item->material?->code ?? '-') }}</td>
+                    <td>
+                        <strong>{{ $item->displayName() }}</strong>
+                        @if($item->isCustom())
+                            <span style="font-size: 10px; color: #0284c7; margin-left: 4px;">(Item Bebas)</span>
+                        @endif
+                    </td>
                     <td style="text-align:right;font-weight:700;">
                         {{ format_quantity($item->quantity) }}
                     </td>
-                    <td style="text-align:center;">{{ $item->material?->unit?->abbreviation ?? 'Unit' }}</td>
+                    <td style="text-align:center;">{{ $item->displayUnit() }}</td>
                     <td>{{ $item->notes ?? '-' }}</td>
                 </tr>
                 @endforeach

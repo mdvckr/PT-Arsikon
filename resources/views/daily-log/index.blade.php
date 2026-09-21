@@ -4,7 +4,7 @@
     <!-- Header & Action -->
     <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:12px;">
         <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin-bottom:3px;">Log Harian Logistik & Material Proyek</h2>
+            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin-bottom:3px;">Log Harian Logistik dan Aktivitas Proyek</h2>
             <p class="text-muted" style="font-size:13px;margin:0;">
                 Rekap mutasi barang masuk, pemakaian lapangan, pantauan alat, dan posisi sisa stok harian
             </p>
@@ -100,7 +100,7 @@
     <div class="card mb-4">
         <div class="card-header flex justify-between items-center" style="background:#ffffff;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
             <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                1. Pemakaian Material Lapangan (Outgoing)
+                1. Pemakaian Material Lapangan Hari Ini (Outgoing)
             </span>
             <span class="badge badge-gray">{{ $usages->count() }} Transaksi Bon</span>
         </div>
@@ -466,7 +466,7 @@
         <div class="card-header flex justify-between items-center" style="background:#ffffff;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
             <div>
                 <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                    6. Neraca Sisa Stok Material (Stock Balance)
+                    6. Neraca Sisa Stok Material Hari Ini (Stock Balance)
                 </span>
             </div>
             <span class="text-muted" style="font-size:12px;">Stok Awal + Masuk - Keluar = Sisa Stok</span>
@@ -526,7 +526,7 @@
     <div class="card mb-4">
         <div class="card-header flex justify-between items-center" style="background:#ffffff;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
             <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                7. Neraca Kesiapan & Posisi Alat Kerja
+                7. Neraca Posisi & Kesiapan Alat Kerja (Tool Availability)
             </span>
             <div class="flex items-center gap-2" style="flex-wrap:wrap;">
                 <span class="badge badge-gray">{{ $totalToolsReady }} Ready</span>

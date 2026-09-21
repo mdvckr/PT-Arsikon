@@ -112,6 +112,25 @@ class DistributionService
                     continue;
                 }
 
+                // Item custom (tidak ada di sistem — bebas tulis nama)
+                $itemType = $item['type'] ?? 'material';
+                if ($itemType === 'custom') {
+                    $customName = trim($item['custom_item_name'] ?? '');
+                    if (empty($customName)) {
+                        continue; // skip baris custom tanpa nama
+                    }
+                    DistributionItem::create([
+                        'distribution_id'     => $distribution->id,
+                        'custom_item_name'    => $customName,
+                        'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                        'qty_shipped'         => $qty,
+                        'qty_received'        => 0,
+                        'qty_damaged_or_lost' => 0,
+                        'notes'               => $item['notes'] ?? null,
+                    ]);
+                    continue;
+                }
+
                 // Item material
                 if (!empty($item['material_id'])) {
                     if ($mr) {
@@ -143,6 +162,7 @@ class DistributionService
                     ]);
                 }
             }
+
 
             $freshItems = $distribution->items()->count();
             if ($freshItems === 0) {
@@ -182,12 +202,13 @@ class DistributionService
                     $ta = $item->toolAssignment;
                     $tool = $item->tool;
 
-                    if (!$tool) {
-                        throw new Exception("Alat tidak ditemukan untuk item Surat Jalan.");
-                    }
+                    $sourceInv = \App\Models\ToolInventory::where('warehouse_id', $distribution->from_warehouse_id)
+                        ->where('tool_id', $tool->id)
+                        ->first();
+                    $availQty = $sourceInv ? (int) $sourceInv->stock_available : (int) $tool->stock_available;
 
-                    if ((int) $tool->stock_available < (int) $item->qty_shipped) {
-                        throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
+                    if ($availQty < (int) $item->qty_shipped) {
+                        throw new Exception("Stok alat {$tool->name} tidak mencukupi di gudang {$distribution->fromWarehouse?->name} saat pengiriman (tersedia: {$availQty}, dibutuhkan: {$item->qty_shipped}).");
                     }
 
                     // Update tool assignment status to active if it exists
@@ -203,6 +224,11 @@ class DistributionService
                     $warehouse = $distribution->fromWarehouse;
                     $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
 
+                    continue;
+                }
+
+                if ($item->isCustom()) {
+                    // Custom items don't have stock in inventory, skip stock deduction
                     continue;
                 }
 
@@ -353,8 +379,8 @@ class DistributionService
                     'qty_damaged_or_lost' => $qtyDamaged,
                 ]);
 
-                if ($distributionItem->isTool()) {
-                    // Stok alat dikelola via ToolAssignment, bukan inventory material
+                if ($distributionItem->isTool() || $distributionItem->isCustom()) {
+                    // Stok alat atau item custom tidak dikelola via inventory material
                     continue;
                 }
 
