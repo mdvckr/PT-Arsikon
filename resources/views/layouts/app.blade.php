@@ -1330,6 +1330,9 @@
                     <i class="fas fa-file-circle-plus"></i> Permintaan Material
 
                 </a>
+                <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
+                    <i class="fas fa-hand-holding"></i> Peminjaman Alat
+                </a>
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                     <i class="fas fa-right-left"></i> Surat Jalan
                 </a>
@@ -1343,10 +1346,7 @@
 
             <!-- ALAT & STOK -->
             <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Alat & Stok</div>
-                <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
-                    <i class="fas fa-hand-holding"></i> Peminjaman Alat
-                </a>
+                <div class="nav-section-label" style="padding: 8px 20px 4px;">Stok</div>
                 <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-check"></i> Stock Opname
                 </a>
