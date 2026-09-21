@@ -90,6 +90,7 @@
             'code'      => $t->code,
             'available' => (int) $t->stock_available,
         ])->values();
+        $toolsDropdownJson = $toolsForDropdown ?? collect([]);
     @endphp
 
     <form id="distribution-form" method="POST" action="{{ route('distributions.store') }}">
@@ -308,6 +309,7 @@
         const whs = @json($whs);
         const allMaterials = @json($matsJson);
         const allTools = @json($toolsJson);
+        const allToolsDropdown = @json($toolsDropdownJson);
 
         const itemsBody       = document.getElementById('itemsBody');
         const emptyRow        = document.getElementById('empty-row');
@@ -499,10 +501,10 @@
                 manualQty.min = "0.01";
                 manualHint.textContent = "Material akan dikirim langsung dan dicatat dalam Surat Jalan.";
             } else {
-                allTools.forEach(t => {
+                allToolsDropdown.forEach(t => {
                     const opt = document.createElement('option');
                     opt.value = t.id;
-                    opt.textContent = `${t.name} · Sisa stok: ${t.available} unit`;
+                    opt.textContent = t.name;
                     opt.dataset.unit = 'unit';
                     opt.dataset.name = t.name;
                     opt.dataset.code = t.code;

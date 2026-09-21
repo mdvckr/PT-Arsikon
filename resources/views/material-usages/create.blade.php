@@ -333,6 +333,7 @@
     {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
         const availableMaterials = @json($materialsData);
+        const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};
         let currentMode = 'mr';
         let rowIndex = 0;
@@ -593,11 +594,23 @@
             const tbody = document.getElementById('itemsBody');
             const rowId = 'row-' + rowIndex;
 
-            let optionsHtml = '<option value="">— Pilih Material Tersedia —</option>';
-            availableMaterials.forEach(m => {
-                const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
-                optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
-            });
+            let optionsHtml = '<option value="">— Pilih Material Tersedia (Kelompok Kategori) —</option>';
+            // Render grouped by kategori supaya rapi
+            if (materialsGrouped && typeof materialsGrouped === 'object' && !Array.isArray(materialsGrouped)) {
+                Object.keys(materialsGrouped).sort().forEach(cat => {
+                    optionsHtml += `<optgroup label="${cat}">`;
+                    materialsGrouped[cat].forEach(m => {
+                        const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
+                        optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
+                    });
+                    optionsHtml += `</optgroup>`;
+                });
+            } else {
+                availableMaterials.forEach(m => {
+                    const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
+                    optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
+                });
+            }
             optionsHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ + Item Custom (Tulis Manual / Bebas)</option>`;
 
             const tr = document.createElement('tr');

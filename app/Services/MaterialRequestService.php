@@ -47,12 +47,30 @@ class MaterialRequestService
             ]);
 
             foreach ($itemsData as $item) {
-                $material = Material::findOrFail($item['material_id']);
                 $qtyRequested = (float) $item['qty_requested'];
-
                 if ($qtyRequested <= 0) {
-                    throw new Exception("Jumlah pengajuan untuk material {$material->name} harus > 0.");
+                    throw new Exception("Jumlah pengajuan harus > 0.");
                 }
+
+                // Custom manual item (tidak ada di Gudang Pusat)
+                if (empty($item['material_id'])) {
+                    $customName = trim($item['custom_item_name'] ?? '');
+                    if ($customName === '') {
+                        throw new Exception("Nama barang custom tidak boleh kosong.");
+                    }
+                    MaterialRequestItem::create([
+                        'material_request_id' => $request->id,
+                        'material_id' => null,
+                        'custom_item_name' => $customName,
+                        'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                        'qty_requested' => $qtyRequested,
+                        'qty_approved' => $submitImmediately ? $qtyRequested : 0,
+                        'notes' => $item['notes'] ?? null,
+                    ]);
+                    continue;
+                }
+
+                $material = Material::findOrFail($item['material_id']);
 
                 MaterialRequestItem::create([
                     'material_request_id' => $request->id,

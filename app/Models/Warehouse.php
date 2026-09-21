@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class Warehouse extends Model
 {
@@ -25,6 +27,43 @@ class Warehouse extends Model
         'is_central' => 'boolean',
         'is_active'  => 'boolean',
     ];
+
+    /**
+     * Scope to filter warehouses based on user role.
+     * Owner/Admin/Admin Gudang Pusat/Admin PO: all active warehouses.
+     * Others: only warehouses assigned to the user.
+     */
+    public function scopeForUser(Builder $query, ?object $user = null): Builder
+    {
+        $user = $user ?? Auth::user();
+
+        if (!$user) {
+            return $query->where('is_active', true);
+        }
+
+        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return $query->where('is_active', true);
+        }
+
+        // Admin Gudang Proyek, Karyawan, etc.: only assigned warehouses
+        return $query->whereIn('id', $user->warehouses->pluck('id'));
+    }
+
+    /**
+     * Get warehouse type label for display.
+     */
+    public function getTypeLabel(): string
+    {
+        return $this->is_central ? 'Pusat' : 'Proyek';
+    }
+
+    /**
+     * Get warehouse badge class.
+     */
+    public function getBadgeClass(): string
+    {
+        return $this->is_central ? 'badge-primary' : 'badge-info';
+    }
 
     public function project(): BelongsTo
     {
@@ -67,6 +106,26 @@ class Warehouse extends Model
         }
 
         return true;
+    }
+
+    public function isCentral(): bool
+    {
+        return (bool) $this->is_central || $this->type === 'central';
+    }
+
+    public function isProject(): bool
+    {
+        return !$this->isCentral();
+    }
+
+    public function scopeCentral(Builder $query): Builder
+    {
+        return $query->where('is_central', true);
+    }
+
+    public function scopeProject(Builder $query): Builder
+    {
+        return $query->where('is_central', false);
     }
 
     /**

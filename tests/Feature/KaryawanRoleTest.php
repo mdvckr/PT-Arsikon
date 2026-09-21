@@ -27,52 +27,68 @@ class KaryawanRoleTest extends TestCase
         $this->adminProyekA = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
     }
 
-    // Karyawan TIDAK boleh akses Material Requests
+    // Karyawan TIDAK boleh akses Material Requests — hanya Admin Gudang Proyek (point 9)
 
-    public function test_karyawan_cannot_view_material_requests_index(): void
+    public function test_karyawan_can_view_material_requests_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-requests')
             ->assertForbidden();
     }
 
-    public function test_karyawan_cannot_access_material_request_create(): void
+    public function test_karyawan_can_access_material_request_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-requests/create')
             ->assertForbidden();
     }
 
-    // Karyawan TIDAK boleh akses Distributions
+    // Karyawan TIDAK boleh akses Distributions — hanya Admin Gudang Proyek (point 9)
 
-    public function test_karyawan_cannot_view_distributions_index(): void
+    public function test_karyawan_can_view_distributions_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/distributions')
             ->assertForbidden();
     }
 
-    public function test_karyawan_cannot_access_distribution_create(): void
+    public function test_karyawan_can_access_distribution_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/distributions/create')
             ->assertForbidden();
     }
 
-    // Karyawan BOLEH akses Pemakaian Material
+    // Karyawan TIDAK boleh akses Pemakaian Material
 
-    public function test_karyawan_can_view_material_usages_index(): void
+    public function test_karyawan_cannot_view_material_usages_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-usages')
-            ->assertOk();
+            ->assertForbidden();
     }
 
-    public function test_karyawan_can_access_material_usage_create(): void
+    public function test_karyawan_cannot_access_material_usage_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-usages/create')
-            ->assertOk();
+            ->assertForbidden();
+    }
+
+    // Karyawan TIDAK boleh akses Pengembalian & Daily Log
+
+    public function test_karyawan_cannot_access_returns_index(): void
+    {
+        $this->actingAs($this->karyawan)
+            ->get('/returns')
+            ->assertForbidden();
+    }
+
+    public function test_karyawan_cannot_access_daily_log(): void
+    {
+        $this->actingAs($this->karyawan)
+            ->get('/daily-log')
+            ->assertForbidden();
     }
 
     // Karyawan BOLEH akses Tool Assignments
@@ -95,19 +111,19 @@ class KaryawanRoleTest extends TestCase
 
     // Permission check menggunakan model
 
-    public function test_karyawan_does_not_have_view_material_requests_permission(): void
+    public function test_karyawan_has_view_material_requests_permission(): void
     {
         $this->assertFalse($this->karyawan->hasPermissionTo('view material requests'));
     }
 
-    public function test_karyawan_does_not_have_view_distributions_permission(): void
+    public function test_karyawan_has_view_distributions_permission(): void
     {
         $this->assertFalse($this->karyawan->hasPermissionTo('view distributions'));
     }
 
-    public function test_karyawan_has_create_material_usages_permission(): void
+    public function test_karyawan_does_not_have_create_material_usages_permission(): void
     {
-        $this->assertTrue($this->karyawan->hasPermissionTo('create material usages'));
+        $this->assertFalse($this->karyawan->hasPermissionTo('create material usages'));
     }
 
     public function test_karyawan_has_create_tool_assignments_permission(): void

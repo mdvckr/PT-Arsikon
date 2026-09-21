@@ -6,8 +6,11 @@ use App\Models\Distribution;
 use App\Models\MaterialRequest;
 use App\Models\ToolAssignment;
 use App\Models\Warehouse;
+use App\Models\Tool;
+use App\Models\ToolInventory;
 use App\Services\DistributionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DistributionController extends Controller
 {
@@ -53,6 +56,8 @@ class DistributionController extends Controller
     public function create(Request $request)
     {
         $this->authorize('create distributions');
+        $user = Auth::user();
+        $warehouses = $this->accessibleWarehouses();
 
         // Sumber: Permintaan Material yang disetujui (belum terpenuhi semua)
         $materialRequests = MaterialRequest::with(['items.material.unit', 'fromWarehouse', 'toWarehouse'])
@@ -68,11 +73,27 @@ class DistributionController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        $warehouses = $this->accessibleWarehouses();
-        $materials  = \App\Models\Material::with('unit', 'category')->orderBy('name')->get();
-        $tools      = \App\Models\Tool::orderBy('name')->get();
+        $materials = \App\Models\Material::with('unit', 'category')->orderBy('name')->get();
 
-        return view('distributions.create', compact('materialRequests', 'toolAssignments', 'warehouses', 'materials', 'tools'));
+        // Filter tools based on user role
+        $accessibleWarehouseIds = $user->accessibleWarehouseIds();
+        $tools = Tool::with('inventories')
+            ->whereHas('inventories', fn($q) => $q->whereIn('warehouse_id', $accessibleWarehouseIds))
+            ->orderBy('name')
+            ->get()
+            ->unique('id');
+
+        // Tools available for dropdown (available stock > 0)
+        $toolsForDropdown = $tools->filter(fn($t) => $t->inventories->where('stock_available', '>', 0)->isNotEmpty())
+            ->map(fn($t) => [
+                'id' => $t->id,
+                'name' => $t->name . ' · Sisa stok: ' . $t->inventories->sum('stock_available') . ' unit',
+                'code' => $t->code,
+                'available' => (int) $t->inventories->sum('stock_available'),
+            ])
+            ->values();
+
+        return view('distributions.create', compact('materialRequests', 'toolAssignments', 'warehouses', 'materials', 'tools', 'toolsForDropdown'));
     }
 
     public function store(Request $request)
@@ -160,12 +181,24 @@ class DistributionController extends Controller
                 ->with('info', "Surat Jalan #{$distribution->distribution_number} sudah dikirim atau tidak berstatus draft.");
         }
 
+        // Gudang Pusat & Proyek sudah terpisah — ship harus dari gudang asal yang terdaftar, bukan session
+        if (!$distribution->fromWarehouse || !$distribution->toWarehouse) {
+            return redirect()->route('distributions.show', $distribution)
+                ->with('error', 'Gudang asal/tujuan surat jalan tidak ditemukan. Periksa data gudang.');
+        }
+
+        if ($distribution->from_warehouse_id === $distribution->to_warehouse_id) {
+            return redirect()->route('distributions.show', $distribution)
+                ->with('error', 'Gudang asal dan tujuan tidak boleh sama.');
+        }
+
         try {
             $this->service->ship($distribution, auth()->id());
 
             return redirect()->route('distributions.show', $distribution)
-                ->with('success', "Surat jalan #{$distribution->distribution_number} berhasil dikirim.");
+                ->with('success', "Surat jalan #{$distribution->distribution_number} berhasil dikirim dari {$distribution->fromWarehouse->name} ke {$distribution->toWarehouse->name}. Stok Pusat telah dikurangi.");
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Distribution ship failed: '.$e->getMessage(), ['distribution_id' => $distribution->id, 'user_id' => auth()->id()]);
             return redirect()->route('distributions.show', $distribution)
                 ->with('error', $e->getMessage());
         }

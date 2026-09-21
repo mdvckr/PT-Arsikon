@@ -21,6 +21,8 @@ class ReturnController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('view returns');
+
         $query = MaterialReturn::with(['fromWarehouse','toWarehouse','requester']);
 
         if ($request->status) $query->where('status', $request->status);
@@ -32,6 +34,7 @@ class ReturnController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('create returns');
         $warehouses = Warehouse::orderBy('name')->get();
         $materials  = Material::with('unit')->orderBy('name')->get();
         $central    = Warehouse::where('is_central', true)->first();
@@ -47,6 +50,8 @@ class ReturnController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create returns');
+
         $validated = $request->validate([
             'from_warehouse_id' => 'required|exists:warehouses,id',
             'to_warehouse_id'   => 'required|exists:warehouses,id|different:from_warehouse_id',
@@ -94,6 +99,8 @@ class ReturnController extends Controller
 
     public function show(MaterialReturn $return)
     {
+        $this->authorize('view returns');
+
         $return->load(['fromWarehouse','toWarehouse','requester','approver','receiver','items.material.unit']);
         return view('returns.show', compact('return'));
     }

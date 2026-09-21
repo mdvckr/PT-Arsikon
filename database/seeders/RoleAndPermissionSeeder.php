@@ -130,17 +130,14 @@ class RoleAndPermissionSeeder extends Seeder
         $adminProyekRole->syncPermissions($proyekPermissions);
         $userRole->syncPermissions($proyekPermissions);
 
-        // 2.1 Create Karyawan Role
+        // 2.1 Create Karyawan Role — hanya peminjaman alat & lihat stok (tanpa permintaan material & surat jalan, khusus Admin Proyek)
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
         $karyawanPermissions = [
             'view materials',
             'view tools',
             'view inventory',
-            'view reports',
             'view tool assignments',
             'create tool assignments',
-            'view material usages',
-            'create material usages',
         ];
         $karyawanRole->syncPermissions($karyawanPermissions);
 
@@ -276,7 +273,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminPOUser->syncRoles([$adminPORole]);
         $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
-        // 6. Karyawan (User Terbatas: View, Pinjam Alat, Request Material, Buat Surat Jalan)
+        // 6. Karyawan (User Terbatas: View, Pinjam Alat, Request            Material, Buat Surat Jalan)
         $karyawanUser = User::firstOrCreate(
             ['email' => 'karyawan@arsikon.co.id'],
             [

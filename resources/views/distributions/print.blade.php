@@ -275,7 +275,12 @@
             </table>
         </div>
 
-        {{-- TABEL ITEM --}}
+        {{-- MASTER ITEMS TABLE --}}
+        @php($masterItems = $distribution->items->filter(fn($i) => $i->material_id !== null || $i->tool_id !== null))
+        @php($customItems = $distribution->items->filter(fn($i) => $i->material_id === null && $i->tool_id === null))
+        <h4 style="color:#2563eb;margin:16px 0 8px;font-size:14px;">
+            <i class="fas fa-boxes-stacked"></i> Daftar Barang/Alat (Master)
+        </h4>
         <table class="item-table">
             <thead>
                 <tr>
@@ -288,7 +293,7 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($distribution->items as $idx => $item)
+                @forelse($masterItems as $idx => $item)
                 <tr>
                     <td class="no">{{ $idx + 1 }}</td>
                     <td>
@@ -304,11 +309,45 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="center" style="color:#64748b;padding:16px;">Tidak ada item.</td>
+                    <td colspan="6" class="center" style="color:#64748b;padding:16px;">Tidak ada item master.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
+
+        {{-- CUSTOM/NEW ITEMS TABLE --}}
+        @if($customItems->count() > 0)
+        <h4 style="color:#c2410c;margin:20px 0 8px;font-size:14px;border-bottom:2px solid #c2410c;padding-bottom:4px;">
+            <i class="fas fa-pen-nib"></i> Daftar Barang/Alat Baru (Custom)
+        </h4>
+        <table class="item-table" style="border-top:3px double #c2410c;">
+            <thead>
+                <tr>
+                    <th class="no">No</th>
+                    <th style="text-align:left;">Nama Barang / Alat Baru</th>
+                    <th>Satuan</th>
+                    <th>Jumlah Kirim</th>
+                    <th>Jumlah Terima</th>
+                    <th>Rusak / Hilang</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($customItems as $idx => $item)
+                <tr style="background:#fff8f0;">
+                    <td class="no">{{ $idx + 1 }}</td>
+                    <td>
+                        <strong>{{ $item->custom_item_name ?? '(Item Custom)' }}</strong>
+                        <div style="font-size:11px;color:#c2410c;">Item Custom / Non-Master Stok</div>
+                    </td>
+                    <td class="center">{{ $item->custom_item_unit ?? 'unit' }}</td>
+                    <td class="center">{{ number_format((float)$item->qty_shipped, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
+                    <td class="center">{{ number_format((float)$item->qty_received, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
+                    <td class="center">{{ number_format((float)$item->qty_damaged_or_lost, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
 
         {{-- CATATAN --}}
         @if($distribution->notes)

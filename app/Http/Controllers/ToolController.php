@@ -7,8 +7,10 @@ use App\Models\Category;
 use App\Models\ToolAssignment;
 use App\Models\ToolInventory;
 use App\Models\Warehouse;
+use App\Models\Inventory;
 use App\Services\ToolInventoryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ToolController extends Controller
 {
@@ -22,11 +24,13 @@ class ToolController extends Controller
     public function index(Request $request)
     {
         $this->authorize('view tools');
+        $user = Auth::user();
+        $accessibleIds = $user->accessibleWarehouseIds();
 
-        // Kategori beserta alat di dalamnya (untuk tabel berjenjang Kategori -> Kelompok Alat -> Varian)
         $categoryQuery = Category::query()
             ->where('type', 'tool')
-            ->with(['tools' => function ($q) use ($request) {
+            ->with(['tools' => function ($q) use ($request, $accessibleIds) {
+                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds)]);
                 if ($request->search) {
                     $q->where(function ($qq) use ($request) {
                         $qq->where('name', 'like', "%{$request->search}%")
@@ -54,22 +58,19 @@ class ToolController extends Controller
         }
 
         $categoriesData = $categoryQuery->orderBy('name')->get();
-        // Alias untuk kompatibilitas
         $categories = $categoriesData;
-
-        // Kategori untuk dropdown filter
         $filterCategories = Category::query()->where('type', 'tool')->orderBy('name')->get();
 
-        return view('tools.index', compact('categoriesData', 'categories', 'filterCategories'));
+        return view('tools.index', compact('categoriesData', 'categories', 'filterCategories', 'accessibleIds'));
     }
 
     public function create(Request $request)
     {
         $this->authorize('create tools');
+        $user = Auth::user();
         $categories = Category::query()->where('type', 'tool')->orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::forUser($user)->orderBy('name')->get();
 
-        // Kategori yang dipilih lewat query (mis. klik "Tambah Alat" pada baris kategori)
         $selectedCategoryId = $request->query('category_id');
         if ($selectedCategoryId && $categories->contains('id', (int) $selectedCategoryId)) {
             $selectedCategoryId = (int) $selectedCategoryId;
@@ -77,7 +78,6 @@ class ToolController extends Controller
             $selectedCategoryId = null;
         }
 
-        // Ambil daftar kelompok nama alat (type) per kategori untuk Dropdown bertingkat
         $existingGroups = Tool::whereNotNull('type')
             ->where('type', '!=', '')
             ->select('category_id', 'type')
@@ -87,12 +87,16 @@ class ToolController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
-        return view('tools.create', compact('categories', 'selectedCategoryId', 'existingGroups', 'warehouses'));
+        $singleWarehouse = $warehouses->count() === 1 ? $warehouses->first() : null;
+
+        return view('tools.create', compact('categories', 'selectedCategoryId', 'existingGroups', 'warehouses', 'singleWarehouse'));
     }
 
     public function store(Request $request)
     {
         $this->authorize('create tools');
+        $user = Auth::user();
+        $accessibleIds = $user->accessibleWarehouseIds();
 
         $validated = $request->validate([
             'code'            => 'required|string|max:50|unique:tools,code',
@@ -102,10 +106,20 @@ class ToolController extends Controller
             'brand'           => 'nullable|string|max:100',
             'category_id'     => 'nullable|integer|exists:categories,id',
             'new_category'    => 'nullable|string|max:255',
-            'warehouse_id'    => 'nullable|integer|exists:warehouses,id',
+            'warehouse_id'    => 'required|integer|exists:warehouses,id',
             'notes'           => 'nullable|string',
             'stock_total'     => 'nullable|integer|min:0',
+            'manual_items'    => 'nullable|array',
+            'manual_items.*.code'  => 'required|string|max:50|unique:tools,code',
+            'manual_items.*.name'  => 'required|string|max:255',
+            'manual_items.*.stock_total' => 'nullable|integer|min:0',
+            'manual_items.*.warehouse_id' => 'required|integer|exists:warehouses,id',
         ]);
+
+        // Validate warehouse access
+        if (!in_array($validated['warehouse_id'], $accessibleIds)) {
+            return back()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.'])->withInput();
+        }
 
         $category = $this->resolveCategory($request);
         $incomingStages = $this->parseIncomingStages($request);
@@ -129,7 +143,7 @@ class ToolController extends Controller
             'size'                 => $validated['size'] ?? null,
             'brand'                => $validated['brand'] ?? null,
             'category_id'          => $category?->id,
-            'current_warehouse_id' => $validated['warehouse_id'] ?? null,
+            'current_warehouse_id' => $validated['warehouse_id'],
             'notes'                => $validated['notes'] ?? null,
             'incoming_stages'      => $incomingStages,
             'stock_total'          => 0,
@@ -139,20 +153,52 @@ class ToolController extends Controller
             'stock_damaged'        => 0,
         ]);
 
-        // Populate per-warehouse inventory for the initial stock
         if ($stockTotal > 0) {
-            $warehouse = $validated['warehouse_id']
-                ? Warehouse::find($validated['warehouse_id'])
-                : ($tool->currentWarehouse ?? Warehouse::where('is_central', true)->first());
-
+            $warehouse = Warehouse::find($validated['warehouse_id']);
             if ($warehouse) {
                 $this->toolInvService->addStock($warehouse, $tool, $stockTotal);
                 $tool->refresh();
             }
         }
 
+        // Handle manual items
+        $manualCreatedCount = 0;
+        if (!empty($validated['manual_items'])) {
+            foreach ($validated['manual_items'] as $manualItem) {
+                if (!in_array($manualItem['warehouse_id'], $accessibleIds)) {
+                    continue;
+                }
+                $manualTool = Tool::create([
+                    'code'              => strtoupper(trim($manualItem['code'])),
+                    'name'              => $manualItem['name'],
+                    'type'              => $typeVal,
+                    'size'              => $validated['size'] ?? null,
+                    'brand'             => $validated['brand'] ?? null,
+                    'category_id'       => $category?->id,
+                    'current_warehouse_id' => $manualItem['warehouse_id'],
+                    'stock_total'       => (int) ($manualItem['stock_total'] ?? 0),
+                    'stock_available'   => (int) ($manualItem['stock_total'] ?? 0),
+                    'stock_borrowed'    => 0,
+                    'stock_maintenance' => 0,
+                    'stock_damaged'     => 0,
+                ]);
+                if ($manualItem['stock_total'] > 0) {
+                    $wh = Warehouse::find($manualItem['warehouse_id']);
+                    if ($wh) {
+                        $this->toolInvService->addStock($wh, $manualTool, (int) $manualItem['stock_total']);
+                    }
+                }
+                $manualCreatedCount++;
+            }
+        }
+
+        $successMsg = "Alat '{$validated['name']}' berhasil ditambahkan dengan total stok {$tool->stock_total} unit.";
+        if ($manualCreatedCount > 0) {
+            $successMsg .= " {$manualCreatedCount} item manual juga berhasil dibuat.";
+        }
+
         return redirect()->route('tools.index')
-            ->with('success', "Alat '{$tool->name}' berhasil ditambahkan dengan total stok {$tool->stock_total} unit.");
+            ->with('success', $successMsg);
     }
 
     public function addStock(Request $request, Tool $tool)
@@ -187,8 +233,9 @@ class ToolController extends Controller
     public function edit(Tool $tool)
     {
         $this->authorize('edit tools');
+        $user = Auth::user();
         $categories = Category::query()->where('type', 'tool')->orderBy('name')->get();
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::forUser($user)->orderBy('name')->get();
 
         $existingGroups = Tool::whereNotNull('type')
             ->where('type', '!=', '')

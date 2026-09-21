@@ -461,73 +461,72 @@
         </div>
     </div>
 
-    <!-- Section 6: Neraca Sisa Stok Material Hari Ini -->
+    <!-- Section 6: Neraca Sisa Stok Material Hari Ini — hanya material yang dipakai hari ini, dikelompokkan kategori+nama -->
     <div class="card mb-4">
         <div class="card-header flex justify-between items-center" style="background:#ffffff;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
             <div>
                 <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
                     6. Neraca Sisa Stok Material Hari Ini (Stock Balance)
                 </span>
+                <span class="text-muted" style="font-size:11.5px;display:block;margin-top:2px;">Dikelompokkan kategori & nama — hanya tampil material yang dipakai/masuk hari ini</span>
             </div>
             <span class="text-muted" style="font-size:12px;">Stok Awal + Masuk - Keluar = Sisa Stok</span>
         </div>
         <div class="card-body p-0">
-            <div class="table-wrap">
-                <table class="data-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width:45px;text-align:center;">#</th>
-                            <th>Nama Material</th>
-                            <th style="width:120px;text-align:right;">Stok Awal</th>
-                            <th style="width:120px;text-align:right;">Masuk (+)</th>
-                            <th style="width:120px;text-align:right;">Dipakai (-)</th>
-                            <th style="width:130px;text-align:right;">Sisa Akhir</th>
-                            <th style="width:80px;text-align:center;">Satuan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($stockBalance as $idx => $stk)
-                        <tr>
-                            <td style="text-align:center;color:#64748b;">{{ $idx + 1 }}</td>
-                            <td>
-                                <div class="fw-600" style="color:#0f172a;">{{ $stk->material_name }}</div>
-                                <div class="text-muted" style="font-size:11.5px;">Kode: {{ $stk->material_code }}</div>
-                            </td>
-                            <td style="text-align:right;color:#475569;">
-                                {{ format_quantity($stk->opening_stock) }}
-                            </td>
-                            <td style="text-align:right;font-weight:600;color:{{ $stk->qty_in > 0 ? '#0f172a' : '#94a3b8' }};">
-                                {{ $stk->qty_in > 0 ? '+' . format_quantity($stk->qty_in) : '-' }}
-                            </td>
-                            <td style="text-align:right;font-weight:600;color:{{ $stk->qty_out > 0 ? '#0f172a' : '#94a3b8' }};">
-                                {{ $stk->qty_out > 0 ? '-' . format_quantity($stk->qty_out) : '-' }}
-                            </td>
-                            <td style="text-align:right;font-weight:700;font-size:13.5px;color:#0f172a;">
-                                {{ format_quantity($stk->closing_stock) }}
-                            </td>
-                            <td style="text-align:center;color:#64748b;">
-                                {{ $stk->unit }}
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="text-center text-muted p-4">
-                                Belum ada data inventori material di gudang ini.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            @if(isset($stockBalanceGrouped) && $stockBalanceGrouped->isNotEmpty())
+                @foreach($stockBalanceGrouped as $catName => $rows)
+                <div style="background:#f8fafc;padding:8px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-tag" style="font-size:11px;color:#64748b;"></i>
+                    <span class="fw-700" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#0f172a;">{{ $catName }}</span>
+                    <span class="badge badge-gray" style="font-size:11px;">{{ $rows->count() }} material dipakai</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:45px;text-align:center;">#</th>
+                                <th>Nama Material</th>
+                                <th style="width:120px;text-align:right;">Stok Awal</th>
+                                <th style="width:120px;text-align:right;">Masuk (+)</th>
+                                <th style="width:120px;text-align:right;">Dipakai (-)</th>
+                                <th style="width:130px;text-align:right;">Sisa Akhir</th>
+                                <th style="width:80px;text-align:center;">Satuan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($rows as $idx => $stk)
+                            <tr>
+                                <td style="text-align:center;color:#64748b;">{{ $idx + 1 }}</td>
+                                <td>
+                                    <div class="fw-600" style="color:#0f172a;">{{ $stk->material_name }}</div>
+                                    <div class="text-muted" style="font-size:11.5px;">Kode: {{ $stk->material_code }}</div>
+                                </td>
+                                <td style="text-align:right;color:#475569;">{{ format_quantity($stk->opening_stock) }}</td>
+                                <td style="text-align:right;font-weight:600;color:{{ $stk->qty_in > 0 ? '#0f172a' : '#94a3b8' }};">{{ $stk->qty_in > 0 ? '+' . format_quantity($stk->qty_in) : '-' }}</td>
+                                <td style="text-align:right;font-weight:600;color:{{ $stk->qty_out > 0 ? '#0f172a' : '#94a3b8' }};">{{ $stk->qty_out > 0 ? '-' . format_quantity($stk->qty_out) : '-' }}</td>
+                                <td style="text-align:right;font-weight:700;font-size:13.5px;color:#0f172a;">{{ format_quantity($stk->closing_stock) }}</td>
+                                <td style="text-align:center;color:#64748b;">{{ $stk->unit }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endforeach
+            @else
+                <div class="text-center text-muted p-4" style="font-size:13px;">Tidak ada material yang dipakai/masuk pada tanggal {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}.</div>
+            @endif
         </div>
     </div>
 
-    <!-- Section 7: Neraca Posisi & Kesiapan Alat Kerja -->
+    <!-- Section 7: Neraca Posisi & Kesiapan Alat Kerja — hanya alat yang dipinjam, grouped kategori+nama -->
     <div class="card mb-4">
         <div class="card-header flex justify-between items-center" style="background:#ffffff;padding:14px 20px;border-bottom:1px solid #f1f5f9;">
-            <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
-                7. Neraca Posisi & Kesiapan Alat Kerja (Tool Availability)
-            </span>
+            <div>
+                <span class="card-title" style="font-size:14px;font-weight:700;color:#0f172a;margin:0;">
+                    7. Neraca Posisi & Kesiapan Alat Kerja (Tool Availability)
+                </span>
+                <span class="text-muted" style="font-size:11.5px;display:block;margin-top:2px;">Dikelompokkan kategori & nama — hanya tampil alat yang dipinjam hari ini</span>
+            </div>
             <div class="flex items-center gap-2" style="flex-wrap:wrap;">
                 <span class="badge badge-gray">{{ $totalToolsReady }} Ready</span>
                 <span class="badge badge-gray">{{ $totalToolsInUse }} di Lapangan</span>
@@ -537,83 +536,70 @@
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-wrap">
-                <table class="data-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width:45px;text-align:center;">#</th>
-                            <th>Nama Alat Kerja</th>
-                            <th style="width:105px;text-align:center;">Total Unit</th>
-                            <th style="width:105px;text-align:center;">Ready (Gudang)</th>
-                            <th style="width:105px;text-align:center;">Di Lapangan</th>
-                            <th style="width:105px;text-align:center;">Rusak / Servis</th>
-                            <th>Mandor Pemegang / Posisi</th>
-                            <th style="width:140px;text-align:center;">Status Kesiapan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($toolBalance as $tIdx => $tb)
-                        <tr>
-                            <td style="text-align:center;color:#64748b;">{{ $tIdx + 1 }}</td>
-                            <td>
-                                <div class="fw-600" style="color:#0f172a;">{{ $tb->tool_name }}</div>
-                                <div class="text-muted" style="font-size:11.5px;">
-                                    Kode: {{ $tb->tool_code }} | Merk: {{ $tb->brand }} | {{ $tb->category_name }}
-                                </div>
-                            </td>
-                            <td style="text-align:center;">
-                                <strong style="font-size:13px;color:#0f172a;">{{ $tb->stock_total }} Unit</strong>
-                            </td>
-                            <td style="text-align:center;">
-                                <span style="font-weight:600;color:{{ $tb->stock_available > 0 ? '#0f172a' : '#94a3b8' }};">
-                                    {{ $tb->stock_available }} Unit
-                                </span>
-                            </td>
-                            <td style="text-align:center;">
-                                <span style="font-weight:600;color:{{ $tb->stock_borrowed > 0 ? '#0f172a' : '#94a3b8' }};">
-                                    {{ $tb->stock_borrowed }} Unit
-                                </span>
-                            </td>
-                            <td style="text-align:center;">
-                                <span style="font-weight:600;color:{{ $tb->stock_maintenance > 0 ? '#dc2626' : '#94a3b8' }};">
-                                    {{ $tb->stock_maintenance }} Unit
-                                </span>
-                            </td>
-                            <td>
-                                @if(!empty($tb->borrowers))
-                                    <div style="display:flex;flex-direction:column;gap:3px;">
-                                        @foreach($tb->borrowers as $bName)
-                                        <div style="font-size:12.5px;color:#1e293b;">
-                                            {{ $bName }}
+            @if(isset($toolBalanceGrouped) && $toolBalanceGrouped->isNotEmpty())
+                @foreach($toolBalanceGrouped as $catName => $rows)
+                <div style="background:#f8fafc;padding:8px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-tools" style="font-size:11px;color:#64748b;"></i>
+                    <span class="fw-700" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#0f172a;">{{ $catName }}</span>
+                    <span class="badge badge-gray" style="font-size:11px;">{{ $rows->count() }} alat dipinjam</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:45px;text-align:center;">#</th>
+                                <th>Nama Alat Kerja</th>
+                                <th style="width:105px;text-align:center;">Total Unit</th>
+                                <th style="width:105px;text-align:center;">Ready (Gudang)</th>
+                                <th style="width:105px;text-align:center;">Di Lapangan</th>
+                                <th style="width:105px;text-align:center;">Rusak / Servis</th>
+                                <th>Mandor Pemegang / Posisi</th>
+                                <th style="width:140px;text-align:center;">Status Kesiapan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($rows as $tIdx => $tb)
+                            <tr>
+                                <td style="text-align:center;color:#64748b;">{{ $tIdx + 1 }}</td>
+                                <td>
+                                    <div class="fw-600" style="color:#0f172a;">{{ $tb->tool_name }}</div>
+                                    <div class="text-muted" style="font-size:11.5px;">Kode: {{ $tb->tool_code }} | Merk: {{ $tb->brand }}</div>
+                                </td>
+                                <td style="text-align:center;"><strong style="font-size:13px;color:#0f172a;">{{ $tb->stock_total }} Unit</strong></td>
+                                <td style="text-align:center;"><span style="font-weight:600;color:{{ $tb->stock_available > 0 ? '#0f172a' : '#94a3b8' }};">{{ $tb->stock_available }} Unit</span></td>
+                                <td style="text-align:center;"><span style="font-weight:600;color:{{ $tb->stock_borrowed > 0 ? '#0f172a' : '#94a3b8' }};">{{ $tb->stock_borrowed }} Unit</span></td>
+                                <td style="text-align:center;"><span style="font-weight:600;color:{{ $tb->stock_maintenance > 0 ? '#dc2626' : '#94a3b8' }};">{{ $tb->stock_maintenance }} Unit</span></td>
+                                <td>
+                                    @if(!empty($tb->borrowers))
+                                        <div style="display:flex;flex-direction:column;gap:3px;">
+                                            @foreach($tb->borrowers as $bName)
+                                            <div style="font-size:12.5px;color:#1e293b;">{{ $bName }}</div>
+                                            @endforeach
                                         </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <span class="text-muted" style="font-size:12px;">Standby di gudang</span>
-                                @endif
-                            </td>
-                            <td style="text-align:center;">
-                                @if($tb->stock_available > 0)
-                                    <span class="badge badge-success">Siap Pakai</span>
-                                @elseif($tb->stock_borrowed > 0)
-                                    <span class="badge badge-primary">Dipakai Lapangan</span>
-                                @elseif($tb->stock_maintenance > 0)
-                                    <span class="badge badge-danger">Butuh Servis</span>
-                                @else
-                                    <span class="badge badge-gray">Kosong</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="8" class="text-center text-muted p-4">
-                                Belum ada data alat kerja yang terdaftar di proyek ini.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    @else
+                                        <span class="text-muted" style="font-size:12px;">Standby di gudang</span>
+                                    @endif
+                                </td>
+                                <td style="text-align:center;">
+                                    @if($tb->stock_available > 0)
+                                        <span class="badge badge-success">Siap Pakai</span>
+                                    @elseif($tb->stock_borrowed > 0)
+                                        <span class="badge badge-primary">Dipakai Lapangan</span>
+                                    @elseif($tb->stock_maintenance > 0)
+                                        <span class="badge badge-danger">Butuh Servis</span>
+                                    @else
+                                        <span class="badge badge-gray">Kosong</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endforeach
+            @else
+                <div class="text-center text-muted p-4" style="font-size:13px;">Tidak ada alat yang dipinjam pada tanggal {{ \Carbon\Carbon::parse($date)->format('d/m/Y') }}.</div>
+            @endif
         </div>
     </div>
 </x-app-layout>

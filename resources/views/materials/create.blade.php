@@ -241,16 +241,25 @@
                 </div>
                 <div style="padding:18px;">
                     <div class="grid grid-3" style="gap:16px;margin-bottom:16px;">
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
-                            <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
-                                <option value="">— Pilih Gudang —</option>
-                                @foreach($warehouses as $wh)
-                                <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
+                     <div>
+                             <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
+                             @if($singleWarehouse ?? false)
+                             <input type="hidden" name="warehouse_id" value="{{ $singleWarehouse->id }}">
+                             <select class="form-control" style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;" disabled>
+                                 <option value="{{ $singleWarehouse->id }}">{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}</option>
+                             </select>
+                             @else
+                             <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
+                                 <option value="">— Pilih Gudang —</option>
+                                 @foreach($warehouses as $wh)
+                                 <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                     {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                                 </option>
+                                 @endforeach
+                             </select>
+                             @endif
+                             @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                         </div>
                         <div>
                             <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">STOK AWAL</label>
                             <input type="number" step="1" min="0" name="initial_stock" id="initial_stock_input"
@@ -273,6 +282,62 @@
                         <textarea name="description" class="form-control" rows="3"
                             placeholder="Deskripsi singkat material, spesifikasi teknis, atau catatan penting lainnya..."
                             style="border-radius:6px;font-size:13px;resize:vertical;">{{ old('description') }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            {{-- MANUAL ITEM ADDITION SECTION --}}
+            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div>
+                        <div class="fw-700" style="font-size:14px;color:#0f172a;">+ Tambah Material/Alat Baru (Tanpa Master Data)</div>
+                        <div class="text-muted" style="font-size:12px;margin-top:1px;">Tambahkan material atau alat langsung tanpa membuat data master terlebih dahulu</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="toggleManualBox()" style="height:32px;font-size:12px;font-weight:600;">
+                        <i class="fas fa-plus-circle text-primary"></i> <span>Tambah Baru</span>
+                    </button>
+                </div>
+                <div id="manual-box" style="display:none;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:16px 18px;">
+                    <div class="grid" style="gap:12px;">
+                        <div>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Material/Alat Baru <span style="color:#ef4444;">*</span></label>
+                            <input type="text" name="manual_items[][name]" id="manual_item_name" class="form-control" placeholder="Contoh: Semen Extra Power 50kg" style="height:36px;border-radius:6px;font-size:13px;">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Kode SKU <span style="color:#ef4444;">*</span></label>
+                            <input type="text" name="manual_items[][sku]" id="manual_item_sku" class="form-control font-monospace" placeholder="Contoh: MAT-XXX-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
+                        </div>
+                    </div>
+                    <div class="grid grid-3" style="gap:12px;margin-top:12px;">
+                        <div>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Satuan</label>
+                            <input type="text" name="manual_items[][unit_id]" id="manual_item_unit" class="form-control" placeholder="Pcs, kg, liter" style="height:36px;border-radius:6px;font-size:13px;">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Jumlah Stok</label>
+                            <input type="number" step="1" min="0" name="manual_items[][quantity]" id="manual_item_qty" class="form-control" placeholder="0" style="height:36px;border-radius:6px;font-size:13px;">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Lokasi Gudang</label>
+                            @if($singleWarehouse ?? false)
+                            <input type="hidden" name="manual_items[][warehouse_id]" value="{{ $singleWarehouse->id }}">
+                            <input type="text" class="form-control" value="{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}" disabled style="height:36px;border-radius:6px;font-size:13px;background:#f8fafc;">
+                            @else
+                            <select name="manual_items[][warehouse_id]" class="form-control" style="height:36px;border-radius:6px;font-size:13px;">
+                                @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                @endforeach
+                            </select>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addManualMaterial()" style="height:32px;font-size:12px;">
+                            <i class="fas fa-check"></i> Tambah Baru
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleManualBox()" style="height:32px;font-size:12px;">
+                            <i class="fas fa-times"></i> Tutup
+                        </button>
                     </div>
                 </div>
             </div>
@@ -556,6 +621,44 @@
 
         // Initialize empty state
         checkEmptyState();
+
+        // ── Manual Item Section ──
+        function toggleManualBox() {
+            var box = document.getElementById('manual-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            if (box.style.display === 'block') {
+                document.getElementById('manual_item_name').focus();
+            }
+        }
+
+        function addManualMaterial() {
+            var name = document.getElementById('manual_item_name').value.trim();
+            var sku = document.getElementById('manual_item_sku').value.trim();
+            var unit = document.getElementById('manual_item_unit').value.trim() || 'pcs';
+            var qty = document.getElementById('manual_item_qty').value || 0;
+
+            if (!name || !sku) {
+                alert('Nama dan Kode SKU wajib diisi.');
+                return;
+            }
+
+            // Add hidden inputs for manual items to the form
+            var container = document.createElement('div');
+            container.style.display = 'none';
+            container.innerHTML = `
+                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length}[name]" value="${name}">
+                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[sku]" value="${sku}">
+                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[unit_id]" value="${unit}">
+                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[quantity]" value="${qty}">
+            `;
+            document.getElementById('material-form').appendChild(container);
+
+            alert('Material/Alat baru: "' + name + '" akan ditambahkan saat simpan.');
+            document.getElementById('manual_item_name').value = '';
+            document.getElementById('manual_item_sku').value = '';
+            document.getElementById('manual_item_unit').value = '';
+            document.getElementById('manual_item_qty').value = '0';
+        }
     </script>
     @endpush
 </x-app-layout>

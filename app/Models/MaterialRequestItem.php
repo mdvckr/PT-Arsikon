@@ -13,6 +13,8 @@ class MaterialRequestItem extends Model
     protected $fillable = [
         'material_request_id',
         'material_id',
+        'custom_item_name',
+        'custom_item_unit',
         'qty_requested',
         'qty_approved',
         'qty_fulfilled',
@@ -33,5 +35,26 @@ class MaterialRequestItem extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function isCustom(): bool
+    {
+        return $this->material_id === null;
+    }
+
+    public function displayName(): string
+    {
+        if ($this->isCustom()) {
+            return $this->custom_item_name ?? '(Item Custom)';
+        }
+        return $this->material?->name ?? '-';
+    }
+
+    public function displayUnit(): string
+    {
+        if ($this->isCustom()) {
+            return $this->custom_item_unit ?? 'unit';
+        }
+        return $this->material?->unit?->abbreviation ?? 'unit';
     }
 }

@@ -79,8 +79,9 @@ class MaterialUsageController extends Controller
             $selectedWarehouse = $warehouses->first();
         }
 
-        // Get materials that have stock > 0 in this warehouse
+        // Get materials that have stock > 0 in this warehouse — grouped by kategori & nama supaya rapi
         $materialsData = [];
+        $materialsGrouped = collect();
         if ($selectedWarehouse) {
             $inventories = Inventory::with(['material.unit', 'material.category'])
                 ->where('warehouse_id', $selectedWarehouse->id)
@@ -96,7 +97,9 @@ class MaterialUsageController extends Controller
                     'unit'     => $inv->material?->unit?->abbreviation ?? 'unit',
                     'category' => $inv->material?->category?->name ?? 'Umum',
                 ];
-            })->values()->toArray();
+            })->sortBy([['category','asc'], ['name','asc']])->values()->toArray();
+
+            $materialsGrouped = collect($materialsData)->groupBy('category')->sortKeys();
         }
 
         $mrQuery = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
@@ -111,7 +114,7 @@ class MaterialUsageController extends Controller
 
         $approvedMRs = $mrQuery->orderBy('id', 'desc')->get();
 
-        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'approvedMRs'));
+        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'materialsGrouped', 'approvedMRs'));
     }
 
     public function getMRDetails(Request $request, \App\Models\MaterialRequest $materialRequest)

@@ -260,7 +260,10 @@
             </div>
         </div>
 
-        <!-- Rincian Material -->
+        <!-- Rincian Material Master -->
+        @php $masterItems = $materialUsage->items->filter(fn($i) => !$i->isCustom()); @endphp
+        @php $customItems = $materialUsage->items->filter(fn($i) => $i->isCustom()); @endphp
+        <h4 style="color:#2563eb;margin:0 0 8px;font-size:13px;"><i class="fas fa-boxes-stacked"></i> Daftar Material (Master)</h4>
         <table class="items-table">
             <thead>
                 <tr>
@@ -273,25 +276,46 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($materialUsage->items as $idx => $item)
+                @forelse($masterItems as $idx => $item)
                 <tr>
                     <td style="text-align:center;">{{ $idx + 1 }}</td>
-                    <td>{{ $item->isCustom() ? 'CUSTOM' : ($item->material?->code ?? '-') }}</td>
-                    <td>
-                        <strong>{{ $item->displayName() }}</strong>
-                        @if($item->isCustom())
-                            <span style="font-size: 10px; color: #0284c7; margin-left: 4px;">(Item Bebas)</span>
-                        @endif
-                    </td>
-                    <td style="text-align:right;font-weight:700;">
-                        {{ format_quantity($item->quantity) }}
-                    </td>
+                    <td>{{ $item->material?->code ?? '-' }}</td>
+                    <td><strong>{{ $item->displayName() }}</strong></td>
+                    <td style="text-align:right;font-weight:700;">{{ format_quantity($item->quantity) }}</td>
                     <td style="text-align:center;">{{ $item->displayUnit() }}</td>
+                    <td>{{ $item->notes ?? '-' }}</td>
+                </tr>
+                @empty
+                <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:12px;">Tidak ada item master.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        @if($customItems->count() > 0)
+        <h4 style="color:#c2410c;margin:16px 0 8px;font-size:13px;border-bottom:2px solid #c2410c;padding-bottom:4px;"><i class="fas fa-pen-nib"></i> Daftar Barang Baru (Custom)</h4>
+        <table class="items-table" style="border-top:3px double #c2410c;">
+            <thead>
+                <tr>
+                    <th style="width:30px;text-align:center;">No</th>
+                    <th>Nama Barang Baru</th>
+                    <th style="width:70px;text-align:center;">Satuan</th>
+                    <th style="width:110px;text-align:right;">Kuantitas</th>
+                    <th>Keterangan / Peruntukan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($customItems as $idx => $item)
+                <tr style="background:#fff8f0;">
+                    <td style="text-align:center;">{{ $idx + 1 }}</td>
+                    <td><strong>{{ $item->displayName() }}</strong><div style="font-size:10px;color:#c2410c;">Item Custom / Non-Master</div></td>
+                    <td style="text-align:center;">{{ $item->displayUnit() }}</td>
+                    <td style="text-align:right;font-weight:700;">{{ format_quantity($item->quantity) }}</td>
                     <td>{{ $item->notes ?? '-' }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        @endif
 
         @if($materialUsage->notes)
         <div style="font-size:11px;margin-bottom:16px;color:#475569;border-left:3px solid #cbd5e1;padding-left:8px;">

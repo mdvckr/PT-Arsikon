@@ -34,13 +34,16 @@
                         <input type="text" id="materialSearch" class="form-control" placeholder="Cari nama material, model, atau kategori..." oninput="filterMaterials()">
                     </div>
 
+                    <div class="alert alert-info mb-3" style="font-size:12.5px;padding:10px 14px;border-radius:8px;">
+                        <i class="fas fa-warehouse"></i> Stok ditampilkan dari <strong>Gudang Pusat</strong> ({{ $centralWarehouse?->name ?? 'Pusat' }}). Gudang Pusat & Proyek punya stok terpisah — permintaan akan dikirim dari Pusat ke Proyek pemohon.
+                    </div>
                     <div class="table-wrap" style="max-height:520px;overflow-y:auto;">
                         <table class="data-table mb-0" id="materialsTable">
                             <thead>
                                 <tr>
                                     <th style="min-width:200px;">Nama Material & Model</th>
                                     <th style="text-align:center;">Ukuran / Dimensi</th>
-                                    <th style="text-align:center;">Total Stok</th>
+                                    <th style="text-align:center;">Stok Pusat</th>
                                     <th style="width:140px;text-align:center;">Jumlah Diminta</th>
                                 </tr>
                             </thead>
@@ -150,6 +153,40 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Manual items: barang tidak ada di Pusat -->
+                    <div class="mt-4" style="border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px;background:#fffbeb;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <i class="fas fa-pen-to-square text-warning" style="font-size:16px;"></i>
+                                <strong style="font-size:13px;color:#92400e;">Barang Tidak Ada di Pusat — Input Manual</strong>
+                                <span class="badge badge-warning" style="font-size:10px;">Custom</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="addCustomRequestRow()" style="padding:6px 12px;">
+                                <i class="fas fa-plus"></i> Tambah Baris Manual
+                            </button>
+                        </div>
+                        <div class="text-muted mb-3" style="font-size:11.5px;line-height:1.4;">
+                            Gunakan untuk barang yang <strong>tidak ada di Gudang Pusat</strong> namun dibutuhkan lapangan. Barang manual tetap tercatat di permintaan & terhubung ke list material Pusat di atas.
+                        </div>
+                        <div class="table-wrap">
+                            <table class="data-table" id="customRequestTable">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:180px;">Nama Barang (Manual)</th>
+                                        <th style="width:100px;text-align:center;">Satuan</th>
+                                        <th style="width:110px;text-align:center;">Jumlah</th>
+                                        <th style="width:44px;text-align:center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customRequestBody">
+                                    <tr id="customRequestEmpty">
+                                        <td colspan="4" class="text-center text-muted" style="padding:12px;font-size:12px;">Belum ada barang manual. Klik “Tambah Baris Manual”.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -189,6 +226,30 @@
 
     @push('scripts')
     <script>
+        let customReqIndex = 0;
+        function addCustomRequestRow() {
+            const tbody = document.getElementById('customRequestBody');
+            const empty = document.getElementById('customRequestEmpty');
+            if (empty) empty.style.display = 'none';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:13px;"></td>
+                <td><input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:13px;"></td>
+                <td><input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;font-weight:700;" oninput="calculateTotal()"></td>
+                <td style="text-align:center;"><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();"><i class="fas fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+            customReqIndex++;
+            calculateTotal();
+        }
+        function checkCustomEmpty() {
+            const tbody = document.getElementById('customRequestBody');
+            const empty = document.getElementById('customRequestEmpty');
+            if (tbody && empty) {
+                const rows = tbody.querySelectorAll('tr:not(#customRequestEmpty)');
+                empty.style.display = rows.length === 0 ? '' : 'none';
+            }
+        }
         function calculateTotal() {
             var total = 0;
             document.querySelectorAll('.qty-input').forEach(function (input) {

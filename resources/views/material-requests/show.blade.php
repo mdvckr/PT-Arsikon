@@ -56,17 +56,19 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php $hasCustom = $materialRequest->items->contains(fn($i) => $i->isCustom()); @endphp
                         @foreach($materialRequest->items as $item)
                         @php
                             $approved = (float) $item->qty_approved;
                             $fulfilled = (float) $item->qty_fulfilled;
                             $remaining = max(0, $approved - $fulfilled);
-                            $unit = $item->material?->unit?->abbreviation ?? 'unit';
+                            $unit = $item->displayUnit();
+                            $isCustom = $item->isCustom();
                         @endphp
-                        <tr>
+                        <tr @if($isCustom) style="background:#fffbeb;" @endif>
                             <td>
-                                <div class="fw-600">{{ $item->material?->name }}</div>
-                                <div class="text-muted" style="font-size:11.5px;">Kode: {{ $item->material?->code ?? '-' }}</div>
+                                <div class="fw-600">{{ $item->displayName() }} @if($isCustom)<span class="badge badge-warning" style="font-size:10px;margin-left:4px;">Custom</span>@endif</div>
+                                <div class="text-muted" style="font-size:11.5px;">@if($isCustom) Manual — tidak ada di Pusat @else Kode: {{ $item->material?->code ?? '-' }} @endif</div>
                             </td>
                             <td class="fw-600" style="text-align:right;">{{ format_quantity($item->qty_requested) }}</td>
                             @if(!in_array($materialRequest->status, ['draft', 'submitted']))

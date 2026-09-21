@@ -438,102 +438,90 @@
             </tbody>
         </table>
 
-        <!-- 4. Neraca Sisa Stok -->
+        <!-- 4. Neraca Sisa Stok — hanya dipakai, grouped kategori -->
         <div class="section-header">
             <span>4. Neraca Sisa Stok Material Hari Ini (Closing Balance)</span>
-            <span style="font-weight:600;font-size:10px;">Stok Awal + Masuk - Keluar = Sisa Stok</span>
+            <span style="font-weight:600;font-size:10px;">Dikelompokkan kategori — hanya material dipakai</span>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px;text-align:center;">No</th>
-                    <th>Nama Material</th>
-                    <th style="width:90px;text-align:right;">Stok Awal</th>
-                    <th style="width:90px;text-align:right;">Masuk (+)</th>
-                    <th style="width:90px;text-align:right;">Dipakai (-)</th>
-                    <th style="width:110px;text-align:right;background:#e2e8f0;">Sisa Stok Sore</th>
-                    <th style="width:60px;text-align:center;">Satuan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($stockBalance as $idx => $stk)
-                <tr>
-                    <td style="text-align:center;">{{ $idx + 1 }}</td>
-                    <td><strong>{{ $stk->material_name }}</strong> <span style="color:#64748b;font-size:9.5px;">({{ $stk->material_code }})</span></td>
-                    <td style="text-align:right;">{{ format_quantity($stk->opening_stock) }}</td>
-                    <td style="text-align:right;">{{ $stk->qty_in > 0 ? '+' . format_quantity($stk->qty_in) : '-' }}</td>
-                    <td style="text-align:right;">{{ $stk->qty_out > 0 ? '-' . format_quantity($stk->qty_out) : '-' }}</td>
-                    <td style="text-align:right;font-weight:800;background:#f1f5f9;">{{ format_quantity($stk->closing_stock) }}</td>
-                    <td style="text-align:center;">{{ $stk->unit }}</td>
-                </tr>
-                @empty
-                <tr><td colspan="7" style="text-align:center;color:#64748b;">Belum ada data stok material.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        @if(isset($stockBalanceGrouped) && $stockBalanceGrouped->isNotEmpty())
+            @foreach($stockBalanceGrouped as $catName => $rows)
+            <div style="background:#f1f5f9;padding:4px 8px;margin:8px 0 4px;font-weight:800;font-size:10px;text-transform:uppercase;color:#0f172a;border-left:3px solid #2563eb;">{{ $catName }} — {{ $rows->count() }} material</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:30px;text-align:center;">No</th>
+                        <th>Nama Material</th>
+                        <th style="width:90px;text-align:right;">Stok Awal</th>
+                        <th style="width:90px;text-align:right;">Masuk (+)</th>
+                        <th style="width:90px;text-align:right;">Dipakai (-)</th>
+                        <th style="width:110px;text-align:right;background:#e2e8f0;">Sisa Stok Sore</th>
+                        <th style="width:60px;text-align:center;">Satuan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rows as $idx => $stk)
+                    <tr>
+                        <td style="text-align:center;">{{ $idx + 1 }}</td>
+                        <td><strong>{{ $stk->material_name }}</strong> <span style="color:#64748b;font-size:9.5px;">({{ $stk->material_code }})</span></td>
+                        <td style="text-align:right;">{{ format_quantity($stk->opening_stock) }}</td>
+                        <td style="text-align:right;">{{ $stk->qty_in > 0 ? '+' . format_quantity($stk->qty_in) : '-' }}</td>
+                        <td style="text-align:right;">{{ $stk->qty_out > 0 ? '-' . format_quantity($stk->qty_out) : '-' }}</td>
+                        <td style="text-align:right;font-weight:800;background:#f1f5f9;">{{ format_quantity($stk->closing_stock) }}</td>
+                        <td style="text-align:center;">{{ $stk->unit }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @endforeach
+        @else
+            <div style="text-align:center;color:#64748b;padding:12px;border:1px dashed #cbd5e1;border-radius:4px;">Tidak ada material yang dipakai pada tanggal ini.</div>
+        @endif
 
-        <!-- 5. Neraca Posisi & Kesiapan Alat Kerja -->
+        <!-- 5. Neraca Posisi & Kesiapan Alat Kerja — hanya dipinjam, grouped kategori -->
         <div class="section-header">
-            <span>5. Neraca Posisi & Kesiapan Alat Kerja (Tool Availability & Condition Balance)</span>
-            <span style="font-weight:600;font-size:10px;">Total Unit = Ready (Gudang) + Di Lapangan + Servis</span>
+            <span>5. Neraca Posisi & Kesiapan Alat Kerja (Tool Availability)</span>
+            <span style="font-weight:600;font-size:10px;">Dikelompokkan kategori — hanya alat dipinjam</span>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:30px;text-align:center;">No</th>
-                    <th>Nama Alat Kerja</th>
-                    <th style="width:75px;text-align:center;">Total Fisik</th>
-                    <th style="width:80px;text-align:center;background:#dcfce7;color:#166534;">Ready Gudang</th>
-                    <th style="width:80px;text-align:center;background:#f3e8ff;color:#6b21a8;">Di Lapangan</th>
-                    <th style="width:75px;text-align:center;background:#fee2e2;color:#991b1b;">Rusak/Servis</th>
-                    <th>Mandor Penanggung Jawab Lapangan</th>
-                    <th style="width:110px;text-align:center;">Status Besok</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($toolBalance as $idx => $tb)
-                <tr>
-                    <td style="text-align:center;">{{ $idx + 1 }}</td>
-                    <td>
-                        <strong>{{ $tb->tool_name }}</strong>
-                        <div style="font-size:9.5px;color:#64748b;">{{ $tb->tool_code }} | {{ $tb->brand }} ({{ $tb->category_name }})</div>
-                    </td>
-                    <td style="text-align:center;font-weight:800;">{{ $tb->stock_total }} Unit</td>
-                    <td style="text-align:center;font-weight:800;background:#f0fdf4;color:#166534;">
-                        {{ $tb->stock_available }} Unit
-                    </td>
-                    <td style="text-align:center;font-weight:700;background:#faf5ff;color:#6b21a8;">
-                        {{ $tb->stock_borrowed }} Unit
-                    </td>
-                    <td style="text-align:center;font-weight:700;background:#fff1f2;color:#9f1239;">
-                        {{ $tb->stock_maintenance }} Unit
-                    </td>
-                    <td>
-                        @if(!empty($tb->borrowers))
-                            @foreach($tb->borrowers as $b)
-                            <div style="font-size:9.5px;">• {{ $b }}</div>
-                            @endforeach
-                        @else
-                            <span style="color:#64748b;font-style:italic;">Semua standby di gudang</span>
-                        @endif
-                    </td>
-                    <td style="text-align:center;font-weight:700;font-size:9.5px;">
-                        @if($tb->stock_available > 0)
-                            <span style="color:#166534;">SIAP PAKAI ({{ $tb->stock_available }})</span>
-                        @elseif($tb->stock_borrowed > 0)
-                            <span style="color:#6b21a8;">DI LAPANGAN</span>
-                        @elseif($tb->stock_maintenance > 0)
-                            <span style="color:#991b1b;">PERLU SERVIS</span>
-                        @else
-                            <span style="color:#64748b;">KOSONG</span>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="8" style="text-align:center;color:#64748b;">Tidak ada data alat kerja di proyek ini.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+        @if(isset($toolBalanceGrouped) && $toolBalanceGrouped->isNotEmpty())
+            @foreach($toolBalanceGrouped as $catName => $rows)
+            <div style="background:#f1f5f9;padding:4px 8px;margin:8px 0 4px;font-weight:800;font-size:10px;text-transform:uppercase;color:#0f172a;border-left:3px solid #7c3aed;">{{ $catName }} — {{ $rows->count() }} alat</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:30px;text-align:center;">No</th>
+                        <th>Nama Alat Kerja</th>
+                        <th style="width:75px;text-align:center;">Total Fisik</th>
+                        <th style="width:80px;text-align:center;background:#dcfce7;color:#166534;">Ready Gudang</th>
+                        <th style="width:80px;text-align:center;background:#f3e8ff;color:#6b21a8;">Di Lapangan</th>
+                        <th style="width:75px;text-align:center;background:#fee2e2;color:#991b1b;">Rusak/Servis</th>
+                        <th>Mandor Penanggung Jawab</th>
+                        <th style="width:110px;text-align:center;">Status Besok</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rows as $idx => $tb)
+                    <tr>
+                        <td style="text-align:center;">{{ $idx + 1 }}</td>
+                        <td><strong>{{ $tb->tool_name }}</strong><div style="font-size:9.5px;color:#64748b;">{{ $tb->tool_code }} | {{ $tb->brand }}</div></td>
+                        <td style="text-align:center;font-weight:800;">{{ $tb->stock_total }} Unit</td>
+                        <td style="text-align:center;font-weight:800;background:#f0fdf4;color:#166534;">{{ $tb->stock_available }} Unit</td>
+                        <td style="text-align:center;font-weight:700;background:#faf5ff;color:#6b21a8;">{{ $tb->stock_borrowed }} Unit</td>
+                        <td style="text-align:center;font-weight:700;background:#fff1f2;color:#9f1239;">{{ $tb->stock_maintenance }} Unit</td>
+                        <td>@if(!empty($tb->borrowers)) @foreach($tb->borrowers as $b)<div style="font-size:9.5px;">• {{ $b }}</div>@endforeach @else <span style="color:#64748b;font-style:italic;">Standby</span> @endif</td>
+                        <td style="text-align:center;font-weight:700;font-size:9.5px;">
+                            @if($tb->stock_available > 0)<span style="color:#166534;">SIAP PAKAI ({{ $tb->stock_available }})</span>
+                            @elseif($tb->stock_borrowed > 0)<span style="color:#6b21a8;">DI LAPANGAN</span>
+                            @elseif($tb->stock_maintenance > 0)<span style="color:#991b1b;">PERLU SERVIS</span>
+                            @else<span style="color:#64748b;">KOSONG</span>@endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @endforeach
+        @else
+            <div style="text-align:center;color:#64748b;padding:12px;border:1px dashed #cbd5e1;border-radius:4px;">Tidak ada alat yang dipinjam pada tanggal ini.</div>
+        @endif
 
         <!-- Tanda Tangan 3 Pihak -->
         <div class="sig-section">

@@ -7,6 +7,20 @@
         <span>{{ $distribution->distribution_number }}</span>
     </div>
 
+    @if(session('error'))
+    <div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13.5px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;display:flex;align-items:center;gap:10px;">
+        <i class="fas fa-exclamation-circle"></i><span>{{ session('error') }}</span>
+    </div>
+    @endif
+    @if(session('success'))
+    <div class="alert alert-success" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13.5px;background:#f0fdf4;color:#065f46;border:1px solid #86efac;display:flex;align-items:center;gap:10px;">
+        <i class="fas fa-check-circle"></i><span>{{ session('success') }}</span>
+    </div>
+    @endif
+    @if(session('info'))
+    <div class="alert alert-info" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13.5px;"><i class="fas fa-info-circle"></i><span>{{ session('info') }}</span></div>
+    @endif
+
     <div class="grid" style="grid-template-columns:1fr 340px;gap:20px;align-items:start;">
 
         {{-- Items List & Receive Form --}}
@@ -287,12 +301,19 @@ function submitShipForm() {
     closeShipModal();
     
     setTimeout(() => {
-        const submitBtn = document.getElementById('shipFormSubmit');
-        if (submitBtn) {
-            submitBtn.click();
-        } else {
-            form.submit();
+        try {
+            const submitBtn = document.getElementById('shipFormSubmit');
+            if (submitBtn) {
+                submitBtn.click();
+            } else {
+                form.submit();
+            }
+        } catch (e) {
+            console.error(e);
+            isSubmitting = false;
         }
+        // safety reset if redirect fails (e.g. validation error)
+        setTimeout(() => { isSubmitting = false; }, 3000);
     }, 100);
 }
 

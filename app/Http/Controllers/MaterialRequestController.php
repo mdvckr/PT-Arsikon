@@ -19,7 +19,7 @@ class MaterialRequestController extends Controller
 
         $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy']);
 
-        if (auth()->user()->hasRole(['User', 'Admin Gudang Proyek'])) {
+        if (auth()->user()->hasRole(['User', 'Admin Gudang Proyek', 'Karyawan'])) {
             $query->where('requested_by_user_id', auth()->id());
         }
 
@@ -42,11 +42,18 @@ class MaterialRequestController extends Controller
 
         $warehouseId = session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
 
-        // Material dikelompokkan per kategori, dengan total stok dari semua gudang
+        $centralWarehouse = Warehouse::where('is_central', true)->first();
+        $centralWarehouseId = $centralWarehouse?->id;
+
+        // Material dikelompokkan per kategori, stok ditampilkan terpisah Pusat vs Proyek (gudang tidak saling terhubung)
         $materialCategories = Category::where('type', 'material')
-            ->with(['materials' => function ($q) {
+            ->with(['materials' => function ($q) use ($centralWarehouseId) {
                 $q->where('is_active', true)
-                  ->with(['unit', 'inventories'])
+                  ->with(['unit', 'inventories' => function ($iq) use ($centralWarehouseId) {
+                      if ($centralWarehouseId) {
+                          $iq->where('warehouse_id', $centralWarehouseId);
+                      }
+                  }])
                   ->orderBy('name');
             }])
             ->orderBy('name')
@@ -57,11 +64,15 @@ class MaterialRequestController extends Controller
         // Material tanpa kategori
         $uncategorizedMaterials = Material::where('is_active', true)
             ->whereNull('category_id')
-            ->with(['unit', 'inventories'])
+            ->with(['unit', 'inventories' => function ($iq) use ($centralWarehouseId) {
+                if ($centralWarehouseId) {
+                    $iq->where('warehouse_id', $centralWarehouseId);
+                }
+            }])
             ->orderBy('name')
             ->get();
 
-        // Gudang pemohon harus merupakan Gudang Proyek (bukan Gudang Pusat)
+        // Gudang pemohon harus merupakan Gudang Proyek (bukan Gudang Pusat) — stok terpisah
         $warehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
         if ($warehouseId) {
             $selectedWh = Warehouse::find($warehouseId);
@@ -72,7 +83,7 @@ class MaterialRequestController extends Controller
             $warehouseId = $warehouses->first()?->id;
         }
 
-        return view('material-requests.create', compact('materialCategories', 'uncategorizedMaterials', 'warehouses', 'warehouseId'));
+        return view('material-requests.create', compact('materialCategories', 'uncategorizedMaterials', 'warehouses', 'warehouseId', 'centralWarehouse'));
     }
 
     public function store(Request $request)
@@ -80,26 +91,47 @@ class MaterialRequestController extends Controller
         $this->authorize('create material requests');
 
         $validated = $request->validate([
-            'warehouse_id'       => 'required|exists:warehouses,id',
-            'needed_at'          => 'nullable|date|after_or_equal:today',
-            'notes'              => 'nullable|string',
-            'quantities'         => 'required|array',
+            'warehouse_id'              => 'required|exists:warehouses,id',
+            'needed_at'                 => 'nullable|date|after_or_equal:today',
+            'notes'                     => 'nullable|string',
+            'quantities'                => 'nullable|array',
+            'custom_items'              => 'nullable|array',
+            'custom_items.*.name'       => 'required_with:custom_items|string|max:255',
+            'custom_items.*.unit'       => 'nullable|string|max:50',
+            'custom_items.*.qty'        => 'required_with:custom_items|numeric|min:0.01',
         ]);
 
-        // Build items dari quantities[material_id] => qty
+        // Build items dari quantities[material_id] => qty (master) + custom_items manual
         $itemsData = [];
-        foreach ($validated['quantities'] as $materialId => $qty) {
-            $qty = (float) $qty;
-            if ($qty <= 0) continue;
-            $itemsData[] = [
-                'material_id'   => $materialId,
-                'qty_requested' => $qty,
-                'notes'         => null,
-            ];
+        if (!empty($validated['quantities'])) {
+            foreach ($validated['quantities'] as $materialId => $qty) {
+                $qty = (float) $qty;
+                if ($qty <= 0) continue;
+                $itemsData[] = [
+                    'material_id'   => $materialId,
+                    'qty_requested' => $qty,
+                    'notes'         => null,
+                ];
+            }
+        }
+        if (!empty($validated['custom_items'])) {
+            foreach ($validated['custom_items'] as $cItem) {
+                $qty = (float) ($cItem['qty'] ?? 0);
+                if ($qty <= 0) continue;
+                $name = trim($cItem['name'] ?? '');
+                if ($name === '') continue;
+                $itemsData[] = [
+                    'material_id'      => null,
+                    'custom_item_name' => $name,
+                    'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
+                    'qty_requested'    => $qty,
+                    'notes'            => 'Manual dari Gudang Proyek - tidak ada di Pusat',
+                ];
+            }
         }
 
         if (empty($itemsData)) {
-            return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta.']);
+            return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta (master atau manual).']);
         }
 
         $fromWarehouse = Warehouse::findOrFail($validated['warehouse_id']);

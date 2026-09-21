@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Warehouse;
 
 class User extends Authenticatable
 {
@@ -45,6 +47,19 @@ class User extends Authenticatable
         'password' => 'hashed',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Get warehouses accessible by this user, filtered by role.
+     * Returns a Collection of Warehouse models.
+     */
+    public function accessibleWarehouses(): Collection
+    {
+        if ($this->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return Warehouse::where('is_active', true)->orderBy('name')->get();
+        }
+
+        return $this->warehouses()->where('is_active', true)->orderBy('name')->get();
+    }
 
     public function warehouses(): BelongsToMany
     {

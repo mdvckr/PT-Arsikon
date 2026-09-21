@@ -6,18 +6,24 @@ use App\Models\Material;
 use App\Models\Category;
 use App\Models\Unit;
 use App\Models\Supplier;
+use App\Models\Warehouse;
+use App\Models\Inventory;
+use App\Models\StockMutation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MaterialController extends Controller
 {
     public function index(Request $request)
     {
         $this->authorize('view materials');
+        $user = Auth::user();
+        $accessibleIds = $user->accessibleWarehouseIds();
 
         $categoryQuery = Category::query()
             ->where('type', 'material')
-            ->with(['materials' => function ($q) use ($request) {
-                $q->with(['unit', 'inventories', 'stockMutations', 'supplier']);
+            ->with(['materials' => function ($q) use ($request, $accessibleIds) {
+                $q->with(['unit', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds), 'stockMutations', 'supplier']);
                 if ($request->search) {
                     $q->where(function ($sub) use ($request) {
                         $sub->where('name', 'like', "%{$request->search}%")
@@ -51,15 +57,32 @@ class MaterialController extends Controller
         $categoriesData = $categoryQuery->orderBy('name')->get();
         $filterCategories = Category::query()->where('type', 'material')->orderBy('name')->get();
 
-        return view('materials.index', compact('categoriesData', 'filterCategories'));
+        return view('materials.index', compact('categoriesData', 'filterCategories', 'accessibleIds'));
+    }
+
+    protected function resolveUnitFromManual(array $item): ?Unit
+    {
+        if (!empty($item['unit_id'])) {
+            return Unit::find($item['unit_id']);
+        }
+        $unit = Unit::where('name', 'Pcs')->first();
+        if (!$unit) {
+            $unit = Unit::create([
+                'code' => 'UNT-' . strtoupper(substr(md5(uniqid()), 0, 4)),
+                'name' => 'Pcs',
+                'is_decimal' => false,
+            ]);
+        }
+        return $unit;
     }
 
     public function create()
     {
         $this->authorize('create materials');
+        $user = Auth::user();
         $categories = Category::query()->where('type', 'material')->orderBy('name')->get();
         $units      = Unit::orderBy('name')->get();
-        $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::forUser($user)->orderBy('name')->get();
 
         // Ambil daftar kelompok nama barang (type) per kategori untuk Dropdown 2 bertingkat
         $existingGroups = Material::whereNotNull('type')
@@ -72,31 +95,43 @@ class MaterialController extends Controller
             ->map(fn($items) => $items->pluck('type')->values());
 
         $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+        $accessibleWarehouseIds = $user->accessibleWarehouseIds();
+        $singleWarehouse = $warehouses->count() === 1 ? $warehouses->first() : null;
 
-        return view('materials.create', compact('categories', 'units', 'warehouses', 'existingGroups', 'suppliers'));
+        return view('materials.create', compact('categories', 'units', 'warehouses', 'existingGroups', 'suppliers', 'accessibleWarehouseIds', 'singleWarehouse'));
     }
 
     public function store(Request $request)
     {
         $this->authorize('create materials');
+        $user = Auth::user();
+        $accessibleIds = $user->accessibleWarehouseIds();
 
         $validated = $request->validate([
-            'sku'             => 'required|string|max:50|unique:materials,sku',
-            'name'            => 'required|string|max:255',
-            'brand'           => 'nullable|string|max:255',
-            'size'            => 'nullable|string|max:255',
-            'type'            => 'nullable|string|max:255',
-            'category_id'     => 'nullable|exists:categories,id',
-            'supplier'        => 'nullable|string|max:255',
-            'supplier_id'     => 'nullable|exists:suppliers,id',
-            'new_category'    => 'nullable|string|max:255',
-            'unit_id'         => 'nullable|string',
-            'new_unit'        => 'nullable|string|max:100',
-            'description'     => 'nullable|string',
-            'warehouse_id'    => 'nullable|exists:warehouses,id',
-            'initial_stock'   => 'nullable|numeric|min:0',
-            'min_stock'       => 'nullable|numeric|min:0',
-            'incoming_stages' => 'nullable|array',
+            'sku'                  => 'required|string|max:50|unique:materials,sku',
+            'name'                 => 'required|string|max:255',
+            'brand'                => 'nullable|string|max:255',
+            'size'                 => 'nullable|string|max:255',
+            'type'                 => 'nullable|string|max:255',
+            'category_id'          => 'nullable|exists:categories,id',
+            'supplier'             => 'nullable|string|max:255',
+            'supplier_id'          => 'nullable|exists:suppliers,id',
+            'new_category'         => 'nullable|string|max:255',
+            'unit_id'              => 'nullable|string',
+            'new_unit'             => 'nullable|string|max:100',
+            'description'          => 'nullable|string',
+            'warehouse_id'         => 'required|integer|exists:warehouses,id',
+            'initial_stock'        => 'nullable|numeric|min:0',
+            'min_stock'            => 'nullable|numeric|min:0',
+            'incoming_stages'      => 'nullable|array',
+            'manual_items'         => 'nullable|array',
+            'manual_items.*.name'  => 'required|string|max:255',
+            'manual_items.*.sku'   => 'required|string|max:50|unique:materials,sku',
+            'manual_items.*.unit_id' => 'nullable|string',
+            'manual_items.*.quantity' => 'nullable|numeric|min:0',
+            'manual_items.*.warehouse_id' => 'required|integer|exists:warehouses,id',
+            'manual_items.*.min_stock' => 'nullable|numeric|min:0',
+            'manual_items.*.description' => 'nullable|string',
         ]);
 
         $category = $this->resolveCategory($request);
@@ -111,6 +146,11 @@ class MaterialController extends Controller
         $supplier = $this->resolveSupplier($request->supplier ?? null);
         $validated['supplier_id'] = $supplier?->id;
         $validated['supplier_name'] = !empty($request->supplier) ? trim($request->supplier) : null;
+
+        // Override warehouse_id if user is restricted to single warehouse
+        if (!in_array($validated['warehouse_id'], $accessibleIds)) {
+            return back()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.'])->withInput();
+        }
 
         $incomingStages = $this->parseIncomingStages($request);
         $validated['incoming_stages'] = $incomingStages;
@@ -136,14 +176,14 @@ class MaterialController extends Controller
         $material = Material::create($validated);
 
         if (!empty($validated['warehouse_id']) && isset($validated['initial_stock']) && $validated['initial_stock'] > 0) {
-            $inventory = \App\Models\Inventory::create([
+            $inventory = Inventory::create([
                 'warehouse_id' => $validated['warehouse_id'],
                 'material_id'  => $material->id,
                 'quantity'      => $validated['initial_stock'],
                 'min_stock'     => $validated['min_stock'] ?? 0,
             ]);
 
-            \App\Models\StockMutation::create([
+            StockMutation::create([
                 'material_id'        => $material->id,
                 'warehouse_id'       => $validated['warehouse_id'],
                 'qty_change'         => $validated['initial_stock'],
@@ -154,8 +194,51 @@ class MaterialController extends Controller
             ]);
         }
 
+        // Handle manual items
+        $manualCreatedCount = 0;
+        if (!empty($validated['manual_items'])) {
+            foreach ($validated['manual_items'] as $manualItem) {
+                if (!in_array($manualItem['warehouse_id'], $accessibleIds)) {
+                    continue;
+                }
+                $manualUnit = $this->resolveUnitFromManual($manualItem);
+                if (!$manualUnit) {
+                    continue;
+                }
+
+                $manualMaterial = Material::create([
+                    'sku'             => $manualItem['sku'],
+                    'name'            => $manualItem['name'],
+                    'unit_id'         => $manualUnit->id,
+                    'category_id'     => $category?->id,
+                    'supplier_id'     => $supplier?->id,
+                    'supplier_name'   => $validated['supplier_name'],
+                    'brand'           => $validated['brand'] ?? null,
+                    'size'            => $validated['size'] ?? null,
+                    'type'            => $typeVal,
+                    'description'     => $manualItem['description'] ?? null,
+                    'is_active'       => true,
+                ]);
+
+                if (!empty($manualItem['quantity']) && $manualItem['quantity'] > 0) {
+                    Inventory::create([
+                        'warehouse_id' => $manualItem['warehouse_id'],
+                        'material_id'  => $manualMaterial->id,
+                        'quantity'     => $manualItem['quantity'],
+                        'min_stock'    => $manualItem['min_stock'] ?? 0,
+                    ]);
+                }
+                $manualCreatedCount++;
+            }
+        }
+
+        $successMsg = "Material '{$validated['name']}' berhasil ditambahkan.";
+        if ($manualCreatedCount > 0) {
+            $successMsg .= " {$manualCreatedCount} item manual juga berhasil dibuat.";
+        }
+
         return redirect()->route('materials.index')
-            ->with('success', "Material '{$validated['name']}' berhasil ditambahkan.");
+            ->with('success', $successMsg);
     }
 
     public function show(Material $material)
@@ -169,9 +252,10 @@ class MaterialController extends Controller
     public function edit(Material $material)
     {
         $this->authorize('edit materials');
+        $user = Auth::user();
         $categories = Category::query()->where('type', 'material')->orderBy('name')->get();
         $units      = Unit::orderBy('name')->get();
-        $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::forUser($user)->orderBy('name')->get();
 
         // Ambil daftar kelompok nama barang (type) per kategori untuk Dropdown 2 bertingkat
         $existingGroups = Material::whereNotNull('type')

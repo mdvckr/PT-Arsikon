@@ -1326,22 +1326,29 @@
                     <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
                 </a>
                 @endcan
+                @can('view material requests')
                 <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                     <i class="fas fa-file-circle-plus"></i> Permintaan Material
-
                 </a>
+                @endcan
                 <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
                     <i class="fas fa-hand-holding"></i> Peminjaman Alat
                 </a>
+                @can('view distributions')
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                     <i class="fas fa-right-left"></i> Surat Jalan
                 </a>
+                @endcan
+                @can('view material usages')
                 <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
                     <i class="fas fa-dolly"></i> Pemakaian Material
                 </a>
+                @endcan
+                @if(!auth()->user()->hasRole('Karyawan'))
                 <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check"></i> Log Harian Proyek
                 </a>
+                @endif
             </div>
 
             <!-- ALAT & STOK -->
@@ -1378,11 +1385,13 @@
             @endif
 
             <!-- PENGEMBALIAN -->
+            @can('view returns')
             <div class="nav-section">
                 <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
                     <i class="fas fa-rotate-left"></i> Pengembalian
                 </a>
             </div>
+            @endcan
 
             <!-- LAPORAN -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']))

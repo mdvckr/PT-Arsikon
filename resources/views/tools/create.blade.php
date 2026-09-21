@@ -147,18 +147,23 @@
                             placeholder="Contoh: Honda, Makita, Bosch, Komatsu">
                         @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div>
-                        <label class="form-label" style="font-weight:600;color:#334155;">Lokasi Gudang Penyimpanan</label>
-                        <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror">
-                            <option value="">-- Pilih Gudang (Opsional) --</option>
-                            @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+                     <div>
+                         <label class="form-label" style="font-weight:600;color:#334155;">Lokasi Gudang Penyimpanan</label>
+                         @if($singleWarehouse ?? false)
+                         <input type="hidden" name="warehouse_id" value="{{ $singleWarehouse->id }}">
+                         <input type="text" class="form-control" value="{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}" disabled style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;">
+                         @else
+                         <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror">
+                             <option value="">-- Pilih Gudang (Opsional) --</option>
+                             @foreach($warehouses as $wh)
+                             <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                 {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                             </option>
+                             @endforeach
+                         </select>
+                         @endif
+                         @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                     </div>
                 </div>
 
                 {{-- Stok Awal / Total Unit --}}
@@ -182,14 +187,70 @@
                 </div>
 
                 <div class="flex gap-2 mt-4 pt-2 border-top">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Simpan Alat
-                    </button>
-                    <a href="{{ route('tools.index') }}" class="btn btn-secondary">Batal</a>
-                </div>
-            </form>
-        </div>
-    </div>
+                     <button type="submit" class="btn btn-primary">
+                         <i class="fas fa-save me-1"></i> Simpan Alat
+                     </button>
+                     <a href="{{ route('tools.index') }}" class="btn btn-secondary">Batal</a>
+                 </div>
+             </form>
+         </div>
+     </div>
+
+     {{-- MANUAL ITEM ADDITION SECTION --}}
+     <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;margin-top:20px;">
+         <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+             <div>
+                 <div class="fw-700" style="font-size:14px;color:#0f172a;">+ Tambah Alat Baru (Tanpa Master Data)</div>
+                 <div class="text-muted" style="font-size:12px;margin-top:1px;">Tambahkan alat langsung tanpa membuat data master terlebih dahulu</div>
+             </div>
+             <button type="button" class="btn btn-sm btn-secondary" onclick="toggleManualToolBox()" style="height:32px;font-size:12px;font-weight:600;">
+                 <i class="fas fa-plus-circle text-primary"></i> <span>Tambah Alat Baru</span>
+             </button>
+         </div>
+         <div id="manual-tool-box" style="display:none;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:16px 18px;">
+             <div class="grid" style="gap:12px;">
+                 <div>
+                     <label class="form-label" style="font-weight:600;color:#334155;">Kode Alat <span style="color:#ef4444;">*</span></label>
+                     <input type="text" name="manual_items[][code]" id="manual_tool_code" class="form-control font-monospace" placeholder="Contoh: TLS-GEN-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
+                 </div>
+                 <div>
+                     <label class="form-label" style="font-weight:600;color:#334155;">Nama Alat <span style="color:#ef4444;">*</span></label>
+                     <input type="text" name="manual_items[][name]" id="manual_tool_name" class="form-control" placeholder="Contoh: Mesin Milling" style="height:36px;border-radius:6px;font-size:13px;">
+                 </div>
+             </div>
+             <div class="grid grid-3" style="gap:12px;margin-top:12px;">
+                 <div>
+                     <label class="form-label" style="font-weight:600;color:#334155;">Jumlah Stok</label>
+                     <input type="number" step="1" min="0" name="manual_items[][stock_total]" id="manual_tool_qty" class="form-control" placeholder="1" style="height:36px;border-radius:6px;font-size:13px;">
+                 </div>
+                 <div>
+                     <label class="form-label" style="font-weight:600;color:#334155;">Lokasi Gudang</label>
+                     @if($singleWarehouse ?? false)
+                     <input type="hidden" name="manual_items[][warehouse_id]" value="{{ $singleWarehouse->id }}">
+                     <input type="text" class="form-control" value="{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}" disabled style="height:36px;border-radius:6px;font-size:13px;background:#f8fafc;">
+                     @else
+                     <select name="manual_items[][warehouse_id]" class="form-control" style="height:36px;border-radius:6px;font-size:13px;">
+                         @foreach($warehouses as $wh)
+                         <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                         @endforeach
+                         </select>
+                     @endif
+                 </div>
+                 <div>
+                     <label class="form-label" style="font-weight:600;color:#334155;">Spesifikasi</label>
+                     <input type="text" name="manual_items[][size]" class="form-control" placeholder="Contoh: 5000W / 10 Ton" style="height:36px;border-radius:6px;font-size:13px;">
+                 </div>
+             </div>
+             <div class="flex gap-2 mt-3">
+                 <button type="button" class="btn btn-primary btn-sm" onclick="addManualTool()" style="height:32px;font-size:12px;">
+                     <i class="fas fa-check"></i> Tambah Alat
+                 </button>
+                 <button type="button" class="btn btn-secondary btn-sm" onclick="toggleManualToolBox()" style="height:32px;font-size:12px;">
+                     <i class="fas fa-times"></i> Tutup
+                 </button>
+             </div>
+         </div>
+     </div>
 
     @push('scripts')
     <script>
@@ -364,7 +425,41 @@
         // Initialize on page load
         onCategoryChange();
 
+        // ── Manual Tool Section ──
+        function toggleManualToolBox() {
+            var box = document.getElementById('manual-tool-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+            if (box.style.display === 'block') {
+                document.getElementById('manual_tool_code').focus();
+            }
+        }
 
+        function addManualTool() {
+            var code = document.getElementById('manual_tool_code').value.trim();
+            var name = document.getElementById('manual_tool_name').value.trim();
+            var qty = document.getElementById('manual_tool_qty').value || 0;
+
+            if (!code || !name) {
+                alert('Kode dan Nama alat wajib diisi.');
+                return;
+            }
+
+            // Add hidden inputs for manual items to the form
+            var container = document.createElement('div');
+            container.style.display = 'none';
+            var idx = document.querySelectorAll('[name^="manual_items"][name$="[code]"]').length;
+            container.innerHTML = `
+                <input type="hidden" name="manual_items[${idx}[code]" value="${code}">
+                <input type="hidden" name="manual_items[${idx}[name]" value="${name}">
+                <input type="hidden" name="manual_items[${idx}[stock_total]" value="${qty}">
+            `;
+            document.querySelector('form').appendChild(container);
+
+            alert('Alat baru: "' + name + '" akan ditambahkan saat simpan.');
+            document.getElementById('manual_tool_code').value = '';
+            document.getElementById('manual_tool_name').value = '';
+            document.getElementById('manual_tool_qty').value = '1';
+        }
     </script>
     @endpush
 </x-app-layout>
