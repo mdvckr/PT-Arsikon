@@ -1,10 +1,20 @@
 <x-app-layout>
     <x-slot name="title">Catat Pengeluaran Material</x-slot>
 
-    <div class="breadcrumb">
-        <a href="{{ route('material-usages.index') }}">Pemakaian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
-        <span>Catat Pengeluaran Baru</span>
+    {{-- Page Header (Style persis seperti halaman Buat Material) --}}
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <div class="breadcrumb" style="margin-bottom: 4px;">
+                <a href="{{ route('material-usages.index') }}">Pemakaian Material</a>
+                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+                <span>Catat Pengeluaran Baru</span>
+            </div>
+            <h2 class="fw-700" style="font-size: 20px; color: #0f172a; margin: 0;">Catat Pengeluaran Material (Bon Lapangan)</h2>
+            <p class="text-muted" style="font-size: 12.5px; margin: 2px 0 0;">Keluarkan material dari gudang proyek berdasarkan surat permintaan (MR) yang disetujui Site Manager</p>
+        </div>
+        <a href="{{ route('material-usages.index') }}" class="btn btn-light border" style="font-size: 13px; color: #475569;">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
     </div>
 
     @if ($errors->any())
@@ -25,23 +35,20 @@
         @csrf
         <input type="hidden" name="input_mode" id="inputMode" value="mr">
 
-        <div class="grid" style="grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+        <div style="display: flex; flex-direction: column; gap: 18px; max-width: 1080px; margin-bottom: 30px;">
 
-            {{-- ── Kiri: Metode MR + Tabel Material ── --}}
-            <div>
-
-                {{-- ==================== SECTION 1: METODE & SURAT PERMINTAAN (MR) ==================== --}}
-                <div class="card mb-4">
-                    <div class="card-header" style="justify-content: space-between;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="fas fa-file-shield text-primary"></i>
-                            <span class="card-title">Metode & Surat Permintaan Material (MR)</span>
-                        </div>
-                        <span class="badge badge-primary" style="font-size: 11px;">
-                            Gudang Aktif: {{ $selectedWarehouse?->name ?? '-' }}
-                        </span>
+            {{-- ==================== SECTION 1: METODE & SURAT PERMINTAAN (MR) ==================== --}}
+            <div class="card" style="border: 1px solid #e2e8f0; box-shadow: none; border-radius: 8px;">
+                <div style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="fw-700" style="font-size: 14px; color: #0f172a;">1. Metode & Surat Permintaan Material (MR)</div>
+                        <div class="text-muted" style="font-size: 12px; margin-top: 1px;">Pilih metode kontrol pengeluaran material gudang proyek</div>
                     </div>
-                    <div class="card-body">
+                    <span class="badge badge-primary" style="font-size: 11px;">
+                        Gudang Aktif: {{ $selectedWarehouse?->name ?? '-' }}
+                    </span>
+                </div>
+                <div style="padding: 18px;">
                     {{-- Mode Selector Cards --}}
                     <div class="grid grid-2 mb-3" style="gap: 14px;">
                         <!-- Mode MR -->
@@ -137,17 +144,85 @@
                         <i class="fas fa-triangle-exclamation me-1 text-warning"></i>
                         <strong>Perhatian:</strong> Pengeluaran manual tidak terikat dengan nomor surat MR. Gunakan hanya untuk kebutuhan mendesak lapangan.
                     </div>
+                </div>
+            </div>
+
+            {{-- ==================== SECTION 2: INFORMASI BUKTI BON PENGELUARAN ==================== --}}
+            <div class="card" style="border: 1px solid #e2e8f0; box-shadow: none; border-radius: 8px;">
+                <div style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0;">
+                    <div class="fw-700" style="font-size: 14px; color: #0f172a;">2. Informasi Bukti Bon Pengeluaran</div>
+                    <div class="text-muted" style="font-size: 12px; margin-top: 1px;">Gudang sumber, nama penerima, zona pekerjaan, dan tanggal pengeluaran</div>
+                </div>
+                <div style="padding: 18px;">
+                    <div class="grid grid-4" style="gap: 16px; margin-bottom: 14px;">
+                        {{-- Field 1: Gudang Sumber --}}
+                        <div>
+                            <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
+                                Gudang Sumber <span style="color: #ef4444;">*</span>
+                            </label>
+                            <select name="warehouse_id" id="warehouseSelect" class="form-control" style="height: 38px; border-radius: 6px; font-size: 13px;" onchange="onWarehouseChanged(this.value)">
+                                @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ $selectedWarehouse?->id == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Field 2: Nama Penerima --}}
+                        <div>
+                            <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
+                                Penerima (Mandor / Tukang) <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="text" name="recipient_name" id="recipientNameInput" class="form-control"
+                                   placeholder="Contoh: Pak Supri (Mandor Besi)"
+                                   value="{{ old('recipient_name') }}" required
+                                   style="height: 38px; border-radius: 6px; font-size: 13px;">
+                        </div>
+
+                        {{-- Field 3: Bagian Pekerjaan / Zona --}}
+                        <div>
+                            <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
+                                Pekerjaan / Zona <span class="text-muted fw-400">(Disarankan)</span>
+                            </label>
+                            <input type="text" name="job_section" id="jobSectionInput" class="form-control"
+                                   placeholder="Contoh: Pengecoran Kolom Lt. 2"
+                                   value="{{ old('job_section') }}"
+                                   style="height: 38px; border-radius: 6px; font-size: 13px;">
+                        </div>
+
+                        {{-- Field 4: Tanggal Pengeluaran --}}
+                        <div>
+                            <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
+                                Tanggal Pengeluaran <span style="color: #ef4444;">*</span>
+                            </label>
+                            <input type="date" name="usage_date" class="form-control"
+                                   value="{{ old('usage_date', date('Y-m-d')) }}" required
+                                   style="height: 38px; border-radius: 6px; font-size: 13px;">
+                        </div>
+                    </div>
+
+                    {{-- Field 5: Catatan Tambahan --}}
+                    <div>
+                        <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
+                            Catatan Tambahan
+                        </label>
+                        <textarea name="notes" id="notesInput" class="form-control" rows="2"
+                            placeholder="Catatan bon, instruksi khusus, atau kondisi serah terima barang..."
+                            style="border-radius: 6px; font-size: 13px; resize: vertical;">{{ old('notes') }}</textarea>
                     </div>
                 </div>
+            </div>
 
+            {{-- ==================== SECTION 3: RINCIAN MATERIAL YANG DIKELUARKAN ==================== --}}
+            <div class="card" style="border: 1px solid #e2e8f0; box-shadow: none; border-radius: 8px; overflow: hidden;">
+                <div style="padding: 14px 18px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div class="fw-700" style="font-size: 14px; color: #0f172a;">3. Rincian Material yang Dikeluarkan</div>
+                        <div class="text-muted" style="font-size: 12px; margin-top: 1px;">Kuantitas yang dikeluarkan dibatasi oleh persetujuan MR dan stok fisik gudang</div>
+                    </div>
 
-                {{-- ==================== SECTION 2: RINCIAN MATERIAL YANG DIKELUARKAN ==================== --}}
-                <div class="card">
-                    <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="fas fa-list text-primary"></i>
-                            <span class="card-title">Rincian Material yang Dikeluarkan</span>
-                        </div>
+                    <div class="flex items-center gap-2">
                         <span id="itemsLoadingSpinner" style="display: none; font-size: 12px; color: #2563eb; font-weight: 600;">
                             <i class="fas fa-spinner fa-spin me-1"></i> Memuat data MR...
                         </span>
@@ -160,8 +235,9 @@
                                 <i class="fas fa-rotate-left me-1"></i> Reset Qty
                             </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="display: none;">
-                            <i class="fas fa-plus"></i> Tambah Material
+
+                        <button type="button" class="btn btn-sm btn-secondary" id="btnAddManualRow" onclick="addManualRow()" style="display: none; height: 32px; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-plus me-1"></i> Tambah Baris Material
                         </button>
                     </div>
                 </div>
@@ -178,26 +254,26 @@
                 </div>
 
                 {{-- Table Rincian Material --}}
-                    <div class="table-wrap">
-                        <table class="data-table" id="itemsTable" style="min-width: 780px;">
-                            <thead>
-                                <tr>
-                                    <th style="text-align: left;">Nama Material</th>
-                                    <th style="text-align: center; width: 130px;" class="col-mr-only">Persetujuan MR</th>
-                                    <th style="text-align: center; width: 120px;" class="col-mr-only">Sisa Kuota</th>
-                                    <th style="text-align: center; width: 120px;">Stok Gudang</th>
-                                    <th style="text-align: center; width: 160px;">Jumlah Keluar <span style="color:#ef4444;">*</span></th>
-                                    <th style="text-align: left;">Keterangan</th>
-                                    <th style="width: 44px; text-align: center;"></th>
-                                </tr>
-            </thead>
-                            <tbody id="itemsBody">
-                                {{-- Dynamic rows --}}
-                            </tbody>
-                        </table>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; font-size: 12.5px; border-collapse: collapse; min-width: 780px;" id="itemsTable">
+                        <thead>
+                            <tr style="background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #e2e8f0;">
+                                <th style="padding: 10px 16px; font-weight: 700; text-align: left;">Nama Material</th>
+                                <th style="padding: 10px 12px; font-weight: 700; text-align: center; width: 130px;" class="col-mr-only">Persetujuan MR</th>
+                                <th style="padding: 10px 12px; font-weight: 700; text-align: center; width: 120px;" class="col-mr-only">Sisa Kuota</th>
+                                <th style="padding: 10px 12px; font-weight: 700; text-align: center; width: 120px;">Stok Gudang</th>
+                                <th style="padding: 10px 14px; font-weight: 700; text-align: center; width: 160px;">Jumlah Keluar <span style="color:#ef4444;">*</span></th>
+                                <th style="padding: 10px 14px; font-weight: 700; text-align: left;">Keterangan</th>
+                                <th style="padding: 10px 12px; width: 44px; text-align: center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            {{-- Dynamic rows --}}
+                        </tbody>
+                    </table>
 
-                        {{-- Empty State jika belum pilih MR --}}
-                        <div id="mrEmptyState" style="padding: 36px 20px; text-align: center; color: #94a3b8;">
+                    {{-- Empty State jika belum pilih MR --}}
+                    <div id="mrEmptyState" style="padding: 36px 20px; text-align: center; color: #94a3b8;">
                         <i class="fas fa-file-circle-question" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
                         <div style="font-size: 13.5px; font-weight: 600; color: #475569;">Belum Ada Permintaan (MR) yang Dipilih</div>
                         <div style="font-size: 12px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>1. Metode & Surat Permintaan Material</strong> di atas.</div>
@@ -218,64 +294,14 @@
                 </div>
             </div>
 
-            {{-- ── Kanan: Informasi Bon Pengeluaran ── --}}
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-file-alt text-primary"></i>
-                    <span class="card-title">Informasi Bon Pengeluaran</span>
-                </div>
-                <div class="card-body">
-
-                    {{-- Gudang Sumber --}}
-                    <div class="mb-3">
-                        <label class="form-label">Gudang Sumber <span class="text-danger">*</span></label>
-                        <select name="warehouse_id" id="warehouseSelect" class="form-control" onchange="onWarehouseChanged(this.value)">
-                            @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ $selectedWarehouse?->id == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    {{-- Nama Penerima --}}
-                    <div class="mb-3">
-                        <label class="form-label">Penerima (Mandor / Tukang) <span class="text-danger">*</span></label>
-                        <input type="text" name="recipient_name" id="recipientNameInput" class="form-control"
-                               placeholder="Contoh: Pak Supri (Mandor Besi)"
-                               value="{{ old('recipient_name') }}" required>
-                    </div>
-
-                    {{-- Bagian Pekerjaan / Zona --}}
-                    <div class="mb-3">
-                        <label class="form-label">Pekerjaan / Zona <span class="text-muted fw-400">(Disarankan)</span></label>
-                        <input type="text" name="job_section" id="jobSectionInput" class="form-control"
-                               placeholder="Contoh: Pengecoran Kolom Lt. 2"
-                               value="{{ old('job_section') }}">
-                    </div>
-
-                    {{-- Tanggal Pengeluaran --}}
-                    <div class="mb-3">
-                        <label class="form-label">Tanggal Pengeluaran <span class="text-danger">*</span></label>
-                        <input type="date" name="usage_date" class="form-control"
-                               value="{{ old('usage_date', date('Y-m-d')) }}" required>
-                    </div>
-
-                    {{-- Catatan Tambahan --}}
-                    <div class="mb-4">
-                        <label class="form-label">Catatan Tambahan</label>
-                        <textarea name="notes" id="notesInput" class="form-control" rows="3"
-                            placeholder="Catatan bon, instruksi khusus, atau kondisi serah terima barang...">{{ old('notes') }}</textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="justify-content:center;">
-                        <i class="fas fa-check-circle"></i> Simpan &amp; Potong Stok Gudang
-                    </button>
-                    <a href="{{ route('material-usages.index') }}" class="btn btn-secondary w-full mt-2" style="justify-content:center;">
-                        Batal
-                    </a>
-
-                </div>
+            {{-- ==================== ACTION BUTTONS ==================== --}}
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0;">
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="height: 38px; padding: 0 22px; font-size: 13px; font-weight: 600; border-radius: 6px;">
+                    <i class="fas fa-check-circle me-1"></i> Simpan & Potong Stok Gudang
+                </button>
+                <a href="{{ route('material-usages.index') }}" class="btn btn-light border" style="height: 38px; padding: 0 16px; font-size: 13px; font-weight: 500; border-radius: 6px; color: #64748b;">
+                    Batal
+                </a>
             </div>
 
         </div>

@@ -74,15 +74,22 @@
                     {{-- Supplier --}}
                     <div class="mb-3">
                         <label class="form-label">Supplier <span class="text-danger">*</span></label>
-                        <select id="supplierSelect" name="supplier_id" class="form-control @error('supplier_id') is-invalid @enderror" required>
-                            <option value="">Pilih Supplier</option>
+                        <input type="text" 
+                            list="supplierOptions" 
+                            name="supplier_name" 
+                            id="supplierInput" 
+                            class="form-control @error('supplier_name') is-invalid @enderror" 
+                            value="{{ old('supplier_name') }}" 
+                            placeholder="Pilih atau ketik supplier..." 
+                            required>
+                        <datalist id="supplierOptions">
                             @foreach($suppliers as $sup)
-                            <option value="{{ $sup->id }}" {{ old('supplier_id') == $sup->id ? 'selected' : '' }}>
-                                {{ $sup->name }}
-                            </option>
+                                <option value="{{ $sup->name }}">
                             @endforeach
-                        </select>
-                        @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </datalist>
+                        @error('supplier_name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     {{-- Gudang Tujuan --}}
