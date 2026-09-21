@@ -45,6 +45,9 @@ class ToolInventoryService
     /**
      * Borrow (decrease available, increase borrowed) stock.
      */
+    /**
+     * Borrow (decrease available, increase borrowed) stock.
+     */
     public function borrow(Warehouse $warehouse, Tool $tool, int $quantity): ToolInventory
     {
         if ($quantity <= 0) {
@@ -55,10 +58,24 @@ class ToolInventoryService
             $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
                 ->where('tool_id', $tool->id)
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
+
+            if (!$inventory) {
+                $avail = (int) $tool->stock_available > 0 ? (int) $tool->stock_available : $quantity;
+                $tot   = (int) $tool->stock_total > 0 ? (int) $tool->stock_total : $avail;
+                $inventory = ToolInventory::create([
+                    'warehouse_id'      => $warehouse->id,
+                    'tool_id'           => $tool->id,
+                    'stock_total'       => max($tot, $quantity),
+                    'stock_available'   => max($avail, $quantity),
+                    'stock_borrowed'    => (int) $tool->stock_borrowed,
+                    'stock_maintenance' => (int) $tool->stock_maintenance,
+                    'stock_damaged'     => (int) $tool->stock_damaged,
+                ]);
+            }
 
             if ($inventory->stock_available < $quantity) {
-                throw new Exception("Insufficient available stock for tool {$tool->name}.");
+                throw new Exception("Stok alat {$tool->name} tidak mencukupi di gudang {$warehouse->name} (tersedia: {$inventory->stock_available}, dibutuhkan: {$quantity}).");
             }
 
             $inventory->decrement('stock_available', $quantity);
@@ -82,9 +99,21 @@ class ToolInventoryService
             $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
                 ->where('tool_id', $tool->id)
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
 
-            $inventory->decrement('stock_borrowed', $quantity);
+            if (!$inventory) {
+                $inventory = ToolInventory::create([
+                    'warehouse_id'      => $warehouse->id,
+                    'tool_id'           => $tool->id,
+                    'stock_total'       => (int) $tool->stock_total,
+                    'stock_available'   => (int) $tool->stock_available,
+                    'stock_borrowed'    => max((int) $tool->stock_borrowed, $quantity),
+                    'stock_maintenance' => (int) $tool->stock_maintenance,
+                    'stock_damaged'     => (int) $tool->stock_damaged,
+                ]);
+            }
+
+            $inventory->decrement('stock_borrowed', min($quantity, (int) $inventory->stock_borrowed));
             $field = match ($condition) {
                 'damaged'           => 'stock_damaged',
                 'under_maintenance' => 'stock_maintenance',
@@ -154,10 +183,22 @@ class ToolInventoryService
             $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
                 ->where('tool_id', $tool->id)
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
+
+            if (!$inventory) {
+                $inventory = ToolInventory::create([
+                    'warehouse_id'      => $warehouse->id,
+                    'tool_id'           => $tool->id,
+                    'stock_total'       => max((int) $tool->stock_total, $quantity),
+                    'stock_available'   => max((int) $tool->stock_available, $quantity),
+                    'stock_borrowed'    => (int) $tool->stock_borrowed,
+                    'stock_maintenance' => (int) $tool->stock_maintenance,
+                    'stock_damaged'     => (int) $tool->stock_damaged,
+                ]);
+            }
 
             if ($inventory->stock_available < $quantity) {
-                throw new Exception("Insufficient available stock for tool {$tool->name}.");
+                throw new Exception("Stok alat {$tool->name} tidak mencukupi untuk pemeliharaan.");
             }
 
             $inventory->decrement('stock_available', $quantity);
@@ -181,10 +222,22 @@ class ToolInventoryService
             $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
                 ->where('tool_id', $tool->id)
                 ->lockForUpdate()
-                ->firstOrFail();
+                ->first();
+
+            if (!$inventory) {
+                $inventory = ToolInventory::create([
+                    'warehouse_id'      => $warehouse->id,
+                    'tool_id'           => $tool->id,
+                    'stock_total'       => max((int) $tool->stock_total, $quantity),
+                    'stock_available'   => 0,
+                    'stock_borrowed'    => (int) $tool->stock_borrowed,
+                    'stock_maintenance' => max((int) $tool->stock_maintenance, $quantity),
+                    'stock_damaged'     => (int) $tool->stock_damaged,
+                ]);
+            }
 
             if ($inventory->stock_maintenance < $quantity) {
-                throw new Exception("Insufficient maintenance stock for tool {$tool->name}.");
+                throw new Exception("Stok pemeliharaan alat {$tool->name} tidak mencukupi.");
             }
 
             $inventory->decrement('stock_maintenance', $quantity);

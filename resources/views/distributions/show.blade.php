@@ -18,9 +18,11 @@
             @if($distribution->status === 'draft')
                 @can('ship distributions')
                 <div class="card-body" style="border-bottom:1px solid #f1f5f9;background:#f8fafc;">
-                    <form method="POST" action="{{ route('distributions.ship', $distribution) }}">
+                    <form method="POST" action="{{ route('distributions.ship', $distribution) }}" id="shipForm">
                         @csrf
-                        <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim surat jalan ini? Stok di gudang asal akan dikurangi dan peminjaman alat yang pending akan disetujui.')">
+                        <!-- Hidden submit button triggered by JS modal -->
+                        <button type="submit" id="shipFormSubmit" style="display:none;"></button>
+                        <button type="button" class="btn btn-primary" onclick="openShipModal()">
                             <i class="fas fa-truck"></i> Proses Pengiriman (Ship)
                         </button>
                     </form>
@@ -175,12 +177,134 @@
                     </span>
                 </div>
                 @if($distribution->notes)
-                <div style="margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;">
+<div style="margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;">
                     <strong>Catatan:</strong><br>{{ $distribution->notes }}
                 </div>
                 @endif
             </div>
         </div>
-
     </div>
 </x-app-layout>
+
+{{-- Ship Confirmation Modal --}}
+<div id="shipModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shipModalTitle">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(37,99,235,0.12);color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+                <i class="fas fa-truck"></i>
+            </div>
+            <h3 id="shipModalTitle" class="modal-title">Konfirmasi Pengiriman Surat Jalan</h3>
+            <button type="button" class="btn-close-modal" onclick="closeShipModal()" aria-label="Tutup">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info" style="margin-bottom:16px;">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Nomor Surat Jalan:</strong> {{ $distribution->distribution_number }}<br>
+                    <strong>Dari:</strong> {{ $distribution->fromWarehouse?->name }}<br>
+                    <strong>Ke:</strong> {{ $distribution->toWarehouse?->name }}<br>
+                    <strong>Tanggal Kirim:</strong> {{ $distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-' }}<br>
+                    <strong>Supir:</strong> {{ $distribution->driver_name ?? '-' }}<br>
+                    <strong>No. Polisi:</strong> {{ $distribution->vehicle_number ?? '-' }}
+                </div>
+            </div>
+
+            <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                    <i class="fas fa-exclamation-triangle text-warning" style="font-size:18px;margin-top:2px;"></i>
+                    <div style="flex:1;color:#78350f;font-size:13.5px;line-height:1.5;">
+                        <strong>Tindakan ini akan:</strong>
+                        <ul style="margin:8px 0 0 20px;padding:0;">
+                            <li>Mengurangi stok material di gudang asal (<strong>{{ $distribution->fromWarehouse?->name }}</strong>)</li>
+                            <li>Menambahkan stok <em>in-transit</em> di gudang tujuan (<strong>{{ $distribution->toWarehouse?->name }}</strong>)</li>
+                            <li>Menyetujui otomatis peminjaman alat yang berstatus <strong>Pending</strong></li>
+                            <li>Mengubah status Surat Jalan menjadi <strong>Dalam Pengiriman (In Transit)</strong></li>
+                        </ul>
+                        <p style="margin:8px 0 0 0;font-size:12.5px;color:#92400e;"><strong>Catatan:</strong> Proses ini tidak dapat dibatalkan setelah dieksekusi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size:13.5px;color:#475569;line-height:1.6;">
+                <strong>Item yang akan dikirim:</strong>
+                <ul style="margin:8px 0 0 20px;padding:0;">
+                    @foreach($distribution->items as $idx => $item)
+                    <li style="margin-bottom:4px;">
+                        <strong>{{ $item->name() }}</strong> — {{ number_format((float)$item->qty_shipped, 0, ',', '.') }} {{ $item->unitAbbr() }}
+                        @if($item->isTool() && $item->toolAssignment)
+                            <span class="badge badge-info" style="margin-left:8px;font-size:10px;">{{ $item->toolAssignment->assignment_number }}</span>
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeShipModal()">
+                <i class="fas fa-times"></i> Batal
+            </button>
+            <button type="button" class="btn btn-primary" onclick="submitShipForm()">
+                <i class="fas fa-truck"></i> Ya, Kirim Sekarang
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let isSubmitting = false;
+
+function openShipModal() {
+    const modal = document.getElementById('shipModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeShipModal() {
+    const modal = document.getElementById('shipModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+function submitShipForm() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const form = document.getElementById('shipForm');
+    if (!form) {
+        console.error('Form shipForm not found!');
+        isSubmitting = false;
+        return;
+    }
+
+    closeShipModal();
+    
+    setTimeout(() => {
+        const submitBtn = document.getElementById('shipFormSubmit');
+        if (submitBtn) {
+            submitBtn.click();
+        } else {
+            form.submit();
+        }
+    }, 100);
+}
+
+// Close on overlay click
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('shipModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeShipModal();
+        });
+    }
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeShipModal();
+    });
+});
+</script>

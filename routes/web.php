@@ -58,8 +58,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Master Data
     Route::resource('materials', MaterialController::class);
-    Route::resource('tools', ToolController::class);
     Route::post('/tools/{tool}/add-stock', [ToolController::class, 'addStock'])->name('tools.addStock');
+    Route::resource('tools', ToolController::class);
     Route::resource('suppliers', SupplierController::class);
 
     // Categories & Units (combined page)
@@ -73,20 +73,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     // Goods Receipts
-    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
     Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
+    Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
+    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
 
     // Material Requests
-    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
     Route::post('/material-requests/{materialRequest}/approve', [MaterialRequestController::class, 'approve'])->name('material-requests.approve');
     Route::post('/material-requests/{materialRequest}/reject', [MaterialRequestController::class, 'reject'])->name('material-requests.reject');
+    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
 
     // Distributions
-    Route::resource('distributions', DistributionController::class)->only(['index', 'create', 'store', 'show']);
     Route::get('/distributions/{distribution}/print', [DistributionController::class, 'print'])->name('distributions.print');
-    Route::post('/distributions/{distribution}/ship', [DistributionController::class, 'ship'])->name('distributions.ship');
+    Route::match(['get', 'post'], '/distributions/{distribution}/ship', [DistributionController::class, 'ship'])->name('distributions.ship');
     Route::post('/distributions/{distribution}/receive', [DistributionController::class, 'receive'])->name('distributions.receive');
+    Route::resource('distributions', DistributionController::class)->only(['index', 'create', 'store', 'show']);
 
     // Material Usages (Pemakaian Material Proyek / Lapangan)
     Route::get('/material-requests/{materialRequest}/details', [MaterialUsageController::class, 'getMRDetails'])->name('material-requests.details');

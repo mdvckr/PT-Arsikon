@@ -180,28 +180,29 @@ class DistributionService
             foreach ($distribution->items as $item) {
                 if ($item->isTool()) {
                     $ta = $item->toolAssignment;
-                    if ($ta && $ta->status === 'pending') {
-                        $tool = $item->tool;
-                        if ((int) $tool->stock_available < (int) $item->qty_shipped) {
-                            throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
-                        }
-                         $ta->update([
+                    $tool = $item->tool;
+
+                    if (!$tool) {
+                        throw new Exception("Alat tidak ditemukan untuk item Surat Jalan.");
+                    }
+
+                    if ((int) $tool->stock_available < (int) $item->qty_shipped) {
+                        throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
+                    }
+
+                    // Update tool assignment status to active if it exists
+                    if ($ta) {
+                        $ta->update([
                             'status'              => 'active',
                             'approved_by_user_id' => $userId,
                             'approved_at'         => now(),
                         ]);
-                        // Borrow via service
-                        $warehouse = $distribution->fromWarehouse;
-                        $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
-                    } elseif ($item->tool) {
-                        $tool = $item->tool;
-                        if ((int) $tool->stock_available < (int) $item->qty_shipped) {
-                            throw new Exception("Stok alat {$tool->name} tidak mencukupi saat pengiriman.");
-                        }
-                        // Borrow via service
-                        $warehouse = $distribution->fromWarehouse;
-                        $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
                     }
+
+                    // Borrow via service from source warehouse
+                    $warehouse = $distribution->fromWarehouse;
+                    $this->toolInvService->borrow($warehouse, $tool, (int) $item->qty_shipped);
+
                     continue;
                 }
 
@@ -268,12 +269,40 @@ class DistributionService
                     route('distributions.show', $distribution)
                 );
             }
+
+            // Notify central admins (Owner, Admin, Admin Gudang Pusat) - always notify for visibility
+            $centralAdmins = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
+            foreach ($centralAdmins as $admin) {
+                // Avoid duplicate notification if already notified as destUser
+                if (!$destUsers->contains('id', $admin->id)) {
+                    NotificationHelper::notifyUser(
+                        $admin,
+                        "Surat Jalan Dikirim: #{$distribution->distribution_number}",
+                        "Surat Jalan #{$distribution->distribution_number} dari {$distribution->fromWarehouse?->name} menuju {$distribution->toWarehouse?->name} telah dikirim.",
+                        "info",
+                        route('distributions.show', $distribution)
+                    );
+                }
+            }
+
             // Notify the creator (applicant) that the surat jalan has been shipped
             if ($distribution->creator) {
                 NotificationHelper::notifyUser(
                     $distribution->creator,
                     "Surat Jalan Dikirim: #{$distribution->distribution_number}",
                     "Surat Jalan #{$distribution->distribution_number} yang Anda ajukan telah dikirim ke {$distribution->toWarehouse?->name}.",
+                    "success",
+                    route('distributions.show', $distribution)
+                );
+            }
+
+            // Notify the user who shipped the distribution (if not already notified)
+            $shipper = User::find($userId);
+            if ($shipper && !$destUsers->contains('id', $shipper->id) && !$centralAdmins->contains('id', $shipper->id) && (!$distribution->creator || $distribution->creator->id !== $shipper->id)) {
+                NotificationHelper::notifyUser(
+                    $shipper,
+                    "Surat Jalan Dikirim: #{$distribution->distribution_number}",
+                    "Anda telah mengirim Surat Jalan #{$distribution->distribution_number} dari {$distribution->fromWarehouse?->name} ke {$distribution->toWarehouse?->name}.",
                     "success",
                     route('distributions.show', $distribution)
                 );

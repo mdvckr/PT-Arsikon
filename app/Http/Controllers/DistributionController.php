@@ -140,9 +140,21 @@ class DistributionController extends Controller
     public function ship(Distribution $distribution)
     {
         $this->authorize('ship distributions');
-        $this->service->ship($distribution, auth()->id());
 
-        return back()->with('success', 'Surat jalan telah dikirim.');
+        if ($distribution->status !== 'draft') {
+            return redirect()->route('distributions.show', $distribution)
+                ->with('info', "Surat Jalan #{$distribution->distribution_number} sudah dikirim atau tidak berstatus draft.");
+        }
+
+        try {
+            $this->service->ship($distribution, auth()->id());
+
+            return redirect()->route('distributions.show', $distribution)
+                ->with('success', "Surat jalan #{$distribution->distribution_number} berhasil dikirim.");
+        } catch (\Throwable $e) {
+            return redirect()->route('distributions.show', $distribution)
+                ->with('error', $e->getMessage());
+        }
     }
 
     public function receive(Request $request, Distribution $distribution)
