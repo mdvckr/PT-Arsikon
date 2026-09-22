@@ -107,6 +107,19 @@ class MaterialController extends Controller
         $user = Auth::user();
         $accessibleIds = $user->accessibleWarehouseIds();
 
+        // Clean up manual_items if present but empty or invalid
+        if ($request->has('manual_items') && is_array($request->manual_items)) {
+            $filteredManual = array_values(array_filter($request->manual_items, function ($item) {
+                return is_array($item) && !empty($item['name']) && !empty($item['sku']);
+            }));
+            $request->merge(['manual_items' => !empty($filteredManual) ? $filteredManual : null]);
+        }
+
+        // Validasi keberadaan kategori
+        if (!$request->filled('category_id') && !$request->filled('new_category')) {
+            return back()->withErrors(['category_id' => 'Kategori wajib dipilih atau diisi pada kolom Kategori Baru.'])->withInput();
+        }
+
         $validated = $request->validate([
             'sku'                  => 'required|string|max:50|unique:materials,sku',
             'name'                 => 'required|string|max:255',
@@ -134,6 +147,14 @@ class MaterialController extends Controller
             'manual_items.*.description' => 'nullable|string',
         ]);
 
+        // Validasi warehouse_id — admin harus memilih gudang yang valid
+        if (empty($validated['warehouse_id']) || !is_numeric($validated['warehouse_id'])) {
+            return back()->withErrors(['warehouse_id' => 'Gudang wajib dipilih.'])->withInput();
+        }
+        if (!in_array((int)$validated['warehouse_id'], $accessibleIds)) {
+            return back()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.'])->withInput();
+        }
+
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
 
@@ -146,11 +167,6 @@ class MaterialController extends Controller
         $supplier = $this->resolveSupplier($request->supplier ?? null);
         $validated['supplier_id'] = $supplier?->id;
         $validated['supplier_name'] = !empty($request->supplier) ? trim($request->supplier) : null;
-
-        // Override warehouse_id if user is restricted to single warehouse
-        if (!in_array($validated['warehouse_id'], $accessibleIds)) {
-            return back()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.'])->withInput();
-        }
 
         $incomingStages = $this->parseIncomingStages($request);
         $validated['incoming_stages'] = $incomingStages;
@@ -172,6 +188,7 @@ class MaterialController extends Controller
             $typeVal = $category?->name ?? 'Lainnya';
         }
         $validated['type'] = $typeVal;
+        $validated['min_stock_central'] = $validated['min_stock'] ?? 0;
 
         $material = Material::create($validated);
 

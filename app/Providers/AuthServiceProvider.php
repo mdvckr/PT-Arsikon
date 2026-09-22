@@ -61,6 +61,34 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 
+            // Admin & Admin Gudang mendapatkan akses penuh untuk material & tools CRUD
+            if ($user->hasAnyRole(['Admin', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO'])) {
+                $adminAbilities = [
+                    'create materials', 'view materials', 'edit materials', 'delete materials',
+                    'create tools', 'view tools', 'edit tools', 'delete tools',
+                    'create categories', 'edit categories', 'delete categories',
+                    'create suppliers', 'edit suppliers', 'delete suppliers',
+                    'manage warehouses', 'manage projects', 'manage users',
+                    'create stock opname', 'view stock opname',
+                    'create goods receipts', 'confirm goods receipts',
+                    'create material requests', 'approve material requests',
+                    'create distributions', 'ship distributions', 'receive distributions',
+                    'create tool assignments', 'approve tool assignments',
+                    'create procurement', 'approve procurement',
+                    'create purchase orders', 'cancel purchase orders',
+                    'create purchase receipts', 'delete purchase receipts',
+                    'create payments', 'verify payments',
+                    'create returns', 'approve returns', 'receive returns',
+                    'create material usages', 'cancel material usages',
+                    'create users', 'edit users', 'delete users',
+                    'view reports', 'view inventory', 'view audit logs',
+                    'manage suppliers', 'manage projects', 'manage warehouses', 'manage users',
+                ];
+                if (in_array($ability, $adminAbilities)) {
+                    return true;
+                }
+            }
+
             return null;
         });
     }

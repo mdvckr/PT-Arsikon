@@ -32,7 +32,7 @@
                     <div class="grid grid-3" style="gap:16px;">
                         {{-- Dropdown 1: Kategori --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                            <label class="form-label" for="category_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
                                 Kategori <span style="color:#ef4444;">*</span>
                             </label>
                             <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange()" style="height:38px;border-radius:6px;font-size:13px;">
@@ -48,7 +48,7 @@
                         {{-- Dropdown 2: Kelompok Barang --}}
                         <div>
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                <label class="form-label mb-0" for="type_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
                                     Kelompok <span style="color:#ef4444;">*</span>
                                 </label>
                                 <button type="button" id="btn_toggle_custom_type" onclick="toggleTypeMode(true)" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600;">
@@ -78,7 +78,7 @@
 
                         {{-- Field 3: Ukuran --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                            <label class="form-label" for="size_input" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
                                 Ukuran / Spesifikasi
                             </label>
                             <input type="text" name="size" id="size_input" value="{{ old('size') }}"
@@ -91,7 +91,7 @@
 
                     {{-- Kategori Baru (kondisional) --}}
                     <div id="new_category_wrap" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-                        <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Kategori Baru</label>
+                        <label class="form-label" for="new_category" style="font-size:12px;font-weight:700;color:#334155;">Nama Kategori Baru</label>
                         <input type="text" name="new_category" id="new_category" value="{{ old('new_category') }}" class="form-control" placeholder="Contoh: Bahan Kimia, Cat, Kayu" style="height:38px;border-radius:6px;background:#fff;max-width:360px;">
                         <div class="text-muted" style="font-size:11px;margin-top:4px;">Kategori baru akan otomatis dibuat bila belum ada.</div>
                     </div>
@@ -108,7 +108,7 @@
                     <div class="grid grid-2" style="gap:16px;">
                         {{-- SKU --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">KODE MATERIAL (SKU) <span style="color:#ef4444;">*</span></label>
+                            <label class="form-label" for="sku" style="font-size:12px;font-weight:700;color:#475569;">KODE MATERIAL (SKU) <span style="color:#ef4444;">*</span></label>
                             <input type="text" name="sku" value="{{ old('sku') }}"
                                 class="form-control font-monospace @error('sku') is-invalid @enderror"
                                 placeholder="Contoh: MAT-BES-001"
@@ -118,7 +118,7 @@
 
                         {{-- Merek / Brand --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">MEREK / BRAND <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
+                            <label class="form-label" for="brand_input" style="font-size:12px;font-weight:700;color:#475569;">MEREK / BRAND <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
                             <input type="text" name="brand" id="brand_input" value="{{ old('brand') }}"
                                 class="form-control @error('brand') is-invalid @enderror"
                                 placeholder="Semen Gresik, Holcim, Krakatau Steel..."
@@ -128,7 +128,7 @@
 
                         {{-- Nama Material --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">
+                            <label class="form-label" for="name_input" style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">
                                 NAMA MATERIAL (LENGKAP) <span style="color:#ef4444;">*</span>
                                 <span id="name_auto_badge" style="display:none;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;border:1px solid #e2e8f0;">
                                     Otomatis
@@ -147,7 +147,7 @@
 
                         {{-- Satuan --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">SATUAN <span style="color:#ef4444;">*</span></label>
+                            <label class="form-label" for="unit_select" style="font-size:12px;font-weight:700;color:#475569;">SATUAN <span style="color:#ef4444;">*</span></label>
                             <select name="unit_id" id="unit_select" class="form-control @error('unit_id') is-invalid @enderror" onchange="toggleNewUnit()" style="height:38px;border-radius:6px;font-size:13px;">
                                 <option value="">— Pilih Satuan —</option>
                                 @foreach($units as $unit)
@@ -160,7 +160,7 @@
 
                         {{-- Supplier --}}
                         <div style="grid-column:span 2;">
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">SUPPLIER / PEMASOK <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
+                            <label class="form-label" for="supplier_input" style="font-size:12px;font-weight:700;color:#475569;">SUPPLIER / PEMASOK <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
                             <input type="text" name="supplier" id="supplier_input" list="supplier_list"
                                 value="{{ old('supplier') }}"
                                 class="form-control @error('supplier') is-invalid @enderror"
@@ -177,7 +177,7 @@
 
                         {{-- Satuan Baru --}}
                         <div id="new_unit_wrap" style="display:none;grid-column:span 2;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Satuan Baru</label>
+                            <label class="form-label" for="new_unit" style="font-size:12px;font-weight:700;color:#334155;">Nama Satuan Baru</label>
                             <input type="text" name="new_unit" id="new_unit" value="{{ old('new_unit') }}" class="form-control" placeholder="Contoh: Unit, Zak, Drum, Liter" style="height:38px;border-radius:6px;background:#fff;max-width:360px;">
                             <div class="text-muted" style="font-size:11px;margin-top:4px;">Satuan baru akan otomatis dibuat bila belum ada.</div>
                         </div>
@@ -242,35 +242,37 @@
                 <div style="padding:18px;">
                     <div class="grid grid-3" style="gap:16px;margin-bottom:16px;">
                      <div>
-                             <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
+                             <label class="form-label" for="warehouse_id" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
                              @if($singleWarehouse ?? false)
                              <input type="hidden" name="warehouse_id" value="{{ $singleWarehouse->id }}">
-                             <select class="form-control" style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;" disabled>
-                                 <option value="{{ $singleWarehouse->id }}">{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}</option>
-                             </select>
+<select id="warehouse_id" class="form-control" style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;" disabled>
+                                  <option value="{{ $singleWarehouse->id }}">{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}</option>
+                              </select>
                              @else
-                             <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
-                                 <option value="">— Pilih Gudang —</option>
-                                 @foreach($warehouses as $wh)
-                                 <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                     {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
-                                 </option>
-                                 @endforeach
-                             </select>
+                             @php
+                                 $defaultWarehouseId = old('warehouse_id', $warehouses->firstWhere('is_central', true)?->id ?? $warehouses->first()?->id);
+                             @endphp
+                             <select name="warehouse_id" id="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
+                                  @foreach($warehouses as $wh)
+                                  <option value="{{ $wh->id }}" {{ $defaultWarehouseId == $wh->id ? 'selected' : '' }}>
+                                      {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                                  </option>
+                                  @endforeach
+                              </select>
                              @endif
                              @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                          </div>
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">STOK AWAL</label>
-                            <input type="number" step="1" min="0" name="initial_stock" id="initial_stock_input"
+<label class="form-label" for="initial_stock_input" style="font-size:12px;font-weight:700;color:#475569;">STOK AWAL</label>
+                             <input type="number" step="1" min="0" name="initial_stock" id="initial_stock_input"
                                 value="{{ old('initial_stock', 0) }}"
                                 class="form-control @error('initial_stock') is-invalid @enderror"
                                 style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" placeholder="0">
                             @error('initial_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">MIN. STOK (ALERT)</label>
-                            <input type="number" step="1" min="0" name="min_stock"
+<label class="form-label" for="min_stock" style="font-size:12px;font-weight:700;color:#475569;">MIN. STOK (ALERT)</label>
+                             <input type="number" step="1" min="0" name="min_stock" id="min_stock"
                                 value="{{ old('min_stock', 0) }}"
                                 class="form-control @error('min_stock') is-invalid @enderror"
                                 style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" placeholder="0">
@@ -278,8 +280,8 @@
                         </div>
                     </div>
                     <div>
-                        <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">KETERANGAN / CATATAN TAMBAHAN</label>
-                        <textarea name="description" class="form-control" rows="3"
+<label class="form-label" for="description" style="font-size:12px;font-weight:700;color:#475569;">KETERANGAN / CATATAN TAMBAHAN</label>
+                     <textarea name="description" id="description" class="form-control" rows="3"
                             placeholder="Deskripsi singkat material, spesifikasi teknis, atau catatan penting lainnya..."
                             style="border-radius:6px;font-size:13px;resize:vertical;">{{ old('description') }}</textarea>
                     </div>
@@ -300,30 +302,30 @@
                 <div id="manual-box" style="display:none;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:16px 18px;">
                     <div class="grid" style="gap:12px;">
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Material/Alat Baru <span style="color:#ef4444;">*</span></label>
-                            <input type="text" name="manual_items[][name]" id="manual_item_name" class="form-control" placeholder="Contoh: Semen Extra Power 50kg" style="height:36px;border-radius:6px;font-size:13px;">
+                            <label class="form-label" for="manual_item_name" style="font-size:12px;font-weight:700;color:#334155;">Nama Material/Alat Baru <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="manual_item_name" class="form-control" placeholder="Contoh: Semen Extra Power 50kg" style="height:36px;border-radius:6px;font-size:13px;">
                         </div>
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Kode SKU <span style="color:#ef4444;">*</span></label>
-                            <input type="text" name="manual_items[][sku]" id="manual_item_sku" class="form-control font-monospace" placeholder="Contoh: MAT-XXX-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
+                            <label class="form-label" for="manual_item_sku" style="font-size:12px;font-weight:700;color:#334155;">Kode SKU <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="manual_item_sku" class="form-control font-monospace" placeholder="Contoh: MAT-XXX-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
                         </div>
                     </div>
                     <div class="grid grid-3" style="gap:12px;margin-top:12px;">
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Satuan</label>
-                            <input type="text" name="manual_items[][unit_id]" id="manual_item_unit" class="form-control" placeholder="Pcs, kg, liter" style="height:36px;border-radius:6px;font-size:13px;">
+                            <label class="form-label" for="manual_item_unit" style="font-size:12px;font-weight:700;color:#334155;">Satuan</label>
+                            <input type="text" id="manual_item_unit" class="form-control" placeholder="Pcs, kg, liter" style="height:36px;border-radius:6px;font-size:13px;">
                         </div>
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Jumlah Stok</label>
-                            <input type="number" step="1" min="0" name="manual_items[][quantity]" id="manual_item_qty" class="form-control" placeholder="0" style="height:36px;border-radius:6px;font-size:13px;">
+                            <label class="form-label" for="manual_item_qty" style="font-size:12px;font-weight:700;color:#334155;">Jumlah Stok</label>
+                            <input type="number" step="1" min="0" id="manual_item_qty" class="form-control" placeholder="0" style="height:36px;border-radius:6px;font-size:13px;">
                         </div>
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Lokasi Gudang</label>
+                            <label class="form-label" for="manual_item_warehouse" style="font-size:12px;font-weight:700;color:#334155;">Lokasi Gudang</label>
                             @if($singleWarehouse ?? false)
-                            <input type="hidden" name="manual_items[][warehouse_id]" value="{{ $singleWarehouse->id }}">
+                            <input type="hidden" id="manual_item_warehouse" value="{{ $singleWarehouse->id }}">
                             <input type="text" class="form-control" value="{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}" disabled style="height:36px;border-radius:6px;font-size:13px;background:#f8fafc;">
                             @else
-                            <select name="manual_items[][warehouse_id]" class="form-control" style="height:36px;border-radius:6px;font-size:13px;">
+                            <select id="manual_item_warehouse" class="form-control" style="height:36px;border-radius:6px;font-size:13px;">
                                 @foreach($warehouses as $wh)
                                 <option value="{{ $wh->id }}">{{ $wh->name }}</option>
                                 @endforeach
@@ -333,12 +335,15 @@
                     </div>
                     <div class="flex gap-2 mt-3">
                         <button type="button" class="btn btn-primary btn-sm" onclick="addManualMaterial()" style="height:32px;font-size:12px;">
-                            <i class="fas fa-check"></i> Tambah Baru
+                            <i class="fas fa-check"></i> Tambah Item
                         </button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="toggleManualBox()" style="height:32px;font-size:12px;">
                             <i class="fas fa-times"></i> Tutup
                         </button>
                     </div>
+
+                    {{-- Dynamic Manual Items Container --}}
+                    <div id="manual_items_container" style="margin-top:10px;"></div>
                 </div>
             </div>
 
@@ -498,6 +503,7 @@
                 var selectVal = (document.getElementById('type_select')?.value || '').trim();
                 if (selectVal && selectVal !== '__new__') hiddenType.value = selectVal;
             }
+            return true;
         }
 
         onCategoryChange();
@@ -623,41 +629,70 @@
         checkEmptyState();
 
         // ── Manual Item Section ──
+        var manualItemCount = 0;
+
         function toggleManualBox() {
             var box = document.getElementById('manual-box');
             box.style.display = box.style.display === 'none' ? 'block' : 'none';
             if (box.style.display === 'block') {
-                document.getElementById('manual_item_name').focus();
+                document.getElementById('manual_item_name')?.focus();
             }
         }
 
         function addManualMaterial() {
-            var name = document.getElementById('manual_item_name').value.trim();
-            var sku = document.getElementById('manual_item_sku').value.trim();
-            var unit = document.getElementById('manual_item_unit').value.trim() || 'pcs';
-            var qty = document.getElementById('manual_item_qty').value || 0;
+            var nameEl = document.getElementById('manual_item_name');
+            var skuEl = document.getElementById('manual_item_sku');
+            var unitEl = document.getElementById('manual_item_unit');
+            var qtyEl = document.getElementById('manual_item_qty');
+            var whEl = document.getElementById('manual_item_warehouse') || document.querySelector('[name="warehouse_id"]');
+
+            var name = nameEl ? nameEl.value.trim() : '';
+            var sku = skuEl ? skuEl.value.trim() : '';
+            var unit = (unitEl ? unitEl.value.trim() : '') || 'Pcs';
+            var qty = qtyEl ? qtyEl.value : 0;
+            var warehouseId = whEl ? whEl.value : '';
 
             if (!name || !sku) {
-                alert('Nama dan Kode SKU wajib diisi.');
+                alert('Nama dan Kode SKU untuk item manual wajib diisi.');
                 return;
             }
 
-            // Add hidden inputs for manual items to the form
-            var container = document.createElement('div');
-            container.style.display = 'none';
-            container.innerHTML = `
-                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length}[name]" value="${name}">
-                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[sku]" value="${sku}">
-                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[unit_id]" value="${unit}">
-                <input type="hidden" name="manual_items[${document.querySelectorAll('[name^="manual_items"]').length - 1}[quantity]" value="${qty}">
-            `;
-            document.getElementById('material-form').appendChild(container);
+            if (!warehouseId) {
+                alert('Pilih gudang terlebih dahulu.');
+                return;
+            }
 
-            alert('Material/Alat baru: "' + name + '" akan ditambahkan saat simpan.');
-            document.getElementById('manual_item_name').value = '';
-            document.getElementById('manual_item_sku').value = '';
-            document.getElementById('manual_item_unit').value = '';
-            document.getElementById('manual_item_qty').value = '0';
+            var container = document.getElementById('manual_items_container');
+            if (!container) return;
+
+            var rowId = 'manual_row_' + manualItemCount;
+            var itemDiv = document.createElement('div');
+            itemDiv.id = rowId;
+            itemDiv.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;margin-top:8px;font-size:12.5px;';
+
+            itemDiv.innerHTML = `
+                <div>
+                    <strong style="color:#0f172a;">${name}</strong>
+                    <span class="font-monospace text-muted" style="font-size:11.5px;margin-left:6px;">(${sku})</span>
+                    <span style="margin-left:8px;font-size:11px;padding:2px 6px;background:#f1f5f9;border-radius:4px;border:1px solid #e2e8f0;color:#334155;">Stok: ${qty} ${unit}</span>
+                    <input type="hidden" name="manual_items[${manualItemCount}][name]" value="${name}">
+                    <input type="hidden" name="manual_items[${manualItemCount}][sku]" value="${sku}">
+                    <input type="hidden" name="manual_items[${manualItemCount}][unit_id]" value="${unit}">
+                    <input type="hidden" name="manual_items[${manualItemCount}][quantity]" value="${qty}">
+                    <input type="hidden" name="manual_items[${manualItemCount}][warehouse_id]" value="${warehouseId}">
+                </div>
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="btn btn-sm btn-light border" style="height:26px;padding:0 8px;font-size:11px;color:#dc2626;" title="Hapus">
+                    <i class="fas fa-trash me-1"></i> Hapus
+                </button>
+            `;
+
+            container.appendChild(itemDiv);
+            manualItemCount++;
+
+            nameEl.value = '';
+            skuEl.value = '';
+            if (unitEl) unitEl.value = '';
+            if (qtyEl) qtyEl.value = '0';
         }
     </script>
     @endpush
