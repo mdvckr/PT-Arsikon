@@ -84,11 +84,12 @@ class MaterialRequestService
             $loaded = $request->load('items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy');
 
             if ($submitImmediately) {
-                NotificationHelper::notifyAdmins(
+                NotificationHelper::notifyApprovers(
                     "Permintaan Material: #{$request->request_number}",
                     "Permintaan material diajukan oleh {$requestedBy->name} dari {$fromWarehouse->name}.",
                     "approval_needed",
-                    route('material-requests.show', $request)
+                    route('material-requests.show', $request),
+                    $fromWarehouse->id
                 );
             }
 

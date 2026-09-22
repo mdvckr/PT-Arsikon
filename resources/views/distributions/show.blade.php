@@ -143,15 +143,22 @@
                         @endforeach
                     </tbody>
                 </table>
-            </div>
+</div>
 
             @if($distribution->status === 'in_transit')
                 @can('receive distributions')
                 <div class="card-body" style="border-top:1px solid #f1f5f9;text-align:right;">
+                    <div class="mb-3">
+                        <label for="surat_jalan" class="form-label small">No. Surat Jalan</label>
+                        <input type="text" name="surat_jalan" id="surat_jalan" class="form-control form-control-sm" value="{{ old('surat_jalan', $distribution->surat_jalan ?? '') }}" placeholder="Masukkan No. Surat Jalan">
+                    </div>
                     <button type="submit" class="btn btn-success" onclick="return confirm('Konfirmasi penerimaan barang/alat di gudang tujuan?')">
                         <i class="fas fa-clipboard-check"></i> Konfirmasi Penerimaan
                     </button>
                 </div>
+                @endcan
+            @endif
+        </div>
                 </form>
                 @endcan
             @endif

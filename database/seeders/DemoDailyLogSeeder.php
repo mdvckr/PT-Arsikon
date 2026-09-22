@@ -43,19 +43,36 @@ class DemoDailyLogSeeder extends Seeder
         // 2. Add Tool Assignment with Mandor Supardi
         $firstTool = $tools->first();
         if ($firstTool) {
+            $loan = \App\Models\ToolLoan::firstOrCreate(
+                ['loan_number' => 'TL-DEMO-001'],
+                [
+                    'from_warehouse_id'   => $proyek->id,
+                    'borrower_name'       => 'Mandor Supardi (Subkon Struktur)',
+                    'borrower_phone'      => '081234567890',
+                    'location_name'       => 'Zona Area Cor Plat Lt. 2 Gedung FK',
+                    'assigned_by_user_id' => $adminProyek?->id,
+                    'assigned_at'         => now()->startOfDay()->addHours(8),
+                    'expected_return_at'  => now()->startOfDay()->addDays(2)->addHours(17),
+                    'status'              => 'active',
+                    'notes'               => 'Peminjaman alat untuk persiapan pengecoran kolom & balok.',
+                ]
+            );
+
             ToolAssignment::updateOrCreate(
                 ['assignment_number' => 'TA-DEMO-001'],
                 [
-                    'tool_id' => $firstTool->id,
+                    'tool_loan_id'      => $loan->id,
+                    'tool_id'           => $firstTool->id,
+                    'quantity'          => 1,
                     'from_warehouse_id' => $proyek->id,
-                    'borrower_name' => 'Mandor Supardi (Subkon Struktur)',
-                    'borrower_phone' => '081234567890',
-                    'location_name' => 'Zona Area Cor Plat Lt. 2 Gedung FK',
+                    'borrower_name'     => 'Mandor Supardi (Subkon Struktur)',
+                    'borrower_phone'    => '081234567890',
+                    'location_name'     => 'Zona Area Cor Plat Lt. 2 Gedung FK',
                     'assigned_by_user_id' => $adminProyek?->id,
-                    'assigned_at' => now()->startOfDay()->addHours(8),
+                    'assigned_at'       => now()->startOfDay()->addHours(8),
                     'expected_return_at' => now()->startOfDay()->addDays(2)->addHours(17),
-                    'status' => 'active',
-                    'notes' => 'Peminjaman alat untuk persiapan pengecoran kolom & balok.',
+                    'status'            => 'active',
+                    'notes'             => 'Peminjaman alat untuk persiapan pengecoran kolom & balok.',
                 ]
             );
         }

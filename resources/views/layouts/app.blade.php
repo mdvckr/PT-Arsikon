@@ -1582,46 +1582,106 @@
             unlockEvents.forEach(e => document.addEventListener(e, unlock, { once: true }));
         })();
 
-        function playNotificationChime() {
+        function playNotificationChime(soundType) {
             try {
                 const ctx = getAudioContext();
                 if (!ctx) return;
 
-                const startSound = () => {
+                const type = (soundType || '').toLowerCase();
+                const isApproval = type.includes('approval') || type.includes('urgent');
+                const isSad = type.includes('rejected') || type.includes('cancelled') || type.includes('warning') || type.includes('danger');
+                const isHappy = type.includes('approved') || type.includes('success');
+
+                const playChime = () => {
                     const now = ctx.currentTime;
 
-                    // First Note: D5 (587.33 Hz) -> A5 (880 Hz)
+                    // 1. APPROVAL REQUEST CHIME (Triple Crisp Tone - Ping-Ping-Ding! 🔔)
+                    if (isApproval) {
+                        // Nada 1: G5 (783.99 Hz)
+                        const o1 = ctx.createOscillator();
+                        const g1 = ctx.createGain();
+                        o1.type = 'sine';
+                        o1.frequency.setValueAtTime(783.99, now);
+                        g1.gain.setValueAtTime(0.35, now);
+                        g1.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                        o1.connect(g1); g1.connect(ctx.destination);
+                        o1.start(now); o1.stop(now + 0.15);
+
+                        // Nada 2: A5 (880.00 Hz)
+                        const o2 = ctx.createOscillator();
+                        const g2 = ctx.createGain();
+                        o2.type = 'sine';
+                        o2.frequency.setValueAtTime(880.00, now + 0.12);
+                        g2.gain.setValueAtTime(0.38, now + 0.12);
+                        g2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                        o2.connect(g2); g2.connect(ctx.destination);
+                        o2.start(now + 0.12); o2.stop(now + 0.30);
+
+                        // Nada 3: C6 (1046.50 Hz) - resonan panjang
+                        const o3 = ctx.createOscillator();
+                        const g3 = ctx.createGain();
+                        o3.type = 'sine';
+                        o3.frequency.setValueAtTime(1046.50, now + 0.26);
+                        g3.gain.setValueAtTime(0.42, now + 0.26);
+                        g3.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+                        o3.connect(g3); g3.connect(ctx.destination);
+                        o3.start(now + 0.26); o3.stop(now + 0.75);
+                        return;
+                    }
+
+                    // 2. REJECTED / WARNING CHIME (Descending Two-tone ❌)
+                    if (isSad) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(440.0, now);          // A4
+                        osc.frequency.exponentialRampToValueAtTime(164.81, now + 0.38); // -> E3
+                        gain.gain.setValueAtTime(0.32, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                        osc.connect(gain); gain.connect(ctx.destination);
+                        osc.start(now); osc.stop(now + 0.55);
+                        return;
+                    }
+
+                    // 3. SUCCESS / APPROVED CHIME (Bright Ascending Major Harmony ✅)
+                    if (isHappy) {
+                        // C5 (523.25 Hz) -> E5 (659.25 Hz) -> G5 (783.99 Hz)
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(523.25, now);
+                        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.25);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                        osc.connect(gain); gain.connect(ctx.destination);
+                        osc.start(now); osc.stop(now + 0.5);
+                        return;
+                    }
+
+                    // 4. GENERAL INFO CHIME (Standard 2-tone chime ℹ️)
                     const osc1 = ctx.createOscillator();
                     const gain1 = ctx.createGain();
                     osc1.type = 'sine';
-                    osc1.frequency.setValueAtTime(587.33, now);
-                    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12);
-                    gain1.gain.setValueAtTime(0.35, now);
-                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                    osc1.connect(gain1);
-                    gain1.connect(ctx.destination);
-                    osc1.start(now);
-                    osc1.stop(now + 0.4);
+                    osc1.frequency.setValueAtTime(587.33, now); // D5
+                    gain1.gain.setValueAtTime(0.3, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc1.connect(gain1); gain1.connect(ctx.destination);
+                    osc1.start(now); osc1.stop(now + 0.25);
 
-                    // Second Note: A5 -> D6 (1174.66 Hz)
                     const osc2 = ctx.createOscillator();
                     const gain2 = ctx.createGain();
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(880, now + 0.12);
-                    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.32);
-                    gain2.gain.setValueAtTime(0, now);
-                    gain2.gain.setValueAtTime(0.4, now + 0.12);
-                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-                    osc2.connect(gain2);
-                    gain2.connect(ctx.destination);
-                    osc2.start(now + 0.12);
-                    osc2.stop(now + 0.7);
+                    osc2.frequency.setValueAtTime(880.0, now + 0.12); // A5
+                    gain2.gain.setValueAtTime(0.32, now + 0.12);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    osc2.connect(gain2); gain2.connect(ctx.destination);
+                    osc2.start(now + 0.12); osc2.stop(now + 0.5);
                 };
 
                 if (ctx.state === 'suspended') {
-                    ctx.resume().then(() => startSound()).catch(() => startSound());
+                    ctx.resume().then(() => playChime()).catch(() => playChime());
                 } else {
-                    startSound();
+                    playChime();
                 }
             } catch (err) {
                 console.warn('Audio playback error:', err);
@@ -1700,7 +1760,7 @@
                 // If new notification detected (by unique ID change or count increase)
                 if (res.latest && res.latest.id && res.latest.id !== lastNotifId) {
                     if (lastNotifId !== '') {
-                        playNotificationChime();
+                        playNotificationChime(res.latest.sound_type);
                         showNotificationToast(res.latest);
                     }
                     lastNotifId = res.latest.id;

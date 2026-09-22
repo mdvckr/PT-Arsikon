@@ -26,6 +26,7 @@ class Distribution extends Model
         'received_at',
         'status',
         'notes',
+        'surat_jalan',
     ];
 
     protected $casts = [

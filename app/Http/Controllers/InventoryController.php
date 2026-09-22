@@ -168,10 +168,20 @@ class InventoryController extends Controller
             $toolCatQuery = Category::query()
                 ->where('type', 'tool')
                 ->with(['tools' => function ($q) use ($request, $warehouseId, $search, $type, $size, $stockLevel) {
-                    $q->with('currentWarehouse');
+                    $q->with(['currentWarehouse', 'inventories' => function ($invQ) use ($warehouseId) {
+                        if ($warehouseId) {
+                            $invQ->where('warehouse_id', $warehouseId);
+                        }
+                    }]);
 
                     if ($warehouseId) {
-                        $q->where('current_warehouse_id', $warehouseId);
+                        $q->where(function ($sub) use ($warehouseId) {
+                            $sub->where('current_warehouse_id', $warehouseId)
+                                ->orWhereHas('inventories', function ($invQ) use ($warehouseId) {
+                                    $invQ->where('warehouse_id', $warehouseId)
+                                         ->where('stock_total', '>', 0);
+                                });
+                        });
                     }
 
                     if ($search) {

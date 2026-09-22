@@ -98,12 +98,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/daily-log', [DailyLogController::class, 'index'])->name('daily-log.index');
     Route::get('/daily-log/print', [DailyLogController::class, 'print'])->name('daily-log.print');
 
-    // Tool Assignments
+    // Tool Assignments / Loans
     Route::resource('tool-assignments', ToolAssignmentController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('/tool-assignments/{toolAssignment}/approve', [ToolAssignmentController::class, 'approve'])->name('tool-assignments.approve');
-    Route::post('/tool-assignments/{toolAssignment}/reject', [ToolAssignmentController::class, 'reject'])->name('tool-assignments.reject');
-    Route::post('/tool-assignments/{toolAssignment}/return', [ToolAssignmentController::class, 'return'])->name('tool-assignments.return');
-    Route::post('/tool-assignments/{toolAssignment}/cancel', [ToolAssignmentController::class, 'cancel'])->name('tool-assignments.cancel');
+    Route::post('/tool-assignments/{toolLoan}/approve', [ToolAssignmentController::class, 'approve'])->name('tool-assignments.approve');
+    Route::post('/tool-assignments/{toolLoan}/reject', [ToolAssignmentController::class, 'reject'])->name('tool-assignments.reject');
+    Route::post('/tool-assignments/{toolLoan}/return', [ToolAssignmentController::class, 'return'])->name('tool-assignments.return');
+    Route::post('/tool-assignments/{toolLoan}/cancel', [ToolAssignmentController::class, 'cancel'])->name('tool-assignments.cancel');
 
     // Stock Opname
     Route::resource('stock-opnames', StockOpnameController::class)->only(['index', 'create', 'store', 'show']);

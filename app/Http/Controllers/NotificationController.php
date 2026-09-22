@@ -44,6 +44,7 @@ class NotificationController extends Controller
                 'title' => $latest->data['title'] ?? 'Notifikasi Baru',
                 'message' => $latest->data['message'] ?? '',
                 'url' => $latest->data['url'] ?? $latest->data['link'] ?? route('notifications.index'),
+                'sound_type' => $latest->data['sound_type'] ?? null,
             ] : null,
         ]);
     }

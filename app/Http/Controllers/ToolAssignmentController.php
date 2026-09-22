@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Tool;
 use App\Models\ToolAssignment;
+use App\Models\ToolLoan;
 use App\Models\Warehouse;
 use App\Models\User;
 use App\Services\ToolInventoryService;
@@ -24,40 +25,29 @@ class ToolAssignmentController extends Controller
     {
         $this->authorize('view tool assignments');
 
-        $query = ToolAssignment::with(['tool.category', 'assignedTo', 'fromWarehouse']);
+        $query = ToolLoan::with(['items.tool.category', 'fromWarehouse', 'assignedBy']);
 
         if ($request->status) {
-            // Normalisasi 'assigned' (legacy UI) menjadi 'active'
             $status = $request->status === 'assigned' ? 'active' : $request->status;
             $query->where('status', $status);
         }
 
         if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->whereHas('tool', fn($q2) => $q2->where('name', 'like', "%{$request->search}%")
-                      ->orWhere('code', 'like', "%{$request->search}%"))
-                  ->orWhere('notes', 'like', "%{$request->search}%");
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('loan_number', 'like', "%{$searchTerm}%")
+                  ->orWhere('borrower_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('borrower_phone', 'like', "%{$searchTerm}%")
+                  ->orWhere('location_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('notes', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('items.tool', fn($q2) => $q2->where('name', 'like', "%{$searchTerm}%")
+                      ->orWhere('code', 'like', "%{$searchTerm}%"));
             });
         }
 
-        if ($request->category_id) {
-            $query->whereHas('tool', fn($q) => $q->where('category_id', $request->category_id));
-        }
+        $loans = $query->latest()->paginate(20)->withQueryString();
 
-        $assignments = $query->latest()->paginate(25)->withQueryString();
-
-        // Kelompokkan berdasarkan kategori alat
-        $grouped = $assignments->getCollection()->groupBy(function ($a) {
-            return $a->tool?->category?->name ?? 'Tanpa Kategori';
-        })->sortKeys();
-
-        // Kategori untuk dropdown filter (hanya yang ada alat)
-        $filterCategories = Category::query()
-            ->where('type', 'tool')
-            ->orderBy('name')
-            ->get();
-
-        return view('tool-assignments.index', compact('assignments', 'grouped', 'filterCategories'));
+        return view('tool-assignments.index', compact('loans'));
     }
 
     public function create()
@@ -120,10 +110,24 @@ class ToolAssignmentController extends Controller
         }
 
         $totalAssignedCount = 0;
+        $toolLoan = null;
 
-        $createdAssignments = [];
+        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount, &$toolLoan) {
+            $loanNumber = ToolLoan::generateLoanNumber();
 
-        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount, &$createdAssignments) {
+            $toolLoan = ToolLoan::create([
+                'loan_number'         => $loanNumber,
+                'from_warehouse_id'   => $warehouse->id,
+                'assigned_by_user_id' => $assignedBy->id,
+                'borrower_name'       => $validated['borrower_name'],
+                'borrower_phone'      => $validated['borrower_phone'] ?? null,
+                'location_name'       => $validated['location_name'],
+                'assigned_at'         => $validated['assigned_at'],
+                'expected_return_at'  => $validated['expected_return_at'] ?? null,
+                'status'              => 'pending',
+                'notes'               => $borrowerInfoNotes,
+            ]);
+
             foreach ($validated['quantities'] as $toolId => $qty) {
                 $qty = (int) $qty;
                 if ($qty <= 0) continue;
@@ -131,16 +135,15 @@ class ToolAssignmentController extends Controller
                 $tool = Tool::find($toolId);
                 if (!$tool) continue;
 
-                // Cek apakah stok tersedia cukup
                 if ($tool->stock_available < $qty) {
-                    $qty = $tool->stock_available; // Pinjam sebanyak yang tersedia
+                    $qty = $tool->stock_available;
                 }
 
                 if ($qty <= 0) continue;
 
-                // Buat 1 record assignment per tool (status: menunggu persetujuan admin)
                 $assignmentNumber = 'TA-' . strtoupper(substr(uniqid(), -6));
-                $ta = ToolAssignment::create([
+                ToolAssignment::create([
+                    'tool_loan_id'        => $toolLoan->id,
                     'assignment_number'   => $assignmentNumber,
                     'tool_id'             => $tool->id,
                     'quantity'            => $qty,
@@ -155,105 +158,110 @@ class ToolAssignmentController extends Controller
                     'notes'               => $borrowerInfoNotes,
                 ]);
 
-                $createdAssignments[] = $ta;
                 $totalAssignedCount += $qty;
+            }
+
+            if ($totalAssignedCount === 0) {
+                throw new \Exception('Silakan masukkan jumlah min. 1 pada alat yang ingin dipinjam.');
             }
         });
 
-        if ($totalAssignedCount === 0) {
+        if (!$toolLoan || $totalAssignedCount === 0) {
             return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada alat yang ingin dipinjam.']);
         }
 
-        // Notify Admins & Owner
-        \App\Services\NotificationHelper::notifyAdmins(
-            "Pengajuan Peminjaman Alat",
+        // Notifikasi ke Approvers (Owner, Admin, Admin Gudang Pusat, dan Admin Gudang Proyek terkait)
+        \App\Services\NotificationHelper::notifyApprovers(
+            "Pengajuan Peminjaman Alat: #{$toolLoan->loan_number}",
             "{$assignedBy->name} mengajukan peminjaman {$totalAssignedCount} unit alat untuk {$validated['borrower_name']} ({$validated['location_name']}).",
             "approval_needed",
-            route('tool-assignments.index')
+            route('tool-assignments.show', $toolLoan->id),
+            $warehouse->id
         );
 
         return redirect()->route('tool-assignments.index')
-            ->with('success', "Pengajuan pinjam {$totalAssignedCount} unit alat berhasil dibuat & menunggu persetujuan Admin.");
+            ->with('success', "Pengajuan peminjaman #{$toolLoan->loan_number} ({$totalAssignedCount} unit alat) berhasil dibuat & menunggu persetujuan Admin.");
     }
 
-    public function show(ToolAssignment $toolAssignment)
+    public function show($id)
     {
         $this->authorize('view tool assignments');
-        $toolAssignment->load(['tool', 'assignedTo', 'fromWarehouse', 'assignedBy', 'approvedBy']);
 
-        return view('tool-assignments.show', compact('toolAssignment'));
+        // Dukung baik ToolLoan id maupun legacy ToolAssignment id
+        $toolLoan = ToolLoan::with(['items.tool.category', 'fromWarehouse', 'assignedBy', 'approvedBy', 'cancelledBy'])->find($id);
+
+        if (!$toolLoan) {
+            $legacyAssignment = ToolAssignment::find($id);
+            if ($legacyAssignment && $legacyAssignment->tool_loan_id) {
+                return redirect()->route('tool-assignments.show', $legacyAssignment->tool_loan_id);
+            }
+            abort(404, 'Data peminjaman tidak ditemukan.');
+        }
+
+        return view('tool-assignments.show', compact('toolLoan'));
     }
 
-    public function approve(ToolAssignment $toolAssignment)
+    public function approve($id)
     {
         $this->authorize('approve tool assignments');
 
-        if ($toolAssignment->status !== 'pending') {
+        $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse', 'assignedBy'])->findOrFail($id);
+
+        if ($toolLoan->status !== 'pending') {
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat disetujui.');
         }
 
-        // Pastikan stok tersedia masih cukup saat persetujuan
-        $tool      = $toolAssignment->tool;
-        $available = (int) $tool->stock_available;
-        if ($available < $toolAssignment->quantity) {
-            return back()->with('error', "Stok tersedia ({$available}) kurang dari jumlah pinjam ({$toolAssignment->quantity}).");
+        // Cek ketersediaan stok untuk semua alat
+        foreach ($toolLoan->items as $item) {
+            $tool = $item->tool;
+            if (!$tool || $tool->stock_available < $item->quantity) {
+                $available = (int) ($tool?->stock_available ?? 0);
+                return back()->with('error', "Stok alat '{$tool?->name}' tidak cukup (Tersedia: {$available}, Dibutuhkan: {$item->quantity}).");
+            }
         }
 
-        DB::transaction(function () use ($toolAssignment, $tool) {
-            $toolAssignment->update([
+        DB::transaction(function () use ($toolLoan) {
+            $toolLoan->update([
                 'status'              => 'active',
                 'approved_by_user_id' => auth()->id(),
                 'approved_at'         => now(),
             ]);
 
-            // Borrow stock via ToolInventoryService on the source warehouse
-            $qty = (int) $toolAssignment->quantity;
-            $warehouse = $toolAssignment->fromWarehouse ?? $toolAssignment->tool?->currentWarehouse;
-            if ($warehouse) {
-                $this->toolInvService->borrow($warehouse, $tool, $qty);
+            foreach ($toolLoan->items as $item) {
+                $item->update([
+                    'status'              => 'active',
+                    'approved_by_user_id' => auth()->id(),
+                    'approved_at'         => now(),
+                ]);
+
+                $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
+                if ($warehouse && $item->tool) {
+                    $this->toolInvService->borrow($warehouse, $item->tool, (int) $item->quantity);
+                }
             }
         });
 
-        // Notify Borrower / Applicant and all users in that warehouse
-        $targetUsers = collect();
-        if ($toolAssignment->assignedBy) {
-            $targetUsers->push($toolAssignment->assignedBy);
-        }
-        if ($toolAssignment->from_warehouse_id) {
-            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $toolAssignment->from_warehouse_id))->get();
-            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
-        }
-
-        // Notify the applicant directly
-        if ($toolAssignment->assignedBy) {
+        // Notifikasi ke pemohon
+        if ($toolLoan->assignedBy) {
             \App\Services\NotificationHelper::notifyUser(
-                $toolAssignment->assignedBy,
-                "Peminjaman Alat Disetujui: #{$toolAssignment->assignment_number}",
-                "Pengajuan peminjaman alat {$tool->name} ({$toolAssignment->quantity} unit) telah disetujui oleh " . auth()->user()->name . ".",
+                $toolLoan->assignedBy,
+                "Peminjaman Alat Disetujui: #{$toolLoan->loan_number}",
+                "Pengajuan peminjaman alat #{$toolLoan->loan_number} telah disetujui oleh " . auth()->user()->name . ".",
                 "success",
-                route('tool-assignments.show', $toolAssignment)
+                route('tool-assignments.show', $toolLoan->id)
             );
         }
-        // Also notify other warehouse users (if any)
-        foreach ($targetUsers as $targetUser) {
-            if ($targetUser->id !== $toolAssignment->assignedBy?->id) {
-                \App\Services\NotificationHelper::notifyUser(
-                    $targetUser,
-                    "Peminjaman Alat Disetujui: #{$toolAssignment->assignment_number}",
-                    "Pengajuan peminjaman alat {$tool->name} ({$toolAssignment->quantity} unit) telah disetujui oleh " . auth()->user()->name . ".",
-                    "info",
-                    route('tool-assignments.show', $toolAssignment)
-                );
-            }
-        }
-        return back()->with('success', 'Pengajuan peminjaman alat disetujui & stok alat dikurangi.');
+
+        return back()->with('success', "Pengajuan peminjaman #{$toolLoan->loan_number} berhasil disetujui dan stok alat telah diperbarui.");
     }
 
-    public function reject(Request $request, ToolAssignment $toolAssignment)
+    public function reject(Request $request, $id)
     {
         $this->authorize('approve tool assignments');
 
-        if ($toolAssignment->status !== 'pending') {
+        $toolLoan = ToolLoan::with(['items', 'assignedBy'])->findOrFail($id);
+
+        if ($toolLoan->status !== 'pending') {
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat ditolak.');
         }
 
@@ -261,37 +269,40 @@ class ToolAssignmentController extends Controller
             'rejection_reason' => 'required|string|max:255',
         ]);
 
-        $toolAssignment->update([
-            'status'           => 'rejected',
-            'rejection_reason' => $request->rejection_reason,
-        ]);
+        DB::transaction(function () use ($toolLoan, $request) {
+            $toolLoan->update([
+                'status'           => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+            ]);
 
-        // Notify Borrower / Applicant and all users in that warehouse
-        $targetUsers = collect();
-        if ($toolAssignment->assignedBy) {
-            $targetUsers->push($toolAssignment->assignedBy);
-        }
-        if ($toolAssignment->from_warehouse_id) {
-            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $toolAssignment->from_warehouse_id))->get();
-            $targetUsers = $targetUsers->merge($projectUsers)->unique('id');
-        }
+            $toolLoan->items()->update([
+                'status'           => 'rejected',
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+        });
 
-        foreach ($targetUsers as $targetUser) {
+        if ($toolLoan->assignedBy) {
             \App\Services\NotificationHelper::notifyUser(
-                $targetUser,
-                "Peminjaman Alat Ditolak: #{$toolAssignment->assignment_number}",
-                "Pengajuan peminjaman alat {$toolAssignment->tool?->name} ditolak oleh " . auth()->user()->name . ". Alasan: {$request->rejection_reason}",
+                $toolLoan->assignedBy,
+                "Peminjaman Alat Ditolak: #{$toolLoan->loan_number}",
+                "Pengajuan peminjaman alat #{$toolLoan->loan_number} ditolak oleh " . auth()->user()->name . ". Alasan: {$request->rejection_reason}",
                 "danger",
-                route('tool-assignments.show', $toolAssignment)
+                route('tool-assignments.show', $toolLoan->id)
             );
         }
 
-        return back()->with('success', 'Pengajuan peminjaman alat ditolak.');
+        return back()->with('success', "Pengajuan peminjaman #{$toolLoan->loan_number} ditolak.");
     }
 
-    public function return(Request $request, ToolAssignment $toolAssignment)
+    public function return(Request $request, $id)
     {
         $this->authorize('return tool assignments');
+
+        $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
+
+        if (!in_array($toolLoan->status, ['active', 'overdue'])) {
+            return back()->with('error', 'Hanya peminjaman berstatus Aktif atau Terlambat yang dapat dikembalikan.');
+        }
 
         $request->validate([
             'returned_at' => 'required|date',
@@ -299,59 +310,73 @@ class ToolAssignmentController extends Controller
             'notes'       => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($request, $toolAssignment) {
-            $qty  = $toolAssignment->quantity ?? 1;
-            $tool = $toolAssignment->tool;
-            $warehouse = $toolAssignment->fromWarehouse ?? $tool->currentWarehouse;
+        DB::transaction(function () use ($request, $toolLoan) {
+            foreach ($toolLoan->items as $item) {
+                if ($item->status === 'returned') continue;
 
-            if ($warehouse) {
-                $this->toolInvService->returnStock($warehouse, $tool, $qty, $request->condition);
+                $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
+                if ($warehouse && $item->tool) {
+                    $this->toolInvService->returnStock($warehouse, $item->tool, (int)$item->quantity, $request->condition);
+                }
+
+                $item->update([
+                    'returned_at' => $request->returned_at,
+                    'status'      => 'returned',
+                    'notes'       => $item->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
+                ]);
             }
 
-            // Update status assignment
-            $toolAssignment->update([
+            $toolLoan->update([
                 'returned_at' => $request->returned_at,
                 'status'      => 'returned',
-                'notes'       => $toolAssignment->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
+                'notes'       => $toolLoan->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
             ]);
         });
 
-        // Notify Admins
         \App\Services\NotificationHelper::notifyAdmins(
-            "Pengembalian Alat",
-            "Alat {$toolAssignment->tool?->name} ({$toolAssignment->quantity} unit) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+            "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
+            "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
             "info",
-            route('tool-assignments.show', $toolAssignment)
+            route('tool-assignments.show', $toolLoan->id)
         );
 
-        return back()->with('success', 'Alat berhasil dikembalikan.');
+        return back()->with('success', "Semua alat dalam peminjaman #{$toolLoan->loan_number} berhasil dikembalikan.");
     }
 
-    public function cancel(Request $request, ToolAssignment $toolAssignment)
+    public function cancel(Request $request, $id)
     {
         $this->authorize('cancel tool assignments');
 
-        if (!in_array($toolAssignment->status, ['pending', 'active'])) {
-            return back()->with('error', 'Hanya pengajuan berstatus Menunggu Persetujuan atau Aktif (Dipinjam) yang dapat dibatalkan.');
+        $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
+
+        if (!in_array($toolLoan->status, ['pending', 'active'])) {
+            return back()->with('error', 'Hanya peminjaman berstatus Menunggu Persetujuan atau Aktif yang dapat dibatalkan.');
         }
 
         $request->validate([
             'cancellation_reason' => 'required|string|max:500',
         ]);
 
-        DB::transaction(function () use ($request, $toolAssignment) {
-            // If active (stock was already deducted), reverse the borrow
-            if ($toolAssignment->status === 'active') {
-                $tool = $toolAssignment->tool;
-                $warehouse = $toolAssignment->fromWarehouse ?? $tool->currentWarehouse;
-                $qty = (int) $toolAssignment->quantity;
+        DB::transaction(function () use ($request, $toolLoan) {
+            $isPreviouslyActive = ($toolLoan->status === 'active');
 
-                if ($warehouse && $tool) {
-                    $this->toolInvService->returnStock($warehouse, $tool, $qty, 'good');
+            foreach ($toolLoan->items as $item) {
+                if ($isPreviouslyActive && $item->status === 'active') {
+                    $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
+                    if ($warehouse && $item->tool) {
+                        $this->toolInvService->returnStock($warehouse, $item->tool, (int)$item->quantity, 'good');
+                    }
                 }
+
+                $item->update([
+                    'status'               => 'cancelled',
+                    'cancelled_at'         => now(),
+                    'cancelled_by_user_id' => auth()->id(),
+                    'cancellation_reason'  => $request->cancellation_reason,
+                ]);
             }
 
-            $toolAssignment->update([
+            $toolLoan->update([
                 'status'               => 'cancelled',
                 'cancelled_at'         => now(),
                 'cancelled_by_user_id' => auth()->id(),
@@ -359,15 +384,14 @@ class ToolAssignmentController extends Controller
             ]);
         });
 
-        // Notify
         \App\Services\NotificationHelper::notifyAdmins(
-            "Pembatalan Peminjaman Alat: #{$toolAssignment->assignment_number}",
-            "Peminjaman alat {$toolAssignment->tool?->name} ({$toolAssignment->quantity} unit) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
+            "Pembatalan Peminjaman Alat: #{$toolLoan->loan_number}",
+            "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
             "warning",
-            route('tool-assignments.show', $toolAssignment)
+            route('tool-assignments.show', $toolLoan->id)
         );
 
-        return back()->with('success', "Peminjaman alat #{$toolAssignment->assignment_number} berhasil dibatalkan." .
-            ($toolAssignment->getOriginal('status') === 'active' ? ' Stok alat telah dikembalikan ke gudang.' : ''));
+        return back()->with('success', "Peminjaman #{$toolLoan->loan_number} berhasil dibatalkan." .
+            ($toolLoan->getOriginal('status') === 'active' ? ' Stok alat telah dikembalikan ke gudang.' : ''));
     }
 }

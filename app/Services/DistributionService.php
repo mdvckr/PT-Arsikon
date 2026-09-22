@@ -344,7 +344,7 @@ class DistributionService
     /**
      * Terima barang/alat di gudang tujuan. Mendukung partial receive & discrepancy (rusak/hilang).
      */
-    public function receive(Distribution $distribution, array $itemsReceivedData, int $userId): Distribution
+    public function receive(Distribution $distribution, array $itemsReceivedData, int $userId, ?string $surat_jalan = null): Distribution
     {
         if ($distribution->status !== 'in_transit') {
             throw new Exception("Hanya Surat Jalan berstatus 'in_transit' yang dapat diterima.");
@@ -354,8 +354,13 @@ class DistributionService
             throw new Exception("Gudang tujuan tidak ditemukan.");
         }
 
-        return DB::transaction(function () use ($distribution, $itemsReceivedData, $userId) {
+        return DB::transaction(function () use ($distribution, $itemsReceivedData, $userId, $surat_jalan) {
             $distribution->load(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse']);
+
+            // Simpan No. Surat Jalan ke distribusi jika diberikan
+            if ($surat_jalan) {
+                $distribution->surat_jalan = $surat_jalan;
+            }
 
             foreach ($itemsReceivedData as $itemData) {
                 $distributionItem = DistributionItem::where('distribution_id', $distribution->id)
@@ -411,6 +416,7 @@ class DistributionService
                 'status'              => 'completed',
                 'received_by_user_id' => $userId,
                 'received_at'         => now(),
+                'surat_jalan'         => $surat_jalan,
             ]);
 
             // Notify creator & central admins

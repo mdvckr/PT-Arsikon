@@ -12,6 +12,7 @@ class ToolAssignment extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tool_loan_id',
         'assignment_number',
         'tool_id',
         'quantity',
@@ -42,6 +43,11 @@ class ToolAssignment extends Model
         'approved_at'        => 'datetime',
         'cancelled_at'       => 'datetime',
     ];
+
+    public function toolLoan(): BelongsTo
+    {
+        return $this->belongsTo(ToolLoan::class, 'tool_loan_id');
+    }
 
     public function cancelledBy(): BelongsTo
     {

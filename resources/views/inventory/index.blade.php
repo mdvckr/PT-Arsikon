@@ -322,7 +322,11 @@
                             {{ $toolCategory->name }}
                         </td>
                         <td style="padding:9px 14px;font-size:12.5px;color:#334155;font-weight:500;">
-                            {{ $tool->currentWarehouse?->name ?? 'Gudang Pusat' }}
+                            @if($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
+                                {{ $tool->inventories->first()->warehouse?->name ?? '-' }}
+                            @else
+                                {{ $tool->currentWarehouse?->name ?? 'Gudang Pusat' }}
+                            @endif
                         </td>
                         <td style="text-align:center;padding:9px 14px;">
                             <span class="fw-700" style="font-size:13.5px;color:#0f172a;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>

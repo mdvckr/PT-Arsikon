@@ -215,7 +215,7 @@ class DistributionController extends Controller
             'items.*.qty_damaged_or_lost'    => 'nullable|numeric|min:0',
         ]);
 
-        $this->service->receive($distribution, $request->items, auth()->id());
+        $this->service->receive($distribution, $request->items, auth()->id(), $request->filled('surat_jalan') ? $request->surat_jalan : null);
 
         return back()->with('success', 'Penerimaan distribusi dicatat.');
     }
