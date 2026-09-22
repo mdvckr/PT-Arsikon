@@ -332,12 +332,15 @@
 
     {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
+        // @ts-nocheck — Blade directives (@json, {{ }}) inside this script are rendered server-side by Laravel.
+        //               VS Code's JS linter cannot parse them; errors shown by IDE are false positives.
         const availableMaterials = @json($materialsData);
         const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};
         let currentMode = 'mr';
         let rowIndex = 0;
         let mrItemsCache = [];
+        let isLoadingMR = false;
 
         function switchMode(mode) {
             currentMode = mode;
@@ -397,6 +400,9 @@
         }
 
         async function loadMRDetails(mrId) {
+            // Guard against concurrent calls (e.g. switchMode + DOMContentLoaded both triggering)
+            if (isLoadingMR) return;
+
             const tbody = document.getElementById('itemsBody');
             const panel = document.getElementById('mrDetailPanel');
             const spinner = document.getElementById('itemsLoadingSpinner');
@@ -407,11 +413,13 @@
                 panel.style.display = 'none';
                 quickActions.style.display = 'none';
                 tbody.innerHTML = '';
+                rowIndex = 0;
                 emptyState.style.display = 'block';
                 updateTableSummary();
                 return;
             }
 
+            isLoadingMR = true;
             emptyState.style.display = 'none';
             spinner.style.display = 'inline-block';
 
@@ -454,8 +462,9 @@
                     notesInput.value = 'Berdasarkan MR #' + data.request_number + ': ' + data.notes;
                 }
 
-                // Render MR items into table
+                // Render MR items into table — reset rowIndex so indices stay consistent
                 tbody.innerHTML = '';
+                rowIndex = 0;
                 mrItemsCache = data.items;
 
                 data.items.forEach(item => {
@@ -535,6 +544,8 @@
             } catch (err) {
                 spinner.style.display = 'none';
                 alert('Gagal memuat rincian MR: ' + err.message);
+            } finally {
+                isLoadingMR = false;
             }
         }
 
@@ -848,11 +859,9 @@
 
         // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
+            // switchMode('mr') will internally call loadMRDetails() if an MR is already selected.
+            // Do NOT call loadMRDetails() again here to prevent duplicate rows from concurrent async fetches.
             switchMode('mr');
-            const mrSelect = document.getElementById('mrSelect');
-            if (mrSelect && mrSelect.value) {
-                loadMRDetails(mrSelect.value);
-            }
         });
     </script>
 </x-app-layout>

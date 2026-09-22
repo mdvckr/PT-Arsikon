@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\MaterialUsage;
+use App\Models\User;
+use App\Models\Warehouse;
+use App\Policies\MaterialUsagePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -13,7 +17,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        //
+        MaterialUsage::class => MaterialUsagePolicy::class,
     ];
 
     /**
@@ -90,6 +94,11 @@ class AuthServiceProvider extends ServiceProvider
             }
 
             return null;
+        });
+
+        // Gate for MaterialUsage bypass approval
+        Gate::define('bypass-material-usage-approval', function (User $user, Warehouse $warehouse) {
+            return $user->hasRole('Admin Gudang Proyek') && !$warehouse->isCentral() && $user->hasAccessToWarehouse($warehouse);
         });
     }
 }

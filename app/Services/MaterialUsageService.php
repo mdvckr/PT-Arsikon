@@ -35,7 +35,13 @@ class MaterialUsageService
             throw new Exception("Nama penerima / mandor / tukang wajib diisi.");
         }
 
-        return DB::transaction(function () use ($warehouse, $issuedBy, $data, $items) {
+        // Check if bypass approval is allowed
+        $bypassApproval = !$warehouse->isCentral()
+            && $issuedBy->hasRole('Admin Gudang Proyek')
+            && $issuedBy->hasAccessToWarehouse($warehouse)
+            && empty($data['material_request_id']);
+
+        return DB::transaction(function () use ($warehouse, $issuedBy, $data, $items, $bypassApproval) {
             // If linked to a Material Request, perform strict validation against approved quantities
             $materialRequest = null;
             $mrItemsMap = null;
@@ -211,7 +217,9 @@ class MaterialUsageService
             // Notification
             $notifMsg = $materialRequest 
                 ? "Pengeluaran material dari MR #{$materialRequest->request_number} di {$warehouse->name} kepada {$usage->recipient_name} untuk {$usage->job_section}."
-                : "Pengeluaran material di {$warehouse->name} kepada {$usage->recipient_name} untuk {$usage->job_section}.";
+                : ($bypassApproval
+                    ? "Pengeluaran material langsung (tanpa MR) di {$warehouse->name} oleh {$issuedBy->name} kepada {$usage->recipient_name} untuk {$usage->job_section}."
+                    : "Pengeluaran material di {$warehouse->name} kepada {$usage->recipient_name} untuk {$usage->job_section}.");
 
             NotificationHelper::notifyAdmins(
                 "Pengeluaran Material: {$usage->usage_number}",
@@ -262,13 +270,17 @@ class MaterialUsageService
 
             // If this usage was linked to a Material Request, rollback fulfilled quantities and status
             if ($usage->material_request_id) {
-                $mr = MaterialRequest::with('items')->find($usage->material_request_id);
+                $mr = MaterialRequest::with('items.material')->find($usage->material_request_id);
                 if ($mr) {
                     foreach ($usage->items as $item) {
                         $mrItem = $mr->items->where('material_id', $item->material_id)->first();
                         if ($mrItem) {
-                            $newFulfilled = max(0, (float)$mrItem->qty_fulfilled - (float)$item->quantity);
-                            $mrItem->update(['qty_fulfilled' => $newFulfilled]);
+                            // Lock MR item row to prevent race conditions
+                            $lockedMrItem = \App\Models\MaterialRequestItem::where('id', $mrItem->id)->lockForUpdate()->first();
+                            if ($lockedMrItem) {
+                                $newFulfilled = max(0, (float)$lockedMrItem->qty_fulfilled - (float)$item->quantity);
+                                $lockedMrItem->update(['qty_fulfilled' => $newFulfilled]);
+                            }
                         }
                     }
 

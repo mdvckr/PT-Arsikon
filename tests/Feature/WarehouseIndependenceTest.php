@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Distribution;
 use App\Models\Material;
+use App\Models\MaterialUsage;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\MaterialUsageService;
 use App\Services\StockService;
 use App\Services\ToolInventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -157,5 +159,57 @@ class WarehouseIndependenceTest extends TestCase
     public function test_distribution_create_page_accessible_by_admin_proyek(): void
     {
         $this->actingAs($this->adminProyekA)->get('/distributions/create')->assertOk();
+    }
+
+    // Phase A: Bypass approval — Admin Gudang Proyek bisa mencatat pemakaian di gudang proyeknya tanpa MR
+
+    public function test_admin_proyek_can_record_usage_at_own_project_warehouse_without_mr(): void
+    {
+        $material = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+
+        $stockService = new StockService();
+        $projectInventory = \App\Models\Inventory::where('warehouse_id', $this->projectWarehouseA->id)->where('material_id', $material->id)->first();
+        $before = $projectInventory ? (float) $projectInventory->quantity : 0;
+
+        $usageService = new MaterialUsageService($stockService);
+
+        $usage = $usageService->createUsage(
+            $this->projectWarehouseA,
+            $this->adminProyekA,
+            [
+                'material_request_id' => null,
+                'recipient_name'      => 'Mandor Budi',
+                'job_section'         => 'Pengecoran Lantai 2',
+                'usage_date'          => now()->toDateString(),
+                'items'               => [
+                    ['material_id' => $material->id, 'quantity' => 10, 'notes' => 'Untuk cor'],
+                ],
+            ]
+        );
+
+        $this->assertDatabaseHas('material_usages', [
+            'id'                    => $usage->id,
+            'warehouse_id'          => $this->projectWarehouseA->id,
+            'status'                => 'completed',
+            'material_request_id'   => null,
+        ]);
+
+        $after = (float) \App\Models\Inventory::where('warehouse_id', $this->projectWarehouseA->id)->where('material_id', $material->id)->first()->quantity;
+        $this->assertEquals($before - 10, $after);
+    }
+
+    public function test_admin_proyek_cannot_bypass_at_central_warehouse(): void
+    {
+        $this->actingAs($this->adminProyekA);
+
+        $this->assertFalse(
+            auth()->user()->can('bypass-material-usage-approval', $this->centralWarehouse),
+            'Admin Gudang Proyek tidak boleh bypass approval di gudang pusat.'
+        );
+
+        $this->assertTrue(
+            auth()->user()->can('bypass-material-usage-approval', $this->projectWarehouseA),
+            'Admin Gudang Proyek boleh bypass approval di gudang proyeknya sendiri.'
+        );
     }
 }

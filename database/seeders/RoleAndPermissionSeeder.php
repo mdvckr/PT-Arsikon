@@ -130,7 +130,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminProyekRole->syncPermissions($proyekPermissions);
         $userRole->syncPermissions($proyekPermissions);
 
-        // 2.1 Create Karyawan Role — hanya peminjaman alat & lihat stok (tanpa permintaan material & surat jalan, khusus Admin Proyek)
+        // 2.1 Create Karyawan Role — peminjaman alat, lihat stok, permintaan material & buat surat jalan
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
         $karyawanPermissions = [
             'view materials',
@@ -138,6 +138,11 @@ class RoleAndPermissionSeeder extends Seeder
             'view inventory',
             'view tool assignments',
             'create tool assignments',
+            'create material requests',
+            'view material requests',
+            'view material usages',
+            'view distributions',
+            'create distributions',
         ];
         $karyawanRole->syncPermissions($karyawanPermissions);
 

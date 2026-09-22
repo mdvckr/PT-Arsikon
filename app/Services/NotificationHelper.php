@@ -17,7 +17,7 @@ class NotificationHelper
         try {
             // Target users with Admin roles or assigned to Central Warehouse
             $admins = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Owner', 'Admin', 'Admin Gudang Pusat', 'Super Admin']);
+                $q->whereIn('name', ['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Super Admin']);
             })->orWhereHas('warehouses', function ($q) {
                 $q->where('is_central', true);
             })->get();

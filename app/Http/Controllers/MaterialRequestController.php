@@ -73,7 +73,12 @@ class MaterialRequestController extends Controller
             ->get();
 
         // Gudang pemohon harus merupakan Gudang Proyek (bukan Gudang Pusat) — stok terpisah
-        $warehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
+        $accessibleWhIds = auth()->user()->accessibleWarehouseIds();
+        if (auth()->user()->hasRole('Admin Gudang Proyek')) {
+            $warehouses = Warehouse::where('is_central', false)->whereIn('id', $accessibleWhIds)->orderBy('name')->get();
+        } else {
+            $warehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
+        }
         if ($warehouseId) {
             $selectedWh = Warehouse::find($warehouseId);
             if ($selectedWh && $selectedWh->is_central) {

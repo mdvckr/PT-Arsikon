@@ -28,7 +28,7 @@ class MaterialUsageController extends Controller
 
         // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
         if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
-            $userWarehouseIds = $user->warehouses->pluck('id')->toArray();
+            $userWarehouseIds = $user->accessibleWarehouseIds();
             $query->whereIn('warehouse_id', $userWarehouseIds);
         }
 
@@ -56,9 +56,9 @@ class MaterialUsageController extends Controller
 
         $usages = $query->latest('usage_date')->latest('id')->paginate(15)->withQueryString();
 
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
             ? Warehouse::orderBy('name')->get()
-            : $user->warehouses;
+            : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
         return view('material-usages.index', compact('usages', 'warehouses'));
     }
@@ -68,14 +68,14 @@ class MaterialUsageController extends Controller
         $this->authorize('create material usages');
 
         $user = auth()->user();
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
             ? Warehouse::orderBy('name')->get()
-            : $user->warehouses;
+            : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
         $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
         $selectedWarehouse = Warehouse::find($activeWarehouseId);
 
-        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
+        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
             $selectedWarehouse = $warehouses->first();
         }
 

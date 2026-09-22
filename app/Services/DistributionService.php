@@ -90,7 +90,9 @@ class DistributionService
                         if ((int) $ta->tool_id !== (int) $item['tool_id']) {
                             throw new Exception("Sumber pengajuan alat tidak sesuai.");
                         }
-                        if ($qty > $ta->quantity) {
+                        // Untuk gudang pusat (central), jangan batasi qty alat berdasarkan TA.
+                        // Pembatasan sesungguhnya adalah stok fisik di gudang, yang dicek saat pengiriman (ship()).
+                        if (!$fromWarehouse->is_central && $qty > $ta->quantity) {
                             throw new Exception(sprintf(
                                 "Jumlah alat %s (%s) melebihi jumlah pengajuan (%s).",
                                 $ta->tool?->name,

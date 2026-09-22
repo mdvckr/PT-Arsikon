@@ -9,7 +9,8 @@ use Tests\TestCase;
 
 /**
  * Sprint 2 - Issue 9: Karyawan Role Cleanup
- * Memastikan Karyawan tidak memiliki akses ke MR dan Distributions.
+ * Karyawan boleh: lihat inventori, pinjam alat, buat Permintaan Material & Surat Jalan, lihat Pemakaian Material.
+ * Karyawan TIDAK boleh: membuat Pemakaian Material, akses Pengembalian & Log Harian.
  */
 class KaryawanRoleTest extends TestCase
 {
@@ -27,45 +28,45 @@ class KaryawanRoleTest extends TestCase
         $this->adminProyekA = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
     }
 
-    // Karyawan TIDAK boleh akses Material Requests — hanya Admin Gudang Proyek (point 9)
+    // Karyawan BOLEH akses Material Requests (membuat permintaan material)
 
     public function test_karyawan_can_view_material_requests_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-requests')
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_karyawan_can_access_material_request_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-requests/create')
-            ->assertForbidden();
+            ->assertOk();
     }
 
-    // Karyawan TIDAK boleh akses Distributions — hanya Admin Gudang Proyek (point 9)
+    // Karyawan BOLEH akses Distributions (membuat surat jalan)
 
     public function test_karyawan_can_view_distributions_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/distributions')
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_karyawan_can_access_distribution_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/distributions/create')
-            ->assertForbidden();
+            ->assertOk();
     }
 
-    // Karyawan TIDAK boleh akses Pemakaian Material
+    // Karyawan BOLEH lihat Pemakaian Material, TIDAK boleh membuatnya
 
-    public function test_karyawan_cannot_view_material_usages_index(): void
+    public function test_karyawan_can_view_material_usages_index(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/material-usages')
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_karyawan_cannot_access_material_usage_create(): void
@@ -113,12 +114,12 @@ class KaryawanRoleTest extends TestCase
 
     public function test_karyawan_has_view_material_requests_permission(): void
     {
-        $this->assertFalse($this->karyawan->hasPermissionTo('view material requests'));
+        $this->assertTrue($this->karyawan->hasPermissionTo('view material requests'));
     }
 
     public function test_karyawan_has_view_distributions_permission(): void
     {
-        $this->assertFalse($this->karyawan->hasPermissionTo('view distributions'));
+        $this->assertTrue($this->karyawan->hasPermissionTo('view distributions'));
     }
 
     public function test_karyawan_does_not_have_create_material_usages_permission(): void
@@ -129,6 +130,16 @@ class KaryawanRoleTest extends TestCase
     public function test_karyawan_has_create_tool_assignments_permission(): void
     {
         $this->assertTrue($this->karyawan->hasPermissionTo('create tool assignments'));
+    }
+
+    public function test_karyawan_has_create_material_requests_permission(): void
+    {
+        $this->assertTrue($this->karyawan->hasPermissionTo('create material requests'));
+    }
+
+    public function test_karyawan_has_create_distributions_permission(): void
+    {
+        $this->assertTrue($this->karyawan->hasPermissionTo('create distributions'));
     }
 
     // Admin Proyek masih bisa akses MR dan Distributions

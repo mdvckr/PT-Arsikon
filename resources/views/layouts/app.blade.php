@@ -1306,17 +1306,26 @@
             </div>
 
             <!-- MASTER DATA -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'User']))
+            @canAny(['view materials', 'view tools', 'view inventory'])
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Logistik</div>
+                @can('view materials')
                 <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
                     <i class="fas fa-boxes-stacked"></i> Material
                 </a>
+                @endcan
+                @can('view tools')
                 <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
                     <i class="fas fa-screwdriver-wrench"></i> Alat
                 </a>
+                @endcan
+                @can('view inventory')
+                <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+                    <i class="fas fa-layer-group"></i> Inventori
+                </a>
+                @endcan
             </div>
-            @endif
+            @endcanAny
 
             <!-- TRANSAKSI -->
             <div class="nav-section">
@@ -1354,12 +1363,11 @@
             <!-- ALAT & STOK -->
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Stok</div>
+                @can('view stock opname')
                 <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-check"></i> Stock Opname
                 </a>
-                <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
-                    <i class="fas fa-layer-group"></i> Inventori
-                </a>
+                @endcan
             </div>
 
             <!-- PENGADAAN (Admin PO & Owner) -->
@@ -1556,50 +1564,65 @@
                 if (AudioContext) audioCtx = new AudioContext();
             }
             if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
+                audioCtx.resume().catch(() => {});
             }
             return audioCtx;
         }
 
-        // Unlock Web Audio on first user interaction
-        document.addEventListener('click', function unlockAudio() {
-            getAudioContext();
-            document.removeEventListener('click', unlockAudio);
-        }, { once: true });
+        // Unlock Web Audio on any user interaction
+        (function initAudioUnlock() {
+            const unlockEvents = ['click', 'touchstart', 'keydown', 'mousedown', 'scroll'];
+            const unlock = () => {
+                const ctx = getAudioContext();
+                if (ctx && ctx.state === 'suspended') {
+                    ctx.resume().catch(() => {});
+                }
+                unlockEvents.forEach(e => document.removeEventListener(e, unlock));
+            };
+            unlockEvents.forEach(e => document.addEventListener(e, unlock, { once: true }));
+        })();
 
         function playNotificationChime() {
             try {
                 const ctx = getAudioContext();
                 if (!ctx) return;
 
-                const now = ctx.currentTime;
+                const startSound = () => {
+                    const now = ctx.currentTime;
 
-                // First Note: D5 (587.33 Hz)
-                const osc1 = ctx.createOscillator();
-                const gain1 = ctx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(587.33, now);
-                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12);
-                gain1.gain.setValueAtTime(0.25, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                osc1.connect(gain1);
-                gain1.connect(ctx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.35);
+                    // First Note: D5 (587.33 Hz) -> A5 (880 Hz)
+                    const osc1 = ctx.createOscillator();
+                    const gain1 = ctx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(587.33, now);
+                    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                    gain1.gain.setValueAtTime(0.35, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.4);
 
-                // Second Note: A5 -> D6 (880 Hz -> 1174.66 Hz)
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(880, now + 0.1);
-                osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.28);
-                gain2.gain.setValueAtTime(0, now);
-                gain2.gain.setValueAtTime(0.3, now + 0.1);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.start(now + 0.1);
-                osc2.stop(now + 0.65);
+                    // Second Note: A5 -> D6 (1174.66 Hz)
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, now + 0.12);
+                    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.32);
+                    gain2.gain.setValueAtTime(0, now);
+                    gain2.gain.setValueAtTime(0.4, now + 0.12);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(now + 0.12);
+                    osc2.stop(now + 0.7);
+                };
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(() => startSound()).catch(() => startSound());
+                } else {
+                    startSound();
+                }
             } catch (err) {
                 console.warn('Audio playback error:', err);
             }
@@ -1648,6 +1671,7 @@
         }
 
         function pollNotifications() {
+            if (!document.body.dataset.notifFetchUrl) return;
             fetch(document.body.dataset.notifFetchUrl, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -1673,20 +1697,22 @@
                     }
                 }
 
-                // If new notification detected
-                if (count > lastNotifCount && res.latest && res.latest.id !== lastNotifId) {
-                    playNotificationChime();
-                    showNotificationToast(res.latest);
+                // If new notification detected (by unique ID change or count increase)
+                if (res.latest && res.latest.id && res.latest.id !== lastNotifId) {
+                    if (lastNotifId !== '') {
+                        playNotificationChime();
+                        showNotificationToast(res.latest);
+                    }
+                    lastNotifId = res.latest.id;
                 }
 
                 lastNotifCount = count;
-                if (res.latest) lastNotifId = res.latest.id;
             })
             .catch(() => {});
         }
 
-        // Poll every 15 seconds
-        setInterval(pollNotifications, 15000);
+        // Poll every 5 seconds for fast response
+        setInterval(pollNotifications, 5000);
 
         // Preserve Sidebar Scroll Position
         (function() {

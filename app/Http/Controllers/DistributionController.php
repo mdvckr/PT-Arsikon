@@ -230,6 +230,6 @@ class DistributionController extends Controller
             return Warehouse::orderBy('name')->get();
         }
 
-        return $user->warehouses()->orderBy('name')->get();
+        return Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
     }
 }
