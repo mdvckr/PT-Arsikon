@@ -25,7 +25,14 @@ class ToolAssignmentController extends Controller
     {
         $this->authorize('view tool assignments');
 
+        $user = auth()->user();
         $query = ToolLoan::with(['items.tool.category', 'fromWarehouse', 'assignedBy']);
+
+        // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
+        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $userWarehouseIds = $user->accessibleWarehouseIds();
+            $query->whereIn('from_warehouse_id', $userWarehouseIds);
+        }
 
         if ($request->status) {
             $status = $request->status === 'assigned' ? 'active' : $request->status;
@@ -54,13 +61,36 @@ class ToolAssignmentController extends Controller
     {
         $this->authorize('create tool assignments');
 
-        $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
+        $user = auth()->user();
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            ? Warehouse::orderBy('name')->get()
+            : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
-        // Ambil semua alat aktif yang punya stok tersedia, dikelompokkan per kategori
+        $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
+        $selectedWarehouse = Warehouse::find($activeWarehouseId);
+
+        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
+            $selectedWarehouse = $warehouses->first();
+        }
+
+        $selectedWarehouseId = $selectedWarehouse?->id;
+
+        // Ambil alat aktif yang punya stok tersedia di gudang ini, dikelompokkan per kategori
         $toolCategories = Category::where('type', 'tool')
-            ->with(['tools' => function ($q) {
+            ->with(['tools' => function ($q) use ($selectedWarehouseId) {
                 $q->where('is_active', true)
-                  ->where('stock_available', '>', 0)
+                  ->whereHas('inventories', function ($iq) use ($selectedWarehouseId) {
+                      if ($selectedWarehouseId) {
+                          $iq->where('warehouse_id', $selectedWarehouseId)->where('stock_available', '>', 0);
+                      } else {
+                          $iq->where('stock_available', '>', 0);
+                      }
+                  })
+                  ->with(['inventories' => function ($iq) use ($selectedWarehouseId) {
+                      if ($selectedWarehouseId) {
+                          $iq->where('warehouse_id', $selectedWarehouseId);
+                      }
+                  }])
                   ->orderBy('name');
             }])
             ->orderBy('name')
@@ -68,16 +98,25 @@ class ToolAssignmentController extends Controller
             ->filter(fn($cat) => $cat->tools->isNotEmpty())
             ->values();
 
-        // Alat tanpa kategori yang masih punya stok
+        // Alat tanpa kategori yang masih punya stok di gudang terpilih
         $uncategorizedTools = Tool::where('is_active', true)
-            ->where('stock_available', '>', 0)
             ->whereNull('category_id')
+            ->whereHas('inventories', function ($iq) use ($selectedWarehouseId) {
+                if ($selectedWarehouseId) {
+                    $iq->where('warehouse_id', $selectedWarehouseId)->where('stock_available', '>', 0);
+                } else {
+                    $iq->where('stock_available', '>', 0);
+                }
+            })
+            ->with(['inventories' => function ($iq) use ($selectedWarehouseId) {
+                if ($selectedWarehouseId) {
+                    $iq->where('warehouse_id', $selectedWarehouseId);
+                }
+            }])
             ->orderBy('name')
             ->get();
 
-        $users      = User::orderBy('name')->get();
-        $warehouses = Warehouse::orderBy('name')->get();
-        $selectedWarehouseId = $activeWarehouseId;
+        $users = User::orderBy('name')->get();
 
         return view('tool-assignments.create', compact('toolCategories', 'uncategorizedTools', 'users', 'warehouses', 'selectedWarehouseId'));
     }
@@ -100,6 +139,11 @@ class ToolAssignmentController extends Controller
         $warehouseId = $validated['warehouse_id'] ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
         $warehouse   = Warehouse::find($warehouseId) ?? Warehouse::first();
         $assignedBy  = auth()->user();
+
+        // Validasi hak akses user ke gudang ini
+        if ($warehouse && !$assignedBy->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$assignedBy->hasAccessToWarehouse($warehouse)) {
+            return back()->withInput()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.']);
+        }
 
         $borrowerInfoNotes = "Peminjam: {$validated['borrower_name']} | Lokasi: {$validated['location_name']}";
         if (!empty($validated['borrower_phone'])) {
@@ -135,8 +179,11 @@ class ToolAssignmentController extends Controller
                 $tool = Tool::find($toolId);
                 if (!$tool) continue;
 
-                if ($tool->stock_available < $qty) {
-                    $qty = $tool->stock_available;
+                // Cek ketersediaan stok di gudang asal
+                $inv = \App\Models\ToolInventory::where('warehouse_id', $warehouse->id)->where('tool_id', $tool->id)->first();
+                $availInWh = $inv ? (int)$inv->stock_available : ((int)$tool->stock_available);
+                if ($availInWh < $qty) {
+                    $qty = $availInWh;
                 }
 
                 if ($qty <= 0) continue;
@@ -198,6 +245,11 @@ class ToolAssignmentController extends Controller
             abort(404, 'Data peminjaman tidak ditemukan.');
         }
 
+        $user = auth()->user();
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
+        }
+
         return view('tool-assignments.show', compact('toolLoan'));
     }
 
@@ -207,16 +259,23 @@ class ToolAssignmentController extends Controller
 
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse', 'assignedBy'])->findOrFail($id);
 
+        $user = auth()->user();
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
+        }
+
         if ($toolLoan->status !== 'pending') {
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat disetujui.');
         }
 
-        // Cek ketersediaan stok untuk semua alat
+        // Cek ketersediaan stok untuk semua alat di gudang asal
+        $warehouse = $toolLoan->fromWarehouse;
         foreach ($toolLoan->items as $item) {
             $tool = $item->tool;
-            if (!$tool || $tool->stock_available < $item->quantity) {
-                $available = (int) ($tool?->stock_available ?? 0);
-                return back()->with('error', "Stok alat '{$tool?->name}' tidak cukup (Tersedia: {$available}, Dibutuhkan: {$item->quantity}).");
+            $inv = $warehouse ? \App\Models\ToolInventory::where('warehouse_id', $warehouse->id)->where('tool_id', $tool->id)->first() : null;
+            $available = $inv ? (int) $inv->stock_available : (int) ($tool?->stock_available ?? 0);
+            if ($available < $item->quantity) {
+                return back()->with('error', "Stok alat '{$tool?->name}' di {$warehouse?->name} tidak cukup (Tersedia: {$available}, Dibutuhkan: {$item->quantity}).");
             }
         }
 
@@ -259,7 +318,12 @@ class ToolAssignmentController extends Controller
     {
         $this->authorize('approve tool assignments');
 
-        $toolLoan = ToolLoan::with(['items', 'assignedBy'])->findOrFail($id);
+        $toolLoan = ToolLoan::with(['items', 'fromWarehouse', 'assignedBy'])->findOrFail($id);
+
+        $user = auth()->user();
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
+        }
 
         if ($toolLoan->status !== 'pending') {
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat ditolak.');
@@ -299,6 +363,11 @@ class ToolAssignmentController extends Controller
         $this->authorize('return tool assignments');
 
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
+
+        $user = auth()->user();
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
+        }
 
         if (!in_array($toolLoan->status, ['active', 'overdue'])) {
             return back()->with('error', 'Hanya peminjaman berstatus Aktif atau Terlambat yang dapat dikembalikan.');
@@ -348,6 +417,11 @@ class ToolAssignmentController extends Controller
         $this->authorize('cancel tool assignments');
 
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
+
+        $user = auth()->user();
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
+        }
 
         if (!in_array($toolLoan->status, ['pending', 'active'])) {
             return back()->with('error', 'Hanya peminjaman berstatus Menunggu Persetujuan atau Aktif yang dapat dibatalkan.');

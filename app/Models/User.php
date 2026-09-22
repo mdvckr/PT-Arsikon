@@ -54,8 +54,17 @@ class User extends Authenticatable
      */
     public function accessibleWarehouses(): Collection
     {
-        if ($this->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($this->hasRole('Owner')) {
             return Warehouse::where('is_active', true)->orderBy('name')->get();
+        }
+
+        if ($this->hasAnyRole(['Admin', 'Admin Gudang Pusat'])) {
+            return Warehouse::where('is_active', true)->orderBy('name')->get();
+        }
+
+        // Admin PO: hanya gudang central (konsisten dengan accessibleWarehouseIds)
+        if ($this->hasRole('Admin PO')) {
+            return Warehouse::where('is_active', true)->where('is_central', true)->orderBy('name')->get();
         }
 
         return $this->warehouses()->where('is_active', true)->orderBy('name')->get();
@@ -79,7 +88,7 @@ class User extends Authenticatable
         }
 
         // Default fallback for Owner/Admin vs User
-        if ($this->hasRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
             return Warehouse::where('is_central', true)->first() ?? $this->warehouses()->first();
         }
 
@@ -88,7 +97,7 @@ class User extends Authenticatable
 
     public function hasAccessToWarehouse(Warehouse $warehouse): bool
     {
-        if ($this->hasRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
             return true;
         }
 

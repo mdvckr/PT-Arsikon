@@ -332,8 +332,8 @@
 
     {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
-        // @ts-nocheck — Blade directives (@json, {{ }}) inside this script are rendered server-side by Laravel.
-        //               VS Code's JS linter cannot parse them; errors shown by IDE are false positives.
+        /* ts-nocheck: Blade directives (json/echo) inside this script are rendered server-side.
+           IDE linter errors for template syntax are false positives. */
         const availableMaterials = @json($materialsData);
         const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};

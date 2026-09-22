@@ -23,7 +23,17 @@ class ReturnController extends Controller
     {
         $this->authorize('view returns');
 
+        $user = auth()->user();
         $query = MaterialReturn::with(['fromWarehouse','toWarehouse','requester']);
+
+        // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
+        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $userWarehouseIds = $user->accessibleWarehouseIds();
+            $query->where(function ($q) use ($userWarehouseIds) {
+                $q->whereIn('from_warehouse_id', $userWarehouseIds)
+                  ->orWhereIn('to_warehouse_id', $userWarehouseIds);
+            });
+        }
 
         if ($request->status) $query->where('status', $request->status);
         if ($request->search) $query->where('return_number', 'like', "%{$request->search}%");
@@ -35,12 +45,18 @@ class ReturnController extends Controller
     public function create(Request $request)
     {
         $this->authorize('create returns');
-        $warehouses = Warehouse::orderBy('name')->get();
+
+        $user = auth()->user();
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            ? Warehouse::orderBy('name')->get()
+            : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
+
         $materials  = Material::with('unit')->orderBy('name')->get();
         $central    = Warehouse::where('is_central', true)->first();
 
-        // Ambil stok material aktif per gudang proyek
+        // Ambil stok material aktif per gudang proyek yang dapat diakses user
         $inventories = Inventory::with('material.unit')
+            ->whereIn('warehouse_id', $warehouses->pluck('id'))
             ->where('quantity', '>', 0)
             ->get()
             ->groupBy('warehouse_id');
@@ -65,6 +81,27 @@ class ReturnController extends Controller
             'items.*.notes'      => 'nullable|string',
         ]);
 
+        $user = auth()->user();
+        $fromWarehouse = Warehouse::findOrFail($validated['from_warehouse_id']);
+
+        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($fromWarehouse)) {
+            return back()->withInput()->withErrors(['from_warehouse_id' => 'Anda tidak memiliki akses ke gudang asal ini.']);
+        }
+
+        // Validasi ketersediaan stok fisik di gudang asal
+        foreach ($validated['items'] as $item) {
+            $inv = Inventory::where('warehouse_id', $fromWarehouse->id)
+                ->where('material_id', $item['material_id'])
+                ->first();
+            $available = $inv ? (float)$inv->quantity : 0;
+            if ($available < (float)$item['quantity']) {
+                $mat = Material::find($item['material_id']);
+                return back()->withInput()->withErrors([
+                    'items' => "Stok material '{$mat?->name}' di {$fromWarehouse->name} tidak mencukupi untuk dikembalikan (tersedia: {$available}, diminta: {$item['quantity']})."
+                ]);
+            }
+        }
+
         $return = MaterialReturn::create([
             'from_warehouse_id' => $validated['from_warehouse_id'],
             'to_warehouse_id'   => $validated['to_warehouse_id'],
@@ -85,7 +122,7 @@ class ReturnController extends Controller
         }
 
         // Notifikasi ke Admin & Central Warehouse
-        $fromWhName = Warehouse::find($validated['from_warehouse_id'])?->name ?? 'Gudang Proyek';
+        $fromWhName = $fromWarehouse->name;
         NotificationHelper::notifyAdmins(
             "Pengembalian Material Baru: #{$return->return_number}",
             "Pengembalian material diajukan dari {$fromWhName} menuju Gudang Pusat.",
@@ -101,12 +138,29 @@ class ReturnController extends Controller
     {
         $this->authorize('view returns');
 
+        $user = auth()->user();
+        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            || ($return->fromWarehouse && $user->hasAccessToWarehouse($return->fromWarehouse))
+            || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
+
+        if (!$hasAccess) {
+            abort(403, 'Anda tidak memiliki akses ke data pengembalian di gudang ini.');
+        }
+
         $return->load(['fromWarehouse','toWarehouse','requester','approver','receiver','items.material.unit']);
         return view('returns.show', compact('return'));
     }
 
     public function approve(MaterialReturn $return)
     {
+        $user = auth()->user();
+        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
+
+        if (!$hasAccess) {
+            abort(403, 'Anda tidak memiliki akses untuk menyetujui pengembalian ini.');
+        }
+
         if ($return->status !== 'pending') {
             return back()->with('error', 'Status tidak valid.');
         }
@@ -132,17 +186,44 @@ class ReturnController extends Controller
 
     public function receive(MaterialReturn $return)
     {
+        $user = auth()->user();
+        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
+
+        if (!$hasAccess) {
+            abort(403, 'Anda tidak memiliki akses untuk menerima pengembalian ini.');
+        }
+
         if ($return->status !== 'approved') {
             return back()->with('error', 'Hanya pengembalian yang sudah disetujui yang dapat diterima.');
         }
 
         foreach ($return->items as $item) {
-            if ($item->condition === 'good') {
-                $material  = Material::findOrFail($item->material_id);
-                $toWarehouse   = Warehouse::findOrFail($return->to_warehouse_id);
-                $fromWarehouse = Warehouse::findOrFail($return->from_warehouse_id);
+            $material      = Material::findOrFail($item->material_id);
+            $toWarehouse   = Warehouse::findOrFail($return->to_warehouse_id);
+            $fromWarehouse = Warehouse::findOrFail($return->from_warehouse_id);
 
-                // Tambah stok di Gudang Pusat
+            // Kurangi stok di Gudang Proyek karena fisik barang keluar dari proyek
+            $fromInv = Inventory::where([
+                'material_id'  => $item->material_id,
+                'warehouse_id' => $return->from_warehouse_id,
+            ])->first();
+
+            if ($fromInv && $fromInv->quantity > 0) {
+                $deductQty = min((float)$item->quantity, (float)$fromInv->quantity);
+                $this->stockService->deductStock(
+                    warehouse: $fromWarehouse,
+                    material: $material,
+                    quantity: $deductQty,
+                    referenceType: 'MaterialReturn',
+                    referenceId: $return->id,
+                    userId: auth()->id(),
+                    notes: "Pengembalian #{$return->return_number} ({$item->condition}) ke " . $toWarehouse->name
+                );
+            }
+
+            // Tambah stok di Gudang Pusat HANYA jika kondisinya baik (layak pakai)
+            if ($item->condition === 'good') {
                 $this->stockService->addStock(
                     warehouse: $toWarehouse,
                     material: $material,
@@ -152,25 +233,8 @@ class ReturnController extends Controller
                     userId: auth()->id(),
                     notes: "Pengembalian #{$return->return_number} dari " . $fromWarehouse->name
                 );
-
-                // Kurangi stok di Gudang Proyek (apabila ada stok tercatat)
-                $fromInv = Inventory::where([
-                    'material_id'  => $item->material_id,
-                    'warehouse_id' => $return->from_warehouse_id,
-                ])->first();
-
-                if ($fromInv && $fromInv->quantity >= $item->quantity) {
-                    $this->stockService->deductStock(
-                        warehouse: $fromWarehouse,
-                        material: $material,
-                        quantity: (float) $item->quantity,
-                        referenceType: 'MaterialReturn',
-                        referenceId: $return->id,
-                        userId: auth()->id(),
-                        notes: "Pengembalian #{$return->return_number} ke " . $toWarehouse->name
-                    );
-                }
             }
+
             $item->update(['received_qty' => $item->quantity]);
         }
 
@@ -196,6 +260,14 @@ class ReturnController extends Controller
 
     public function reject(Request $request, MaterialReturn $return)
     {
+        $user = auth()->user();
+        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+            || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
+
+        if (!$hasAccess) {
+            abort(403, 'Anda tidak memiliki akses untuk menolak pengembalian ini.');
+        }
+
         $request->validate(['rejection_reason' => 'required|string']);
         $return->update([
             'status'           => 'rejected',

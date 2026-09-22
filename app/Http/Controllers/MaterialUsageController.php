@@ -216,6 +216,11 @@ class MaterialUsageController extends Controller
     {
         $this->authorize('view material usages');
 
+        $user = auth()->user();
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
+        }
+
         $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit', 'cancelledBy']);
 
         return view('material-usages.show', compact('materialUsage'));
@@ -225,6 +230,11 @@ class MaterialUsageController extends Controller
     {
         $this->authorize('view material usages');
 
+        $user = auth()->user();
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
+        }
+
         $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit']);
 
         return view('material-usages.print', compact('materialUsage'));
@@ -233,6 +243,11 @@ class MaterialUsageController extends Controller
     public function cancel(Request $request, MaterialUsage $materialUsage)
     {
         $this->authorize('cancel material usages');
+
+        $user = auth()->user();
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
+        }
 
         $request->validate([
             'cancellation_reason' => 'required|string|max:500',

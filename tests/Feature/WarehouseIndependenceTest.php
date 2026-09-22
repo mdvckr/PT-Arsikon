@@ -212,4 +212,112 @@ class WarehouseIndependenceTest extends TestCase
             'Admin Gudang Proyek boleh bypass approval di gudang proyeknya sendiri.'
         );
     }
+
+    public function test_tool_inventory_isolation_cannot_borrow_from_warehouse_with_zero_stock(): void
+    {
+        $tool = \App\Models\Tool::firstOrFail();
+
+        // Pastikan alat tercatat di Gudang Pusat tetapi TIDAK ada di Proyek B
+        \App\Models\ToolInventory::updateOrCreate(
+            ['warehouse_id' => $this->centralWarehouse->id, 'tool_id' => $tool->id],
+            ['stock_total' => 5, 'stock_available' => 5, 'stock_borrowed' => 0, 'stock_maintenance' => 0, 'stock_damaged' => 0]
+        );
+        \App\Models\ToolInventory::where('warehouse_id', $this->projectWarehouseB->id)->where('tool_id', $tool->id)->delete();
+
+        $toolInvService = new ToolInventoryService();
+
+        // Mencoba meminjam dari Proyek B yang stoknya 0 HARUS melempar Exception, BUKAN menduplikasi stok dari pusat
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Stok alat {$tool->name} tidak tersedia di gudang {$this->projectWarehouseB->name}");
+
+        $toolInvService->borrow($this->projectWarehouseB, $tool, 1);
+    }
+
+    public function test_admin_proyek_cannot_view_tool_loan_from_other_warehouse(): void
+    {
+        $tool = \App\Models\Tool::firstOrFail();
+        $loan = \App\Models\ToolLoan::create([
+            'loan_number'         => \App\Models\ToolLoan::generateLoanNumber(),
+            'from_warehouse_id'   => $this->projectWarehouseB->id,
+            'assigned_by_user_id' => $this->adminPusat->id,
+            'borrower_name'       => 'Pekerja Site B',
+            'location_name'       => 'Site Proyek B',
+            'assigned_at'         => now()->toDateString(),
+            'status'              => 'pending',
+        ]);
+
+        // Admin Proyek A tidak boleh melihat peminjaman Proyek B (403 Forbidden)
+        $this->actingAs($this->adminProyekA)
+            ->get(route('tool-assignments.show', $loan->id))
+            ->assertForbidden();
+    }
+
+    public function test_admin_proyek_cannot_view_material_usage_from_other_warehouse(): void
+    {
+        $usage = MaterialUsage::create([
+            'usage_number'        => MaterialUsage::generateUsageNumber(),
+            'warehouse_id'        => $this->projectWarehouseB->id,
+            'issued_by_user_id'   => $this->adminPusat->id,
+            'recipient_name'      => 'Mandor Proyek B',
+            'usage_date'          => now()->toDateString(),
+            'status'              => 'completed',
+        ]);
+
+        // Admin Proyek A tidak boleh mengakses pemakaian Proyek B
+        $this->actingAs($this->adminProyekA)
+            ->get(route('material-usages.show', $usage))
+            ->assertForbidden();
+    }
+
+    public function test_material_return_validates_origin_stock_and_deducts_properly(): void
+    {
+        $material = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+        $stockService = new StockService();
+
+        $currentQty = (float) (\App\Models\Inventory::where('warehouse_id', $this->projectWarehouseA->id)->where('material_id', $material->id)->value('quantity') ?? 0);
+        $excessiveQty = $currentQty + 100;
+
+        // 1. Coba ajukan pengembalian melebihi stok yang ada -> HARUS gagal validasi
+        $this->actingAs($this->adminProyekA)
+            ->post(route('returns.store'), [
+                'from_warehouse_id' => $this->projectWarehouseA->id,
+                'to_warehouse_id'   => $this->centralWarehouse->id,
+                'reason'            => 'excess',
+                'return_date'       => now()->toDateString(),
+                'items'             => [
+                    ['material_id' => $material->id, 'quantity' => $excessiveQty, 'condition' => 'good'],
+                ],
+            ])
+            ->assertSessionHasErrors('items');
+
+        // 2. Ajukan pengembalian valid 3 unit
+        $this->actingAs($this->adminProyekA)
+            ->post(route('returns.store'), [
+                'from_warehouse_id' => $this->projectWarehouseA->id,
+                'to_warehouse_id'   => $this->centralWarehouse->id,
+                'reason'            => 'excess',
+                'return_date'       => now()->toDateString(),
+                'items'             => [
+                    ['material_id' => $material->id, 'quantity' => 3, 'condition' => 'good'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $return = \App\Models\MaterialReturn::where('from_warehouse_id', $this->projectWarehouseA->id)->latest()->firstOrFail();
+
+        // 3. Admin Pusat menyetujui dan menerima retur
+        $this->actingAs($this->adminPusat)->post(route('returns.approve', $return))->assertRedirect();
+
+        $centralBefore = (float) (\App\Models\Inventory::where('warehouse_id', $this->centralWarehouse->id)->where('material_id', $material->id)->value('quantity') ?? 0);
+        $projectBefore = (float) (\App\Models\Inventory::where('warehouse_id', $this->projectWarehouseA->id)->where('material_id', $material->id)->value('quantity') ?? 0);
+
+        $this->actingAs($this->adminPusat)->post(route('returns.receive', $return))->assertRedirect();
+
+        $centralAfter = (float) \App\Models\Inventory::where('warehouse_id', $this->centralWarehouse->id)->where('material_id', $material->id)->value('quantity');
+        $projectAfter = (float) \App\Models\Inventory::where('warehouse_id', $this->projectWarehouseA->id)->where('material_id', $material->id)->value('quantity');
+
+        // Gudang Pusat bertambah 3, Gudang Proyek berkurang 3
+        $this->assertEquals($centralBefore + 3, $centralAfter);
+        $this->assertEquals($projectBefore - 3, $projectAfter);
+    }
 }

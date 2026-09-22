@@ -25,7 +25,9 @@ class Warehouse extends Model
 
     protected $casts = [
         'is_central' => 'boolean',
-        'is_active'  => 'boolean',
+        // Catatan: is_active TIDAK di-cast di sini karena ada accessor getIsActiveAttribute()
+        // yang menghitung nilai dinamis berdasarkan status proyek & is_central.
+        // Cast di $casts + accessor sekaligus menyebabkan perilaku tak terduga.
     ];
 
     /**

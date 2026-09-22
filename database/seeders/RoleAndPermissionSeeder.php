@@ -15,137 +15,148 @@ class RoleAndPermissionSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Konvensi Penamaan Permission: format "kata kerja + objek" dengan spasi.
+     * Contoh: 'view materials', 'create distributions', 'approve returns'.
+     * Permission alias format dot (goods_receipts.create, dll.) telah dihapus
+     * karena duplikat — gunakan format spasi sebagai satu-satunya sumber kebenaran.
      */
     public function run(): void
     {
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 1. Define Permissions
+        // ==========================================================
+        // 1. Define Canonical Permissions (format spasi, tanpa duplikat)
+        // ==========================================================
         $permissions = [
-            'users.manage', 'view users', 'create users', 'edit users', 'delete users',
+            // Users
+            'view users', 'create users', 'edit users', 'delete users',
+            // Projects & Warehouses
             'projects.manage',
             'warehouses.manage',
-            'suppliers.manage', 'view suppliers', 'create suppliers', 'edit suppliers', 'delete suppliers',
-            'materials.manage', 'view materials', 'create materials', 'edit materials', 'delete materials',
-            'tools.manage', 'view tools', 'create tools', 'edit tools', 'delete tools',
-            'goods_receipts.create', 'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
-            'view material usages', 'create material usages', 'cancel material usages',
-            'distributions.create', 'view distributions', 'create distributions', 'distributions.receive', 'ship distributions', 'receive distributions',
-            'tools.assign', 'view tool assignments', 'create tool assignments', 'return tool assignments', 'approve tool assignments', 'tools.inspect_return', 'cancel tool assignments',
-            'stock_opname.create', 'view stock opname', 'create stock opname', 'stock_opname.approve', 'approve stock opname',
-            'reports.view_all', 'view reports',
-            'audit_logs.view', 'view audit logs', 'view inventory', 'delete inventory',
-            // Categories
+            // Suppliers
+            'view suppliers', 'create suppliers', 'edit suppliers', 'delete suppliers',
+            // Master Data
+            'view materials', 'create materials', 'edit materials', 'delete materials',
+            'view tools', 'create tools', 'edit tools', 'delete tools',
+            // Categories & Units
             'view categories', 'create categories', 'edit categories', 'delete categories',
-            // Procurement & PO
+            // Goods Receipts
+            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
+            // Material Requests
+            'view material requests', 'create material requests', 'approve material requests',
+            // Material Usages
+            'view material usages', 'create material usages', 'cancel material usages',
+            // Distributions
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+            // Tool Assignments
+            'view tool assignments', 'create tool assignments', 'return tool assignments',
+            'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
+            // Stock Opname
+            'view stock opname', 'create stock opname', 'approve stock opname',
+            // Inventory
+            'view inventory', 'delete inventory',
+            // Procurement
             'view procurement', 'create procurement', 'approve procurement',
+            // Purchase Orders
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            // Purchase Receipts
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
+            // Payments
             'view payments', 'create payments', 'verify payments',
+            // Returns
             'view returns', 'create returns', 'approve returns', 'receive returns',
+            // Reports & Audit
+            'view reports', 'view audit logs',
         ];
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
+        // ==========================================================
         // 2. Create Roles & Assign Permissions
+        // ==========================================================
+
+        // --- Owner: Super Admin (semua permission) ---
         $ownerRole = Role::firstOrCreate(['name' => 'Owner']);
         $ownerRole->syncPermissions(Permission::all());
 
+        // --- Admin Gudang Pusat (+ alias 'Admin' untuk backward compat) ---
         $adminPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat']);
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']); // Backwards-compatible alias
+        $adminRole      = Role::firstOrCreate(['name' => 'Admin']); // backward-compatible alias
         $pusatPermissions = [
-            'users.manage', 'view users', 'create users', 'edit users', 'delete users',
+            'view users', 'create users', 'edit users', 'delete users',
             'projects.manage',
             'warehouses.manage',
-            'suppliers.manage', 'view suppliers', 'create suppliers', 'edit suppliers', 'delete suppliers',
-            'materials.manage', 'view materials', 'create materials', 'edit materials', 'delete materials',
-            'tools.manage', 'view tools', 'create tools', 'edit tools', 'delete tools',
+            'view suppliers', 'create suppliers', 'edit suppliers', 'delete suppliers',
+            'view materials', 'create materials', 'edit materials', 'delete materials',
+            'view tools', 'create tools', 'edit tools', 'delete tools',
             'view categories', 'create categories', 'edit categories', 'delete categories',
-            'goods_receipts.create', 'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            'material_requests.create', 'view material requests', 'create material requests', 'material_requests.approve', 'approve material requests',
+            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
+            'view material requests', 'create material requests', 'approve material requests',
             'view material usages', 'create material usages', 'cancel material usages',
-            'distributions.create',
-            'view distributions',
-            'create distributions',
-            'ship distributions',
-            'receive distributions',
-            'tools.assign',
-            'view tool assignments',
-            'create tool assignments',
-            'return tool assignments',
-            'approve tool assignments',
-            'tools.inspect_return',
-            'cancel tool assignments',
-            'view stock opname',
-            'create stock opname',
-            'stock_opname.create',
-            'stock_opname.approve',
-            'approve stock opname',
-            'reports.view_all', 'view reports',
-            'audit_logs.view',
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+            'view tool assignments', 'create tool assignments', 'return tool assignments',
+            'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
+            'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
-            'view returns',
-            'approve returns',
-            'receive returns',
+            'view returns', 'approve returns', 'receive returns',
+            'view reports', 'view audit logs',
         ];
         $adminPusatRole->syncPermissions($pusatPermissions);
         $adminRole->syncPermissions($pusatPermissions);
 
+        // --- Admin Gudang Proyek (+ alias 'User' untuk backward compat) ---
         $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
-        $userRole = Role::firstOrCreate(['name' => 'User']); // Backwards-compatible alias
+        $userRole        = Role::firstOrCreate(['name' => 'User']); // backward-compatible alias
         $proyekPermissions = [
-            // Material & Tool CRUD (full access di gudang proyek)
+            // Material & Tool CRUD
             'view materials', 'create materials', 'edit materials', 'delete materials',
             'view tools', 'create tools', 'edit tools', 'delete tools',
             'view categories', 'create categories', 'edit categories', 'delete categories',
             // Goods Receipts
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            'goods_receipts.create',
             // Material Requests
-            'view material requests', 'create material requests', 'material_requests.create',
+            'view material requests', 'create material requests',
             // Material Usages
             'view material usages', 'create material usages', 'cancel material usages',
             // Distributions
-            'view distributions', 'create distributions', 'distributions.create',
-            'ship distributions', 'distributions.receive', 'receive distributions',
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             // Tool Assignments
-            'view tool assignments', 'create tool assignments',
-            'tools.assign', 'return tool assignments', 'approve tool assignments',
-            'tools.inspect_return', 'cancel tool assignments',
+            'view tool assignments', 'create tool assignments', 'return tool assignments',
+            'approve tool assignments', 'inspect return tool assignments', 'cancel tool assignments',
             // Stock Opname
-            'view stock opname', 'create stock opname', 'stock_opname.create',
+            'view stock opname', 'create stock opname',
             // Inventory
             'view inventory', 'delete inventory',
             // Procurement
-            'create procurement', 'view procurement',
+            'view procurement', 'create procurement',
             // Returns
-            'create returns', 'view returns', 'receive returns',
+            'view returns', 'create returns', 'receive returns',
             // Reports
             'view reports',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
         $userRole->syncPermissions($proyekPermissions);
 
-        // 2.1 Create Karyawan Role — peminjaman alat, lihat stok, permintaan material & buat surat jalan
+        // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material, buat surat jalan) ---
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
-        $karyawanPermissions = [
+        $karyawanRole->syncPermissions([
             'view materials',
             'view tools',
             'view inventory',
             'view tool assignments',
             'create tool assignments',
-            'create material requests',
             'view material requests',
+            'create material requests',
             'view material usages',
             'view distributions',
             'create distributions',
-        ];
-        $karyawanRole->syncPermissions($karyawanPermissions);
+        ]);
 
+        // --- Admin PO: fokus pengadaan & pembelian ---
         $adminPORole = Role::firstOrCreate(['name' => 'Admin PO']);
         $adminPORole->syncPermissions([
             'view suppliers', 'create suppliers', 'edit suppliers',
@@ -160,28 +171,30 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
-            'view distributions', 'create distributions', 'distributions.create', 'ship distributions', 'receive distributions', 'distributions.receive',
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view reports',
-            'audit_logs.view',
+            'view audit logs',
         ]);
 
+        // ==========================================================
         // 3. Create Default Central Warehouse & Sample Projects
+        // ==========================================================
         $centralWarehouse = Warehouse::firstOrCreate(
             ['code' => 'W-CENTRAL'],
             [
-                'name' => 'Gudang Pusat PT Arsikon',
-                'type' => 'central',
+                'name'       => 'Gudang Pusat PT Arsikon',
+                'type'       => 'central',
                 'is_central' => true,
-                'address' => 'Jl. Industri Utama No. 1, Jakarta',
+                'address'    => 'Jl. Industri Utama No. 1, Jakarta',
             ]
         );
 
         $sampleProjectA = Project::firstOrCreate(
             ['code' => 'PRJ-001'],
             [
-                'name' => 'Proyek Pembangunan Gedung A',
-                'location' => 'Jakarta Selatan',
-                'status' => 'active',
+                'name'       => 'Proyek Pembangunan Gedung A',
+                'location'   => 'Jakarta Selatan',
+                'status'     => 'active',
                 'start_date' => now()->toDateString(),
             ]
         );
@@ -190,19 +203,19 @@ class RoleAndPermissionSeeder extends Seeder
             ['code' => 'W-PRJ-001'],
             [
                 'project_id' => $sampleProjectA->id,
-                'name' => 'Gudang Proyek FK Teknik',
-                'type' => 'project',
+                'name'       => 'Gudang Proyek FK Teknik',
+                'type'       => 'project',
                 'is_central' => false,
-                'address' => 'Site Office FK Teknik, Ciamis',
+                'address'    => 'Site Office FK Teknik, Ciamis',
             ]
         );
 
         $sampleProjectB = Project::firstOrCreate(
             ['code' => 'PRJ-002'],
             [
-                'name' => 'Proyek Pembangunan Gedung B',
-                'location' => 'Bekasi Timur',
-                'status' => 'active',
+                'name'       => 'Proyek Pembangunan Gedung B',
+                'location'   => 'Bekasi Timur',
+                'status'     => 'active',
                 'start_date' => now()->toDateString(),
             ]
         );
@@ -211,20 +224,23 @@ class RoleAndPermissionSeeder extends Seeder
             ['code' => 'W-PRJ-002'],
             [
                 'project_id' => $sampleProjectB->id,
-                'name' => 'Gudang Proyek Gedung B',
-                'type' => 'project',
+                'name'       => 'Gudang Proyek Gedung B',
+                'type'       => 'project',
                 'is_central' => false,
-                'address' => 'Site Office Gedung B, Bekasi',
+                'address'    => 'Site Office Gedung B, Bekasi',
             ]
         );
 
-        // 4. Create 5 Initial System Users
+        // ==========================================================
+        // 4. Create Default System Users
+        // ==========================================================
+
         // 1. Owner
         $ownerUser = User::firstOrCreate(
             ['email' => 'owner@arsikon.co.id'],
             [
-                'name' => 'Bapak Owner',
-                'password' => Hash::make('password123'),
+                'name'     => 'Bapak Owner',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $ownerUser->syncRoles([$ownerRole]);
@@ -238,52 +254,52 @@ class RoleAndPermissionSeeder extends Seeder
         $adminPusatUser = User::firstOrCreate(
             ['email' => 'admin.pusat@arsikon.co.id'],
             [
-                'name' => 'Admin Gudang Pusat',
-                'password' => Hash::make('password123'),
+                'name'     => 'Admin Gudang Pusat',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
         $adminPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
-        // 3. Admin Gudang Proyek  (Proyek A)
+        // 3. Admin Gudang Proyek (Proyek A)
         $adminProyek1 = User::firstOrCreate(
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
-                'name' => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make('password123'),
+                'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
         $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
+        // 4. User Proyek (Proyek A)
         $userProyek = User::firstOrCreate(
             ['email' => 'user.proyek@arsikon.co.id'],
             [
-                'name' => 'User Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make('password123'),
+                'name'     => 'User Proyek FAKULTAS Teknik UGM',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $userProyek->syncRoles([$userRole, $adminProyekRole]);
         $userProyek->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
 
         // 5. Admin PO (Pengadaan)
         $adminPOUser = User::firstOrCreate(
             ['email' => 'admin.po@arsikon.co.id'],
             [
                 'name'     => 'Admin Pengadaan (PO)',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $adminPOUser->syncRoles([$adminPORole]);
         $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
-        // 6. Karyawan (User Terbatas: View, Pinjam Alat, Request            Material, Buat Surat Jalan)
+        // 6. Karyawan (akses terbatas)
         $karyawanUser = User::firstOrCreate(
             ['email' => 'karyawan@arsikon.co.id'],
             [
                 'name'     => 'Pekerja Lapangan',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
             ]
         );
         $karyawanUser->syncRoles([$karyawanRole]);

@@ -61,6 +61,12 @@ class ToolInventoryService
                 ->first();
 
             if (!$inventory) {
+                // If this tool already has inventory records in other warehouses, this warehouse has 0 stock
+                $hasExistingInventories = ToolInventory::where('tool_id', $tool->id)->exists();
+                if ($hasExistingInventories) {
+                    throw new Exception("Stok alat {$tool->name} tidak tersedia di gudang {$warehouse->name} (tersedia: 0, dibutuhkan: {$quantity}).");
+                }
+
                 $avail = (int) $tool->stock_available > 0 ? (int) $tool->stock_available : $quantity;
                 $tot   = (int) $tool->stock_total > 0 ? (int) $tool->stock_total : $avail;
                 $inventory = ToolInventory::create([
@@ -108,11 +114,11 @@ class ToolInventoryService
                 $inventory = ToolInventory::create([
                     'warehouse_id'      => $warehouse->id,
                     'tool_id'           => $tool->id,
-                    'stock_total'       => (int) $tool->stock_total,
-                    'stock_available'   => (int) $tool->stock_available,
-                    'stock_borrowed'    => max((int) $tool->stock_borrowed, $quantity),
-                    'stock_maintenance' => (int) $tool->stock_maintenance,
-                    'stock_damaged'     => (int) $tool->stock_damaged,
+                    'stock_total'       => $quantity,
+                    'stock_available'   => 0,
+                    'stock_borrowed'    => $quantity,
+                    'stock_maintenance' => 0,
+                    'stock_damaged'     => 0,
                 ]);
             }
 

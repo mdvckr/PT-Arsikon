@@ -296,7 +296,7 @@ class MasterDataSeeder extends Seeder
         // 5. Seed Tools
         $centralWarehouse = Warehouse::where('is_central', true)->first();
 
-        Tool::firstOrCreate(
+        $toolGen = Tool::firstOrCreate(
             ['code' => 'TOOL-GEN-01'],
             [
                 'category_id' => $catAlatBerat->id,
@@ -310,7 +310,7 @@ class MasterDataSeeder extends Seeder
             ]
         );
 
-        Tool::firstOrCreate(
+        $toolMol = Tool::firstOrCreate(
             ['code' => 'TOOL-MOL-01'],
             [
                 'category_id' => $catAlatBerat->id,
@@ -323,6 +323,29 @@ class MasterDataSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        if ($centralWarehouse) {
+            \App\Models\ToolInventory::firstOrCreate(
+                ['warehouse_id' => $centralWarehouse->id, 'tool_id' => $toolGen->id],
+                [
+                    'stock_total' => 5,
+                    'stock_available' => 5,
+                    'stock_borrowed' => 0,
+                    'stock_maintenance' => 0,
+                    'stock_damaged' => 0,
+                ]
+            );
+            \App\Models\ToolInventory::firstOrCreate(
+                ['warehouse_id' => $centralWarehouse->id, 'tool_id' => $toolMol->id],
+                [
+                    'stock_total' => 3,
+                    'stock_available' => 3,
+                    'stock_borrowed' => 0,
+                    'stock_maintenance' => 0,
+                    'stock_damaged' => 0,
+                ]
+            );
+        }
         // 6. Seed Sample Tool Assignment
         $projectUser = User::where('email', 'user.proyek@arsikon.co.id')->first();
         $projectWarehouse = Warehouse::where('is_central', false)->first();

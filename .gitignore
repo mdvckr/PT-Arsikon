@@ -17,3 +17,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+# Vite temporary timestamp files
+vite.config.js.timestamp-*.mjs
+# Debug probe files
+_probe.php

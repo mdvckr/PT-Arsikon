@@ -155,7 +155,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gudang Asal Alat</label>
-                        <select name="warehouse_id" class="form-control">
+                        <select name="warehouse_id" class="form-control" onchange="window.location.href = '{{ route('tool-assignments.create') }}?warehouse_id=' + this.value;">
                             @foreach($warehouses as $wh)
                             <option value="{{ $wh->id }}" {{ old('warehouse_id', $selectedWarehouseId) == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
                             @endforeach

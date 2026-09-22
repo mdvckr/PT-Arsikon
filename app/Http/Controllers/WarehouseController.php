@@ -10,7 +10,7 @@ class WarehouseController extends Controller
 {
     public function index()
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
         $warehouses = Warehouse::withCount(['inventories', 'users'])->latest()->paginate(15);
 
         return view('warehouses.index', compact('warehouses'));
@@ -18,7 +18,7 @@ class WarehouseController extends Controller
 
     public function create()
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
         $projects = Project::orderBy('name')->get();
 
         return view('warehouses.create', compact('projects'));
@@ -26,7 +26,7 @@ class WarehouseController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
 
         // Normalize input
         $rawType = $request->input('type');
@@ -67,7 +67,7 @@ class WarehouseController extends Controller
 
     public function edit(Warehouse $warehouse)
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
         $projects = Project::orderBy('name')->get();
 
         return view('warehouses.edit', compact('warehouse', 'projects'));
@@ -75,7 +75,7 @@ class WarehouseController extends Controller
 
     public function update(Request $request, Warehouse $warehouse)
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
 
         // Normalize input
         $rawType = $request->input('type');
@@ -113,7 +113,21 @@ class WarehouseController extends Controller
 
     public function destroy(Warehouse $warehouse)
     {
-        $this->authorize('view users');
+        $this->authorize('warehouses.manage');
+
+        // Cek apakah gudang masih memiliki inventory atau transaksi aktif
+        $inventoryCount = $warehouse->inventories()->where('quantity', '>', 0)->count();
+        if ($inventoryCount > 0) {
+            return redirect()->route('warehouses.index')
+                ->with('error', "Gudang '{$warehouse->name}' tidak dapat dihapus karena masih memiliki {$inventoryCount} item stok aktif.");
+        }
+
+        $userCount = $warehouse->users()->count();
+        if ($userCount > 0) {
+            return redirect()->route('warehouses.index')
+                ->with('error', "Gudang '{$warehouse->name}' tidak dapat dihapus karena masih memiliki {$userCount} user yang ditugaskan.");
+        }
+
         $name = $warehouse->name;
         $warehouse->delete();
 
@@ -121,4 +135,3 @@ class WarehouseController extends Controller
             ->with('success', "Gudang '{$name}' berhasil dihapus.");
     }
 }
-
