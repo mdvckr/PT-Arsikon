@@ -225,7 +225,17 @@ class ToolController extends Controller
     public function show(Tool $tool)
     {
         $this->authorize('view tools');
-        $tool->load(['category', 'currentWarehouse', 'assignments.fromWarehouse', 'assignments.toWarehouse', 'assignments.assignedBy', 'maintenances']);
+        $tool->load([
+            'category',
+            'currentWarehouse',
+            'inventories.warehouse',
+            'assignments.fromWarehouse',
+            'assignments.toWarehouse',
+            'assignments.assignedBy',
+            'assignments.assignedTo',
+            'assignments.toolLoan',
+            'maintenances',
+        ]);
 
         return view('tools.show', compact('tool'));
     }

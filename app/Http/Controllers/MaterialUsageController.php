@@ -79,25 +79,27 @@ class MaterialUsageController extends Controller
             $selectedWarehouse = $warehouses->first();
         }
 
-        // Get materials that have stock > 0 in this warehouse — grouped by kategori & nama supaya rapi
+        // Get all active materials with their stock in this warehouse
         $materialsData = [];
         $materialsGrouped = collect();
         if ($selectedWarehouse) {
-            $inventories = Inventory::with(['material.unit', 'material.category'])
-                ->where('warehouse_id', $selectedWarehouse->id)
-                ->where('quantity', '>', 0)
-                ->get();
+            $stocks = Inventory::where('warehouse_id', $selectedWarehouse->id)
+                ->pluck('quantity', 'material_id')
+                ->toArray();
 
-            $materialsData = $inventories->map(function ($inv) {
+            $materials = Material::with(['unit', 'category'])->where('is_active', true)->orderBy('name')->get();
+
+            $materialsData = $materials->map(function ($m) use ($stocks) {
+                $stock = isset($stocks[$m->id]) ? (float) $stocks[$m->id] : 0.0;
                 return [
-                    'id'       => $inv->material_id,
-                    'name'     => $inv->material?->name,
-                    'code'     => $inv->material?->code,
-                    'stock'    => (float) $inv->quantity,
-                    'unit'     => $inv->material?->unit?->abbreviation ?? 'unit',
-                    'category' => $inv->material?->category?->name ?? 'Umum',
+                    'id'       => $m->id,
+                    'name'     => $m->name,
+                    'code'     => $m->code ?? $m->sku ?? '',
+                    'stock'    => $stock,
+                    'unit'     => $m->unit?->abbreviation ?? 'unit',
+                    'category' => $m->category?->name ?? 'Umum',
                 ];
-            })->sortBy([['category','asc'], ['name','asc']])->values()->toArray();
+            })->values()->toArray();
 
             $materialsGrouped = collect($materialsData)->groupBy('category')->sortKeys();
         }

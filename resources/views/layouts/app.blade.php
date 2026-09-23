@@ -457,6 +457,41 @@
 
         .topbar-center {
             flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .topbar-page-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .topbar-sep {
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 300;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .topbar-page-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.01em;
+            margin: 0;
+            line-height: 1.2;
         }
 
         .topbar-actions {
@@ -903,6 +938,8 @@
             /* Topbar actions compact */
             .topbar-actions { gap: 8px; padding-right: 14px; }
             .topbar-circle-btn { width: 34px; height: 34px; font-size: 13px; }
+            .topbar-center { padding: 0 8px; }
+            .topbar-page-title { font-size: 12.5px; max-width: 220px; }
 
             /* Breadcrumb compact */
             .breadcrumb { font-size: 12px; margin-bottom: 12px; }
@@ -941,9 +978,19 @@
                 bottom: 16px;
                 right: 12px;
                 left: 12px;
+                max-width: calc(100vw - 24px);
             }
             .notif-toast {
                 max-width: 100%;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px 14px;
+                gap: 10px;
+                animation: toastInMobile 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            @keyframes toastInMobile {
+                from { transform: translateY(25px); opacity: 0; }
+                to   { transform: translateY(0); opacity: 1; }
             }
         }
 
@@ -984,6 +1031,14 @@
             .brand-title { font-size: 13px; }
             .brand-logo { width: 32px; height: 32px; }
             .topbar-brand { gap: 8px; }
+            .topbar-center { padding: 0 6px; }
+            .topbar-page-title { font-size: 11.5px; max-width: 140px; }
+            .topbar-sep { font-size: 12px; }
+        }
+
+        @media (max-width: 380px) {
+            .brand-text { display: none; }
+            .topbar-page-title { max-width: 160px; }
 
             /* Tabs scroll */
             .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -1186,7 +1241,14 @@
             </a>
         </div>
 
-        <div class="topbar-center"></div>
+        <div class="topbar-center">
+            @if(isset($title))
+            <div class="topbar-page-info">
+                <span class="topbar-sep">/</span>
+                <h2 class="topbar-page-title">{{ $title }}</h2>
+            </div>
+            @endif
+        </div>
 
         @php
             $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
@@ -1269,7 +1331,7 @@
                     <select name="warehouse_id" onchange="document.getElementById('workspaceForm').submit()" class="workspace-select" title="Ganti Workspace Gudang">
                         @foreach($warehouses as $wh)
                             <option value="{{ $wh->id }}" {{ $activeWarehouseId == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->is_central ? '🏢 ' : '🏗️ ' }}{{ $wh->name }}
+                                [{{ $wh->is_central ? 'Pusat' : 'Proyek' }}] {{ $wh->name }}
                             </option>
                         @endforeach
                     </select>
@@ -1595,7 +1657,7 @@
                 const playChime = () => {
                     const now = ctx.currentTime;
 
-                    // 1. APPROVAL REQUEST CHIME (Triple Crisp Tone - Ping-Ping-Ding! 🔔)
+                    // 1. APPROVAL REQUEST CHIME (Triple Crisp Tone - Ping-Ping-Ding!)
                     if (isApproval) {
                         // Nada 1: G5 (783.99 Hz)
                         const o1 = ctx.createOscillator();
@@ -1629,7 +1691,7 @@
                         return;
                     }
 
-                    // 2. REJECTED / WARNING CHIME (Descending Two-tone ❌)
+                    // 2. REJECTED / WARNING CHIME (Descending Two-tone)
                     if (isSad) {
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
@@ -1643,7 +1705,7 @@
                         return;
                     }
 
-                    // 3. SUCCESS / APPROVED CHIME (Bright Ascending Major Harmony ✅)
+                    // 3. SUCCESS / APPROVED CHIME (Bright Ascending Major Harmony)
                     if (isHappy) {
                         // C5 (523.25 Hz) -> E5 (659.25 Hz) -> G5 (783.99 Hz)
                         const osc = ctx.createOscillator();

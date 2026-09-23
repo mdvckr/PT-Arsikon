@@ -46,7 +46,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th>No</th>
                         <th>Tgl Nota</th>
                         <th>No. Nota</th>
                         <th>PO / Proyek</th>

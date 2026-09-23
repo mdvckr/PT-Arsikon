@@ -126,6 +126,107 @@
             box-shadow: 0 2px 6px -1px rgba(37,99,235,0.08);
         }
 
+        /* Items Table Form Controls Styling */
+        #itemsTable thead th {
+            padding: 9px 12px !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            color: #64748b !important;
+            background: #fafafa !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            white-space: nowrap !important;
+        }
+
+        #itemsTable tbody td {
+            padding: 8px 10px !important;
+            vertical-align: middle !important;
+        }
+
+        #itemsTable .material-select,
+        #itemsTable select.form-control {
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+            line-height: 1.4 !important;
+            border-radius: 6px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            cursor: pointer;
+        }
+
+        #itemsTable .material-select:focus,
+        #itemsTable select.form-control:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+            outline: none !important;
+        }
+
+        #itemsTable input.qty-input {
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 6px 8px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            border-radius: 6px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            box-sizing: border-box !important;
+            color: #0f172a !important;
+            text-align: center !important;
+        }
+
+        #itemsTable input.qty-input:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+            outline: none !important;
+        }
+
+        #itemsTable input[name*="[notes]"] {
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 7px 12px !important;
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            border-radius: 6px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            box-sizing: border-box !important;
+            color: #0f172a !important;
+        }
+
+        #itemsTable input[name*="[notes]"]:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+            outline: none !important;
+        }
+
+        #itemsTable .btn-delete-row {
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            color: #dc2626 !important;
+            background: #ffffff !important;
+            border: 1px solid #fecaca !important;
+            transition: all 0.15s ease !important;
+            cursor: pointer !important;
+            font-size: 12px !important;
+        }
+
+        #itemsTable .btn-delete-row:hover {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+            transform: scale(1.04) !important;
+        }
+
         /* Responsive Breakpoints */
         @media (max-width: 992px) {
             .material-usage-layout {
@@ -312,28 +413,28 @@
                         </span>
 
                         <div id="mrQuickActions" style="display: none;" class="flex gap-1">
-                            <button type="button" class="btn btn-sm btn-light border text-primary fw-600" onclick="fillAllRemainingQuota()" title="Otomatis mengisi kuantitas sesuai sisa kuota yang disetujui" style="height: 28px; font-size: 11.5px; border-radius:5px; padding:0 10px;">
+                            <button type="button" class="btn btn-sm btn-light border text-primary fw-600" onclick="fillAllRemainingQuota()" title="Otomatis mengisi kuantitas sesuai sisa kuota yang disetujui" style="height: 32px; font-size: 12px; border-radius:6px; padding:0 12px;">
                                 <i class="fas fa-check-double text-primary me-1"></i> Penuhi Kuota
                             </button>
-                            <button type="button" class="btn btn-sm btn-light border text-muted fw-600" onclick="resetAllQuantities()" title="Kosongkan nilai input kuantitas" style="height: 28px; font-size: 11.5px; border-radius:5px; padding:0 8px;">
+                            <button type="button" class="btn btn-sm btn-light border text-muted fw-600" onclick="resetAllQuantities()" title="Kosongkan nilai input kuantitas" style="height: 32px; font-size: 12px; border-radius:6px; padding:0 10px;">
                                 <i class="fas fa-rotate-left me-1"></i> Reset
                             </button>
                         </div>
-                        <div id="manualButtonsGroup" style="display: none; gap: 6px;">
-                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="border-radius:5px; font-size:11.5px; height:28px; padding:0 10px;">
-                                <i class="fas fa-plus"></i> Tambah Baris
+                        <div id="manualButtonsGroup" style="display: none; gap: 8px;">
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
+                                <i class="fas fa-plus me-1"></i> Tambah Baris
                             </button>
-                            <button type="button" class="btn btn-sm btn-light border text-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border-radius:5px; font-size:11.5px; height:28px; padding:0 10px; font-weight:600;">
-                                <i class="fas fa-plus"></i> Item Custom
+                            <button type="button" class="btn btn-sm btn-light border text-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
+                                <i class="fas fa-plus me-1"></i> Item Custom
                             </button>
                         </div>
                     </div>
 
                     {{-- Search Toolbar --}}
-                    <div style="padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <div style="padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                         <div style="position: relative; max-width: 320px; width: 100%;">
-                            <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform:translateY(-50%); font-size: 11px; color: #94a3b8;"></i>
-                            <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 30px; padding-left: 28px; font-size: 11.5px; border-radius: 5px; border-color:#cbd5e1;">
+                            <i class="fas fa-search" style="position: absolute; left: 11px; top: 50%; transform:translateY(-50%); font-size: 11.5px; color: #94a3b8;"></i>
+                            <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 34px; padding-left: 32px; font-size: 12px; border-radius: 6px; border-color:#cbd5e1;">
                         </div>
                         <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
                             0 item
@@ -475,6 +576,11 @@
 
         </div>
     </form>
+
+    {{-- Global Floating Material Autocomplete Suggestions Dropdown --}}
+    <div id="material-suggestions-box" 
+         style="display:none; position:absolute; z-index:99999; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 14px 30px -4px rgba(0,0,0,0.22); max-height:280px; overflow-y:auto; font-family:'Inter', sans-serif;">
+    </div>
 
     {{-- Floating Action Bar for Mobile View --}}
     <div id="mobileUsageSummaryBar" style="display:none;position:fixed;bottom:14px;left:14px;right:14px;z-index:99;background:#0f172a;color:#ffffff;border-radius:10px;padding:10px 14px;box-shadow:0 8px 20px -3px rgba(0,0,0,0.3);align-items:center;justify-content:space-between;gap:10px;">
@@ -687,8 +793,8 @@
                             </span>
                             ${isOutOfStock ? '<div class="text-danger" style="font-size: 10px; font-weight: 600; margin-top: 1px;">Stok 0</div>' : ''}
                         </td>
-                        <td style="padding: 7px 8px;">
-                            <div style="display: flex; align-items: center; justify-content:center; gap: 4px;">
+                        <td style="padding: 8px 8px;">
+                            <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
                                 <input type="number" 
                                        name="items[${rowIndex}][quantity]" 
                                        id="${rowId}-qty" 
@@ -701,17 +807,17 @@
                                        value="${isFullyFulfilled ? 0 : defaultQty}" 
                                        ${isFullyFulfilled ? 'readonly' : 'required'}
                                        oninput="validateMRQty('${rowId}')"
-                                       style="font-weight: 700; font-size: 12px; height: 30px; border-radius: 5px; width:75px; padding:0 4px;">
-                                <span class="text-muted fw-600" style="font-size: 11px; min-width: 24px;">${item.unit}</span>
+                                       style="width: 85px;">
+                                <span class="text-muted fw-600" style="font-size: 11.5px; min-width: 24px;">${item.unit}</span>
                             </div>
-                            <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 2px; text-align:center; display: none;"></div>
+                            <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 3px; text-align:center; display: none;"></div>
                         </td>
-                        <td style="padding: 7px 10px;">
-                            <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Catatan..." value="${item.notes || ''}" style="font-size: 11.5px; height: 30px; border-radius: 5px;">
+                        <td style="padding: 8px 10px;">
+                            <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Catatan keperluan..." value="${item.notes || ''}">
                         </td>
-                        <td style="padding: 7px 6px; text-align: center;">
-                            <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus" style="width:26px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius: 4px;">
-                                <i class="fas fa-trash-can" style="font-size: 10px;"></i>
+                        <td style="padding: 8px 6px; text-align: center;">
+                            <button type="button" class="btn-delete-row" onclick="removeRow('${rowId}')" title="Hapus Baris">
+                                <i class="fas fa-trash-can"></i>
                             </button>
                         </td>
                     `;
@@ -783,62 +889,88 @@
             updateTableSummary();
         }
 
-        function addManualRow(preselectedId = null, qtyVal = '', isCustom = false) {
+        let activeAutocompleteRowId = null;
+        let currentSuggestions = [];
+        let activeSuggestionIndex = -1;
+
+        function addManualRow(preselectedId = null, qtyVal = '', isCustom = false, initialCustomName = '') {
             const tbody = document.getElementById('itemsBody');
             const rowId = 'row-' + rowIndex;
 
-            let optionsHtml = '<option value="">— Pilih Material —</option>';
-            if (materialsGrouped && typeof materialsGrouped === 'object' && !Array.isArray(materialsGrouped)) {
-                Object.keys(materialsGrouped).sort().forEach(cat => {
-                    optionsHtml += `<optgroup label="${cat}">`;
-                    materialsGrouped[cat].forEach(m => {
-                        const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
-                        optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
-                    });
-                    optionsHtml += `</optgroup>`;
-                });
-            } else {
-                availableMaterials.forEach(m => {
-                    const selected = (!isCustom && preselectedId && preselectedId == m.id) ? 'selected' : '';
-                    optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
-                });
+            let initialName = '';
+            let initialId = '';
+            let initialUnit = '-';
+            let initialStock = 0;
+
+            if (isCustom) {
+                initialName = initialCustomName || '';
+            } else if (preselectedId) {
+                const found = availableMaterials.find(m => m.id == preselectedId);
+                if (found) {
+                    initialName = found.name;
+                    initialId = found.id;
+                    initialUnit = found.unit || 'unit';
+                    initialStock = found.stock;
+                }
             }
-            optionsHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>+ Item Custom (Tulis Manual)</option>`;
 
             const tr = document.createElement('tr');
             tr.id = rowId;
             tr.style.borderBottom = '1px solid #f1f5f9';
             tr.innerHTML = `
-                <td style="padding: 7px 12px;">
-                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="">
-                    <select id="${rowId}-select" class="form-control material-select" onchange="onManualMaterialChange(this, '${rowId}')" style="font-size: 12px; height: 30px; border-radius: 5px;">
-                        ${optionsHtml}
-                    </select>
-                    <div id="${rowId}-custom-box" style="display: ${isCustom ? 'block' : 'none'}; margin-top: 4px;">
-                        <div style="display: flex; gap: 4px;">
-                            <input type="text" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" class="form-control" placeholder="Nama item..." style="font-size: 11.5px; height: 28px; border-radius: 4px;" ${isCustom ? 'required' : ''}>
-                            <input type="text" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" class="form-control" placeholder="Satuan" style="font-size: 11.5px; height: 28px; width: 80px; border-radius: 4px;" oninput="onCustomUnitChange(this, '${rowId}')">
-                        </div>
+                <td style="padding: 8px 12px; position: relative;">
+                    <div style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;"></i>
+                        <input type="text" 
+                               id="${rowId}-name-input" 
+                               class="form-control material-autocomplete-input" 
+                               placeholder="Ketik nama material (cth: Batu, Semen, Pasir)..." 
+                               autocomplete="off"
+                               value="${escapeHtml(initialName)}"
+                               oninput="onMaterialSearchInput(this, '${rowId}')"
+                               onfocus="onMaterialSearchFocus(this, '${rowId}')"
+                               onkeydown="onMaterialSearchKeydown(event, '${rowId}')"
+                               style="height: 38px; padding-left: 32px; padding-right: 28px; font-size: 12.5px; border-radius: 6px;">
+                        <button type="button" 
+                                id="${rowId}-clear-btn" 
+                                onclick="clearMaterialRowSelection('${rowId}')" 
+                                style="display: ${initialName ? 'block' : 'none'}; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" 
+                                title="Hapus / Ganti">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    {{-- Hidden Form Fields --}}
+                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="${initialId}">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" value="${isCustom ? escapeHtml(initialName) : ''}">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" value="${isCustom ? 'unit' : ''}">
+
+                    {{-- Custom item unit editor --}}
+                    <div id="${rowId}-custom-badge-wrap" style="display: ${isCustom ? 'flex' : 'none'}; align-items: center; gap: 6px; margin-top: 5px;">
+                        <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:2px 6px;">Non-Master</span>
+                        <input type="text" id="${rowId}-custom-unit-input" class="form-control" placeholder="Satuan (cth: sak, m3)" value="unit" style="height: 26px; font-size: 11px; padding: 2px 6px; width: 110px; border-radius: 4px;" oninput="onCustomUnitChange(this, '${rowId}')">
                     </div>
                 </td>
-                <td style="padding: 7px 8px; text-align: center;">
-                    <span class="badge" id="${rowId}-stock" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; background:#f1f5f9; color:#64748b;">-</span>
+                <td style="padding: 8px 8px; text-align: center;">
+                    <span class="badge" id="${rowId}-stock" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 5px; ${initialId ? (initialStock > 0 ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;') : 'background:#f1f5f9; color:#64748b;'}">
+                        ${initialId ? initialStock + ' ' + initialUnit : (isCustom ? 'Custom' : '-')}
+                    </span>
                 </td>
-                <td style="padding: 7px 8px;">
-                    <div style="display: flex; align-items: center; justify-content:center; gap: 4px;">
+                <td style="padding: 8px 8px;">
+                    <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
                         <input type="number" name="items[${rowIndex}][quantity]" id="${rowId}-qty" class="form-control qty-input text-center"
                                step="0.01" min="0.01" placeholder="0" value="${qtyVal}" required oninput="validateManualQty('${rowId}')"
-                               style="font-weight: 700; font-size: 12px; height: 30px; border-radius: 5px; width:75px; padding:0 4px;">
-                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11px; min-width: 24px;">-</span>
+                               style="width: 85px;" ${initialId ? `max="${initialStock}"` : ''}>
+                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 24px;">${initialUnit}</span>
                     </div>
-                    <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 2px; text-align:center; display: none;"></div>
+                    <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 3px; text-align:center; display: none;"></div>
                 </td>
-                <td style="padding: 7px 10px;">
-                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan..." style="font-size: 11.5px; height: 30px; border-radius: 5px;">
+                <td style="padding: 8px 10px;">
+                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan keperluan...">
                 </td>
-                <td style="padding: 7px 6px; text-align: center;">
-                    <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus Item" style="width:26px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius: 4px;">
-                        <i class="fas fa-trash-can" style="font-size: 10px;"></i>
+                <td style="padding: 8px 6px; text-align: center;">
+                    <button type="button" class="btn-delete-row" onclick="removeRow('${rowId}')" title="Hapus Baris">
+                        <i class="fas fa-trash-can"></i>
                     </button>
                 </td>
             `;
@@ -846,67 +978,390 @@
             tbody.appendChild(tr);
             rowIndex++;
 
-            const sel = tr.querySelector('.material-select');
-            onManualMaterialChange(sel, rowId);
+            if (isCustom && !initialCustomName) {
+                setTimeout(() => {
+                    const inp = document.getElementById(rowId + '-name-input');
+                    if (inp) inp.focus();
+                }, 100);
+            }
+
             updateTableSummary();
         }
 
-        function onManualMaterialChange(select, rowId) {
-            const val = select.value;
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function highlightMatch(text, query) {
+            if (!query) return escapeHtml(text);
+            const safeText = escapeHtml(text);
+            const safeQuery = escapeHtml(query);
+            const regex = new RegExp(`(${safeQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return safeText.replace(regex, '<mark style="background:#fef08a;color:#713f12;padding:0 2px;border-radius:2px;font-weight:700;">$1</mark>');
+        }
+
+        function onMaterialSearchFocus(input, rowId) {
+            activeAutocompleteRowId = rowId;
+            renderMaterialSuggestions(input, rowId, input.value);
+        }
+
+        function onMaterialSearchInput(input, rowId) {
+            activeAutocompleteRowId = rowId;
+            const clearBtn = document.getElementById(rowId + '-clear-btn');
+            if (clearBtn) clearBtn.style.display = input.value.trim() ? 'block' : 'none';
+
+            // Check if user modified the name of an already linked master
+            const matIdInput = document.getElementById(rowId + '-material-id');
+            if (matIdInput && matIdInput.value) {
+                const currentMaster = availableMaterials.find(m => m.id == matIdInput.value);
+                if (currentMaster && currentMaster.name.trim().toLowerCase() !== input.value.trim().toLowerCase()) {
+                    // Unlink master
+                    matIdInput.value = '';
+                    const customNameInput = document.getElementById(rowId + '-custom-name');
+                    if (customNameInput) customNameInput.value = input.value.trim();
+                }
+            }
+
+            renderMaterialSuggestions(input, rowId, input.value);
+        }
+
+        function positionSuggestionsBox(input) {
+            const box = document.getElementById('material-suggestions-box');
+            if (!box || !input) return;
+            const rect = input.getBoundingClientRect();
+            box.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+            box.style.left = (rect.left + window.scrollX) + 'px';
+            box.style.width = Math.max(rect.width, 360) + 'px';
+        }
+
+        function renderMaterialSuggestions(input, rowId, query) {
+            const box = document.getElementById('material-suggestions-box');
+            if (!box) return;
+
+            const q = (query || '').trim().toLowerCase();
+            currentSuggestions = [];
+            activeSuggestionIndex = -1;
+
+            // Filter materials by name, code, or category
+            let matched = availableMaterials.filter(m => {
+                if (!q) return true;
+                const name = (m.name || '').toLowerCase();
+                const code = (m.code || '').toLowerCase();
+                const cat = (m.category || '').toLowerCase();
+                return name.includes(q) || code.includes(q) || cat.includes(q);
+            });
+
+            // Sort: 1. startsWith query name, 2. Alphabetical A-Z
+            matched.sort((a, b) => {
+                if (q) {
+                    const aStarts = (a.name || '').toLowerCase().startsWith(q);
+                    const bStarts = (b.name || '').toLowerCase().startsWith(q);
+                    if (aStarts && !bStarts) return -1;
+                    if (!aStarts && bStarts) return 1;
+                }
+                return (a.name || '').localeCompare(b.name || '', 'id', { sensitivity: 'base' });
+            });
+
+            matched = matched.slice(0, q ? 20 : 12);
+
+            let html = '';
+            let itemIdx = 0;
+
+            if (matched.length > 0) {
+                html += `<div style="padding:6px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
+                    <span><i class="fas fa-boxes-stacked me-1 text-primary"></i> Data Master Inventori (${matched.length} Ditemukan)</span>
+                    <span style="font-size:10px;color:#94a3b8;font-weight:normal;">Urut A-Z</span>
+                </div>`;
+
+                matched.forEach(m => {
+                    currentSuggestions.push({
+                        type: 'master',
+                        id: m.id,
+                        name: m.name,
+                        stock: m.stock,
+                        unit: m.unit
+                    });
+
+                    const safeNameAttr = escapeHtml(m.name);
+                    const isInStock = m.stock > 0;
+
+                    html += `<div class="material-sugg-item" data-index="${itemIdx}" 
+                                  onclick="selectMaterialSuggestion('${rowId}', ${m.id})" 
+                                  style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;transition:background .15s;">
+                        <div style="min-width:0;padding-right:10px;">
+                            <div style="font-weight:600;font-size:12.5px;color:#0f172a;">
+                                ${highlightMatch(m.name, q)}
+                            </div>
+                            <div class="text-muted" style="font-size:11px;display:flex;align-items:center;gap:6px;margin-top:2px;">
+                                ${m.code ? `<code style="font-size:10px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:#475569;">${escapeHtml(m.code)}</code> &bull; ` : ''}
+                                <span>Kategori: ${escapeHtml(m.category || 'Umum')}</span>
+                            </div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <span class="badge" style="background:${isInStock ? '#eff6ff' : '#fef2f2'};color:${isInStock ? '#0284c7' : '#b91c1c'};border:1px solid ${isInStock ? '#bae6fd' : '#fecaca'};font-size:11px;font-weight:600;padding:2px 7px;">
+                                Stok: ${m.stock} ${escapeHtml(m.unit || '')}
+                            </span>
+                        </div>
+                    </div>`;
+                    itemIdx++;
+                });
+            }
+
+            // Opsi untuk jadikan input manual custom
+            if (q) {
+                const safeQ = escapeHtml(query.trim());
+                currentSuggestions.push({
+                    type: 'custom',
+                    name: query.trim()
+                });
+
+                html += `<div class="material-sugg-item suggestion-custom-opt" data-index="${itemIdx}" 
+                              onclick="selectAsCustomMaterial('${rowId}', '${query.trim().replace(/'/g, "\\'")}')" 
+                              style="padding:9px 12px;background:#fffbeb;border-top:1.5px dashed #fde68a;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:#92400e;transition:background .15s;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-pen-to-square text-warning" style="font-size:12.5px;"></i>
+                        <span style="font-size:12px;">Gunakan "<strong>${safeQ}</strong>" sebagai Material Custom</span>
+                    </div>
+                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;padding:2px 6px;">Non-Master</span>
+                </div>`;
+            } else if (matched.length === 0) {
+                html = `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:12px;">
+                    <i class="fas fa-keyboard" style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;"></i>
+                    Ketik nama material untuk mencari di inventori
+                </div>`;
+            }
+
+            box.innerHTML = html;
+            positionSuggestionsBox(input);
+            box.style.display = 'block';
+        }
+
+        function hideMaterialSuggestions() {
+            const box = document.getElementById('material-suggestions-box');
+            if (box) box.style.display = 'none';
+            activeAutocompleteRowId = null;
+            activeSuggestionIndex = -1;
+            currentSuggestions = [];
+        }
+
+        function onMaterialSearchKeydown(e, rowId) {
+            const box = document.getElementById('material-suggestions-box');
+            if (!box || box.style.display === 'none') {
+                if (e.key === 'ArrowDown') {
+                    onMaterialSearchFocus(e.target, rowId);
+                }
+                return;
+            }
+
+            const items = box.querySelectorAll('.material-sugg-item');
+            if (!items || items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+                highlightActiveSuggestion(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+                highlightActiveSuggestion(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeSuggestionIndex >= 0 && activeSuggestionIndex < currentSuggestions.length) {
+                    const selected = currentSuggestions[activeSuggestionIndex];
+                    if (selected.type === 'master') {
+                        selectMaterialSuggestion(rowId, selected.id);
+                    } else {
+                        selectAsCustomMaterial(rowId, selected.name);
+                    }
+                } else if (currentSuggestions.length > 0) {
+                    const first = currentSuggestions[0];
+                    if (first.type === 'master') {
+                        selectMaterialSuggestion(rowId, first.id);
+                    } else {
+                        selectAsCustomMaterial(rowId, first.name);
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                hideMaterialSuggestions();
+            }
+        }
+
+        function highlightActiveSuggestion(items) {
+            items.forEach((it, idx) => {
+                if (idx === activeSuggestionIndex) {
+                    it.style.backgroundColor = '#e0f2fe';
+                    it.scrollIntoView({ block: 'nearest' });
+                } else {
+                    it.style.backgroundColor = '';
+                }
+            });
+        }
+
+        function selectMaterialSuggestion(rowId, materialId) {
+            const m = availableMaterials.find(x => x.id == materialId);
+            if (!m) return;
+
+            const nameInput = document.getElementById(rowId + '-name-input');
+            const matIdInput = document.getElementById(rowId + '-material-id');
+            const customNameInput = document.getElementById(rowId + '-custom-name');
+            const customUnitInput = document.getElementById(rowId + '-custom-unit');
+            const customBadgeWrap = document.getElementById(rowId + '-custom-badge-wrap');
+            const clearBtn = document.getElementById(rowId + '-clear-btn');
             const stockBadge = document.getElementById(rowId + '-stock');
             const unitLabel = document.getElementById(rowId + '-unit');
             const qtyInput = document.getElementById(rowId + '-qty');
-            const customBox = document.getElementById(rowId + '-custom-box');
-            const customName = document.getElementById(rowId + '-custom-name');
-            const customUnit = document.getElementById(rowId + '-custom-unit');
-            const hiddenMaterialId = document.getElementById(rowId + '-material-id');
 
-            if (val === '__custom__') {
-                hiddenMaterialId.value = '';
-                customBox.style.display = 'block';
-                customName.required = true;
-                stockBadge.style.background = '#f5f3ff';
-                stockBadge.style.color = '#7c3aed';
-                stockBadge.style.border = '1px solid #ddd6fe';
+            if (nameInput) nameInput.value = m.name;
+            if (matIdInput) matIdInput.value = m.id;
+            if (customNameInput) customNameInput.value = '';
+            if (customUnitInput) customUnitInput.value = '';
+            if (customBadgeWrap) customBadgeWrap.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'block';
+
+            if (stockBadge) {
+                stockBadge.style.background = m.stock > 0 ? '#eff6ff' : '#fef2f2';
+                stockBadge.style.color = m.stock > 0 ? '#2563eb' : '#b91c1c';
+                stockBadge.style.border = m.stock > 0 ? '1px solid #bfdbfe' : '1px solid #fecaca';
+                stockBadge.innerText = m.stock + ' ' + (m.unit || '');
+            }
+
+            if (unitLabel) unitLabel.innerText = m.unit || 'unit';
+            if (qtyInput) {
+                qtyInput.max = m.stock;
+                validateManualQty(rowId);
+                setTimeout(() => {
+                    qtyInput.focus();
+                    qtyInput.select();
+                }, 80);
+            }
+
+            hideMaterialSuggestions();
+            updateTableSummary();
+        }
+
+        function selectAsCustomMaterial(rowId, customName) {
+            const nameInput = document.getElementById(rowId + '-name-input');
+            const matIdInput = document.getElementById(rowId + '-material-id');
+            const customNameInput = document.getElementById(rowId + '-custom-name');
+            const customUnitInput = document.getElementById(rowId + '-custom-unit');
+            const customUnitField = document.getElementById(rowId + '-custom-unit-input');
+            const customBadgeWrap = document.getElementById(rowId + '-custom-badge-wrap');
+            const clearBtn = document.getElementById(rowId + '-clear-btn');
+            const stockBadge = document.getElementById(rowId + '-stock');
+            const unitLabel = document.getElementById(rowId + '-unit');
+            const qtyInput = document.getElementById(rowId + '-qty');
+
+            const trimmedName = customName.trim();
+            if (nameInput) nameInput.value = trimmedName;
+            if (matIdInput) matIdInput.value = '';
+            if (customNameInput) customNameInput.value = trimmedName;
+            const chosenUnit = (customUnitField ? customUnitField.value.trim() : 'unit') || 'unit';
+            if (customUnitInput) customUnitInput.value = chosenUnit;
+            if (customBadgeWrap) customBadgeWrap.style.display = 'flex';
+            if (clearBtn) clearBtn.style.display = 'block';
+
+            if (stockBadge) {
+                stockBadge.style.background = '#fef3c7';
+                stockBadge.style.color = '#92400e';
+                stockBadge.style.border = '1px solid #fde68a';
                 stockBadge.innerText = 'Custom';
-                unitLabel.innerText = customUnit.value.trim() || 'unit';
-                qtyInput.removeAttribute('max');
-            } else if (val) {
-                hiddenMaterialId.value = val;
-                customBox.style.display = 'none';
-                customName.required = false;
-                customName.value = '';
-                
-                const selectedOpt = select.options[select.selectedIndex];
-                const stock = parseFloat(selectedOpt.getAttribute('data-stock') || 0);
-                const unit = selectedOpt.getAttribute('data-unit') || '';
+            }
 
-                stockBadge.style.background = stock > 0 ? '#eff6ff' : '#fef2f2';
-                stockBadge.style.color = stock > 0 ? '#2563eb' : '#b91c1c';
-                stockBadge.style.border = stock > 0 ? '1px solid #bfdbfe' : '1px solid #fecaca';
-                stockBadge.innerText = stock + ' ' + unit;
-                unitLabel.innerText = unit;
-                qtyInput.max = stock;
-            } else {
-                hiddenMaterialId.value = '';
-                customBox.style.display = 'none';
-                customName.required = false;
+            if (unitLabel) unitLabel.innerText = chosenUnit;
+            if (qtyInput) {
+                qtyInput.removeAttribute('max');
+                validateManualQty(rowId);
+                setTimeout(() => {
+                    if (customUnitField && (!customUnitField.value || customUnitField.value === 'unit')) {
+                        customUnitField.focus();
+                        customUnitField.select();
+                    } else {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }, 80);
+            }
+
+            hideMaterialSuggestions();
+            updateTableSummary();
+        }
+
+        function clearMaterialRowSelection(rowId) {
+            const nameInput = document.getElementById(rowId + '-name-input');
+            const matIdInput = document.getElementById(rowId + '-material-id');
+            const customNameInput = document.getElementById(rowId + '-custom-name');
+            const customUnitInput = document.getElementById(rowId + '-custom-unit');
+            const customBadgeWrap = document.getElementById(rowId + '-custom-badge-wrap');
+            const clearBtn = document.getElementById(rowId + '-clear-btn');
+            const stockBadge = document.getElementById(rowId + '-stock');
+            const unitLabel = document.getElementById(rowId + '-unit');
+            const qtyInput = document.getElementById(rowId + '-qty');
+
+            if (nameInput) {
+                nameInput.value = '';
+                nameInput.focus();
+            }
+            if (matIdInput) matIdInput.value = '';
+            if (customNameInput) customNameInput.value = '';
+            if (customUnitInput) customUnitInput.value = '';
+            if (customBadgeWrap) customBadgeWrap.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+
+            if (stockBadge) {
                 stockBadge.style.background = '#f1f5f9';
                 stockBadge.style.color = '#64748b';
                 stockBadge.style.border = '1px solid #cbd5e1';
                 stockBadge.innerText = '-';
-                unitLabel.innerText = '-';
-                qtyInput.removeAttribute('max');
             }
-            validateManualQty(rowId);
+
+            if (unitLabel) unitLabel.innerText = '-';
+            if (qtyInput) {
+                qtyInput.removeAttribute('max');
+                validateManualQty(rowId);
+            }
+
+            renderMaterialSuggestions(nameInput, rowId, '');
+            updateTableSummary();
         }
 
         function onCustomUnitChange(input, rowId) {
             const unitLabel = document.getElementById(rowId + '-unit');
-            if (unitLabel) {
-                unitLabel.innerText = input.value.trim() || 'unit';
-            }
+            const customUnitHidden = document.getElementById(rowId + '-custom-unit');
+            const val = input.value.trim() || 'unit';
+            if (unitLabel) unitLabel.innerText = val;
+            if (customUnitHidden) customUnitHidden.value = val;
         }
+
+        // Global listeners for positioning and closing suggestions dropdown
+        document.addEventListener('click', function(e) {
+            const box = document.getElementById('material-suggestions-box');
+            if (!box || box.style.display === 'none') return;
+            if (!box.contains(e.target) && !e.target.classList.contains('material-autocomplete-input')) {
+                hideMaterialSuggestions();
+            }
+        });
+
+        window.addEventListener('scroll', function() {
+            const box = document.getElementById('material-suggestions-box');
+            if (box && box.style.display !== 'none' && activeAutocompleteRowId) {
+                const inp = document.getElementById(activeAutocompleteRowId + '-name-input');
+                if (inp) positionSuggestionsBox(inp);
+            }
+        }, true);
+
+        window.addEventListener('resize', function() {
+            const box = document.getElementById('material-suggestions-box');
+            if (box && box.style.display !== 'none' && activeAutocompleteRowId) {
+                const inp = document.getElementById(activeAutocompleteRowId + '-name-input');
+                if (inp) positionSuggestionsBox(inp);
+            }
+        });
 
         function validateManualQty(rowId) {
             const qtyInput = document.getElementById(rowId + '-qty');
@@ -1006,6 +1461,28 @@
         }
 
         function validateBeforeSubmit(form) {
+            // Auto-link any typed name if material_id was not explicitly clicked
+            const manualRows = document.querySelectorAll('#itemsBody tr');
+            manualRows.forEach(tr => {
+                const nameInput = tr.querySelector('.material-autocomplete-input');
+                const matIdInput = tr.querySelector('input[name*="[material_id]"]');
+                const customNameInput = tr.querySelector('input[name*="[custom_item_name]"]');
+                const customUnitInput = tr.querySelector('input[name*="[custom_item_unit]"]');
+
+                if (nameInput && nameInput.value.trim()) {
+                    const typed = nameInput.value.trim();
+                    if (!matIdInput.value && !customNameInput.value) {
+                        const exactMatch = availableMaterials.find(m => m.name.trim().toLowerCase() === typed.toLowerCase());
+                        if (exactMatch) {
+                            matIdInput.value = exactMatch.id;
+                        } else {
+                            customNameInput.value = typed;
+                            if (!customUnitInput.value) customUnitInput.value = 'unit';
+                        }
+                    }
+                }
+            });
+
             if (currentMode === 'mr') {
                 const mrSelect = document.getElementById('mrSelect');
                 if (!mrSelect.value) {

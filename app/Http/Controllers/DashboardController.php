@@ -19,8 +19,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $user        = Auth::user();
-        $warehouseId = session('active_warehouse_id');
+        $user = Auth::user();
+        $activeWarehouse = $user->activeWarehouse();
+        $warehouseId = $activeWarehouse?->id ?? session('active_warehouse_id');
         $accessibleIds = $user->accessibleWarehouseIds();
 
         // KPI Cards — difilter berdasarkan warehouse yang dapat diakses user
@@ -32,8 +33,10 @@ class DashboardController extends Controller
                 $q->whereIn('warehouse_id', $accessibleIds);
             })->count();
 
-        $pendingRequests = MaterialRequest::whereIn('from_warehouse_id', $accessibleIds)
-            ->orWhereIn('to_warehouse_id', $accessibleIds)
+        $pendingRequests = MaterialRequest::where(function ($q) use ($accessibleIds) {
+                $q->whereIn('from_warehouse_id', $accessibleIds)
+                  ->orWhereIn('to_warehouse_id', $accessibleIds);
+            })
             ->where('status', 'pending')
             ->count();
 
@@ -52,6 +55,16 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Recent Distributions (Surat Jalan)
+        $recentDistributions = Distribution::with(['fromWarehouse', 'toWarehouse'])
+            ->where(function ($q) use ($accessibleIds) {
+                $q->whereIn('from_warehouse_id', $accessibleIds)
+                  ->orWhereIn('to_warehouse_id', $accessibleIds);
+            })
+            ->latest()
+            ->limit(5)
+            ->get();
+
         // Stock Mutations (last 7 days) — filtered by active warehouse
         $mutations = StockMutation::where('created_at', '>=', now()->subDays(7))
             ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
@@ -60,14 +73,21 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Tool Status Summary — filtered by accessible warehouses
-        $toolStats = ToolAssignment::where(function ($q) use ($accessibleIds) {
+        // Tool Status Summary
+        $toolsReady = (int) Tool::sum('stock_available');
+        $toolsInUse = ToolAssignment::where('status', 'active')
+            ->where(function ($q) use ($accessibleIds) {
                 $q->whereIn('from_warehouse_id', $accessibleIds)
                   ->orWhereIn('to_warehouse_id', $accessibleIds);
             })
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status');
+            ->count();
+        $toolsMaintenance = (int) Tool::sum('stock_maintenance');
+
+        $toolStats = [
+            'ready'       => $toolsReady,
+            'active'      => $toolsInUse,
+            'maintenance' => $toolsMaintenance,
+        ];
 
         // Stock Opname status — filtered by active warehouse
         $openOpname = StockOpname::where('status', 'open')
@@ -83,7 +103,8 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'totalMaterials', 'totalTools', 'pendingRequests', 'lowStockItems',
-            'recentRequests', 'mutations', 'toolStats',
+            'recentRequests', 'recentDistributions', 'mutations', 'toolStats',
+            'toolsReady', 'toolsInUse', 'toolsMaintenance',
             'openOpname', 'inventoryByCategory'
         ));
     }
