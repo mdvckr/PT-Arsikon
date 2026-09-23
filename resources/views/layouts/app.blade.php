@@ -386,11 +386,28 @@
             overflow-x: hidden;
         }
 
-        /* ===== TOPBAR (Full Width) ===== */
+        /* ===== TOPBAR (Full Width) — PREMIUM REDESIGN ===== */
+        @keyframes topbar-glow {
+            0%, 100% { box-shadow: 0 2px 20px rgba(234, 88, 12, 0.15), 0 1px 0 rgba(255,255,255,0.05); }
+            50% { box-shadow: 0 2px 30px rgba(234, 88, 12, 0.28), 0 1px 0 rgba(255,255,255,0.05); }
+        }
+        @keyframes brand-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+            50% { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+        }
+        @keyframes slide-in-brand {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
         .topbar {
             height: var(--topbar-height);
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            border-bottom: 1px solid rgba(234, 88, 12, 0.3);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -400,7 +417,19 @@
             right: 0;
             width: 100%;
             z-index: 1050;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            animation: topbar-glow 4s ease-in-out infinite;
+        }
+
+        .topbar::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ea580c, #f97316, #fbbf24, #f97316, #ea580c, transparent);
+            background-size: 200% 100%;
+            animation: brand-shimmer 4s linear infinite;
         }
 
         .topbar-brand {
@@ -410,9 +439,23 @@
             align-items: center;
             gap: 12px;
             padding: 0 18px;
-            background: #fff8f3;
-            border-right: 1px solid #fed7aa;
+            background: rgba(234, 88, 12, 0.12);
+            border-right: 1px solid rgba(234, 88, 12, 0.25);
             flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            animation: slide-in-brand 0.5s ease;
+        }
+
+        .topbar-brand::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(234, 88, 12, 0.08) 0%, transparent 60%);
+            pointer-events: none;
         }
 
         .brand-link {
@@ -424,11 +467,16 @@
         }
 
         .brand-logo {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
             flex-shrink: 0;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 0 8px rgba(234, 88, 12, 0.5)) brightness(1.05);
+            transition: filter 0.3s ease, transform 0.3s ease;
+        }
+        .brand-link:hover .brand-logo {
+            filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.7)) brightness(1.15);
+            transform: scale(1.06) rotate(-2deg);
         }
 
         .brand-text {
@@ -438,30 +486,71 @@
         }
 
         .brand-title {
-            font-size: 14.5px;
+            font-size: 14px;
             font-weight: 900;
-            color: #0f172a;
+            color: #ffffff;
             line-height: 1.15;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.08em;
             font-family: 'Inter', sans-serif;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.4);
         }
 
         .brand-subtitle {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 800;
-            color: #0284c7;
-            letter-spacing: 0.12em;
+            color: #fb923c;
+            letter-spacing: 0.18em;
             margin-top: 2px;
             font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
         }
 
+        /* Topbar Center — Greeting + Page Info */
         .topbar-center {
             flex: 1;
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            justify-content: space-between;
+            padding: 0 20px;
             min-width: 0;
             overflow: hidden;
+            gap: 12px;
+        }
+
+        .topbar-left-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .topbar-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
+        .topbar-greeting {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .topbar-greeting-text {
+            font-size: 10.5px;
+            color: rgba(255,255,255,0.45);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+        .topbar-greeting-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .topbar-page-info {
@@ -474,81 +563,165 @@
             text-overflow: ellipsis;
         }
 
+        .topbar-breadcrumb-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(234, 88, 12, 0.2);
+            border: 1px solid rgba(234, 88, 12, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fb923c;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
         .topbar-sep {
-            color: #cbd5e1;
-            font-size: 14px;
-            font-weight: 300;
+            color: rgba(255,255,255,0.2);
+            font-size: 16px;
+            font-weight: 200;
             user-select: none;
             flex-shrink: 0;
         }
 
         .topbar-page-title {
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 700;
-            color: #0f172a;
+            color: rgba(255,255,255,0.9);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.01em;
             margin: 0;
             line-height: 1.2;
         }
 
+        /* Clock widget */
+        .topbar-clock {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+        .topbar-clock-time {
+            font-size: 15px;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'Inter', monospace;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+        .topbar-clock-date {
+            font-size: 9.5px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        /* Topbar Actions */
         .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding-right: 24px;
+            gap: 10px;
+            padding-right: 20px;
+        }
+
+        .topbar-action-separator {
+            width: 1px;
+            height: 28px;
+            background: rgba(255,255,255,0.1);
         }
 
         .topbar-circle-btn {
             width: 38px;
             height: 38px;
-            border-radius: 50%;
-            background: #334155;
-            color: #ffffff;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.85);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
             text-decoration: none;
             position: relative;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
-            border: none;
+            transition: all 0.22s ease;
+            backdrop-filter: blur(4px);
             cursor: pointer;
         }
 
         .topbar-circle-btn:hover {
-            background: #1e293b;
-            color: #ffffff;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: rgba(234, 88, 12, 0.25);
+            border-color: rgba(234, 88, 12, 0.5);
+            color: #fb923c;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+        }
+
+        /* User Profile Chip */
+        .topbar-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px 5px 5px;
+            border-radius: 40px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-decoration: none;
+            transition: all 0.22s ease;
+            cursor: pointer;
+        }
+        .topbar-user-chip:hover {
+            background: rgba(234, 88, 12, 0.18);
+            border-color: rgba(234, 88, 12, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(234, 88, 12, 0.2);
+        }
+        .topbar-user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(234, 88, 12, 0.4);
+        }
+        .topbar-user-name {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .topbar-circle-btn .notif-badge {
             position: absolute;
-            top: -4px;
-            right: -4px;
-            min-width: 19px;
-            height: 19px;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
             padding: 0 4px;
-            background: #ef4444;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: #ffffff;
             border-radius: 10px;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #ffffff;
-            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.5);
+            border: 2px solid #0f172a;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
             animation: pulse-badge 2s infinite;
-        }
-
-        @keyframes pulse-badge {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.12); }
         }
 
         /* ===== PAGE CONTENT ===== */
@@ -1226,10 +1399,10 @@
     data-notif-last-id="{{ auth()->user()?->unreadNotifications()->latest()->first()?->id ?? '' }}"
     data-notif-url="{{ route('notifications.index') }}"
     data-notif-fetch-url="{{ route('notifications.unreadCount') }}">
-    <!-- TOPBAR (Full Width) -->
-    <header class="topbar">
+    <!-- TOPBAR (Full Width) — Premium Design -->
+    <header class="topbar" id="mainTopbar">
         <div class="topbar-brand">
-            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
+            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
                 <i class="fas fa-bars"></i>
             </button>
             <a href="{{ route('dashboard') }}" class="brand-link">
@@ -1241,18 +1414,33 @@
             </a>
         </div>
 
-        <div class="topbar-center">
-            @if(isset($title))
-            <div class="topbar-page-info">
-                <span class="topbar-sep">/</span>
-                <h2 class="topbar-page-title">{{ $title }}</h2>
-            </div>
-            @endif
-        </div>
-
         @php
             $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
+            $userName = auth()->user()->name ?? 'User';
+            $userInitial = strtoupper(substr($userName, 0, 1));
+            $greetingHour = now()->setTimezone('Asia/Jakarta')->hour;
+            $greeting = $greetingHour < 11 ? 'Selamat Pagi' : ($greetingHour < 15 ? 'Selamat Siang' : ($greetingHour < 18 ? 'Selamat Sore' : 'Selamat Malam'));
         @endphp
+
+        <div class="topbar-center">
+            <div class="topbar-left-info">
+                @if(isset($title))
+                <div class="topbar-page-info">
+                    <div class="topbar-breadcrumb-icon"><i class="fas fa-layer-group"></i></div>
+                    <h2 class="topbar-page-title">{{ $title }}</h2>
+                </div>
+                <div class="topbar-divider"></div>
+                @endif
+                <div class="topbar-greeting">
+                    <span class="topbar-greeting-text">{{ $greeting }},</span>
+                    <span class="topbar-greeting-name">{{ explode(' ', $userName)[0] }}</span>
+                </div>
+            </div>
+            <div class="topbar-clock">
+                <span class="topbar-clock-time" id="topbar-clock">00:00:00</span>
+                <span class="topbar-clock-date" id="topbar-date">—</span>
+            </div>
+        </div>
 
         <div class="topbar-actions">
             <a href="{{ route('notifications.index') }}" class="topbar-circle-btn" title="Notifikasi ({{ $unreadNotificationsCount }} belum dibaca)">
@@ -1261,8 +1449,10 @@
                 <span class="notif-badge">{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>
                 @endif
             </a>
-            <a href="{{ route('profile.edit') }}" class="topbar-circle-btn" title="Profil">
-                <i class="fas fa-user"></i>
+            <div class="topbar-action-separator"></div>
+            <a href="{{ route('profile.edit') }}" class="topbar-user-chip" title="Lihat Profil">
+                <div class="topbar-user-avatar">{{ $userInitial }}</div>
+                <span class="topbar-user-name">{{ $userName }}</span>
             </a>
         </div>
     </header>
@@ -1588,6 +1778,22 @@
                 setTimeout(() => el.remove(), 400);
             });
         }, 4000);
+
+        // Live Clock (Topbar)
+        (function() {
+            const DAYS_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const MONTHS_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            function pad(n) { return String(n).padStart(2, '0'); }
+            function updateClock() {
+                const now = new Date();
+                const timeEl = document.getElementById('topbar-clock');
+                const dateEl = document.getElementById('topbar-date');
+                if (timeEl) timeEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+                if (dateEl) dateEl.textContent = DAYS_ID[now.getDay()] + ', ' + now.getDate() + ' ' + MONTHS_ID[now.getMonth()] + ' ' + now.getFullYear();
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        })();
     </script>
 
     <script>

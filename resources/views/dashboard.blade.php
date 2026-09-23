@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Dashboard Operasional</x-slot>
+    <x-slot name="title">Dashboard</x-slot>
 
     @push('styles')
     <style>
@@ -359,33 +359,7 @@
         <span>Dashboard Operasional</span>
     </div>
 
-    {{-- Header --}}
-    <div class="dash-header">
-        <div class="dash-title-group">
-            <h1>Ringkasan Operasional Logistik</h1>
-            <p>Monitoring data inventaris, alur distribusi surat jalan, dan ketersediaan alat kerja.</p>
-        </div>
-
-        <div class="dash-meta-tags">
-            <div class="dash-tag">
-                <span class="text-muted">Peran:</span>
-                <strong>{{ $userRoleText }}</strong>
-            </div>
-
-            <div class="dash-tag">
-                <i class="{{ ($activeWh?->is_central ?? false) ? 'fas fa-building text-primary' : 'fas fa-industry text-info' }}"></i>
-                <span>{{ $activeWh?->name ?? 'Gudang Pusat' }}</span>
-                <span class="badge {{ ($activeWh?->is_central ?? false) ? 'badge-primary' : 'badge-info' }}" style="font-size:9.5px;padding:1px 5px;">
-                    {{ ($activeWh?->is_central ?? false) ? 'Pusat' : 'Proyek' }}
-                </span>
-            </div>
-
-            <div class="dash-tag">
-                <i class="far fa-calendar text-muted"></i>
-                <span>{{ \Carbon\Carbon::now()->translatedFormat('d M Y') }}</span>
-            </div>
-        </div>
-    </div>
+    
 
     {{-- 4 Primary KPI Metric Cards --}}
     <div class="dash-metrics-grid">

@@ -4,15 +4,9 @@
     {{-- Page Header --}}
     <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:12px;">
         <div>
-           
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Material</h2>
             <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Daftar seluruh master material konstruksi, spesifikasi, dan stok</p>
         </div>
-        @can('create materials')
-        <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:38px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
-            <i class="fas fa-plus"></i> Tambah Material
-        </a>
-        @endcan
     </div>
 
     {{-- Simple Search Bar (Filter Kategori Dihapus) --}}
@@ -33,9 +27,16 @@
                     Reset
                 </a>
                 @endif
+                 @can('create materials')
+        <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:38px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
+            <i class="fas fa-plus"></i> Tambah Material
+        </a>
+        @endcan
             </form>
         </div>
+        
     </div>
+    
 
     {{-- Grouped Accordion Table --}}
     <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">

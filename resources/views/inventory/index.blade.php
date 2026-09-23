@@ -4,11 +4,6 @@
     {{-- Page Header --}}
     <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:12px;">
         <div>
-            <div class="breadcrumb" style="margin-bottom:4px;">
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
-                <span>Inventori Gudang</span>
-            </div>
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Inventori Gudang</h2>
             <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Monitoring stok material dan alat kerja secara real-time di seluruh gudang</p>
         </div>

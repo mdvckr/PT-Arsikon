@@ -165,12 +165,7 @@
         $isToday = $date === date('Y-m-d');
     @endphp
 
-    {{-- Breadcrumb --}}
-    <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('dashboard') }}">Dashboard</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-        <span>Log Harian Logistik</span>
-    </div>
+  
 
     {{-- Header & Action Bar --}}
     <div class="flex items-center justify-between mb-3 daily-page-header" style="flex-wrap:wrap;gap:12px;">
@@ -184,27 +179,6 @@
             </p>
         </div>
         <div class="header-actions" style="display:flex;align-items:center;gap:6px;">
-            {{-- Quick Date Navigation --}}
-            <div style="display:flex;align-items:center;background:#ffffff;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;">
-                <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => $prevDate]) }}" 
-                   class="btn btn-sm btn-light" style="height:32px;padding:0 9px;border:none;border-right:1px solid #e2e8f0;font-size:11px;color:#475569;" title="Hari Sebelumnya">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-                <span style="font-size:11.5px;font-weight:600;padding:0 10px;color:#0f172a;white-space:nowrap;">
-                    {{ $carbonDate->translatedFormat('d M Y') }}
-                </span>
-                <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => $nextDate]) }}" 
-                   class="btn btn-sm btn-light" style="height:32px;padding:0 9px;border:none;border-left:1px solid #e2e8f0;font-size:11px;color:#475569;" title="Hari Berikutnya">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            </div>
-
-            @if(!$isToday)
-            <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => date('Y-m-d')]) }}" 
-               class="btn btn-sm btn-light border" style="height:32px;padding:0 10px;border-radius:6px;font-size:11.5px;color:#2563eb;font-weight:600;">
-                Hari Ini
-            </a>
-            @endif
 
             <a href="{{ route('daily-log.print', ['warehouse_id' => $selectedWarehouse->id, 'date' => $date]) }}" target="_blank" 
                class="btn btn-sm btn-primary" style="height:32px;padding:0 12px;border-radius:6px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">

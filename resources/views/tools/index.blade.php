@@ -6,11 +6,6 @@
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Inventaris Alat</h2>
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola inventaris alat kerja dan stok pemakaian per kategori</p>
         </div>
-        @can('create tools')
-        <a href="{{ route('tools.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Tambah Alat
-        </a>
-        @endcan
     </div>
 
     {{-- Filter --}}
@@ -33,6 +28,11 @@
                         @endforeach
                     </select>
                 </div>
+                 @can('create tools')
+        <a href="{{ route('tools.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Tambah Alat
+        </a>
+        @endcan
             </form>
         </div>
     </div>
