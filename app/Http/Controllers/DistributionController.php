@@ -58,42 +58,180 @@ class DistributionController extends Controller
         $this->authorize('create distributions');
         $user = Auth::user();
         $warehouses = $this->accessibleWarehouses();
+        $originWarehouse = $warehouses->firstWhere('is_central', true) ?? $warehouses->first();
 
-        // Sumber: Permintaan Material yang disetujui (belum terpenuhi semua)
-        $materialRequests = MaterialRequest::with(['items.material.unit', 'fromWarehouse', 'toWarehouse'])
-            ->whereIn('status', ['approved', 'partially_fulfilled'])
-            ->orderBy('id', 'desc')
-            ->get()
-            ->filter(fn($mr) => $mr->items->contains(fn($it) => (float) $it->qty_approved - (float) $it->qty_fulfilled > 0))
-            ->values();
+        // 1. Permintaan Material (MR) dari user / proyek (submitted, approved, partially_fulfilled)
+        $materialRequests = \App\Models\MaterialRequest::with([
+            'items.material.unit',
+            'items.material.category',
+            'fromWarehouse',
+            'toWarehouse',
+            'requestedBy',
+            'approvedBy',
+        ])
+        ->whereIn('status', ['submitted', 'approved', 'partially_fulfilled'])
+        ->orderBy('id', 'desc')
+        ->get()
+        ->filter(function ($mr) {
+            return $mr->items->contains(function ($it) {
+                $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
+                return $approved - (float) $it->qty_fulfilled > 0;
+            });
+        })
+        ->values();
 
-        // Sumber: Pengajuan peminjaman alat (pending / sudah disetujui)
-        $toolAssignments = ToolAssignment::with(['tool', 'fromWarehouse'])
-            ->whereIn('status', ['pending', 'active'])
-            ->orderBy('id', 'desc')
+        $mrsFormatted = $materialRequests->map(function ($mr) {
+            $items = [];
+            foreach ($mr->items as $it) {
+                $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
+                $fulfilled = (float) $it->qty_fulfilled;
+                $remaining = max(0, $approved - $fulfilled);
+                if ($remaining <= 0) continue;
+
+                $items[] = [
+                    'material_id'      => $it->material_id,
+                    'name'             => $it->displayName(),
+                    'code'             => $it->material?->code ?? $it->material?->sku ?? '',
+                    'unit'             => $it->displayUnit(),
+                    'category'         => $it->material?->category?->name ?? 'Material Umum',
+                    'qty_approved'     => $approved,
+                    'qty_fulfilled'    => $fulfilled,
+                    'remaining'        => $remaining,
+                    'is_custom'        => $it->isCustom(),
+                    'custom_item_name' => $it->custom_item_name,
+                    'custom_item_unit' => $it->custom_item_unit,
+                ];
+            }
+
+            $statusLabels = [
+                'submitted'           => 'Menunggu Persetujuan',
+                'approved'            => 'Disetujui',
+                'partially_fulfilled' => 'Terkirim Sebagian',
+            ];
+
+            return [
+                'id'                => $mr->id,
+                'number'            => $mr->request_number,
+                'requester'         => $mr->requestedBy?->name ?? 'User Proyek',
+                'from_warehouse_id' => $mr->to_warehouse_id,   // Asal kirim = gudang penyedia (Pusat)
+                'to_warehouse_id'   => $mr->from_warehouse_id, // Tujuan = gudang pemohon (Proyek)
+                'from_warehouse'    => $mr->toWarehouse?->name ?? 'Gudang Pusat',
+                'to_warehouse'      => $mr->fromWarehouse?->name ?? 'Gudang Proyek',
+                'status'            => $mr->status,
+                'status_label'      => $statusLabels[$mr->status] ?? $mr->status,
+                'date'              => $mr->created_at?->format('d/m/Y') ?? '',
+                'items'             => $items,
+            ];
+        })->values();
+
+        // 2. Peminjaman Alat (ToolLoan / ToolAssignment) aktif / disetujui
+        $toolLoans = \App\Models\ToolLoan::with([
+            'items.tool.category',
+            'fromWarehouse',
+            'assignedBy',
+            'approvedBy',
+        ])
+        ->whereIn('status', ['pending', 'active'])
+        ->orderBy('id', 'desc')
+        ->get();
+
+        $tasFormatted = [];
+        foreach ($toolLoans as $loan) {
+            $items = [];
+            foreach ($loan->items as $item) {
+                $items[] = [
+                    'id'               => $item->id,
+                    'tool_id'          => $item->tool_id,
+                    'tool_name'        => $item->tool?->name ?? 'Alat Kerja',
+                    'tool_code'        => $item->tool?->code ?? '',
+                    'category'         => $item->tool?->category?->name ?? 'Peralatan Kerja',
+                    'quantity'         => (int) $item->quantity,
+                    'from_warehouse_id'=> $loan->from_warehouse_id,
+                    'from_warehouse'   => $loan->fromWarehouse?->name ?? 'Gudang',
+                ];
+            }
+            $tasFormatted[] = [
+                'id'                => $loan->id,
+                'number'            => $loan->loan_number,
+                'borrower'          => $loan->borrower_name,
+                'location'          => $loan->location_name,
+                'from_warehouse_id' => $loan->from_warehouse_id,
+                'from_warehouse'    => $loan->fromWarehouse?->name ?? 'Gudang Pusat',
+                'status'            => $loan->status,
+                'date'              => $loan->created_at?->format('d/m/Y') ?? '',
+                'items'             => $items,
+            ];
+        }
+        $tasFormatted = collect($tasFormatted)->values();
+
+        // URL Query Pre-selections
+        $selectedMrId = $request->query('material_request_id');
+        $selectedLoanId = $request->query('tool_loan_id');
+        if (!$selectedLoanId && $request->query('tool_assignment_id')) {
+            $assignment = \App\Models\ToolAssignment::find($request->query('tool_assignment_id'));
+            $selectedLoanId = $assignment?->tool_loan_id;
+        }
+
+        // Eager load category, unit, inventories for materials
+        $materials = \App\Models\Material::with(['unit', 'category', 'inventories'])
+            ->orderBy('name')
             ->get();
 
-        $materials = \App\Models\Material::with('unit', 'category')->orderBy('name')->get();
+        $materialsData = $materials->map(function ($m) {
+            $stocks = [];
+            foreach ($m->inventories as $inv) {
+                $stocks[$inv->warehouse_id] = (float) $inv->quantity;
+            }
+            return [
+                'id'          => $m->id,
+                'name'        => $m->name . ($m->type ? " [{$m->type}]" : ''),
+                'code'        => $m->code ?? $m->sku ?? '',
+                'unit'        => $m->unit?->abbreviation ?? 'pcs',
+                'category'    => $m->category?->name ?? 'Material Umum',
+                'stocks'      => $stocks,
+                'total_stock' => (float) $m->inventories->sum('quantity'),
+            ];
+        })->sortBy([['category', 'asc'], ['name', 'asc']])->values();
 
-        // Filter tools based on user role
+        $materialsGrouped = $materialsData->groupBy('category')->sortKeys();
+
+        // Eager load category and inventories for tools
         $accessibleWarehouseIds = $user->accessibleWarehouseIds();
-        $tools = Tool::with('inventories')
+        $tools = Tool::with(['category', 'inventories'])
             ->whereHas('inventories', fn($q) => $q->whereIn('warehouse_id', $accessibleWarehouseIds))
             ->orderBy('name')
             ->get()
             ->unique('id');
 
-        // Tools available for dropdown (available stock > 0)
-        $toolsForDropdown = $tools->filter(fn($t) => $t->inventories->where('stock_available', '>', 0)->isNotEmpty())
-            ->map(fn($t) => [
-                'id' => $t->id,
-                'name' => $t->name . ' · Sisa stok: ' . $t->inventories->sum('stock_available') . ' unit',
-                'code' => $t->code,
-                'available' => (int) $t->inventories->sum('stock_available'),
-            ])
-            ->values();
+        if ($tools->isEmpty()) {
+            $tools = Tool::with(['category', 'inventories'])->where('is_active', true)->orderBy('name')->get();
+        }
 
-        return view('distributions.create', compact('materialRequests', 'toolAssignments', 'warehouses', 'materials', 'tools', 'toolsForDropdown'));
+        $toolsData = $tools->map(function ($t) {
+            $stocks = [];
+            foreach ($t->inventories as $inv) {
+                $stocks[$inv->warehouse_id] = (int) $inv->stock_available;
+            }
+            return [
+                'id'          => $t->id,
+                'name'        => $t->name . ($t->serial_number ? " (S/N: {$t->serial_number})" : ''),
+                'code'        => $t->code ?? '',
+                'unit'        => 'unit',
+                'category'    => $t->category?->name ?? 'Peralatan Kerja',
+                'stocks'      => $stocks,
+                'total_stock' => (int) ($t->stock_available ?? 0),
+            ];
+        })->sortBy([['category', 'asc'], ['name', 'asc']])->values();
+
+        $toolsGrouped = $toolsData->groupBy('category')->sortKeys();
+        $toolsForDropdown = $toolsData;
+
+        return view('distributions.create', compact(
+            'materialRequests', 'warehouses', 'originWarehouse', 'materials',
+            'tools', 'toolsForDropdown', 'materialsData', 'materialsGrouped',
+            'toolsData', 'toolsGrouped', 'mrsFormatted', 'tasFormatted',
+            'selectedMrId', 'selectedLoanId'
+        ));
     }
 
     public function store(Request $request)

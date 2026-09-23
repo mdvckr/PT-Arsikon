@@ -10,7 +10,6 @@
                 <span>Tambah Material</span>
             </div>
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Tambah Material Baru</h2>
-            <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Daftarkan material baru lengkap dengan spesifikasi dan jadwal kedatangan</p>
         </div>
         <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:13px;color:#475569;">
             <i class="fas fa-arrow-left me-1"></i> Kembali
@@ -25,8 +24,7 @@
             {{-- SECTION 1: KLASIFIKASI MATERIAL --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">1. Klasifikasi Material</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Tentukan Kategori, Kelompok Barang, dan Ukuran / Spesifikasi</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-layer-group me-1 text-primary"></i> 1. Klasifikasi Material</div>
                 </div>
                 <div style="padding:18px;">
                     <div class="grid grid-3" style="gap:16px;">
@@ -101,8 +99,7 @@
             {{-- SECTION 2: INFORMASI MATERIAL --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">2. Informasi & Identitas Material</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Kode SKU, nama lengkap, merek, satuan, dan supplier</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-cube me-1 text-primary"></i> 2. Informasi & Identitas Material</div>
                 </div>
                 <div style="padding:18px;">
                     <div class="grid grid-2" style="gap:16px;">
@@ -189,8 +186,7 @@
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
                     <div>
-                        <div class="fw-700" style="font-size:14px;color:#0f172a;">3. Tahap Kedatangan Barang</div>
-                        <div class="text-muted" style="font-size:12px;margin-top:1px;">Catat flow masuk bertahap (sudah masuk maupun rencana)</div>
+                        <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-calendar-alt me-1 text-primary"></i> 3. Tahap Kedatangan Barang</div>
                     </div>
                     <button type="button" onclick="addStageRow()" class="btn btn-sm btn-secondary" style="height:32px;font-size:12px;font-weight:600;">
                         <i class="fas fa-plus"></i> Tambah Tahap
@@ -233,57 +229,50 @@
                 </div>
             </div>
 
-            {{-- SECTION 4: STOK AWAL & KETERANGAN --}}
+            {{-- SECTION 4: STOK AWAL & PENGATURAN STOK --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">4. Stok Awal & Keterangan</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Opsional — Input stok awal inventori dan catatan tambahan</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-warehouse me-1 text-primary"></i> 4. Stok Awal & Pengaturan Stok</div>
                 </div>
                 <div style="padding:18px;">
-                    <div class="grid grid-3" style="gap:16px;margin-bottom:16px;">
-                     <div>
-                             <label class="form-label" for="warehouse_id" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
-                             @if($singleWarehouse ?? false)
-                             <input type="hidden" name="warehouse_id" value="{{ $singleWarehouse->id }}">
-<select id="warehouse_id" class="form-control" style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;" disabled>
-                                  <option value="{{ $singleWarehouse->id }}">{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}</option>
-                              </select>
-                             @else
-                             @php
-                                 $defaultWarehouseId = old('warehouse_id', $warehouses->firstWhere('is_central', true)?->id ?? $warehouses->first()?->id);
-                             @endphp
-                             <select name="warehouse_id" id="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
-                                  @foreach($warehouses as $wh)
-                                  <option value="{{ $wh->id }}" {{ $defaultWarehouseId == $wh->id ? 'selected' : '' }}>
-                                      {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
-                                  </option>
-                                  @endforeach
-                              </select>
-                             @endif
-                             @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                         </div>
+                    <div class="grid grid-3" style="gap:16px;">
                         <div>
-<label class="form-label" for="initial_stock_input" style="font-size:12px;font-weight:700;color:#475569;">STOK AWAL</label>
-                             <input type="number" step="1" min="0" name="initial_stock" id="initial_stock_input"
+                            <label class="form-label" for="warehouse_id" style="font-size:12px;font-weight:700;color:#475569;">LOKASI GUDANG</label>
+                            @if($singleWarehouse ?? false)
+                            <input type="hidden" name="warehouse_id" value="{{ $singleWarehouse->id }}">
+                            <select id="warehouse_id" class="form-control" style="height:38px;border-radius:6px;font-size:13px;background:#f8fafc;" disabled>
+                                <option value="{{ $singleWarehouse->id }}">{{ $singleWarehouse->name }} {{ $singleWarehouse->is_central ? '(Pusat)' : '(Proyek)' }}</option>
+                            </select>
+                            @else
+                            @php
+                                $defaultWarehouseId = old('warehouse_id', $warehouses->firstWhere('is_central', true)?->id ?? $warehouses->first()?->id);
+                            @endphp
+                            <select name="warehouse_id" id="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" style="height:38px;border-radius:6px;font-size:13px;">
+                                @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ $defaultWarehouseId == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @endif
+                            @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div>
+                            <label class="form-label" for="initial_stock_input" style="font-size:12px;font-weight:700;color:#475569;">STOK AWAL</label>
+                            <input type="number" step="1" min="0" name="initial_stock" id="initial_stock_input"
                                 value="{{ old('initial_stock', 0) }}"
                                 class="form-control @error('initial_stock') is-invalid @enderror"
                                 style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" placeholder="0">
                             @error('initial_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div>
-<label class="form-label" for="min_stock" style="font-size:12px;font-weight:700;color:#475569;">MIN. STOK (ALERT)</label>
-                             <input type="number" step="1" min="0" name="min_stock" id="min_stock"
+                            <label class="form-label" for="min_stock" style="font-size:12px;font-weight:700;color:#475569;">MIN. STOK (ALERT)</label>
+                            <input type="number" step="1" min="0" name="min_stock" id="min_stock"
                                 value="{{ old('min_stock', 0) }}"
                                 class="form-control @error('min_stock') is-invalid @enderror"
                                 style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" placeholder="0">
                             @error('min_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
-                    </div>
-                    <div>
-<label class="form-label" for="description" style="font-size:12px;font-weight:700;color:#475569;">KETERANGAN / CATATAN TAMBAHAN</label>
-                     <textarea name="description" id="description" class="form-control" rows="3"
-                            placeholder="Deskripsi singkat material, spesifikasi teknis, atau catatan penting lainnya..."
-                            style="border-radius:6px;font-size:13px;resize:vertical;">{{ old('description') }}</textarea>
                     </div>
                 </div>
             </div>

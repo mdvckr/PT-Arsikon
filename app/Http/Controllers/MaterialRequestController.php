@@ -172,7 +172,10 @@ class MaterialRequestController extends Controller
             'items.material.unit', 
             'items.material.category',
             'materialUsages.issuedBy',
-            'materialUsages.warehouse'
+            'materialUsages.warehouse',
+            'distributions.fromWarehouse',
+            'distributions.toWarehouse',
+            'distributions.creator',
         ]);
 
         return view('material-requests.show', compact('materialRequest'));

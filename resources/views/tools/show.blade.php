@@ -22,7 +22,7 @@
                 <div class="card-body">
                     @php
                         $rows = [
-                            ['Kode Alat', '<code style="background:#f1f5f9;padding:2px 7px;border-radius:5px;font-weight:600;">'.$tool->code.'</code>'],
+                            ['Kode Alat', '<span class="font-monospace fw-600" style="color:#0f172a;">'.$tool->code.'</span>'],
                             ['Nama Alat', $tool->name],
                             ['Kelompok Alat', $tool->type ? '<span class="badge" style="background:#e0e7ff;color:#4338ca;">'.$tool->type.'</span>' : '-'],
                             ['Spesifikasi / Ukuran', $tool->size ? '<span class="badge bg-light text-dark border"><i class="fas fa-ruler-combined me-1"></i>'.$tool->size.'</span>' : '-'],

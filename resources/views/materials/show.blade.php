@@ -13,7 +13,7 @@
         <div>
             <div class="flex items-center gap-2" style="flex-wrap:wrap;">
                 <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">{{ $material->name }}</h2>
-                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:#475569;background:#f1f5f9;padding:2px 7px;border-radius:4px;border:1px solid #e2e8f0;">
+                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;color:#334155;font-weight:600;">
                     {{ $material->sku }}
                 </span>
                 @if($material->category)
@@ -55,78 +55,12 @@
         </div>
     </div>
 
-    <div class="grid" style="grid-template-columns:360px 1fr;gap:20px;align-items:start;" id="material-detail-grid">
-        {{-- Info Card --}}
-        <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
-            <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                <div class="fw-700" style="font-size:14px;color:#0f172a;">Informasi Material</div>
-                <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Spesifikasi dan identitas material</div>
-            </div>
-            <div class="card-body" style="padding:18px;">
-                <table style="width:100%;font-size:13px;border-collapse:collapse;">
-                    @php
-                        $displaySupplier = $material->supplier?->name ?? $material->supplier_name;
-                        $rows = [
-                            ['Kode SKU', '<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;color:#334155;background:#f1f5f9;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">'.$material->sku.'</span>'],
-                            ['Nama Material', '<span style="font-weight:600;color:#0f172a;">'.$material->name.'</span>'],
-                            ['Kelompok Barang', $material->type ?: '-'],
-                            ['Merek / Brand', $material->brand ?: '-'],
-                            ['Ukuran / Dimensi', $material->size ?: '-'],
-                            ['Supplier / Pemasok', $displaySupplier ?: '-'],
-                            ['Kategori', $material->category?->name ?? '-'],
-                            ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').')'],
-                            ['Waktu Input Data', $material->created_at ? $material->created_at->format('d M Y, H:i') : '-'],
-                        ];
-                    @endphp
-                    @foreach($rows as [$label, $value])
-                    <tr style="border-bottom:1px solid #f8fafc;">
-                        <td style="padding:8px 0;color:#64748b;font-weight:500;width:40%;vertical-align:top;font-size:12px;">{{ $label }}</td>
-                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;">{!! $value !!}</td>
-                    </tr>
-                    @endforeach
-                    @if($material->description)
-                    <tr style="border-bottom:1px solid #f8fafc;">
-                        <td style="padding:8px 0;color:#64748b;font-weight:500;vertical-align:top;font-size:12px;">Keterangan</td>
-                        <td style="padding:8px 0;color:#334155;line-height:1.45;">{{ $material->description }}</td>
-                    </tr>
-                    @endif
-                    {{-- Incoming Stages (shown in print too) --}}
-                    @if(!empty($material->incoming_stages) && count($material->incoming_stages) > 0)
-                    <tr>
-                        <td style="padding:10px 0 4px;color:#64748b;font-weight:500;vertical-align:top;font-size:12px;">Tahap Kedatangan</td>
-                        <td style="padding:10px 0 4px;">
-                            <div style="display:flex;flex-direction:column;gap:5px;">
-                            @foreach($material->incoming_stages as $stg)
-                                @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:4px;font-size:11.5px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
-                                    <div>
-                                        <strong>{{ $stg['stage'] ?? ('Tahap '.$loop->iteration) }}</strong>
-                                        @if(!empty($stg['date']))
-                                        <span class="text-muted" style="font-size:10.5px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
-                                        @endif
-                                        <span style="font-size:10px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};margin-left:4px;">
-                                            [{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}]
-                                        </span>
-                                    </div>
-                                    <div style="font-weight:600;">
-                                        {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $material->unit?->abbreviation ?? '' }}
-                                    </div>
-                                </div>
-                            @endforeach
-                            </div>
-                        </td>
-                    </tr>
-                    @endif
-                </table>
-            </div>
-        </div>
-
+    <div class="grid" style="grid-template-columns:1fr 340px;gap:20px;align-items:start;" id="material-detail-grid">
         <div style="display:flex;flex-direction:column;gap:16px;">
             {{-- Inventory per Warehouse --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">Stok per Lokasi / Gudang</div>
-                    <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Kuantitas stok fisik yang tersimpan di masing-masing gudang</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-warehouse me-1 text-primary"></i> Stok per Lokasi / Gudang</div>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
@@ -172,8 +106,7 @@
             {{-- Recent Mutations --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">Riwayat Mutasi Stok (20 Terakhir)</div>
-                    <div style="font-size:11.5px;color:#64748b;margin-top:1px;">Log pergerakan barang masuk dan pemakaian keluar</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-list me-1 text-primary"></i> Riwayat Mutasi Stok (20 Terakhir)</div>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
@@ -225,7 +158,66 @@
                 </div>
             </div>
         </div>
-    </div>
+    
+        {{-- Info Card --}}
+        <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;position:sticky;top:20px;">
+            <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-cube me-1 text-primary"></i> Informasi Material</div>
+            </div>
+            <div class="card-body" style="padding:18px;">
+                <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                    @php
+                        $displaySupplier = $material->supplier?->name ?? $material->supplier_name;
+                        $rows = [
+                            ['Kode SKU', '<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12.5px;color:#334155;font-weight:600;">'.$material->sku.'</span>'],
+                            ['Nama Material', '<span style="font-weight:600;color:#0f172a;">'.$material->name.'</span>'],
+                            ['Kelompok Barang', $material->type ?: '-'],
+                            ['Merek / Brand', $material->brand ?: '-'],
+                            ['Ukuran / Dimensi', $material->size ?: '-'],
+                            ['Supplier / Pemasok', $displaySupplier ?: '-'],
+                            ['Kategori', $material->category?->name ?? '-'],
+                            ['Satuan', ($material->unit?->name ?? '-').' ('.($material->unit?->abbreviation ?? '').')'],
+                            ['Waktu Input Data', $material->created_at ? $material->created_at->format('d M Y, H:i') : '-'],
+                        ];
+                    @endphp
+                    @foreach($rows as [$label, $value])
+                    <tr style="border-bottom:1px solid #f8fafc;">
+                        <td style="padding:8px 0;color:#64748b;font-weight:500;width:40%;vertical-align:top;font-size:12px;">{{ $label }}</td>
+                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;">{!! $value !!}</td>
+                    </tr>
+                    @endforeach
+                    {{-- Incoming Stages (shown in print too) --}}
+                    @if(!empty($material->incoming_stages) && count($material->incoming_stages) > 0)
+                    <tr>
+                        <td style="padding:10px 0 4px;color:#64748b;font-weight:500;vertical-align:top;font-size:12px;">Tahap Kedatangan</td>
+                        <td style="padding:10px 0 4px;">
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                            @foreach($material->incoming_stages as $stg)
+                                @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:4px;font-size:11.5px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
+                                    <div>
+                                        <strong>{{ $stg['stage'] ?? ('Tahap '.$loop->iteration) }}</strong>
+                                        @if(!empty($stg['date']))
+                                        <span class="text-muted" style="font-size:10.5px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
+                                        @endif
+                                        <span style="font-size:10px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};margin-left:4px;">
+                                            [{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}]
+                                        </span>
+                                    </div>
+                                    <div style="font-weight:600;">
+                                        {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $material->unit?->abbreviation ?? '' }}
+                                    </div>
+                                </div>
+                            @endforeach
+                            </div>
+                        </td>
+                    </tr>
+                    @endif
+                </table>
+            </div>
+        </div>
+
+        </div>
 
     @push('styles')
     <style>

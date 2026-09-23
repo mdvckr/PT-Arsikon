@@ -12,7 +12,6 @@
                 <span>Edit</span>
             </div>
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Edit Material</h2>
-            <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Perbarui informasi spesifikasi dan jadwal kedatangan material</p>
         </div>
         <div class="flex gap-2">
             <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:13px;color:#475569;">
@@ -32,8 +31,7 @@
             {{-- SECTION 1: KLASIFIKASI MATERIAL --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">1. Klasifikasi Material</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Tentukan Kategori, Kelompok Barang, dan Ukuran / Spesifikasi</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-layer-group me-1 text-primary"></i> 1. Klasifikasi Material</div>
                 </div>
                 <div style="padding:18px;">
                     <div class="grid grid-3" style="gap:16px;">
@@ -108,8 +106,7 @@
             {{-- SECTION 2: INFORMASI MATERIAL --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">2. Informasi & Identitas Material</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Kode SKU, nama lengkap, merek, satuan, dan supplier</div>
+                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-cube me-1 text-primary"></i> 2. Informasi & Identitas Material</div>
                 </div>
                 <div style="padding:18px;">
                     <div class="grid grid-2" style="gap:16px;">
@@ -194,8 +191,7 @@
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
                     <div>
-                        <div class="fw-700" style="font-size:14px;color:#0f172a;">3. Tahap Kedatangan Barang</div>
-                        <div class="text-muted" style="font-size:12px;margin-top:1px;">Catat flow masuk bertahap (sudah masuk maupun rencana)</div>
+                        <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-calendar-alt me-1 text-primary"></i> 3. Tahap Kedatangan Barang</div>
                     </div>
                     <button type="button" onclick="addStageRow()" class="btn btn-sm btn-secondary" style="height:32px;font-size:12px;font-weight:600;">
                         <i class="fas fa-plus"></i> Tambah Tahap
@@ -233,19 +229,6 @@
                     <div class="text-muted" style="font-size:11px;">
                         Ubah status ke <em>Sudah Masuk</em> bila barang tiba di lokasi
                     </div>
-                </div>
-            </div>
-
-            {{-- SECTION 4: CATATAN TAMBAHAN --}}
-            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
-                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;">4. Catatan Tambahan</div>
-                    <div class="text-muted" style="font-size:12px;margin-top:1px;">Deskripsi umum, spesifikasi teknis, atau catatan penting lainnya</div>
-                </div>
-                <div style="padding:18px;">
-                    <textarea name="description" class="form-control" rows="4"
-                        placeholder="Keterangan umum material, spesifikasi teknis, catatan penting..."
-                        style="border-radius:6px;font-size:13px;resize:vertical;">{{ old('description', $material->description) }}</textarea>
                 </div>
             </div>
 

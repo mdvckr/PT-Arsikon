@@ -33,8 +33,20 @@ class DistributionService
         $mr = null;
         if (!empty($data['material_request_id'])) {
             $mr = MaterialRequest::with(['items.material.unit'])->findOrFail($data['material_request_id']);
-            if (!in_array($mr->status, ['approved', 'partially_fulfilled'])) {
+            if (!in_array($mr->status, ['submitted', 'approved', 'partially_fulfilled'])) {
                 throw new Exception("Permintaan material {$mr->request_number} berstatus '{$mr->status}', tidak dapat dibuatkan Surat Jalan.");
+            }
+            if ($mr->status === 'submitted') {
+                $mr->update([
+                    'status' => 'approved',
+                    'approved_by_user_id' => $userId,
+                    'approved_at' => now(),
+                ]);
+                foreach ($mr->items as $mIt) {
+                    if ((float) $mIt->qty_approved <= 0) {
+                        $mIt->update(['qty_approved' => $mIt->qty_requested]);
+                    }
+                }
             }
         }
 
@@ -141,7 +153,8 @@ class DistributionService
                             ->first();
 
                         if ($requestItem) {
-                            $remaining = (float) $requestItem->qty_approved - (float) $requestItem->qty_fulfilled;
+                            $approvedQty = (float) $requestItem->qty_approved > 0 ? (float) $requestItem->qty_approved : (float) $requestItem->qty_requested;
+                            $remaining = $approvedQty - (float) $requestItem->qty_fulfilled;
                             if ($qty > $remaining) {
                                 $material = $requestItem->material;
                                 throw new Exception(sprintf(

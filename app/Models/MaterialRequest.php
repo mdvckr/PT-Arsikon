@@ -52,6 +52,11 @@ class MaterialRequest extends Model
         return $this->hasMany(MaterialUsage::class);
     }
 
+    public function distributions(): HasMany
+    {
+        return $this->hasMany(Distribution::class);
+    }
+
     public static function generateRequestNumber(): string
     {
         $prefix = 'REQ-' . date('Ymd') . '-';

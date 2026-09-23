@@ -240,7 +240,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'owner@arsikon.co.id'],
             [
                 'name'     => 'Bapak Owner',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
             ]
         );
         $ownerUser->syncRoles([$ownerRole]);
@@ -255,7 +255,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'admin.pusat@arsikon.co.id'],
             [
                 'name'     => 'Admin Gudang Pusat',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
             ]
         );
         $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
@@ -266,7 +266,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
                 'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
         $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
@@ -277,7 +277,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'user.proyek@arsikon.co.id'],
             [
                 'name'     => 'User Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
         $userProyek->syncRoles([$userRole, $adminProyekRole]);
@@ -288,7 +288,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'admin.po@arsikon.co.id'],
             [
                 'name'     => 'Admin Pengadaan (PO)',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
         $adminPOUser->syncRoles([$adminPORole]);
@@ -299,7 +299,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'karyawan@arsikon.co.id'],
             [
                 'name'     => 'Pekerja Lapangan',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'Password@2026!')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
         $karyawanUser->syncRoles([$karyawanRole]);

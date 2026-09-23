@@ -73,16 +73,15 @@
             <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-                        <th style="width:40px;text-align:center;padding:11px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">#</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Material</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Kelompok & Spesifikasi</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Kategori</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Gudang</th>
-                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Stok Saat Ini</th>
-                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Min. Stok</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Status</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Update</th>
-                        <th style="text-align:center;width:75px;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Aksi</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Material</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kelompok & Spesifikasi</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kategori</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Gudang</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Stok Saat Ini</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Min. Stok</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;text-align:center;">Status</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Update</th>
+                        <th style="text-align:center;width:65px;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -104,18 +103,18 @@
                     @endphp
                     @if($materialsWithInv->isNotEmpty())
                     {{-- Level 1: Category Header --}}
-                    <tr class="group-toggle" data-group="group-mat-cat-{{ $category->id }}" style="background:#f1f5f9 !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="10" style="padding:9px 16px !important;">
+                    <tr class="group-toggle" data-group="group-mat-cat-{{ $category->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                        <td colspan="9" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center" style="gap:8px;">
-                                    <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;"></i>
-                                    <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">{{ $category->name }}</span>
-                                    <span class="text-muted" style="font-size:12px;font-weight:500;">
+                                    <i class="fas fa-chevron-down group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
+                                    <span class="fw-700" style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:#1e293b;">{{ $category->name }}</span>
+                                    <span style="font-size:11.5px;color:#64748b;font-weight:500;">
                                         ({{ $totalMaterials }} material)
                                     </span>
                                 </div>
-                                <span class="text-muted" style="font-size:11.5px;">
-                                    Tutup / Buka
+                                <span style="font-size:11px;color:#94a3b8;font-weight:500;">
+                                    Buka / Tutup
                                 </span>
                             </div>
                         </td>
@@ -124,20 +123,20 @@
                     {{-- Level 2: Sub-Group Header (Kelompok Barang / Type) --}}
                     @foreach($typeGroups as $typeName => $materialsInType)
                     @php $subKey = 'sub-mat-' . $category->id . '-' . Str::slug($typeName); @endphp
-                    <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-toggle" data-group="{{ $subKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-bottom:1px solid #edf2f7;">
-                        <td colspan="10" style="padding:7px 16px 7px 34px !important;">
+                    <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-toggle" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;">
+                        <td colspan="9" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
-                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;"></i>
-                                    <span class="fw-600" style="font-size:12.5px;color:#334155;">
+                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;"></i>
+                                    <span class="fw-600" style="font-size:12px;color:#334155;">
                                         {{ $typeName }}
                                     </span>
-                                    <span class="text-muted" style="font-size:11.5px;">
+                                    <span style="font-size:11px;color:#94a3b8;">
                                         ({{ $materialsInType->count() }})
                                     </span>
                                 </div>
-                                <span class="text-muted" style="font-size:11px;">
-                                    Tutup / Buka
+                                <span style="font-size:11px;color:#94a3b8;">
+                                    Buka / Tutup
                                 </span>
                             </div>
                         </td>
@@ -147,53 +146,52 @@
                     @foreach($materialsInType as $material)
                         @foreach($material->inventories as $inv)
                         <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-rows {{ $subKey }}" style="border-bottom:1px solid #f1f5f9;">
-                            <td class="text-muted" style="text-align:center;font-size:12px;padding:10px;vertical-align:middle;">{{ $loop->iteration }}</td>
-                            <td style="padding:10px 14px;vertical-align:middle;">
-                                <div class="fw-600" style="color:#0f172a;font-size:13px;">{{ $material->name }}</div>
-                                <div style="margin-top:2px;">
-                                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;color:#475569;background:#f8fafc;padding:1px 5px;border-radius:3px;border:1px solid #e2e8f0;font-weight:500;">
+                            <td style="padding:9px 14px;vertical-align:middle;">
+                                <div class="fw-600" style="color:#0f172a;font-size:12.5px;line-height:1.35;">{{ $material->name }}</div>
+                                <div style="margin-top:2px;display:flex;align-items:center;gap:6px;">
+                                    <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;color:#64748b;font-weight:600;letter-spacing:0.02em;">
                                         {{ $material->sku ?? '-' }}
                                     </span>
                                     @if($material->brand)
-                                    <span class="text-muted" style="font-size:11px;margin-left:6px;">
+                                    <span class="text-muted" style="font-size:11px;">
                                         Merek: {{ $material->brand }}
                                     </span>
                                     @endif
                                 </div>
                             </td>
-                            <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
+                            <td style="padding:8px 12px;font-size:12px;color:#475569;vertical-align:middle;">
                                 {{ $material->type ?: '-' }}
                                 @if($material->size)
-                                <span class="text-muted" style="font-size:11.5px;">· {{ $material->size }}</span>
+                                <span class="text-muted" style="font-size:11px;">· {{ $material->size }}</span>
                                 @endif
                             </td>
-                            <td style="padding:10px 14px;font-size:12.5px;color:#475569;vertical-align:middle;">
+                            <td style="padding:8px 12px;font-size:12px;color:#64748b;vertical-align:middle;">
                                 {{ $category->name }}
                             </td>
-                            <td style="padding:10px 14px;font-size:12.5px;color:#334155;font-weight:500;vertical-align:middle;">
+                            <td style="padding:8px 12px;font-size:12px;color:#334155;font-weight:500;vertical-align:middle;">
                                 {{ $inv->warehouse?->name ?? '-' }}
                             </td>
-                            <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
-                                <span class="fw-700" style="font-size:13.5px;color:#0f172a;">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
+                            <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
+                                <span class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
                                 <span class="text-muted" style="font-size:11px;"> {{ $material->unit?->abbreviation ?? $material->unit?->name }}</span>
                             </td>
-                            <td style="text-align:center;padding:10px 14px;font-size:12.5px;color:#64748b;vertical-align:middle;">
+                            <td style="text-align:center;padding:8px 12px;font-size:12px;color:#64748b;vertical-align:middle;font-variant-numeric:tabular-nums;">
                                 {{ number_format($inv->min_stock, 0, ',', '.') }}
                             </td>
-                            <td style="padding:10px 14px;vertical-align:middle;">
+                            <td style="padding:8px 12px;vertical-align:middle;text-align:center;">
                                 @if($inv->quantity <= 0)
-                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">Habis</span>
+                                    <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;">Habis</span>
                                 @elseif($inv->quantity <= $inv->min_stock)
-                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#fffbeb;color:#b45309;border:1px solid #fde68a;">Rendah</span>
+                                    <span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;">Rendah</span>
                                 @else
-                                    <span style="display:inline-block;padding:1px 8px;border-radius:12px;font-size:10.5px;font-weight:600;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">Normal</span>
+                                    <span class="badge" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;">Normal</span>
                                 @endif
                             </td>
-                            <td class="text-muted" style="padding:10px 14px;font-size:12px;white-space:nowrap;vertical-align:middle;">
+                            <td class="text-muted" style="padding:8px 12px;font-size:11.5px;white-space:nowrap;vertical-align:middle;">
                                 {{ $inv->updated_at ? $inv->updated_at->format('d/m/Y') : '-' }}
                             </td>
-                            <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
-                                <a href="{{ route('inventory.show', $inv) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Detail Riwayat Stok">
+                            <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
+                                <a href="{{ route('inventory.show', $inv) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:5px;background:#f8fafc;" title="Detail Riwayat Stok">
                                     <i class="fas fa-eye" style="font-size:11px;"></i>
                                 </a>
                             </td>
@@ -204,7 +202,7 @@
                     @endif
                     @empty
                     <tr>
-                        <td colspan="10" style="padding:32px;text-align:center;" class="text-muted">
+                        <td colspan="9" style="padding:32px;text-align:center;" class="text-muted">
                             Tidak ada data inventori material yang cocok dengan pencarian.
                         </td>
                     </tr>
@@ -230,16 +228,15 @@
             <table class="data-table mb-0" style="width:100%;border-collapse:collapse;">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-                        <th style="width:40px;text-align:center;padding:11px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">#</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Nama Alat & Kode</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Merk & Spesifikasi</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Kategori</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Gudang / Lokasi</th>
-                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Total Stok</th>
-                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Tersedia</th>
-                        <th style="text-align:center;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Dipinjam</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Status</th>
-                        <th style="text-align:center;width:75px;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;">Aksi</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Nama Alat & Kode</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk & Spesifikasi</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kategori</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Gudang / Lokasi</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Total Stok</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tersedia</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Dipinjam</th>
+                        <th style="padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;text-align:center;">Status</th>
+                        <th style="text-align:center;width:65px;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -259,18 +256,18 @@
                         $totalToolGroups = $toolTypeGroups->count();
                     @endphp
                     {{-- Level 1: Tool Category Header --}}
-                    <tr class="group-toggle" data-group="group-tool-cat-{{ $toolCategory->id }}" style="background:#f1f5f9 !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="10" style="padding:9px 16px !important;">
+                    <tr class="group-toggle" data-group="group-tool-cat-{{ $toolCategory->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                        <td colspan="9" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center" style="gap:8px;">
-                                    <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;"></i>
-                                    <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">{{ $toolCategory->name }}</span>
-                                    <span class="text-muted" style="font-size:12px;font-weight:500;">
+                                    <i class="fas fa-chevron-down group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
+                                    <span class="fw-700" style="font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:#1e293b;">{{ $toolCategory->name }}</span>
+                                    <span style="font-size:11.5px;color:#64748b;font-weight:500;">
                                         ({{ $totalTools }} alat)
                                     </span>
                                 </div>
-                                <span class="text-muted" style="font-size:11.5px;">
-                                    Tutup / Buka
+                                <span style="font-size:11px;color:#94a3b8;font-weight:500;">
+                                    Buka / Tutup
                                 </span>
                             </div>
                         </td>
@@ -279,20 +276,20 @@
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
                     @foreach($toolTypeGroups as $toolTypeName => $toolsInType)
                     @php $subToolKey = 'sub-tool-' . $toolCategory->id . '-' . Str::slug($toolTypeName); @endphp
-                    <tr class="group-rows group-tool-cat-{{ $toolCategory->id }} subgroup-toggle" data-group="{{ $subToolKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-bottom:1px solid #edf2f7;">
-                        <td colspan="10" style="padding:7px 16px 7px 34px !important;">
+                    <tr class="group-rows group-tool-cat-{{ $toolCategory->id }} subgroup-toggle" data-group="{{ $subToolKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;">
+                        <td colspan="9" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
-                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;"></i>
-                                    <span class="fw-600" style="font-size:12.5px;color:#334155;">
+                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;"></i>
+                                    <span class="fw-600" style="font-size:12px;color:#334155;">
                                         {{ $toolTypeName }}
                                     </span>
-                                    <span class="text-muted" style="font-size:11.5px;">
+                                    <span style="font-size:11px;color:#94a3b8;">
                                         ({{ $toolsInType->count() }})
                                     </span>
                                 </div>
-                                <span class="text-muted" style="font-size:11px;">
-                                    Tutup / Buka
+                                <span style="font-size:11px;color:#94a3b8;">
+                                    Buka / Tutup
                                 </span>
                             </div>
                         </td>
@@ -301,53 +298,54 @@
                     {{-- Level 3: Individual Tool Rows --}}
                     @foreach($toolsInType as $tool)
                     <tr class="group-rows group-tool-cat-{{ $toolCategory->id }} subgroup-rows {{ $subToolKey }}" style="border-bottom:1px solid #f1f5f9;">
-                        <td class="text-muted" style="text-align:center;font-size:12px;padding:9px 10px;">{{ $loop->iteration }}</td>
-                        <td style="padding:9px 14px;">
-                            <div class="fw-600" style="color:#0f172a;font-size:13px;">{{ $tool->name }}</div>
-                            <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px;color:#475569;background:#f1f5f9;padding:1px 5px;border-radius:3px;border:1px solid #e2e8f0;">
-                                {{ $tool->code ?? '-' }}
-                            </span>
+                        <td style="padding:9px 14px;vertical-align:middle;">
+                            <div class="fw-600" style="color:#0f172a;font-size:12.5px;line-height:1.35;">{{ $tool->name }}</div>
+                            <div style="margin-top:2px;">
+                                <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11.5px;color:#64748b;font-weight:600;letter-spacing:0.02em;">
+                                    {{ $tool->code ?? '-' }}
+                                </span>
+                            </div>
                         </td>
-                        <td style="padding:9px 14px;font-size:12.5px;color:#334155;">
+                        <td style="padding:8px 12px;font-size:12px;color:#475569;vertical-align:middle;">
                             @if($tool->brand)
                             <span>{{ $tool->brand }}</span>
                             @endif
                             @if($tool->size)
-                            <span class="text-muted" style="font-size:11.5px;">· {{ $tool->size }}</span>
+                            <span class="text-muted" style="font-size:11px;">· {{ $tool->size }}</span>
                             @elseif(!$tool->brand)
                             <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td style="padding:9px 14px;font-size:12.5px;color:#475569;">
+                        <td style="padding:8px 12px;font-size:12px;color:#64748b;vertical-align:middle;">
                             {{ $toolCategory->name }}
                         </td>
-                        <td style="padding:9px 14px;font-size:12.5px;color:#334155;font-weight:500;">
+                        <td style="padding:8px 12px;font-size:12px;color:#334155;font-weight:500;vertical-align:middle;">
                             @if($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
                                 {{ $tool->inventories->first()->warehouse?->name ?? '-' }}
                             @else
                                 {{ $tool->currentWarehouse?->name ?? 'Gudang Pusat' }}
                             @endif
                         </td>
-                        <td style="text-align:center;padding:9px 14px;">
-                            <span class="fw-700" style="font-size:13.5px;color:#0f172a;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>
+                        <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
+                            <span class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>
                             <span class="text-muted" style="font-size:11px;"> unit</span>
                         </td>
-                        <td style="text-align:center;padding:9px 14px;">
-                            <span class="fw-700" style="font-size:13.5px;color:#16a34a;">{{ number_format($tool->stock_available, 0, ',', '.') }}</span>
+                        <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
+                            <span class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">{{ number_format($tool->stock_available, 0, ',', '.') }}</span>
                             <span class="text-muted" style="font-size:11px;"> unit</span>
                         </td>
-                        <td style="text-align:center;padding:9px 14px;">
-                            <span style="font-size:13px;color:#334155;">{{ number_format($tool->stock_borrowed, 0, ',', '.') }}</span>
+                        <td style="text-align:center;padding:8px 12px;font-size:12px;color:#64748b;vertical-align:middle;font-variant-numeric:tabular-nums;">
+                            {{ number_format($tool->stock_borrowed, 0, ',', '.') }}
                         </td>
-                        <td style="padding:9px 14px;font-size:12px;">
+                        <td style="padding:8px 12px;vertical-align:middle;text-align:center;">
                             @if($tool->stock_available > 0)
-                                <span style="color:#16a34a;font-weight:600;">Tersedia</span>
+                                <span class="badge" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;">Tersedia</span>
                             @else
-                                <span style="color:#dc2626;font-weight:600;">Habis / Dipinjam</span>
+                                <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;">Habis / Dipinjam</span>
                             @endif
                         </td>
-                        <td style="text-align:center;padding:9px 14px;">
-                            <a href="{{ route('tools.show', $tool) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;" title="Detail Alat">
+                        <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
+                            <a href="{{ route('tools.show', $tool) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:5px;background:#f8fafc;" title="Detail Alat">
                                 <i class="fas fa-eye" style="font-size:11px;"></i>
                             </a>
                         </td>
@@ -356,7 +354,7 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10" style="padding:32px;text-align:center;" class="text-muted">
+                        <td colspan="9" style="padding:32px;text-align:center;" class="text-muted">
                             Tidak ada data inventori alat kerja yang cocok dengan pencarian.
                         </td>
                     </tr>

@@ -1,18 +1,166 @@
 <x-app-layout>
     <x-slot name="title">Catat Pengeluaran Material</x-slot>
 
-    <div class="breadcrumb">
+    @push('styles')
+    <style>
+        .material-usage-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mode-select-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mode-select-box:hover {
+            border-color: #93c5fd;
+            background: #fbfdff;
+        }
+
+        .mode-select-box.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+
+        .mode-radio {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            display: inline-block;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .mode-select-box.active .mode-radio {
+            border-color: #2563eb;
+            background: #2563eb;
+            box-shadow: inset 0 0 0 2.5px #ffffff;
+        }
+
+        .panel-mr-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .is-invalid {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        .row-fulfilled {
+            background: #f8fafc !important;
+            opacity: 0.65;
+        }
+
+        .row-out-of-stock {
+            background: #fffbeb !important;
+        }
+
+        .sidebar-sticky-bon .form-control {
+            height: 36px;
+            padding: 7px 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            color: #0f172a;
+        }
+
+        .sidebar-sticky-bon .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+            outline: none;
+        }
+
+        .sidebar-sticky-bon textarea.form-control {
+            height: auto !important;
+            min-height: 64px;
+            line-height: 1.4;
+            padding: 8px 10px;
+        }
+
+        #mrSelect {
+            height: 38px !important;
+            padding: 7px 12px !important;
+            font-size: 12.5px !important;
+            line-height: 1.4 !important;
+            border-radius: 8px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            box-sizing: border-box !important;
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #mrSelect:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+            outline: none !important;
+        }
+
+        .mr-detail-card {
+            margin-top: 12px;
+            background: #ffffff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px -1px rgba(37,99,235,0.08);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .material-usage-layout {
+                grid-template-columns: 1fr !important;
+            }
+            .sidebar-sticky-bon {
+                position: static !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .mode-grid {
+                grid-template-columns: 1fr !important;
+                gap: 8px;
+            }
+            .panel-mr-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+        }
+    </style>
+    @endpush
+
+    <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('material-usages.index') }}">Pemakaian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
         <span>Catat Pengeluaran Baru</span>
     </div>
 
     @if ($errors->any())
-    <div class="alert alert-danger mb-4" style="border-radius: 8px;">
-        <i class="fas fa-triangle-exclamation text-danger" style="font-size: 16px;"></i>
+    <div class="alert alert-danger mb-3" style="border-radius: 6px; font-size:12px; padding:8px 12px;">
+        <i class="fas fa-triangle-exclamation text-danger" style="font-size: 14px;"></i>
         <div>
             <strong>Terdapat kesalahan pada input pengeluaran:</strong>
-            <ul style="margin: 4px 0 0 16px; font-size: 12.5px;">
+            <ul style="margin: 3px 0 0 16px; font-size: 11.5px;">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -25,260 +173,302 @@
         @csrf
         <input type="hidden" name="input_mode" id="inputMode" value="mr">
 
-        <div class="grid" style="grid-template-columns:1fr 360px; gap:20px; align-items:start;">
+        <div class="material-usage-layout mb-3">
 
             {{-- ── Kiri: Metode MR + Tabel Material ── --}}
-            <div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
 
                 {{-- ==================== SECTION 1: METODE & SURAT PERMINTAAN (MR) ==================== --}}
-                <div class="card mb-4">
-                    <div class="card-header" style="justify-content: space-between;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="fas fa-file-shield text-primary"></i>
-                            <span class="card-title">Metode & Surat Permintaan Material (MR)</span>
+                <div class="card" style="border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
+                    <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-file-invoice text-primary" style="font-size:13px;"></i>
+                            <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Metode & Surat Permintaan Material</span>
                         </div>
-                        <span class="badge badge-primary" style="font-size: 11px;">
-                            Gudang Aktif: {{ $selectedWarehouse?->name ?? '-' }}
+                        <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10.5px; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe; font-weight:600;">
+                            Gudang: {{ $selectedWarehouse?->name ?? '-' }}
                         </span>
                     </div>
-                    <div class="card-body">
-                    {{-- Mode Selector Cards --}}
-                    <div class="grid grid-2 mb-3" style="gap: 14px;">
-                        <!-- Mode MR -->
-                        <div class="mode-select-box active" id="modeCardMR" onclick="switchMode('mr')">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-file-shield text-primary" style="font-size: 16px;"></i>
-                                    <strong style="font-size: 13.5px; color: #0f172a;">Tarik dari Permintaan (MR) Disetujui</strong>
+                    <div class="card-body" style="padding:14px;">
+                        {{-- Mode Selector Cards --}}
+                        <div class="mode-grid mb-2">
+                            <!-- Mode MR -->
+                            <div class="mode-select-box active" id="modeCardMR" onclick="switchMode('mr')">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-file-shield text-primary" style="font-size: 13px;"></i>
+                                        <strong style="font-size: 12.5px; color: #0f172a;">Tarik dari Permintaan (MR)</strong>
+                                    </div>
+                                    <span class="mode-radio"></span>
                                 </div>
-                                <span class="mode-radio"></span>
+                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.35; color:#64748b;">
+                                    Pengeluaran terkontrol sesuai kuota MR yang telah disetujui. Sisa kuota diperbarui otomatis.
+                                </p>
                             </div>
-                            <div class="badge badge-success mb-1" style="font-size: 10px; padding: 2px 7px;">
-                                <i class="fas fa-check-circle"></i> 100% Terkontrol Sesuai Approval Site Manager
+
+                            <!-- Mode Manual -->
+                            <div class="mode-select-box" id="modeCardManual" onclick="switchMode('manual')">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-pen-to-square text-warning" style="font-size: 13px;"></i>
+                                        <strong style="font-size: 12.5px; color: #0f172a;">Input Bebas / Insidentil</strong>
+                                    </div>
+                                    <span class="mode-radio"></span>
+                                </div>
+                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.35; color:#64748b;">
+                                    Pengeluaran langsung tanpa surat MR untuk kebutuhan mendesak lapangan.
+                                </p>
                             </div>
-                            <p class="text-muted mb-0" style="font-size: 11.5px; line-height: 1.4;">
-                                Material keluar dibatasi sesuai kuota MR yang telah disetujui. Sisa kuota dan status MR terupdate otomatis.
-                            </p>
                         </div>
 
-                        <!-- Mode Manual -->
-                        <div class="mode-select-box" id="modeCardManual" onclick="switchMode('manual')">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-pen-to-square text-warning" style="font-size: 16px;"></i>
-                                    <strong style="font-size: 13.5px; color: #0f172a;">Input Bebas / Insidentil (Tanpa MR)</strong>
+                        {{-- Dropdown MR --}}
+                        <div id="mrPickerWrapper">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                                <label class="form-label mb-0" style="font-size:11.5px; font-weight:600; color:#334155; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-file-signature text-primary" style="font-size:12px;"></i>
+                                    Pilih Nomor Permintaan Material (MR) <span class="text-danger">*</span>
+                                </label>
+                                @if($approvedMRs->isNotEmpty())
+                                <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe;">
+                                    {{ $approvedMRs->count() }} Siap Dikeluarkan
+                                </span>
+                                @endif
+                            </div>
+
+                            <select name="material_request_id" id="mrSelect" class="form-control" onchange="loadMRDetails(this.value)">
+                                <option value="">— Pilih Nomor MR yang Telah Disetujui —</option>
+                                @foreach($approvedMRs as $mr)
+                                <option value="{{ $mr->id }}" {{ old('material_request_id') == $mr->id ? 'selected' : '' }}>
+                                    #{{ $mr->request_number }} • {{ $mr->items->count() }} Jenis Item | Pemohon: {{ $mr->requestedBy?->name ?? 'User' }} [{{ $mr->status === 'partially_fulfilled' ? 'Terkirim Sebagian' : 'Disetujui' }}]
+                                </option>
+                                @endforeach
+                            </select>
+
+                            @if($approvedMRs->isEmpty())
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding:9px 12px; border-radius:6px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:11.5px;">
+                                <i class="fas fa-circle-info" style="font-size:13px; color:#d97706; flex-shrink:0;"></i>
+                                <span>Tidak ditemukan MR berstatus <strong>Disetujui / Terkirim Sebagian</strong> pada gudang ini. Anda dapat menggunakan mode <em>Input Bebas / Insidentil</em> di atas.</span>
+                            </div>
+                            @endif
+
+                            <!-- Summary Box MR Terpilih -->
+                            <div id="mrDetailPanel" class="mr-detail-card" style="display: none;">
+                                <div style="padding: 8px 12px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <div style="width:24px; height:24px; border-radius:6px; background:#2563eb; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:11px;">
+                                            <i class="fas fa-file-lines"></i>
+                                        </div>
+                                        <strong id="panelMrNumber" style="font-size: 12.5px; color:#1e40af; font-weight:700;">#REQ-...</strong>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="badge" id="panelMrStatus" style="font-size: 10.5px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; border-radius:12px; padding:2px 8px; font-weight:600;">Disetujui</span>
+                                        <button type="button" onclick="clearSelectedMR()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:11px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;" title="Reset / Ganti MR">
+                                            <i class="fas fa-xmark"></i> Batal
+                                        </button>
+                                    </div>
                                 </div>
-                                <span class="mode-radio"></span>
+                                <div class="panel-mr-grid" style="padding: 10px 14px; font-size: 11.5px; background:#ffffff;">
+                                    <div>
+                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Pemohon:</span>
+                                        <strong id="panelMrRequester" style="color: #0f172a;">-</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Penyetuju (SM):</span>
+                                        <strong id="panelMrApprover" style="color: #0f172a;">-</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Tgl Pengajuan:</span>
+                                        <span id="panelMrDate" style="font-weight: 600; color: #0f172a;">-</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Total Item:</span>
+                                        <span id="panelMrItemCount" class="badge" style="font-size: 10.5px; background:#eff6ff; color:#2563eb; font-weight:700; padding:1px 7px; border-radius:4px; border:1px solid #bfdbfe;">-</span>
+                                    </div>
+                                </div>
+                                <div id="panelMrNotesWrapper" style="display: none; padding: 8px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #334155;">
+                                    <i class="fas fa-quote-left text-muted me-1" style="font-size:10px;"></i>
+                                    <strong>Catatan:</strong> <span id="panelMrNotes"></span>
+                                </div>
                             </div>
-                            <div class="badge badge-warning mb-1" style="font-size: 10px; padding: 2px 7px;">
-                                <i class="fas fa-triangle-exclamation"></i> Kebutuhan Darurat Lapangan
-                            </div>
-                            <p class="text-muted mb-0" style="font-size: 11.5px; line-height: 1.4;">
-                                Pengeluaran langsung tanpa surat MR. Digunakan khusus kebutuhan darurat lapangan.
-                            </p>
                         </div>
-                    </div>
 
-                    {{-- Dropdown MR --}}
-                    <div id="mrPickerWrapper">
-                        <label class="form-label" style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em;">
-                            Pilih Nomor Permintaan Material (MR) <span style="color: #ef4444;">*</span>
-                        </label>
-                        <select name="material_request_id" id="mrSelect" class="form-control" style="height: 38px; border-radius: 6px; font-size: 13px; font-weight: 500;" onchange="loadMRDetails(this.value)">
-                            <option value="">— Pilih Nomor MR yang Telah Disetujui Site Manager —</option>
-                            @foreach($approvedMRs as $mr)
-                            <option value="{{ $mr->id }}" {{ old('material_request_id') == $mr->id ? 'selected' : '' }}>
-                                #{{ $mr->request_number }} — {{ $mr->items->count() }} Jenis Item | Pemohon: {{ $mr->requestedBy?->name ?? 'User' }} ({{ $mr->status === 'partially_fulfilled' ? 'Terkirim Sebagian' : 'Disetujui' }})
-                            </option>
-                            @endforeach
-                        </select>
-
-                        @if($approvedMRs->isEmpty())
-                        <div class="alert alert-warning mt-2 mb-0" style="font-size: 12px; padding: 9px 14px; border-radius: 6px;">
-                            <i class="fas fa-info-circle me-1"></i> Tidak ditemukan MR berstatus <strong>Disetujui / Terkirim Sebagian</strong> pada gudang ini. Silakan buat MR baru atau gunakan mode input manual bila darurat.
+                        {{-- Warning Mode Manual --}}
+                        <div id="manualModeAlert" style="display: none; padding: 8px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; font-size: 11.5px; color: #92400e;">
+                            <i class="fas fa-triangle-exclamation me-1 text-warning"></i>
+                            <strong>Perhatian:</strong> Pengeluaran manual tidak terikat dengan surat MR. Khusus kebutuhan mendesak lapangan.
                         </div>
-                        @endif
-
-                        <!-- Summary Box MR Terpilih -->
-                        <div id="mrDetailPanel" style="display: none; margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
-                            <div style="padding: 8px 14px; background: #eff6ff; border-bottom: 1px solid #dbeafe; display: flex; justify-content: space-between; align-items: center;">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-check-double text-success"></i>
-                                    <strong id="panelMrNumber" class="text-primary" style="font-size: 13px;">#REQ-...</strong>
-                                </div>
-                                <span class="badge badge-success" id="panelMrStatus" style="font-size: 11px;">Disetujui</span>
-                            </div>
-                            <div class="grid grid-4" style="padding: 10px 14px; gap: 10px; font-size: 12px;">
-                                <div>
-                                    <span class="text-muted" style="font-size: 11px; display: block;">Pemohon:</span>
-                                    <strong id="panelMrRequester" style="color: #0f172a;">-</strong>
-                                </div>
-                                <div>
-                                    <span class="text-muted" style="font-size: 11px; display: block;">Penyetuju (Site Manager):</span>
-                                    <strong id="panelMrApprover" style="color: #0f172a;">-</strong>
-                                </div>
-                                <div>
-                                    <span class="text-muted" style="font-size: 11px; display: block;">Tanggal Pengajuan:</span>
-                                    <span id="panelMrDate" style="font-weight: 600; color: #0f172a;">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-muted" style="font-size: 11px; display: block;">Total Item:</span>
-                                    <span id="panelMrItemCount" class="badge badge-purple" style="font-size: 11px;">-</span>
-                                </div>
-                            </div>
-                            <div id="panelMrNotesWrapper" style="display: none; padding: 8px 14px; background: #fefce8; border-top: 1px solid #fef08a; font-size: 11.5px; color: #854d0e;">
-                                <strong>Catatan / Memo MR:</strong> <span id="panelMrNotes"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Warning Mode Manual --}}
-                    <div id="manualModeAlert" style="display: none; padding: 10px 14px; background: #fefce8; border: 1px solid #fef08a; border-radius: 6px; font-size: 12px; color: #854d0e;">
-                        <i class="fas fa-triangle-exclamation me-1 text-warning"></i>
-                        <strong>Perhatian:</strong> Pengeluaran manual tidak terikat dengan nomor surat MR. Gunakan hanya untuk kebutuhan mendesak lapangan.
-                    </div>
                     </div>
                 </div>
 
-
                 {{-- ==================== SECTION 2: RINCIAN MATERIAL YANG DIKELUARKAN ==================== --}}
-                <div class="card">
-                    <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="fas fa-list text-primary"></i>
-                            <span class="card-title">Rincian Material yang Dikeluarkan</span>
+                <div class="card" style="border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
+                    <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+                            <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Rincian Material yang Dikeluarkan</span>
                         </div>
-                        <span id="itemsLoadingSpinner" style="display: none; font-size: 12px; color: #2563eb; font-weight: 600;">
+                        <span id="itemsLoadingSpinner" style="display: none; font-size: 11.5px; color: #2563eb; font-weight: 600;">
                             <i class="fas fa-spinner fa-spin me-1"></i> Memuat data MR...
                         </span>
 
-                        <div id="mrQuickActions" style="display: none;" class="flex gap-2">
-                            <button type="button" class="btn btn-sm btn-light border text-primary fw-600" onclick="fillAllRemainingQuota()" title="Otomatis mengisi kuantitas sesuai sisa kuota yang disetujui" style="height: 32px; font-size: 12px;">
-                                <i class="fas fa-wand-magic-sparkles text-primary me-1"></i> Penuhi Sisa Kuota
+                        <div id="mrQuickActions" style="display: none;" class="flex gap-1">
+                            <button type="button" class="btn btn-sm btn-light border text-primary fw-600" onclick="fillAllRemainingQuota()" title="Otomatis mengisi kuantitas sesuai sisa kuota yang disetujui" style="height: 28px; font-size: 11.5px; border-radius:5px; padding:0 10px;">
+                                <i class="fas fa-check-double text-primary me-1"></i> Penuhi Kuota
                             </button>
-                            <button type="button" class="btn btn-sm btn-light border text-muted fw-600" onclick="resetAllQuantities()" title="Kosongkan nilai input kuantitas" style="height: 32px; font-size: 12px;">
-                                <i class="fas fa-rotate-left me-1"></i> Reset Qty
+                            <button type="button" class="btn btn-sm btn-light border text-muted fw-600" onclick="resetAllQuantities()" title="Kosongkan nilai input kuantitas" style="height: 28px; font-size: 11.5px; border-radius:5px; padding:0 8px;">
+                                <i class="fas fa-rotate-left me-1"></i> Reset
                             </button>
                         </div>
-                        <div id="manualButtonsGroup" style="display: none; gap: 8px;">
-                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()">
-                                <i class="fas fa-plus"></i> Tambah Material
+                        <div id="manualButtonsGroup" style="display: none; gap: 6px;">
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="border-radius:5px; font-size:11.5px; height:28px; padding:0 10px;">
+                                <i class="fas fa-plus"></i> Tambah Baris
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border: 1px solid #3b82f6; background: #eff6ff; color: #2563eb; font-weight: 600;">
-                                <i class="fas fa-pen-to-square"></i> + Item Custom
+                            <button type="button" class="btn btn-sm btn-light border text-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border-radius:5px; font-size:11.5px; height:28px; padding:0 10px; font-weight:600;">
+                                <i class="fas fa-plus"></i> Item Custom
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {{-- Search Toolbar --}}
-                <div style="padding: 10px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                    <div style="position: relative; max-width: 380px; width: 100%;">
-                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 10px; font-size: 12px; color: #94a3b8;"></i>
-                        <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama material atau kode barang..." oninput="filterTableRows(this.value)" style="height: 32px; padding-left: 30px; font-size: 12px; border-radius: 6px;">
+                    {{-- Search Toolbar --}}
+                    <div style="padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <div style="position: relative; max-width: 320px; width: 100%;">
+                            <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform:translateY(-50%); font-size: 11px; color: #94a3b8;"></i>
+                            <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 30px; padding-left: 28px; font-size: 11.5px; border-radius: 5px; border-color:#cbd5e1;">
+                        </div>
+                        <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
+                            0 item
+                        </span>
                     </div>
-                    <span class="text-muted" id="rowCountIndicator" style="font-size: 12px; font-weight: 600;">
-                        0 item
-                    </span>
-                </div>
 
-                {{-- Table Rincian Material --}}
-                    <div class="table-wrap">
-                        <table class="data-table" id="itemsTable" style="min-width: 780px;">
+                    {{-- Table Rincian Material --}}
+                    <div class="table-wrap" style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                        <table class="data-table mb-0" id="itemsTable">
                             <thead>
-                                <tr>
-                                    <th style="text-align: left;">Nama Material</th>
-                                    <th style="text-align: center; width: 130px;" class="col-mr-only">Persetujuan MR</th>
-                                    <th style="text-align: center; width: 120px;" class="col-mr-only">Sisa Kuota</th>
-                                    <th style="text-align: center; width: 120px;">Stok Gudang</th>
-                                    <th style="text-align: center; width: 160px;">Jumlah Keluar <span style="color:#ef4444;">*</span></th>
-                                    <th style="text-align: left;">Keterangan</th>
-                                    <th style="width: 44px; text-align: center;"></th>
+                                <tr style="background:#fafafa; border-bottom:1px solid #e2e8f0; font-size:10.5px; text-transform:uppercase; letter-spacing:0.3px; color:#64748b;">
+                                    <th style="text-align: left; padding:7px 12px;">Nama Material</th>
+                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">MR Disetujui</th>
+                                    <th style="text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
+                                    <th style="text-align: center; width: 100px; padding:7px 8px;">Stok Gudang</th>
+                                    <th style="text-align: center; width: 140px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
+                                    <th style="text-align: left; padding:7px 12px;">Keterangan</th>
+                                    <th style="width: 36px; text-align: center; padding:7px 6px;"></th>
                                 </tr>
-            </thead>
+                            </thead>
                             <tbody id="itemsBody">
                                 {{-- Dynamic rows --}}
                             </tbody>
                         </table>
 
                         {{-- Empty State jika belum pilih MR --}}
-                        <div id="mrEmptyState" style="padding: 36px 20px; text-align: center; color: #94a3b8;">
-                        <i class="fas fa-file-circle-question" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px;"></i>
-                        <div style="font-size: 13.5px; font-weight: 600; color: #475569;">Belum Ada Permintaan (MR) yang Dipilih</div>
-                        <div style="font-size: 12px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>1. Metode & Surat Permintaan Material</strong> di atas.</div>
+                        <div id="mrEmptyState" style="padding: 28px 16px; text-align: center; color: #94a3b8;">
+                            <i class="fas fa-inbox" style="font-size: 24px; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
+                            <div style="font-size: 12.5px; font-weight: 600; color: #475569;">Belum Ada Permintaan (MR) yang Dipilih</div>
+                            <div style="font-size: 11px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>Metode & Surat Permintaan Material</strong> di atas.</div>
+                        </div>
+                    </div>
+
+                    {{-- Summary Bar --}}
+                    <div style="padding: 8px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 14px; font-size: 11.5px;">
+                            <div>Material: <strong id="sumItemCount" style="color: #0f172a;">0</strong> jenis</div>
+                            <div>Total Kuantitas: <strong id="sumQuantityCount" style="color: #2563eb;">0</strong></div>
+                        </div>
+                        <div id="statusValidationBadge">
+                            <span class="badge" style="background:#f1f5f9; color:#64748b; font-size: 10.5px; padding:2px 8px; border-radius:12px; border:1px solid #cbd5e1;">
+                                Belum Ada Kuantitas
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {{-- Summary Bar --}}
-                <div style="padding: 10px 18px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; align-items: center; gap: 16px; font-size: 12px;">
-                        <div>Material Terisi: <strong id="sumItemCount" style="color: #0f172a;">0</strong> jenis</div>
-                        <div>Total Kuantitas: <strong id="sumQuantityCount" style="color: #2563eb;">0</strong></div>
-                    </div>
-                    <div id="statusValidationBadge">
-                        <span class="badge badge-success" style="font-size: 11px;">
-                            <i class="fas fa-circle-check"></i> Siap Dikeluarkan
-                        </span>
-                    </div>
-                </div>
             </div>
 
             {{-- ── Kanan: Informasi Bon Pengeluaran ── --}}
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-file-alt text-primary"></i>
-                    <span class="card-title">Informasi Bon Pengeluaran</span>
+            <div class="card sidebar-sticky-bon" id="bonSidebarCard" style="position:sticky; top:20px; border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
+                <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-file-invoice text-primary" style="font-size:13px;"></i>
+                    <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Informasi Bon Pengeluaran</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="padding:14px;">
 
-                    {{-- Gudang Sumber --}}
-                    <div class="mb-3">
-                        <label class="form-label">Gudang Sumber <span class="text-danger">*</span></label>
-                        <select name="warehouse_id" id="warehouseSelect" class="form-control" onchange="onWarehouseChanged(this.value)">
-                            @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ $selectedWarehouse?->id == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
-                            </option>
-                            @endforeach
-                        </select>
+                    {{-- Gudang Sumber (Otomatis seperti di Surat Jalan) --}}
+                    <div class="mb-2">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;">
+                            <label class="form-label mb-0" style="font-size:11px; font-weight:600; color:#334155;">Gudang Sumber <span class="text-danger">*</span></label>
+                            @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
+                            <button type="button" onclick="toggleWarehouseSwitch()" style="background:none; border:none; padding:0; font-size:10.5px; color:#2563eb; font-weight:600; cursor:pointer;" title="Ganti Gudang">
+                                <i class="fas fa-arrow-right-arrow-left" style="font-size:9.5px;"></i> Ganti
+                            </button>
+                            @endif
+                        </div>
+
+                        {{-- Hidden actual value submitted with form --}}
+                        <input type="hidden" name="warehouse_id" id="warehouseSelect" value="{{ $selectedWarehouse?->id }}">
+
+                        {{-- Readonly Box: Otomatis --}}
+                        <div id="warehouseLockedDisplay" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; min-height:36px; box-sizing:border-box;">
+                            <div style="display:flex; align-items:center; gap:7px; overflow:hidden;">
+                                <i class="fas fa-warehouse text-primary" style="font-size:12px; flex-shrink:0;"></i>
+                                <span style="font-size:12px; font-weight:600; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="displayWarehouseName">
+                                    {{ $selectedWarehouse?->name ?? 'Gudang Pusat' }} {{ $selectedWarehouse?->is_central ? '(Pusat)' : '' }}
+                                </span>
+                            </div>
+                            <span class="badge" style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; font-size:10px; padding:2px 7px; border-radius:4px; font-weight:600; flex-shrink:0;">
+                                <i class="fas fa-lock" style="font-size:8.5px;"></i> Otomatis
+                            </span>
+                        </div>
+
+                        @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
+                        <div id="warehouseSwitchWrapper" style="display:none; margin-top:5px;">
+                            <select id="warehousePickerDropdown" class="form-control" onchange="onWarehouseChanged(this.value)" style="height:34px; padding:5px 9px; font-size:12px; border-radius:6px; border-color:#93c5fd; box-sizing:border-box;">
+                                @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ $selectedWarehouse?->id == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '' }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                     </div>
 
                     {{-- Nama Penerima --}}
-                    <div class="mb-3">
-                        <label class="form-label">Penerima (Mandor / Tukang) <span class="text-danger">*</span></label>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Penerima (Mandor / Tukang) <span class="text-danger">*</span></label>
                         <input type="text" name="recipient_name" id="recipientNameInput" class="form-control"
-                               placeholder="Contoh: Pak Supri (Mandor Besi)"
+                               placeholder="Contoh: Pak Supri (Mandor)"
                                value="{{ old('recipient_name') }}" required>
                     </div>
 
                     {{-- Bagian Pekerjaan / Zona --}}
-                    <div class="mb-3">
-                        <label class="form-label">Pekerjaan / Zona <span class="text-muted fw-400">(Disarankan)</span></label>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Pekerjaan / Zona <span class="text-muted fw-400">(Opsional)</span></label>
                         <input type="text" name="job_section" id="jobSectionInput" class="form-control"
-                               placeholder="Contoh: Pengecoran Kolom Lt. 2"
+                               placeholder="Contoh: Kolom Lt. 2"
                                value="{{ old('job_section') }}">
                     </div>
 
                     {{-- Tanggal Pengeluaran --}}
-                    <div class="mb-3">
-                        <label class="form-label">Tanggal Pengeluaran <span class="text-danger">*</span></label>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Tanggal Pengeluaran <span class="text-danger">*</span></label>
                         <input type="date" name="usage_date" class="form-control"
                                value="{{ old('usage_date', date('Y-m-d')) }}" required>
                     </div>
 
                     {{-- Catatan Tambahan --}}
-                    <div class="mb-4">
-                        <label class="form-label">Catatan Tambahan</label>
-                        <textarea name="notes" id="notesInput" class="form-control" rows="3"
-                            placeholder="Catatan bon, instruksi khusus, atau kondisi serah terima barang...">{{ old('notes') }}</textarea>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Catatan Tambahan</label>
+                        <textarea name="notes" id="notesInput" class="form-control" rows="2"
+                            placeholder="Catatan serah terima material...">{{ old('notes') }}</textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="justify-content:center;">
-                        <i class="fas fa-check-circle"></i> Simpan &amp; Potong Stok Gudang
-                    </button>
-                    <a href="{{ route('material-usages.index') }}" class="btn btn-secondary w-full mt-2" style="justify-content:center;">
-                        Batal
-                    </a>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="justify-content:center; padding:8px 12px; height:38px; font-size:12.5px; font-weight:600; border-radius:6px; box-shadow:0 2px 4px rgba(37,99,235,0.2);">
+                            <i class="fas fa-check-circle me-1"></i> Simpan &amp; Potong Stok
+                        </button>
+                        <a href="{{ route('material-usages.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center; padding:6px 12px; height:32px; font-size:12px; font-weight:500; border-radius:6px; color:#64748b;">
+                            Batal
+                        </a>
+                    </div>
 
                 </div>
             </div>
@@ -286,54 +476,21 @@
         </div>
     </form>
 
-    {{-- ==================== STYLES ==================== --}}
-    <style>
-        .mode-select-box {
-            border: 1.5px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 12px 14px;
-            background: #ffffff;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .mode-select-box:hover {
-            border-color: #93c5fd;
-            background: #fbfdff;
-        }
-        .mode-select-box.active {
-            border-color: #2563eb;
-            background: #f0f7ff;
-        }
-        .mode-radio {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid #cbd5e1;
-            display: inline-block;
-            transition: all 0.2s;
-        }
-        .mode-select-box.active .mode-radio {
-            border-color: #2563eb;
-            background: #2563eb;
-            box-shadow: inset 0 0 0 3px #ffffff;
-        }
-        .is-invalid {
-            border-color: #ef4444 !important;
-            background-color: #fef2f2 !important;
-        }
-        .row-fulfilled {
-            background: #f8fafc !important;
-            opacity: 0.65;
-        }
-        .row-out-of-stock {
-            background: #fffbeb !important;
-        }
-    </style>
+    {{-- Floating Action Bar for Mobile View --}}
+    <div id="mobileUsageSummaryBar" style="display:none;position:fixed;bottom:14px;left:14px;right:14px;z-index:99;background:#0f172a;color:#ffffff;border-radius:10px;padding:10px 14px;box-shadow:0 8px 20px -3px rgba(0,0,0,0.3);align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+            <span style="font-size:12px;font-weight:600;"><span id="mobileUsageItemCount">0</span> Item Siap</span>
+        </div>
+        <button type="button" onclick="scrollToBonForm()" class="btn btn-sm btn-primary" style="padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:5px;box-shadow:none;">
+            Simpan Bon &darr;
+        </button>
+    </div>
 
     {{-- ==================== JAVASCRIPT ==================== --}}
+    @push('scripts')
     <script>
-        /* ts-nocheck: Blade directives (json/echo) inside this script are rendered server-side.
-           IDE linter errors for template syntax are false positives. */
+        /* ts-nocheck: Blade directives inside script are server-rendered */
         const availableMaterials = @json($materialsData);
         const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};
@@ -341,6 +498,15 @@
         let rowIndex = 0;
         let mrItemsCache = [];
         let isLoadingMR = false;
+
+        function scrollToBonForm() {
+            const sidebar = document.getElementById('bonSidebarCard');
+            if (sidebar) {
+                sidebar.scrollIntoView({ behavior: 'smooth' });
+                const recipientInput = document.getElementById('recipientNameInput');
+                if (recipientInput) setTimeout(() => recipientInput.focus(), 300);
+            }
+        }
 
         function switchMode(mode) {
             currentMode = mode;
@@ -395,12 +561,26 @@
             updateTableSummary();
         }
 
+        function clearSelectedMR() {
+            const mrSelect = document.getElementById('mrSelect');
+            if (mrSelect) {
+                mrSelect.value = '';
+                loadMRDetails('');
+            }
+        }
+
+        function toggleWarehouseSwitch() {
+            const wrapper = document.getElementById('warehouseSwitchWrapper');
+            if (wrapper) {
+                wrapper.style.display = (wrapper.style.display === 'none' || wrapper.style.display === '') ? 'block' : 'none';
+            }
+        }
+
         function onWarehouseChanged(warehouseId) {
             window.location.href = '{{ route('material-usages.create') }}?warehouse_id=' + warehouseId;
         }
 
         async function loadMRDetails(mrId) {
-            // Guard against concurrent calls (e.g. switchMode + DOMContentLoaded both triggering)
             if (isLoadingMR) return;
 
             const tbody = document.getElementById('itemsBody');
@@ -441,10 +621,14 @@
 
                 const statusBadge = document.getElementById('panelMrStatus');
                 if (data.status === 'partially_fulfilled') {
-                    statusBadge.className = 'badge badge-info';
+                    statusBadge.style.background = '#eff6ff';
+                    statusBadge.style.color = '#2563eb';
+                    statusBadge.style.borderColor = '#bfdbfe';
                     statusBadge.innerText = 'Terkirim Sebagian';
                 } else {
-                    statusBadge.className = 'badge badge-success';
+                    statusBadge.style.background = '#ecfdf5';
+                    statusBadge.style.color = '#047857';
+                    statusBadge.style.borderColor = '#a7f3d0';
                     statusBadge.innerText = 'Disetujui Site Manager';
                 }
 
@@ -456,13 +640,11 @@
                 }
                 panel.style.display = 'block';
 
-                // Auto-fill suggested notes if empty
                 const notesInput = document.getElementById('notesInput');
                 if (!notesInput.value && data.notes) {
                     notesInput.value = 'Berdasarkan MR #' + data.request_number + ': ' + data.notes;
                 }
 
-                // Render MR items into table — reset rowIndex so indices stay consistent
                 tbody.innerHTML = '';
                 rowIndex = 0;
                 mrItemsCache = data.items;
@@ -481,32 +663,32 @@
                     tr.style.borderBottom = '1px solid #f1f5f9';
 
                     tr.innerHTML = `
-                        <td style="padding: 10px 16px;">
+                        <td style="padding: 7px 12px;">
                             <input type="hidden" name="items[${rowIndex}][material_id]" value="${item.material_id}">
-                            <div class="fw-600 text-dark" style="font-size: 13px;">${item.name}</div>
+                            <div class="fw-600 text-dark" style="font-size: 12.5px; color:#0f172a;">${item.name}</div>
                             <div class="flex items-center gap-2 mt-1">
-                                <code style="font-size: 11px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #475569;">${item.code}</code>
-                                <span class="badge badge-gray" style="font-size: 10px;">${item.category}</span>
+                                <code style="font-size: 10.5px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #475569;">${item.code}</code>
+                                <span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; border-radius:3px; padding:1px 5px;">${item.category}</span>
                             </div>
-                            ${isFullyFulfilled ? '<span class="badge badge-gray mt-1" style="font-size: 10px;"><i class="fas fa-check"></i> Kuota Terpenuhi</span>' : ''}
+                            ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><i class="fas fa-check"></i> Terpenuhi</span>' : ''}
                         </td>
-                        <td style="padding: 10px 12px; text-align: center;">
-                            <div class="fw-700 text-dark" style="font-size: 12.5px;">${item.qty_approved} ${item.unit}</div>
-                            <div class="text-muted" style="font-size: 11px;">Sudah: ${item.qty_fulfilled} ${item.unit}</div>
+                        <td style="padding: 7px 8px; text-align: center;">
+                            <div class="fw-700" style="font-size: 12px; color:#1e293b;">${item.qty_approved} ${item.unit}</div>
+                            <div class="text-muted" style="font-size: 10.5px;">Sudah: ${item.qty_fulfilled}</div>
                         </td>
-                        <td style="padding: 10px 12px; text-align: center;">
-                            <span class="badge ${remaining > 0 ? 'badge-success' : 'badge-gray'}" style="font-size: 11.5px; font-weight: 700; padding: 3px 8px;">
+                        <td style="padding: 7px 8px; text-align: center;">
+                            <span class="badge" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; ${remaining > 0 ? 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#64748b;'}">
                                 ${remaining} ${item.unit}
                             </span>
                         </td>
-                        <td style="padding: 10px 12px; text-align: center;">
-                            <span class="badge ${stock > 0 ? 'badge-primary' : 'badge-danger'}" style="font-size: 11.5px; font-weight: 700; padding: 3px 8px;">
+                        <td style="padding: 7px 8px; text-align: center;">
+                            <span class="badge" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; ${stock > 0 ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;'}">
                                 ${stock} ${item.unit}
                             </span>
-                            ${isOutOfStock ? '<div class="text-danger" style="font-size: 10px; font-weight: 600; margin-top: 2px;">Stok 0</div>' : ''}
+                            ${isOutOfStock ? '<div class="text-danger" style="font-size: 10px; font-weight: 600; margin-top: 1px;">Stok 0</div>' : ''}
                         </td>
-                        <td style="padding: 10px 14px;">
-                            <div style="display: flex; align-items: center; gap: 5px;">
+                        <td style="padding: 7px 8px;">
+                            <div style="display: flex; align-items: center; justify-content:center; gap: 4px;">
                                 <input type="number" 
                                        name="items[${rowIndex}][quantity]" 
                                        id="${rowId}-qty" 
@@ -519,17 +701,17 @@
                                        value="${isFullyFulfilled ? 0 : defaultQty}" 
                                        ${isFullyFulfilled ? 'readonly' : 'required'}
                                        oninput="validateMRQty('${rowId}')"
-                                       style="font-weight: 700; font-size: 13.5px; height: 34px; border-radius: 6px;">
-                                <span class="text-muted fw-600" style="font-size: 11.5px; min-width: 28px;">${item.unit}</span>
+                                       style="font-weight: 700; font-size: 12px; height: 30px; border-radius: 5px; width:75px; padding:0 4px;">
+                                <span class="text-muted fw-600" style="font-size: 11px; min-width: 24px;">${item.unit}</span>
                             </div>
-                            <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10.5px; margin-top: 2px; display: none;"></div>
+                            <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 2px; text-align:center; display: none;"></div>
                         </td>
-                        <td style="padding: 10px 14px;">
-                            <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Catatan..." value="${item.notes || ''}" style="font-size: 12px; height: 34px; border-radius: 6px;">
+                        <td style="padding: 7px 10px;">
+                            <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Catatan..." value="${item.notes || ''}" style="font-size: 11.5px; height: 30px; border-radius: 5px;">
                         </td>
-                        <td style="padding: 10px 12px; text-align: center;">
-                            <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus dari pengeluaran ini" style="padding: 4px 8px; border-radius: 4px;">
-                                <i class="fas fa-trash-can" style="font-size: 12px;"></i>
+                        <td style="padding: 7px 6px; text-align: center;">
+                            <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus" style="width:26px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius: 4px;">
+                                <i class="fas fa-trash-can" style="font-size: 10px;"></i>
                             </button>
                         </td>
                     `;
@@ -561,11 +743,11 @@
             if (val > remaining) {
                 input.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-circle-exclamation me-1"></i> Max kuota MR: ${remaining}`;
+                warningEl.innerHTML = `<i class="fas fa-circle-exclamation me-1"></i> Max: ${remaining}`;
             } else if (val > stock) {
                 input.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Max stok: ${stock}`;
+                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Stok: ${stock}`;
             } else {
                 input.classList.remove('is-invalid');
                 warningEl.style.display = 'none';
@@ -605,8 +787,7 @@
             const tbody = document.getElementById('itemsBody');
             const rowId = 'row-' + rowIndex;
 
-            let optionsHtml = '<option value="">— Pilih Material Tersedia (Kelompok Kategori) —</option>';
-            // Render grouped by kategori supaya rapi
+            let optionsHtml = '<option value="">— Pilih Material —</option>';
             if (materialsGrouped && typeof materialsGrouped === 'object' && !Array.isArray(materialsGrouped)) {
                 Object.keys(materialsGrouped).sort().forEach(cat => {
                     optionsHtml += `<optgroup label="${cat}">`;
@@ -622,42 +803,42 @@
                     optionsHtml += `<option value="${m.id}" data-stock="${m.stock}" data-unit="${m.unit}" ${selected}>${m.name} (${m.code}) — Stok: ${m.stock} ${m.unit}</option>`;
                 });
             }
-            optionsHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ + Item Custom (Tulis Manual / Bebas)</option>`;
+            optionsHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>+ Item Custom (Tulis Manual)</option>`;
 
             const tr = document.createElement('tr');
             tr.id = rowId;
             tr.style.borderBottom = '1px solid #f1f5f9';
             tr.innerHTML = `
-                <td style="padding: 10px 16px;">
+                <td style="padding: 7px 12px;">
                     <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="">
-                    <select id="${rowId}-select" class="form-control material-select" onchange="onManualMaterialChange(this, '${rowId}')" style="font-size: 12.5px; height: 34px; border-radius: 6px;">
+                    <select id="${rowId}-select" class="form-control material-select" onchange="onManualMaterialChange(this, '${rowId}')" style="font-size: 12px; height: 30px; border-radius: 5px;">
                         ${optionsHtml}
                     </select>
-                    <div id="${rowId}-custom-box" style="display: ${isCustom ? 'block' : 'none'}; margin-top: 6px;">
-                        <div style="display: flex; gap: 6px;">
-                            <input type="text" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" class="form-control" placeholder="Nama item/barang custom..." style="font-size: 12px; height: 32px; border-radius: 6px;" ${isCustom ? 'required' : ''}>
-                            <input type="text" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" class="form-control" placeholder="Satuan (misal: pcs)" style="font-size: 12px; height: 32px; width: 130px; border-radius: 6px;" oninput="onCustomUnitChange(this, '${rowId}')">
+                    <div id="${rowId}-custom-box" style="display: ${isCustom ? 'block' : 'none'}; margin-top: 4px;">
+                        <div style="display: flex; gap: 4px;">
+                            <input type="text" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" class="form-control" placeholder="Nama item..." style="font-size: 11.5px; height: 28px; border-radius: 4px;" ${isCustom ? 'required' : ''}>
+                            <input type="text" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" class="form-control" placeholder="Satuan" style="font-size: 11.5px; height: 28px; width: 80px; border-radius: 4px;" oninput="onCustomUnitChange(this, '${rowId}')">
                         </div>
                     </div>
                 </td>
-                <td style="padding: 10px 12px; text-align: center;">
-                    <span class="badge badge-gray" id="${rowId}-stock" style="font-size: 11.5px; font-weight: 700; padding: 3px 8px;">-</span>
+                <td style="padding: 7px 8px; text-align: center;">
+                    <span class="badge" id="${rowId}-stock" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; background:#f1f5f9; color:#64748b;">-</span>
                 </td>
-                <td style="padding: 10px 14px;">
-                    <div style="display: flex; align-items: center; gap: 5px;">
+                <td style="padding: 7px 8px;">
+                    <div style="display: flex; align-items: center; justify-content:center; gap: 4px;">
                         <input type="number" name="items[${rowIndex}][quantity]" id="${rowId}-qty" class="form-control qty-input text-center"
                                step="0.01" min="0.01" placeholder="0" value="${qtyVal}" required oninput="validateManualQty('${rowId}')"
-                               style="font-weight: 700; font-size: 13.5px; height: 34px; border-radius: 6px;">
-                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 28px;">-</span>
+                               style="font-weight: 700; font-size: 12px; height: 30px; border-radius: 5px; width:75px; padding:0 4px;">
+                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11px; min-width: 24px;">-</span>
                     </div>
-                    <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10.5px; margin-top: 2px; display: none;"></div>
+                    <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 2px; text-align:center; display: none;"></div>
                 </td>
-                <td style="padding: 10px 14px;">
-                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan..." style="font-size: 12px; height: 34px; border-radius: 6px;">
+                <td style="padding: 7px 10px;">
+                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan..." style="font-size: 11.5px; height: 30px; border-radius: 5px;">
                 </td>
-                <td style="padding: 10px 12px; text-align: center;">
-                    <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus Item" style="padding: 4px 8px; border-radius: 4px;">
-                        <i class="fas fa-trash-can" style="font-size: 12px;"></i>
+                <td style="padding: 7px 6px; text-align: center;">
+                    <button type="button" class="btn btn-sm btn-light text-danger border" onclick="removeRow('${rowId}')" title="Hapus Item" style="width:26px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius: 4px;">
+                        <i class="fas fa-trash-can" style="font-size: 10px;"></i>
                     </button>
                 </td>
             `;
@@ -684,7 +865,9 @@
                 hiddenMaterialId.value = '';
                 customBox.style.display = 'block';
                 customName.required = true;
-                stockBadge.className = 'badge badge-info';
+                stockBadge.style.background = '#f5f3ff';
+                stockBadge.style.color = '#7c3aed';
+                stockBadge.style.border = '1px solid #ddd6fe';
                 stockBadge.innerText = 'Custom';
                 unitLabel.innerText = customUnit.value.trim() || 'unit';
                 qtyInput.removeAttribute('max');
@@ -698,7 +881,9 @@
                 const stock = parseFloat(selectedOpt.getAttribute('data-stock') || 0);
                 const unit = selectedOpt.getAttribute('data-unit') || '';
 
-                stockBadge.className = 'badge badge-primary';
+                stockBadge.style.background = stock > 0 ? '#eff6ff' : '#fef2f2';
+                stockBadge.style.color = stock > 0 ? '#2563eb' : '#b91c1c';
+                stockBadge.style.border = stock > 0 ? '1px solid #bfdbfe' : '1px solid #fecaca';
                 stockBadge.innerText = stock + ' ' + unit;
                 unitLabel.innerText = unit;
                 qtyInput.max = stock;
@@ -706,7 +891,9 @@
                 hiddenMaterialId.value = '';
                 customBox.style.display = 'none';
                 customName.required = false;
-                stockBadge.className = 'badge badge-gray';
+                stockBadge.style.background = '#f1f5f9';
+                stockBadge.style.color = '#64748b';
+                stockBadge.style.border = '1px solid #cbd5e1';
                 stockBadge.innerText = '-';
                 unitLabel.innerText = '-';
                 qtyInput.removeAttribute('max');
@@ -731,7 +918,7 @@
             if (max > 0 && val > max) {
                 qtyInput.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Max stok: ${max}`;
+                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Max: ${max}`;
             } else {
                 qtyInput.classList.remove('is-invalid');
                 warningEl.style.display = 'none';
@@ -756,17 +943,16 @@
         }
 
         function filterTableRows(query) {
-            const lower = query.toLowerCase().trim();
+            const q = query.toLowerCase().trim();
             const rows = document.querySelectorAll('#itemsBody tr');
             let visibleCount = 0;
 
             rows.forEach(tr => {
                 const text = tr.innerText.toLowerCase();
-                if (!lower || text.includes(lower)) {
-                    tr.style.display = '';
+                const match = !q || text.includes(q);
+                tr.style.display = match ? '' : 'none';
+                if (match) {
                     visibleCount++;
-                } else {
-                    tr.style.display = 'none';
                 }
             });
 
@@ -799,11 +985,23 @@
 
             const badge = document.getElementById('statusValidationBadge');
             if (hasInvalid) {
-                badge.innerHTML = `<span class="badge badge-danger" style="font-size: 11px;"><i class="fas fa-circle-xmark"></i> Ada Jumlah Melebihi Batas</span>`;
+                badge.innerHTML = `<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><i class="fas fa-circle-xmark me-1"></i> Melebihi Batas</span>`;
             } else if (totalItems === 0) {
-                badge.innerHTML = `<span class="badge badge-gray" style="font-size: 11px;"><i class="fas fa-minus-circle"></i> Belum Ada Kuantitas</span>`;
+                badge.innerHTML = `<span class="badge" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; font-size: 10.5px; padding:2px 7px; border-radius:12px;">Belum Ada Kuantitas</span>`;
             } else {
-                badge.innerHTML = `<span class="badge badge-success" style="font-size: 11px;"><i class="fas fa-circle-check"></i> Siap Dikeluarkan (${totalItems} item)</span>`;
+                badge.innerHTML = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><i class="fas fa-circle-check me-1"></i> Siap (${totalItems} item)</span>`;
+            }
+
+            // Mobile Floating Action Bar
+            const mobileBar = document.getElementById('mobileUsageSummaryBar');
+            const mobileCount = document.getElementById('mobileUsageItemCount');
+            if (mobileBar && mobileCount) {
+                mobileCount.innerText = totalItems;
+                if (window.innerWidth <= 992 && totalItems > 0 && !hasInvalid) {
+                    mobileBar.style.display = 'flex';
+                } else {
+                    mobileBar.style.display = 'none';
+                }
             }
         }
 
@@ -811,7 +1009,7 @@
             if (currentMode === 'mr') {
                 const mrSelect = document.getElementById('mrSelect');
                 if (!mrSelect.value) {
-                    alert('⚠️ Silakan pilih Nomor Permintaan (MR) yang telah disetujui terlebih dahulu.');
+                    alert('Silakan pilih Nomor Permintaan (MR) yang telah disetujui terlebih dahulu.');
                     mrSelect.focus();
                     return false;
                 }
@@ -819,7 +1017,7 @@
 
             const rows = document.querySelectorAll('#itemsBody tr');
             if (rows.length === 0) {
-                alert('⚠️ Daftar material yang dikeluarkan tidak boleh kosong.');
+                alert('Daftar material yang dikeluarkan tidak boleh kosong.');
                 return false;
             }
 
@@ -839,12 +1037,12 @@
             });
 
             if (!hasValidQty) {
-                alert('⚠️ Silakan masukkan jumlah pengeluaran minimal 1 material dengan kuantitas lebih dari 0.');
+                alert('Silakan masukkan jumlah pengeluaran minimal 1 material dengan kuantitas lebih dari 0.');
                 return false;
             }
 
             if (hasError) {
-                alert('⚠️ Terdapat input kuantitas yang melebihi kuota persetujuan MR atau stok fisik gudang. Mohon perbaiki baris bertanda merah.');
+                alert('Terdapat input kuantitas yang melebihi kuota persetujuan MR atau stok fisik gudang. Mohon perbaiki baris bertanda merah.');
                 return false;
             }
 
@@ -857,11 +1055,14 @@
             return true;
         }
 
+        window.addEventListener('resize', function() {
+            updateTableSummary();
+        });
+
         // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
-            // switchMode('mr') will internally call loadMRDetails() if an MR is already selected.
-            // Do NOT call loadMRDetails() again here to prevent duplicate rows from concurrent async fetches.
             switchMode('mr');
         });
     </script>
+    @endpush
 </x-app-layout>
