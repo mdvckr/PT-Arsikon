@@ -9,7 +9,11 @@
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin-top:4px;">
                 Purchase Order {{ $purchaseOrder->po_number }}
             </h2>
-            <p class="text-muted" style="font-size:13px;">Supplier: <strong>{{ $purchaseOrder->supplier?->name ?? '-' }}</strong></p>
+            <p class="text-muted" style="font-size:13px;">Supplier: <strong>{{ $purchaseOrder->display_supplier_name }}</strong>
+                @if($purchaseOrder->isManualSupplier())
+                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10.5px;font-weight:500;margin-left:4px;">Vendor Bebas / Manual</span>
+                @endif
+            </p>
         </div>
 
         <div class="flex gap-2 items-center">
@@ -84,10 +88,27 @@
                     <tr>
                         <td class="text-muted">{{ $idx + 1 }}</td>
                         <td>
-                            <strong>{{ $item->material?->name ?? 'Material' }}</strong>
-                            <span class="text-muted text-xs ms-1">({{ $item->material?->unit?->symbol ?? 'unit' }})</span>
+                            <div>
+                                <strong>{{ $item->displayName() }}</strong>
+                                <span class="text-muted text-xs ms-1">({{ $item->displayUnit() }})</span>
+                            </div>
+                            @if($item->materialRequestItem && $item->materialRequestItem->materialRequest)
+                                <div class="mt-1">
+                                    <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:500;">
+                                        <i class="fas fa-link me-1"></i> Dari Permintaan: #{{ $item->materialRequestItem->materialRequest->request_number }} ({{ $item->materialRequestItem->materialRequest->fromWarehouse?->name }})
+                                    </span>
+                                </div>
+                            @elseif($item->isCustom())
+                                <div class="mt-1">
+                                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:500;">
+                                        <i class="fas fa-tag me-1"></i> Barang Baru / Pengadaan Khusus
+                                    </span>
+                                </div>
+                            @endif
                         </td>
-                        <td class="text-center">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                        <td class="text-center">
+                            {{ number_format($item->quantity, 2, ',', '.') }} {{ $item->displayUnit() }}
+                        </td>
                         <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
                         <td class="text-end"><strong class="text-primary">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
                     </tr>

@@ -10,9 +10,20 @@ class PurchaseOrder extends Model
     use HasFactory;
 
     protected $fillable = [
-        'po_number','procurement_request_id','supplier_id','created_by','approved_by',
-        'status','order_date','expected_delivery','total_amount','paid_amount',
-        'terms','notes','approved_at',
+        'po_number',
+        'procurement_request_id',
+        'supplier_id',
+        'supplier_name',
+        'created_by',
+        'approved_by',
+        'status',
+        'order_date',
+        'expected_delivery',
+        'total_amount',
+        'paid_amount',
+        'terms',
+        'notes',
+        'approved_at',
     ];
 
     protected $casts = [
@@ -65,5 +76,15 @@ class PurchaseOrder extends Model
             'cancelled'        => 'danger',
             default            => 'gray',
         };
+    }
+
+    public function getDisplaySupplierNameAttribute(): string
+    {
+        return $this->supplier?->name ?? $this->supplier_name ?? '-';
+    }
+
+    public function isManualSupplier(): bool
+    {
+        return empty($this->supplier_id) && !empty($this->supplier_name);
     }
 }
