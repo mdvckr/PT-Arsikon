@@ -33,10 +33,10 @@
                                     <div class="fw-600">{{ $inv->material?->name }}</div>
                                     <div class="text-muted" style="font-size:11.5px;">{{ $inv->material?->code }}</div>
                                 </td>
-                                <td>{{ number_format($inv->quantity, 2) }}</td>
+                                <td>{{ number_format($inv->quantity, 0) }}</td>
                                 <td>
                                     <input type="number" name="items[{{ $i }}][physical_quantity]" class="form-control"
-                                        value="{{ old('items.'.$i.'.physical_quantity', $inv->quantity) }}" min="0" step="0.01" required>
+                                        value="{{ old('items.'.$i.'.physical_quantity', intval($inv->quantity)) }}" min="0" step="1" required>
                                 </td>
                                 <td>{{ $inv->material?->unit?->abbreviation }}</td>
                             </tr>
