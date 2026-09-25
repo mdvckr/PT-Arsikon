@@ -221,12 +221,22 @@ class MaterialUsageService
                     ? "Pengeluaran material langsung (tanpa MR) di {$warehouse->name} oleh {$issuedBy->name} kepada {$usage->recipient_name} untuk {$usage->job_section}."
                     : "Pengeluaran material di {$warehouse->name} kepada {$usage->recipient_name} untuk {$usage->job_section}.");
 
-            NotificationHelper::notifyAdmins(
-                "Pengeluaran Material: {$usage->usage_number}",
-                $notifMsg,
-                "info",
-                route('material-usages.show', $usage)
-            );
+            if ($warehouse->is_central) {
+                NotificationHelper::notifyCentralWarehouseAdmins(
+                    "Pengeluaran Material: {$usage->usage_number}",
+                    $notifMsg,
+                    "info",
+                    route('material-usages.show', $usage)
+                );
+            } else {
+                NotificationHelper::notifyProjectWarehouseAdmins(
+                    $warehouse->id,
+                    "Pengeluaran Material: {$usage->usage_number}",
+                    $notifMsg,
+                    "info",
+                    route('material-usages.show', $usage)
+                );
+            }
 
             return $usage->fresh(['items.material.unit', 'warehouse', 'project', 'issuedBy', 'materialRequest']);
         });
@@ -306,13 +316,23 @@ class MaterialUsageService
                 'cancellation_reason'  => $reason,
             ]);
 
-            // Notify admins
-            NotificationHelper::notifyAdmins(
-                "Pembatalan Pemakaian Material: {$usage->usage_number}",
-                "Pemakaian material #{$usage->usage_number} di {$warehouse->name} dibatalkan oleh {$cancelledBy->name}. Alasan: {$reason}. Stok telah dikembalikan.",
-                "warning",
-                route('material-usages.show', $usage)
-            );
+            // Notify admins of the specific warehouse
+            if ($warehouse->is_central) {
+                NotificationHelper::notifyCentralWarehouseAdmins(
+                    "Pembatalan Pemakaian Material: {$usage->usage_number}",
+                    "Pemakaian material #{$usage->usage_number} di {$warehouse->name} dibatalkan oleh {$cancelledBy->name}. Alasan: {$reason}. Stok telah dikembalikan.",
+                    "warning",
+                    route('material-usages.show', $usage)
+                );
+            } else {
+                NotificationHelper::notifyProjectWarehouseAdmins(
+                    $warehouse->id,
+                    "Pembatalan Pemakaian Material: {$usage->usage_number}",
+                    "Pemakaian material #{$usage->usage_number} di {$warehouse->name} dibatalkan oleh {$cancelledBy->name}. Alasan: {$reason}. Stok telah dikembalikan.",
+                    "warning",
+                    route('material-usages.show', $usage)
+                );
+            }
 
             return $usage->fresh();
         });

@@ -119,12 +119,23 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            @php
+                $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
+            @endphp
+
             @if(in_array($materialRequest->status, ['submitted', 'approved', 'partially_fulfilled']))
                 @can('create distributions')
                 <a href="{{ route('distributions.create', ['material_request_id' => $materialRequest->id]) }}" class="btn btn-primary btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
                     <i class="fas fa-truck-fast"></i> Buat Surat Jalan
                 </a>
                 @endcan
+
+                @if($hasCustomItems && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']))
+                <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                    <i class="fas fa-cart-shopping"></i> Buat PO (Item Manual)
+                </a>
+                @endif
+
                 @can('create material usages')
                 <a href="{{ route('material-usages.create', ['warehouse_id' => $materialRequest->from_warehouse_id]) }}" class="btn btn-sm btn-light border" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;color:#475569;">
                     <i class="fas fa-boxes-packing"></i> Pengeluaran
@@ -163,6 +174,24 @@
     <div class="mr-detail-layout mb-3">
         {{-- Left: Items --}}
         <div style="display:flex;flex-direction:column;gap:16px;">
+
+            @if($hasCustomItems)
+            <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;overflow:hidden;">
+                <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-circle-info" style="color:#d97706;font-size:14px;"></i>
+                        <span style="font-size:12px;color:#92400e;">
+                            Permintaan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
+                        </span>
+                    </div>
+                    @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']))
+                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
+                        <i class="fas fa-cart-plus me-1"></i> Buat PO Item Manual
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @endif
 
             {{-- Item Permintaan Card --}}
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">

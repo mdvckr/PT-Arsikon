@@ -610,28 +610,50 @@
             // Masukkan seluruh item yang disetujui dari MR
             mr.items.forEach(it => {
                 const tr = document.createElement('tr');
-                tr.dataset.kind = 'material';
+                const isCustom = it.is_custom || !it.material_id;
+                tr.dataset.kind = isCustom ? 'custom' : 'material';
                 tr.dataset.source = 'mr';
                 tr.dataset.sourceId = mr.id;
 
-                tr.innerHTML = `
-                    <td><span class="badge" style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;">Material</span></td>
-                    <td>
+                const badgeHtml = isCustom
+                    ? `<span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-pen-nib me-1"></i>Manual</span>`
+                    : `<span class="badge" style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-cube me-1"></i>Material</span>`;
+
+                const hiddenFields = isCustom
+                    ? `
+                        <input type="hidden" name="items[${rowIndex}][type]" value="custom">
+                        <input type="hidden" name="items[${rowIndex}][custom_item_name]" value="${escapeHtml(it.custom_item_name || it.name)}">
+                        <input type="hidden" name="items[${rowIndex}][custom_item_unit]" value="${escapeHtml(it.custom_item_unit || it.unit || 'unit')}">
+                        <input type="hidden" name="items[${rowIndex}][notes]" value="Permintaan #${escapeHtml(mr.number)}">
+                      `
+                    : `
                         <input type="hidden" name="items[${rowIndex}][type]" value="material">
                         <input type="hidden" name="items[${rowIndex}][material_id]" value="${it.material_id}">
-                        <input type="hidden" name="items[${rowIndex}][notes]" value="Permintaan #${mr.number}">
-                        <div class="fw-600" style="color:#1e293b;font-size:13px;">${it.name}</div>
+                        <input type="hidden" name="items[${rowIndex}][notes]" value="Permintaan #${escapeHtml(mr.number)}">
+                      `;
+
+                const subtext = isCustom
+                    ? `<span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">#${escapeHtml(mr.number)}</span>
+                       <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;">Input Manual</span>
+                       <span>Sisa: <strong>${it.remaining} ${escapeHtml(it.unit)}</strong></span>`
+                    : `${it.code ? `<code style="font-size:11px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#475569;">${escapeHtml(it.code)}</code> &bull; ` : ''}
+                       <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">#${escapeHtml(mr.number)}</span>
+                       <span>Sisa: <strong>${it.remaining} ${escapeHtml(it.unit)}</strong></span>`;
+
+                tr.innerHTML = `
+                    <td>${badgeHtml}</td>
+                    <td>
+                        ${hiddenFields}
+                        <div class="fw-600" style="color:#1e293b;font-size:13px;">${escapeHtml(it.name)}</div>
                         <div class="text-muted" style="font-size:11.5px;display:flex;align-items:center;gap:6px;margin-top:2px;">
-                            ${it.code ? `<code style="font-size:11px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#475569;">${it.code}</code> &bull; ` : ''}
-                            <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">#${mr.number}</span>
-                            <span>Sisa: <strong>${it.remaining} ${it.unit}</strong></span>
+                            ${subtext}
                         </div>
                     </td>
                     <td>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <input type="number" name="items[${rowIndex}][quantity]" class="form-control qty-input"
                                 value="${it.remaining}" min="0.01" max="${it.remaining}" step="0.01" required style="width:100px;text-align:center;font-weight:700;height:34px;border-radius:6px;font-size:13px;">
-                            <span class="text-muted" style="font-size:12.5px;font-weight:500;">${it.unit}</span>
+                            <span class="text-muted" style="font-size:12.5px;font-weight:500;">${escapeHtml(it.unit)}</span>
                         </div>
                     </td>
                     <td style="text-align:center;">

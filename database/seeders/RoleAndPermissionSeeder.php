@@ -102,6 +102,11 @@ class RoleAndPermissionSeeder extends Seeder
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
             'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
+            // Procurement & Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
+            'view procurement', 'create procurement', 'approve procurement',
+            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
+            'view payments', 'create payments', 'verify payments',
             'view returns', 'approve returns', 'receive returns',
             'view reports', 'view audit logs',
         ];

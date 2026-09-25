@@ -62,4 +62,70 @@ class Material extends Model
     {
         return $this->sku;
     }
+
+    /**
+     * Auto-register custom/manual item to master materials table.
+     */
+    public static function autoRegisterCustom(string $name, ?string $unitName = 'unit'): Material
+    {
+        $cleanName = trim($name);
+        $material = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
+        if ($material) {
+            return $material;
+        }
+
+        // Resolve unit
+        $cleanUnit = trim($unitName ?: 'unit');
+        $unit = Unit::whereRaw('LOWER(name) = ?', [strtolower($cleanUnit)])
+            ->orWhereRaw('LOWER(code) = ?', [strtolower($cleanUnit)])
+            ->first();
+
+        if (!$unit) {
+            $unitCode = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $cleanUnit), 0, 4)) ?: 'UNT';
+            $unit = Unit::firstOrCreate(
+                ['code' => $unitCode],
+                ['name' => ucfirst($cleanUnit), 'is_decimal' => true]
+            );
+        }
+
+        // Resolve default category
+        $category = Category::where('type', 'material')
+            ->where(function ($q) {
+                $q->where('name', 'like', '%Umum%')
+                  ->orWhere('name', 'like', '%Khusus%')
+                  ->orWhere('name', 'like', '%Proyek%');
+            })->first();
+
+        if (!$category) {
+            $category = Category::where('type', 'material')->first();
+        }
+
+        if (!$category) {
+            $category = Category::create([
+                'code' => 'CAT-CUST',
+                'name' => 'Material Khusus Proyek',
+                'type' => 'material',
+                'description' => 'Kategori otomatis untuk barang custom/manual dari pengadaan proyek',
+            ]);
+        }
+
+        // Generate unique SKU
+        $maxId = (int) (static::max('id') ?? 0) + 1;
+        $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+        while (static::where('sku', $sku)->exists()) {
+            $maxId++;
+            $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+        }
+
+        return static::create([
+            'category_id' => $category->id,
+            'unit_id'     => $unit->id,
+            'sku'         => $sku,
+            'name'        => $cleanName,
+            'brand'       => 'Custom / Proyek',
+            'type'        => 'Material Proyek',
+            'is_active'   => true,
+            'description' => 'Didaftarkan otomatis oleh sistem dari Permintaan / Penerimaan Barang Proyek',
+        ]);
+    }
 }

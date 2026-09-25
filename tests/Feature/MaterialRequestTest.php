@@ -105,4 +105,57 @@ class MaterialRequestTest extends TestCase
             ]
         );
     }
+
+    public function test_hybrid_material_request_triggers_purchasing_notification_and_prepopulates_po(): void
+    {
+        $adminPo = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
+
+        // 1. Submit Hybrid MR (Material inventori + Item manual yang tidak ada di inventori)
+        $request = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            $this->projectUser,
+            [
+                ['material_id' => $this->semenMaterial->id, 'qty_requested' => 20],
+                ['custom_item_name' => 'Baut Anchor Khusus M16', 'custom_item_unit' => 'Pcs', 'qty_requested' => 100],
+            ],
+            true, // submit immediately
+            'Permintaan campuran: Semen gudang pusat + Baut khusus beli PO'
+        );
+
+        $this->assertEquals('submitted', $request->status);
+        $this->assertCount(2, $request->items);
+        $this->assertTrue($request->items()->whereNull('material_id')->exists());
+
+        // 2. Admin PO should receive notification regarding custom items
+        $this->assertTrue(
+            $adminPo->notifications()
+                ->where('data->title', 'like', "%{$request->request_number}%")
+                ->where('data->url', 'like', "%from_mr_id={$request->id}%")
+                ->exists(),
+            'Admin PO should receive notification for MR with custom/manual items'
+        );
+
+        // 3. Admin PO accesses PO creation route with from_mr_id parameter
+        $response = $this->actingAs($adminPo)->get(route('purchase-orders.create', ['from_mr_id' => $request->id]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Baut Anchor Khusus M16');
+        $response->assertSee($request->request_number);
+        // Pastikan hanya 1 item manual yang masuk ke tabel item PO, barang gudang pusat tidak ikut masuk
+        $response->assertSee('items[0][custom_item_name]');
+        $response->assertDontSee('items[1][material_id]');
+
+        // 4. MR yang hanya berisi barang inventori (tanpa item manual) tidak dapat dibuatkan PO
+        $standardOnlyMr = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            $this->projectUser,
+            [
+                ['material_id' => $this->semenMaterial->id, 'qty_requested' => 10],
+            ],
+            true
+        );
+        $redirectResponse = $this->actingAs($adminPo)->get(route('purchase-orders.create', ['from_mr_id' => $standardOnlyMr->id]));
+        $redirectResponse->assertRedirect(route('material-requests.show', $standardOnlyMr));
+        $redirectResponse->assertSessionHas('error');
+    }
 }

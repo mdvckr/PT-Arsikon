@@ -402,12 +402,23 @@ class ToolAssignmentController extends Controller
             ]);
         });
 
-        \App\Services\NotificationHelper::notifyAdmins(
-            "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
-            "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
-            "info",
-            route('tool-assignments.show', $toolLoan->id)
-        );
+        $wh = $toolLoan->fromWarehouse;
+        if ($wh && !$wh->is_central) {
+            \App\Services\NotificationHelper::notifyProjectWarehouseAdmins(
+                $wh->id,
+                "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+                "info",
+                route('tool-assignments.show', $toolLoan->id)
+            );
+        } else {
+            \App\Services\NotificationHelper::notifyCentralWarehouseAdmins(
+                "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+                "info",
+                route('tool-assignments.show', $toolLoan->id)
+            );
+        }
 
         return back()->with('success', "Semua alat dalam peminjaman #{$toolLoan->loan_number} berhasil dikembalikan.");
     }
@@ -458,12 +469,23 @@ class ToolAssignmentController extends Controller
             ]);
         });
 
-        \App\Services\NotificationHelper::notifyAdmins(
-            "Pembatalan Peminjaman Alat: #{$toolLoan->loan_number}",
-            "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
-            "warning",
-            route('tool-assignments.show', $toolLoan->id)
-        );
+        $wh = $toolLoan->fromWarehouse;
+        if ($wh && !$wh->is_central) {
+            \App\Services\NotificationHelper::notifyProjectWarehouseAdmins(
+                $wh->id,
+                "Pembatalan Peminjaman Alat: #{$toolLoan->loan_number}",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
+                "warning",
+                route('tool-assignments.show', $toolLoan->id)
+            );
+        } else {
+            \App\Services\NotificationHelper::notifyCentralWarehouseAdmins(
+                "Pembatalan Peminjaman Alat: #{$toolLoan->loan_number}",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) dibatalkan oleh " . auth()->user()->name . ". Alasan: {$request->cancellation_reason}",
+                "warning",
+                route('tool-assignments.show', $toolLoan->id)
+            );
+        }
 
         return back()->with('success', "Peminjaman #{$toolLoan->loan_number} berhasil dibatalkan." .
             ($toolLoan->getOriginal('status') === 'active' ? ' Stok alat telah dikembalikan ke gudang.' : ''));

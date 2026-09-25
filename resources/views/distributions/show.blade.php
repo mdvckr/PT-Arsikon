@@ -176,8 +176,7 @@
         <div style="display:flex;flex-direction:column;gap:16px;">
 
             {{-- Ship Action --}}
-            @if($distribution->status === 'draft')
-                @can('ship distributions')
+            @if($distribution->canUserShip(auth()->user()))
                 <div class="card" style="border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;box-shadow:0 2px 6px -1px rgba(37,99,235,0.06);overflow:hidden;">
                     <div class="card-body" style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
                         <div style="display:flex;align-items:center;gap:8px;">
@@ -193,7 +192,22 @@
                         </form>
                     </div>
                 </div>
-                @endcan
+            @elseif($distribution->status === 'draft')
+                <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;overflow:hidden;">
+                    <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#64748b;">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        <span>Surat Jalan berstatus draft. Pengiriman hanya dapat diproses oleh petugas di <strong>{{ $distribution->fromWarehouse?->name }}</strong>.</span>
+                    </div>
+                </div>
+            @endif
+
+            @if($distribution->status === 'in_transit' && !$distribution->canUserReceive(auth()->user()))
+                <div class="card" style="border:1px solid #e0e7ff;border-radius:10px;background:#eef2ff;overflow:hidden;">
+                    <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#3730a3;">
+                        <i class="fas fa-location-arrow text-primary"></i>
+                        <span>Surat Jalan sedang dalam perjalanan menuju <strong>{{ $distribution->toWarehouse?->name }}</strong>. Konfirmasi penerimaan hanya dapat disetujui oleh petugas di gudang tujuan tersebut.</span>
+                    </div>
+                </div>
             @endif
 
             {{-- Items Card --}}
@@ -208,7 +222,7 @@
                     </span>
                 </div>
 
-                @php $canReceive = $distribution->status === 'in_transit' && auth()->user()->can('receive distributions'); @endphp
+                @php $canReceive = $distribution->canUserReceive(auth()->user()); @endphp
                 @if($canReceive)
                 <form method="POST" action="{{ route('distributions.receive', $distribution) }}">
                 @csrf

@@ -92,10 +92,10 @@ class GoodsReceiptController extends Controller
         $items = $purchaseOrder->items->map(fn($item) => [
             'purchase_order_item_id' => $item->id,
             'material_id'            => $item->material_id,
-            'material_name'          => $item->material?->name,
-            'material_code'          => $item->material?->code,
-            'category_name'          => $item->material?->category?->name ?? 'Lainnya',
-            'unit_abbr'              => $item->material?->unit?->abbreviation ?? $item->unit,
+            'material_name'          => $item->material?->name ?? $item->custom_item_name,
+            'material_code'          => $item->material?->code ?? 'NON-MASTER',
+            'category_name'          => $item->material?->category?->name ?? 'Material Khusus Proyek',
+            'unit_abbr'              => $item->material?->unit?->abbreviation ?? $item->custom_item_unit ?? $item->unit ?? 'unit',
             'qty_ordered'            => (float) $item->quantity,
             'qty_received'           => (float) $item->received_qty,
             'qty_remaining'          => max(0, (float) $item->quantity - (float) $item->received_qty),
@@ -114,6 +114,25 @@ class GoodsReceiptController extends Controller
     public function store(Request $request)
     {
         $this->authorize('create goods receipts');
+
+        // Auto-register custom items from PO if material_id is not yet created
+        if ($request->has('items') && is_array($request->items)) {
+            $items = $request->items;
+            foreach ($items as $k => $v) {
+                if (empty($v['material_id']) && !empty($v['purchase_order_item_id'])) {
+                    $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
+                    if ($poItem && !empty($poItem->custom_item_name)) {
+                        $mat = Material::autoRegisterCustom($poItem->custom_item_name, $poItem->custom_item_unit ?? $poItem->unit);
+                        $items[$k]['material_id'] = $mat->id;
+                        $poItem->update(['material_id' => $mat->id]);
+                        if ($poItem->material_request_item_id) {
+                            $poItem->materialRequestItem?->update(['material_id' => $mat->id]);
+                        }
+                    }
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
 
         $validated = $request->validate([
             'purchase_order_id'          => 'nullable|exists:purchase_orders,id',

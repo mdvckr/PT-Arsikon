@@ -291,7 +291,7 @@
         </div>
 
         @if($unreadCount > 0)
-        <form method="POST" action="{{ route('notifications.markAllAsRead') }}" class="header-action-form">
+        <form method="POST" action="{{ route('notifications.markAllAsRead') }}" class="header-action-form" style="margin:0;">
             @csrf
             <button type="submit" class="btn btn-primary" style="height:34px;padding:0 14px;font-size:12px;font-weight:600;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);" onclick="return confirm('Tandai semua notifikasi telah dibaca?')">
                 <i class="fas fa-check-double me-1"></i> Tandai Semua Dibaca

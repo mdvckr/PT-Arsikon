@@ -131,10 +131,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/procurement/{procurement}/approve', [ProcurementController::class, 'approve'])->name('procurement.approve');
     Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
 
-    // Purchase Orders
-    Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
-    Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
-    Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+    // Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin|Admin Gudang Pusat|Admin PO']], function () {
+        Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
+        Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
+        Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+    });
 
     // Nota Pembelian Harian / Purchase Receipts
     Route::resource('purchase-receipts', PurchaseReceiptController::class);

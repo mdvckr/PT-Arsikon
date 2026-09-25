@@ -20,6 +20,14 @@ class ToolInventory extends Model
         'stock_damaged',
     ];
 
+    protected $casts = [
+        'stock_total' => 'integer',
+        'stock_available' => 'integer',
+        'stock_borrowed' => 'integer',
+        'stock_maintenance' => 'integer',
+        'stock_damaged' => 'integer',
+    ];
+
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
@@ -33,20 +41,20 @@ class ToolInventory extends Model
     public function validateInvariants(): void
     {
         $stocks = [
-            $this->stock_total,
-            $this->stock_available,
-            $this->stock_borrowed,
-            $this->stock_maintenance,
-            $this->stock_damaged,
+            (int) $this->stock_total,
+            (int) $this->stock_available,
+            (int) $this->stock_borrowed,
+            (int) $this->stock_maintenance,
+            (int) $this->stock_damaged,
         ];
         foreach ($stocks as $s) {
-            if ((int) $s < 0) {
+            if ($s < 0) {
                 throw new \Exception('Stock values cannot be negative.');
             }
         }
-        $calc = $this->stock_available + $this->stock_borrowed + $this->stock_maintenance + $this->stock_damaged;
-        if ($calc !== $this->stock_total) {
-            throw new \Exception('Invariant violation: stock_total does not equal sum of detail stocks.');
+        $calc = (int) $this->stock_available + (int) $this->stock_borrowed + (int) $this->stock_maintenance + (int) $this->stock_damaged;
+        if ($calc !== (int) $this->stock_total) {
+            throw new \Exception("Invariant violation: stock_total ({$this->stock_total}) does not equal sum of detail stocks ({$calc}).");
         }
     }
 }

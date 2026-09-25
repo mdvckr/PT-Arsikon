@@ -1003,13 +1003,23 @@
 
         /* ===== RESPONSIVE ===== */
         .mobile-toggle {
-            display: none;
-            background: none;
-            border: none;
+            display: none !important;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 20px;
-            color: #374151;
-            padding: 4px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            font-size: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+        .mobile-toggle:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
         }
 
         /* Sidebar backdrop overlay for mobile */
@@ -1029,7 +1039,7 @@
 
         /* ===== TABLET (max 1024px) ===== */
         @media (max-width: 1024px) {
-            .mobile-toggle { display: flex; align-items: center; justify-content: center; }
+            .mobile-toggle { display: flex !important; }
             .topbar-brand { width: auto; border-right: none; padding: 0 12px; }
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
@@ -1271,77 +1281,134 @@
         .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.4; }
         .empty-state h3 { font-size: 15px; font-weight: 600; color: #475569; margin-bottom: 6px; }
 
-        /* ===== NOTIFICATION TOAST ===== */
+        /* ===== NOTIFICATION TOAST (PREMIUM POP-UP) ===== */
         .notif-toast-container {
             position: fixed;
-            bottom: 24px;
+            top: 74px;
             right: 24px;
-            z-index: 9999;
+            z-index: 99999;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             pointer-events: none;
+            max-width: 420px;
+            width: calc(100vw - 32px);
         }
 
         .notif-toast {
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             color: #ffffff;
-            padding: 14px 18px;
-            border-radius: 12px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+            padding: 16px 18px;
+            border-radius: 14px;
+            box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
             display: flex;
-            align-items: center;
-            gap: 12px;
+            gap: 14px;
             pointer-events: auto;
             cursor: pointer;
-            border-left: 4px solid #ea580c;
-            max-width: 380px;
-            animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            transition: all 0.3s ease;
+            border-left: 5px solid #3b82f6;
+            position: relative;
+            overflow: hidden;
+            animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.25s ease;
         }
+
+        .notif-toast.toast-approval { border-left-color: #f59e0b; }
+        .notif-toast.toast-success  { border-left-color: #10b981; }
+        .notif-toast.toast-warning  { border-left-color: #ef4444; }
+        .notif-toast.toast-info     { border-left-color: #3b82f6; }
 
         .notif-toast:hover {
             transform: translateY(-2px);
-            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.38);
+            box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.2);
         }
 
         .notif-toast .toast-icon {
-            width: 36px;
-            height: 36px;
-            background: rgba(234, 88, 12, 0.2);
-            color: #ea580c;
-            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
+            font-size: 17px;
             flex-shrink: 0;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
+        .notif-toast.toast-approval .toast-icon { background: rgba(245, 158, 11, 0.22); color: #fbbf24; }
+        .notif-toast.toast-success .toast-icon  { background: rgba(16, 185, 129, 0.22); color: #34d399; }
+        .notif-toast.toast-warning .toast-icon  { background: rgba(239, 68, 68, 0.22); color: #f87171; }
 
         .notif-toast .toast-content {
             flex: 1;
             min-width: 0;
         }
 
+        .notif-toast .toast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .notif-toast .toast-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+        }
+
+        .notif-toast .toast-time {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
         .notif-toast .toast-title {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 700;
             color: #ffffff;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-bottom: 4px;
+            line-height: 1.35;
         }
 
         .notif-toast .toast-desc {
             font-size: 12px;
-            color: #94a3b8;
-            line-height: 1.3;
+            color: #cbd5e1;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .notif-toast .toast-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11.5px;
+        }
+
+        .notif-toast .toast-link {
+            color: #60a5fa;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+        .notif-toast .toast-link:hover {
+            color: #93c5fd;
+            text-decoration: underline;
         }
 
         .notif-toast .toast-close {
@@ -1350,22 +1417,43 @@
             color: #94a3b8;
             font-size: 18px;
             cursor: pointer;
-            padding: 2px;
+            padding: 2px 6px;
             line-height: 1;
+            border-radius: 4px;
+            transition: color 0.15s ease, background 0.15s ease;
         }
-
         .notif-toast .toast-close:hover {
             color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        @keyframes toastIn {
-            from { transform: translateX(50px) scale(0.95); opacity: 0; }
+        .notif-toast .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #3b82f6;
+            width: 100%;
+            animation: toastProgress 7s linear forwards;
+        }
+        .notif-toast.toast-approval .toast-progress { background: #f59e0b; }
+        .notif-toast.toast-success .toast-progress  { background: #10b981; }
+        .notif-toast.toast-warning .toast-progress  { background: #ef4444; }
+
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to   { width: 0%; }
+        }
+
+        @keyframes toastSlideIn {
+            from { transform: translateX(60px) scale(0.92); opacity: 0; }
             to   { transform: translateX(0) scale(1); opacity: 1; }
         }
 
         .toast-out {
-            transform: translateX(50px) scale(0.9);
+            transform: translateX(60px) scale(0.92);
             opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* Global Print Rules */
@@ -1402,7 +1490,7 @@
     <!-- TOPBAR (Full Width) — Premium Design -->
     <header class="topbar" id="mainTopbar">
         <div class="topbar-brand">
-            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
                 <i class="fas fa-bars"></i>
             </button>
             <a href="{{ route('dashboard') }}" class="brand-link">
@@ -1857,7 +1945,7 @@
 
                 const type = (soundType || '').toLowerCase();
                 const isApproval = type.includes('approval') || type.includes('urgent');
-                const isSad = type.includes('rejected') || type.includes('cancelled') || type.includes('warning') || type.includes('danger');
+                const isSad = type.includes('rejected') || type.includes('cancelled') || type.includes('warning') || type.includes('danger') || type.includes('error');
                 const isHappy = type.includes('approved') || type.includes('success');
 
                 const playChime = () => {
@@ -1913,7 +2001,6 @@
 
                     // 3. SUCCESS / APPROVED CHIME (Bright Ascending Major Harmony)
                     if (isHappy) {
-                        // C5 (523.25 Hz) -> E5 (659.25 Hz) -> G5 (783.99 Hz)
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         osc.type = 'sine';
@@ -1956,7 +2043,8 @@
             }
         }
 
-        // Realtime Notification Poller
+        // Realtime Notification Poller & Toast State
+        let isPollerInitialized = false;
         let lastNotifCount = parseInt(document.body.dataset.notifCount || '0', 10);
         let lastNotifId = document.body.dataset.notifLastId || '';
 
@@ -1964,15 +2052,48 @@
             const container = document.getElementById('notifToastContainer');
             if (!container) return;
 
+            const soundType = (data.sound_type || data.type || '').toLowerCase();
+            let themeClass = 'toast-info';
+            let iconClass = 'fas fa-bell';
+            let badgeText = 'Informasi';
+
+            if (soundType.includes('approval') || soundType.includes('urgent')) {
+                themeClass = 'toast-approval';
+                iconClass = 'fas fa-clipboard-check';
+                badgeText = 'Persetujuan';
+            } else if (soundType.includes('approved') || soundType.includes('success')) {
+                themeClass = 'toast-success';
+                iconClass = 'fas fa-check-circle';
+                badgeText = 'Berhasil';
+            } else if (soundType.includes('rejected') || soundType.includes('cancelled') || soundType.includes('warning') || soundType.includes('danger')) {
+                themeClass = 'toast-warning';
+                iconClass = 'fas fa-exclamation-triangle';
+                badgeText = 'Peringatan';
+            }
+
+            const targetUrl = data.url || data.link || document.body.dataset.notifUrl || '#';
             const toast = document.createElement('div');
-            toast.className = 'notif-toast';
+            toast.className = `notif-toast ${themeClass}`;
             toast.innerHTML = `
-                <div class="toast-icon"><i class="fas fa-bell"></i></div>
+                <div class="toast-icon">
+                    <i class="${iconClass}"></i>
+                </div>
                 <div class="toast-content">
+                    <div class="toast-header">
+                        <span class="toast-badge">${badgeText}</span>
+                        <span class="toast-time">${escapeHtml(data.created_at_human || 'Baru saja')}</span>
+                    </div>
                     <div class="toast-title">${escapeHtml(data.title || 'Notifikasi Baru')}</div>
                     <div class="toast-desc">${escapeHtml(data.message || '')}</div>
+                    <div class="toast-footer">
+                        <a href="${escapeHtml(targetUrl)}" class="toast-link">
+                            <span>Buka Detail</span>
+                            <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+                        </a>
+                    </div>
                 </div>
                 <button class="toast-close" type="button" title="Tutup">&times;</button>
+                <div class="toast-progress"></div>
             `;
 
             toast.onclick = function(e) {
@@ -1981,20 +2102,24 @@
                     setTimeout(() => toast.remove(), 300);
                     return;
                 }
-                window.location.href = data.url || document.body.dataset.notifUrl;
+                if (targetUrl && targetUrl !== '#') {
+                    window.location.href = targetUrl;
+                }
             };
 
             container.appendChild(toast);
 
             setTimeout(() => {
-                toast.classList.add('toast-out');
-                setTimeout(() => toast.remove(), 300);
+                if (toast.parentElement) {
+                    toast.classList.add('toast-out');
+                    setTimeout(() => toast.remove(), 300);
+                }
             }, 7000);
         }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
 
@@ -2025,12 +2150,22 @@
                     }
                 }
 
-                // If new notification detected (by unique ID change or count increase)
-                if (res.latest && res.latest.id && res.latest.id !== lastNotifId) {
-                    if (lastNotifId !== '') {
-                        playNotificationChime(res.latest.sound_type);
-                        showNotificationToast(res.latest);
+                if (!isPollerInitialized) {
+                    isPollerInitialized = true;
+                    if (!lastNotifId && res.latest && res.latest.id) {
+                        lastNotifId = res.latest.id;
                     }
+                    lastNotifCount = count;
+                    return;
+                }
+
+                // If new notification detected (by unique ID change or count increase)
+                const isNewId = res.latest && res.latest.id && res.latest.id !== lastNotifId;
+                const isCountIncreased = count > lastNotifCount;
+
+                if (res.latest && (isNewId || isCountIncreased)) {
+                    playNotificationChime(res.latest.sound_type || res.latest.type);
+                    showNotificationToast(res.latest);
                     lastNotifId = res.latest.id;
                 }
 
@@ -2039,8 +2174,53 @@
             .catch(() => {});
         }
 
-        // Poll every 5 seconds for fast response
-        setInterval(pollNotifications, 5000);
+        // Expose globally
+        window.playNotificationChime = playNotificationChime;
+        window.showNotificationToast = showNotificationToast;
+
+        // Auto-trigger Toast & Chime for Session Flash messages
+        @if(session('success'))
+            setTimeout(() => {
+                showNotificationToast({
+                    title: 'Berhasil',
+                    message: {!! json_encode(session('success')) !!},
+                    sound_type: 'success',
+                    type: 'success',
+                    created_at_human: 'Baru saja'
+                });
+                playNotificationChime('success');
+            }, 300);
+        @endif
+
+        @if(session('error'))
+            setTimeout(() => {
+                showNotificationToast({
+                    title: 'Gagal / Perhatian',
+                    message: {!! json_encode(session('error')) !!},
+                    sound_type: 'warning',
+                    type: 'danger',
+                    created_at_human: 'Baru saja'
+                });
+                playNotificationChime('warning');
+            }, 300);
+        @endif
+
+        @if(session('warning'))
+            setTimeout(() => {
+                showNotificationToast({
+                    title: 'Peringatan Sistem',
+                    message: {!! json_encode(session('warning')) !!},
+                    sound_type: 'warning',
+                    type: 'warning',
+                    created_at_human: 'Baru saja'
+                });
+                playNotificationChime('warning');
+            }, 300);
+        @endif
+
+        // Initial check 1.5 seconds after load, then poll every 4 seconds
+        setTimeout(pollNotifications, 1500);
+        setInterval(pollNotifications, 4000);
 
         // Preserve Sidebar Scroll Position
         (function() {

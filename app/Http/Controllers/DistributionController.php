@@ -238,6 +238,26 @@ class DistributionController extends Controller
     {
         $this->authorize('create distributions');
 
+        // Normalisasi items jika frontend mengirim string "null", "undefined", atau ""
+        if ($request->has('items') && is_array($request->items)) {
+            $items = $request->items;
+            foreach ($items as $k => $v) {
+                if (isset($v['material_id']) && ($v['material_id'] === 'null' || $v['material_id'] === '' || $v['material_id'] === 'undefined')) {
+                    $items[$k]['material_id'] = null;
+                }
+                if (isset($v['tool_id']) && ($v['tool_id'] === 'null' || $v['tool_id'] === '' || $v['tool_id'] === 'undefined')) {
+                    $items[$k]['tool_id'] = null;
+                }
+                if (isset($v['tool_assignment_id']) && ($v['tool_assignment_id'] === 'null' || $v['tool_assignment_id'] === '' || $v['tool_assignment_id'] === 'undefined')) {
+                    $items[$k]['tool_assignment_id'] = null;
+                }
+                if (empty($items[$k]['material_id']) && empty($items[$k]['tool_id']) && !empty($items[$k]['custom_item_name'])) {
+                    $items[$k]['type'] = 'custom';
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
         $validated = $request->validate([
             'from_warehouse_id'    => 'required|exists:warehouses,id',
             'to_warehouse_id'      => 'required|exists:warehouses,id|different:from_warehouse_id',
@@ -314,6 +334,11 @@ class DistributionController extends Controller
     {
         $this->authorize('ship distributions');
 
+        if (!$distribution->canUserShip(auth()->user())) {
+            return redirect()->route('distributions.show', $distribution)
+                ->with('error', 'Hanya petugas di gudang asal yang berhak memproses pengiriman Surat Jalan ini.');
+        }
+
         if ($distribution->status !== 'draft') {
             return redirect()->route('distributions.show', $distribution)
                 ->with('info', "Surat Jalan #{$distribution->distribution_number} sudah dikirim atau tidak berstatus draft.");
@@ -346,6 +371,10 @@ class DistributionController extends Controller
     {
         $this->authorize('receive distributions');
 
+        if (!$distribution->canUserReceive(auth()->user())) {
+            return back()->with('error', 'Hanya petugas di gudang tujuan yang berhak menyetujui dan mengonfirmasi penerimaan Surat Jalan ini.');
+        }
+
         $request->validate([
             'items'                          => 'required|array',
             'items.*.distribution_item_id'   => 'required|exists:distribution_items,id',
@@ -355,7 +384,7 @@ class DistributionController extends Controller
 
         $this->service->receive($distribution, $request->items, auth()->id(), $request->filled('surat_jalan') ? $request->surat_jalan : null);
 
-        return back()->with('success', 'Penerimaan distribusi dicatat.');
+        return back()->with('success', "Penerimaan Surat Jalan #{$distribution->distribution_number} berhasil dikonfirmasi. Stok telah diperbarui ke inventaris.");
     }
 
     // ── Helper ────────────────────────────────────────────────────────────

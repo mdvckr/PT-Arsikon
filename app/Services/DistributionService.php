@@ -188,12 +188,22 @@ class DistributionService
 
             $loaded = $distribution->load(['items.material', 'items.tool', 'fromWarehouse', 'toWarehouse', 'creator', 'materialRequest']);
 
-            NotificationHelper::notifyAdmins(
-                "Surat Jalan Baru Dibuat: #{$distribution->distribution_number}",
-                "Surat Jalan #{$distribution->distribution_number} dibuat dari {$fromWarehouse->name} menuju {$toWarehouse->name}.",
-                "info",
-                route('distributions.show', $distribution)
-            );
+            if ($toWarehouse->is_central) {
+                NotificationHelper::notifyCentralWarehouseAdmins(
+                    "Surat Jalan Baru Dibuat: #{$distribution->distribution_number}",
+                    "Surat Jalan #{$distribution->distribution_number} dibuat dari {$fromWarehouse->name} menuju {$toWarehouse->name}.",
+                    "info",
+                    route('distributions.show', $distribution)
+                );
+            } else {
+                NotificationHelper::notifyProjectWarehouseAdmins(
+                    $toWarehouse->id,
+                    "Surat Jalan Baru Dibuat: #{$distribution->distribution_number}",
+                    "Surat Jalan #{$distribution->distribution_number} dibuat dari {$fromWarehouse->name} menuju {$toWarehouse->name}.",
+                    "info",
+                    route('distributions.show', $distribution)
+                );
+            }
 
             return $loaded;
         });
@@ -274,9 +284,14 @@ class DistributionService
 
                 // Update qty_fulfilled pada item permintaan jika terhubung dengan MR
                 if ($distribution->material_request_id) {
-                    MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
-                        ->where('material_id', $item->material_id)
-                        ->increment('qty_fulfilled', (float) $item->qty_shipped);
+                    $mrItemQuery = MaterialRequestItem::where('material_request_id', $distribution->material_request_id);
+                    if ($item->isCustom()) {
+                        $mrItemQuery->whereNull('material_id')
+                            ->where('custom_item_name', $item->custom_item_name);
+                    } else {
+                        $mrItemQuery->where('material_id', $item->material_id);
+                    }
+                    $mrItemQuery->increment('qty_fulfilled', (float) $item->qty_shipped);
                 }
             }
 
@@ -296,8 +311,10 @@ class DistributionService
                 'shipped_at'        => now(),
             ]);
 
-            // Notify destination warehouse users / admins
-            $destUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $distribution->to_warehouse_id))->get();
+            // Notify destination warehouse users / admins (excluding regular karyawan)
+            $destUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $distribution->to_warehouse_id))
+                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
+                ->get();
             if ($destUsers->isEmpty()) {
                 $destUsers = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
             }
@@ -305,9 +322,10 @@ class DistributionService
                 NotificationHelper::notifyUser(
                     $destUser,
                     "Surat Jalan Dalam Pengiriman: #{$distribution->distribution_number}",
-                    "Surat Jalan #{$distribution->distribution_number} sedang dikirim menuju {$distribution->toWarehouse?->name}.",
-                    "info",
-                    route('distributions.show', $distribution)
+                    "Surat Jalan #{$distribution->distribution_number} sedang dikirim menuju {$distribution->toWarehouse?->name}. Mohon konfirmasi penerimaan saat tiba.",
+                    "approval_needed",
+                    route('distributions.show', $distribution),
+                    "approval"
                 );
             }
 
@@ -399,23 +417,47 @@ class DistributionService
                     'qty_damaged_or_lost' => $qtyDamaged,
                 ]);
 
-                if ($distributionItem->isTool() || $distributionItem->isCustom()) {
-                    // Stok alat atau item custom tidak dikelola via inventory material
+                if ($distributionItem->isTool()) {
+                    // Stok alat dikelola via tool assignment
+                    continue;
+                }
+
+                $material = null;
+                if ($distributionItem->isCustom()) {
+                    // Opsi B: Auto-register custom item ke Master Material & Inventori
+                    $material = Material::autoRegisterCustom(
+                        $distributionItem->custom_item_name,
+                        $distributionItem->custom_item_unit
+                    );
+                    $distributionItem->update(['material_id' => $material->id]);
+
+                    // Jika distribusi ini terikat ke MR, perbarui juga material_id pada item MR
+                    if ($distribution->material_request_id) {
+                        MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
+                            ->whereNull('material_id')
+                            ->where('custom_item_name', $distributionItem->custom_item_name)
+                            ->update(['material_id' => $material->id]);
+                    }
+                } else {
+                    $material = $distributionItem->material;
+                }
+
+                if (!$material) {
                     continue;
                 }
 
                 $projectInventory = Inventory::where('warehouse_id', $distribution->to_warehouse_id)
-                    ->where('material_id', $distributionItem->material_id)
+                    ->where('material_id', $material->id)
                     ->first();
 
-                if ($projectInventory) {
+                if ($projectInventory && !$distributionItem->isCustom()) {
                     $projectInventory->decrement('qty_in_transit', min($qtyShipped, (float) $projectInventory->qty_in_transit));
                 }
 
                 if ($qtyReceived > 0) {
                     $this->stockService->addStock(
                         $distribution->toWarehouse,
-                        $distributionItem->material,
+                        $material,
                         $qtyReceived,
                         'distribution_receive',
                         $distribution->id,
@@ -432,14 +474,67 @@ class DistributionService
                 'surat_jalan'         => $surat_jalan,
             ]);
 
-            // Notify creator & central admins
-            if ($distribution->creator) {
+            // ── Notifikasi Konfirmasi Penerimaan Surat Jalan ─────────────────────────────
+            $receiver = User::find($userId);
+            $receiverName = $receiver ? $receiver->name : 'Petugas Gudang Tujuan';
+            $fromName = $distribution->fromWarehouse?->name ?? 'Gudang Asal';
+            $toName = $distribution->toWarehouse?->name ?? 'Gudang Tujuan';
+            $notifUrl = route('distributions.show', $distribution);
+
+            // 1. Notifikasi ke Petugas yang Mengonfirmasi (Receiver)
+            if ($receiver) {
+                NotificationHelper::notifyUser(
+                    $receiver,
+                    "Penerimaan Surat Jalan Dikonfirmasi: #{$distribution->distribution_number}",
+                    "Anda telah berhasil mengonfirmasi penerimaan Surat Jalan #{$distribution->distribution_number} di {$toName}. Stok telah masuk ke inventaris.",
+                    "success",
+                    $notifUrl,
+                    "success"
+                );
+            }
+
+            // 2. Notifikasi ke Petugas yang Mengirim (Shipper)
+            if ($distribution->shippedBy && (!$receiver || $distribution->shippedBy->id !== $receiver->id)) {
+                NotificationHelper::notifyUser(
+                    $distribution->shippedBy,
+                    "Surat Jalan Telah Diterima: #{$distribution->distribution_number}",
+                    "Surat Jalan #{$distribution->distribution_number} yang Anda kirim telah dikonfirmasi dan diterima di {$toName} oleh {$receiverName}.",
+                    "success",
+                    $notifUrl,
+                    "success"
+                );
+            }
+
+            // 3. Notifikasi ke Pembuat Surat Jalan (Creator)
+            if ($distribution->creator && (!$receiver || $distribution->creator->id !== $receiver->id) && (!$distribution->shippedBy || $distribution->creator->id !== $distribution->shippedBy->id)) {
                 NotificationHelper::notifyUser(
                     $distribution->creator,
                     "Surat Jalan Selesai: #{$distribution->distribution_number}",
-                    "Barang/alat pada Surat Jalan #{$distribution->distribution_number} telah diterima di {$distribution->toWarehouse?->name}.",
+                    "Barang/alat pada Surat Jalan #{$distribution->distribution_number} telah dikonfirmasi dan diterima di {$toName}.",
                     "success",
-                    route('distributions.show', $distribution)
+                    $notifUrl,
+                    "success"
+                );
+            }
+
+            // 4. Notifikasi ke Admin Gudang Pusat & Owner
+            NotificationHelper::notifyCentralWarehouseAdmins(
+                "Konfirmasi Surat Jalan: #{$distribution->distribution_number}",
+                "Surat Jalan #{$distribution->distribution_number} dari {$fromName} telah dikonfirmasi dan diterima di {$toName} oleh {$receiverName}.",
+                "success",
+                $notifUrl,
+                "success"
+            );
+
+            // 5. Jika Gudang Asal adalah Gudang Proyek, notifikasi admin gudang proyek tersebut
+            if ($distribution->fromWarehouse && !$distribution->fromWarehouse->is_central) {
+                NotificationHelper::notifyProjectWarehouseAdmins(
+                    $distribution->from_warehouse_id,
+                    "Surat Jalan Telah Diterima di Tujuan: #{$distribution->distribution_number}",
+                    "Pengiriman Surat Jalan #{$distribution->distribution_number} telah tiba dan dikonfirmasi di {$toName}.",
+                    "success",
+                    $notifUrl,
+                    "success"
                 );
             }
 

@@ -133,12 +133,22 @@ class StockService
             ]);
 
             if ((float) $inventory->min_stock > 0 && $newQty <= (float) $inventory->min_stock) {
-                NotificationHelper::notifyAdmins(
-                    "Stok Rendah: {$material->name}",
-                    "Stok material {$material->name} di {$warehouse->name} tersisa {$newQty} {$material->unit?->abbreviation}, sudah mencapai batas minimum ({$inventory->min_stock}).",
-                    "stock_alert",
-                    route('inventory.index')
-                );
+                if ($warehouse->is_central) {
+                    NotificationHelper::notifyCentralWarehouseAdmins(
+                        "Stok Rendah: {$material->name}",
+                        "Stok material {$material->name} di {$warehouse->name} tersisa {$newQty} {$material->unit?->abbreviation}, sudah mencapai batas minimum ({$inventory->min_stock}).",
+                        "stock_alert",
+                        route('inventory.index')
+                    );
+                } else {
+                    NotificationHelper::notifyProjectWarehouseAdmins(
+                        $warehouse->id,
+                        "Stok Rendah: {$material->name}",
+                        "Stok material {$material->name} di {$warehouse->name} tersisa {$newQty} {$material->unit?->abbreviation}, sudah mencapai batas minimum ({$inventory->min_stock}).",
+                        "stock_alert",
+                        route('inventory.index')
+                    );
+                }
             }
 
             return $inventory->fresh();

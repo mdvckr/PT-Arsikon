@@ -122,16 +122,37 @@ class ToolInventoryService
                 ]);
             }
 
-            $inventory->decrement('stock_borrowed', min($quantity, (int) $inventory->stock_borrowed));
+            $currentBorrowed = (int) $inventory->stock_borrowed;
+            $borrowedToDecrement = min($quantity, $currentBorrowed);
             $field = match ($condition) {
                 'damaged'           => 'stock_damaged',
                 'under_maintenance' => 'stock_maintenance',
                 default             => 'stock_available',
             };
+
+            if ($borrowedToDecrement > 0) {
+                $inventory->decrement('stock_borrowed', $borrowedToDecrement);
+            }
+
+            // Jika ada selisih antara kuantitas kembali dengan yang tercatat dipinjam di gudang ini
+            // (misal data demo/seeder yang belum terpotong), sesuaikan stock_total agar invarian konsisten
+            $untracked = $quantity - $borrowedToDecrement;
+            if ($untracked > 0) {
+                $inventory->increment('stock_total', $untracked);
+            }
+
             $inventory->increment($field, $quantity);
             $inventory->validateInvariants();
 
-            $tool->decrement('stock_borrowed', min($quantity, (int) $tool->stock_borrowed));
+            $currentToolBorrowed = (int) $tool->stock_borrowed;
+            $toolBorrowedToDecrement = min($quantity, $currentToolBorrowed);
+            if ($toolBorrowedToDecrement > 0) {
+                $tool->decrement('stock_borrowed', $toolBorrowedToDecrement);
+            }
+            $toolUntracked = $quantity - $toolBorrowedToDecrement;
+            if ($toolUntracked > 0) {
+                $tool->increment('stock_total', $toolUntracked);
+            }
             $tool->increment($field, $quantity);
 
             return $inventory->fresh();

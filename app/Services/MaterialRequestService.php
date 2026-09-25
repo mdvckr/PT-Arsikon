@@ -84,13 +84,24 @@ class MaterialRequestService
             $loaded = $request->load('items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy');
 
             if ($submitImmediately) {
-                NotificationHelper::notifyApprovers(
+                NotificationHelper::notifyCentralWarehouseAdmins(
                     "Permintaan Material: #{$request->request_number}",
                     "Permintaan material diajukan oleh {$requestedBy->name} dari {$fromWarehouse->name}.",
                     "approval_needed",
-                    route('material-requests.show', $request),
-                    $fromWarehouse->id
+                    route('material-requests.show', $request)
                 );
+
+                // Jika terdapat item manual/custom (tidak ada di inventori manapun), kirim notifikasi ke Admin PO
+                $hasCustomItems = $request->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
+                if ($hasCustomItems) {
+                    $customCount = $request->items->whereNull('material_id')->count();
+                    NotificationHelper::notifyPurchasingAdmins(
+                        "Kebutuhan Pengadaan (MR Manual): #{$request->request_number}",
+                        "Terdapat {$customCount} item barang manual dari {$fromWarehouse->name} yang memerlukan pengadaan / penerbitan PO.",
+                        "warning",
+                        route('purchase-orders.create', ['from_mr_id' => $request->id])
+                    );
+                }
             }
 
             return $loaded;
@@ -129,7 +140,7 @@ class MaterialRequestService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
-            // Notify requestedBy directly and then other warehouse users
+            // Notify requestedBy directly and then other warehouse admins (excluding regular karyawan)
             if ($request->requestedBy) {
                 NotificationHelper::notifyUser(
                     $request->requestedBy,
@@ -139,8 +150,11 @@ class MaterialRequestService
                     route('material-requests.show', $request)
                 );
             }
-            $projectUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))->get();
-            $allTargets = collect($projectUsers)->merge($request->requestedBy ? [$request->requestedBy] : [])->unique('id');
+            $projectAdmins = User::whereHas('roles', fn($r) => $r->whereIn('name', ['Admin Gudang Proyek', 'User']))
+                ->whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))
+                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
+                ->get();
+            $allTargets = collect($projectAdmins)->merge($request->requestedBy ? [$request->requestedBy] : [])->unique('id');
             foreach ($allTargets as $targetUser) {
                 if ($request->requestedBy && $targetUser->id === $request->requestedBy->id) {
                     continue; // already notified

@@ -12,6 +12,17 @@ use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = auth()->user();
+            if (!$user || (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']) && !$user->can('view purchase orders'))) {
+                abort(403, 'Akses ditolak: Hanya Admin Gudang Pusat dan Admin PO yang berhak mengakses Purchase Order.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index(Request $request)
     {
         $query = PurchaseOrder::with([
@@ -59,6 +70,20 @@ class PurchaseOrderController extends Controller
         $materials    = Material::with('unit')->orderBy('name')->get();
         $approvedPRs  = ProcurementRequest::where('status','approved')->with('items.material')->get();
         $selectedPR   = $request->pr_id ? ProcurementRequest::with('items.material.unit')->find($request->pr_id) : null;
+        
+        $selectedMR = null;
+        if ($request->from_mr_id) {
+            $mr = \App\Models\MaterialRequest::with(['items.material.unit', 'fromWarehouse'])->find($request->from_mr_id);
+            if ($mr) {
+                // Hanya boleh membuat PO jika terdapat item manual yang tidak ada di inventori
+                $customItemsCount = $mr->items->whereNull('material_id')->count();
+                if ($customItemsCount === 0) {
+                    return redirect()->route('material-requests.show', $mr)
+                        ->with('error', "Permintaan #{$mr->request_number} tidak memiliki barang manual. Seluruh barang tersedia di master inventori dan langsung diproses melalui Surat Jalan.");
+                }
+                $selectedMR = $mr;
+            }
+        }
 
         // Ambil item custom dari Permintaan Material (MR) yang belum dibatalkan/ditolak
         $mrCustomItems = MaterialRequestItem::whereNull('material_id')
@@ -69,7 +94,7 @@ class PurchaseOrderController extends Controller
             ->latest()
             ->get();
 
-        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'mrCustomItems'));
+        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'selectedMR', 'mrCustomItems'));
     }
 
     public function store(Request $request)

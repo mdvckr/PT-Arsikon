@@ -75,6 +75,15 @@ class DemoDailyLogSeeder extends Seeder
                     'notes'             => 'Peminjaman alat untuk persiapan pengecoran kolom & balok.',
                 ]
             );
+
+            // Sync Tool Inventory in Project Warehouse for this active loan
+            $toolInv = \App\Models\ToolInventory::where('warehouse_id', $proyek->id)
+                ->where('tool_id', $firstTool->id)
+                ->first();
+            if ($toolInv && $toolInv->stock_borrowed == 0 && $toolInv->stock_available > 0) {
+                $toolInv->decrement('stock_available', 1);
+                $toolInv->increment('stock_borrowed', 1);
+            }
         }
 
         // 3. Ensure sufficient material inventory in Project Warehouse

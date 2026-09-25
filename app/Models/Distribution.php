@@ -86,4 +86,70 @@ class Distribution extends Model
 
         return $prefix . $nextNumber;
     }
+
+    /**
+     * Memeriksa apakah user berhak memproses pengiriman (Ship) Surat Jalan ini.
+     * Hanya petugas gudang asal, Admin Pusat (bila asal pusat), atau Owner/Super Admin.
+     */
+    public function canUserShip(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if ($this->status !== 'draft') {
+            return false;
+        }
+
+        if (!$user->can('ship distributions')) {
+            return false;
+        }
+
+        // Owner & Super Admin ('Admin') always have full authority/override
+        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+            return true;
+        }
+
+        // Jika gudang asal adalah Gudang Pusat, Admin Gudang Pusat berhak
+        if ($this->fromWarehouse?->is_central && $user->hasRole('Admin Gudang Pusat')) {
+            return true;
+        }
+
+        // Untuk Gudang Proyek, user WAJIB ditugaskan di gudang asal ini
+        return $user->warehouses()->where('warehouses.id', $this->from_warehouse_id)->exists();
+    }
+
+    /**
+     * Memeriksa apakah user berhak menyetujui / mengonfirmasi penerimaan (Receive) Surat Jalan ini.
+     * Hanya petugas di GUDANG TUJUAN, Admin Pusat (bila tujuan pusat), atau Owner/Super Admin.
+     */
+    public function canUserReceive(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if ($this->status !== 'in_transit') {
+            return false;
+        }
+
+        if (!$user->can('receive distributions')) {
+            return false;
+        }
+
+        // Owner & Super Admin ('Admin') always have full authority/override
+        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+            return true;
+        }
+
+        // Jika gudang tujuan adalah Gudang Pusat, Admin Gudang Pusat berhak
+        if ($this->toWarehouse?->is_central && $user->hasRole('Admin Gudang Pusat')) {
+            return true;
+        }
+
+        // Untuk Gudang Proyek, user WAJIB ditugaskan di gudang tujuan ini
+        return $user->warehouses()->where('warehouses.id', $this->to_warehouse_id)->exists();
+    }
 }

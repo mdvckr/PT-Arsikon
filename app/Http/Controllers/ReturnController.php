@@ -121,9 +121,9 @@ class ReturnController extends Controller
             ]);
         }
 
-        // Notifikasi ke Admin & Central Warehouse
+        // Notifikasi ke Central Warehouse Admins
         $fromWhName = $fromWarehouse->name;
-        NotificationHelper::notifyAdmins(
+        NotificationHelper::notifyCentralWarehouseAdmins(
             "Pengembalian Material Baru: #{$return->return_number}",
             "Pengembalian material diajukan dari {$fromWhName} menuju Gudang Pusat.",
             "return_created",

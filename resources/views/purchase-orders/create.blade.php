@@ -19,6 +19,21 @@
         </div>
     @endif
 
+    @if(isset($selectedMR) && $selectedMR && $selectedMR->items->whereNull('material_id')->isNotEmpty())
+    <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
+            <div>
+                <strong style="font-size:13px;display:block;">Pengadaan Barang Manual untuk MR #{{ $selectedMR->request_number }}</strong>
+                <span style="font-size:11.5px;color:#b45309;">Hanya <strong>item barang manual/khusus</strong> yang dimasukkan ke PO ini karena memerlukan proses pengadaan/pembelian supplier. Barang inventori gudang pusat tetap diproses melalui Surat Jalan Distribusi.</span>
+            </div>
+        </div>
+        <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:5px 10px;font-size:11px;font-weight:600;">
+            MR: {{ $selectedMR->request_number }} ({{ $selectedMR->items->whereNull('material_id')->count() }} Item Manual)
+        </span>
+    </div>
+    @endif
+
     <form action="{{ route('purchase-orders.store') }}" method="POST">
         @csrf
 
@@ -163,6 +178,61 @@
                                 </td>
                             </tr>
                             @endforeach
+                        @elseif(isset($selectedMR) && $selectedMR && $selectedMR->items->whereNull('material_id')->isNotEmpty())
+                            @php
+                                // HANYA barang yang diinput manual (tidak ada di inventori pusat) yang masuk ke PO
+                                $mrItemsToBuy = $selectedMR->items->whereNull('material_id')->values();
+                            @endphp
+                            @foreach($mrItemsToBuy as $idx => $mrItem)
+                            <tr class="po-item-row">
+                                <td>
+                                    <input type="hidden" name="items[{{ $idx }}][material_id]" class="po-material-id" value="">
+                                    <input type="hidden" name="items[{{ $idx }}][material_request_item_id]" class="po-mr-item-id" value="{{ $mrItem->id }}">
+                                    <input type="hidden" name="items[{{ $idx }}][custom_item_name]" class="po-custom-name" value="{{ $mrItem->custom_item_name }}">
+                                    <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" class="po-custom-unit" value="{{ $mrItem->custom_item_unit ?? 'unit' }}">
+
+                                    <select class="form-control po-item-select" onchange="handleItemSelect(this)" required>
+                                        <optgroup label="Permintaan Material Proyek (Item Manual)">
+                                            <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $selectedMR->request_number }}" data-warehouse="{{ $selectedMR->fromWarehouse?->name }}" selected>
+                                                [MR #{{ $selectedMR->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $selectedMR->fromWarehouse?->name }}
+                                            </option>
+                                        </optgroup>
+                                        <optgroup label="Input Bebas">
+                                            <option value="manual:new" data-type="manual">+ Input Barang Baru Manual (Ketik Sendiri)</option>
+                                        </optgroup>
+                                        <optgroup label="Master Data Material">
+                                            @foreach($materials as $mat)
+                                                <option value="mat:{{ $mat->id }}" data-type="material" data-id="{{ $mat->id }}" data-price="{{ $mat->unit_price ?? 0 }}" data-unit="{{ $mat->unit?->symbol ?? 'unit' }}">
+                                                    {{ $mat->name }} ({{ $mat->unit?->symbol ?? 'unit' }})
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    </select>
+
+                                    <div class="po-extra-container mt-2" style="display:block;">
+                                        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:5px 8px;font-size:11px;color:#92400e;">
+                                            <i class="fas fa-link me-1"></i> Item manual dari MR <strong>#{{ $selectedMR->request_number }}</strong> ({{ $selectedMR->fromWarehouse?->name }}).
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @php $neededQty = max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled); @endphp
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" step="0.01" min="0.01" name="items[{{ $idx }}][quantity]" value="{{ $neededQty }}" class="form-control po-qty" oninput="calcPoRow(this)" required>
+                                        <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">{{ $mrItem->custom_item_unit ?? 'unit' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="items[{{ $idx }}][unit_price]" value="0" class="form-control po-price" oninput="calcPoRow(this)" required>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                            @endforeach
                         @else
                             <tr class="po-item-row">
                                 <td>
@@ -227,7 +297,7 @@
     </form>
 
     <script>
-        let poRowIdx = {{ $selectedPR ? count($selectedPR->items) : 1 }};
+        let poRowIdx = {{ $selectedPR ? count($selectedPR->items) : (isset($selectedMR) && $selectedMR ? max(1, $selectedMR->items->whereNull('material_id')->count()) : 1) }};
 
         // Cache options template for adding new rows dynamically
         const optionsTemplateHtml = `
