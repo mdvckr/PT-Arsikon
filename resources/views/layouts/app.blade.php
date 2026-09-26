@@ -1047,6 +1047,12 @@
             .grid-4 { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: repeat(2, 1fr); }
 
+            /* Hide title and divider in topbar on tablet/mobile */
+            .topbar-page-info,
+            .topbar-divider {
+                display: none !important;
+            }
+
             /* Card headers with filters should wrap */
             .card-header {
                 flex-wrap: wrap;
@@ -1118,11 +1124,20 @@
             .btn { padding: 7px 12px; font-size: 12.5px; }
             .btn-sm { padding: 4px 8px; font-size: 11px; }
 
-            /* Topbar actions compact */
-            .topbar-actions { gap: 8px; padding-right: 14px; }
+            /* Topbar mobile */
+            .topbar-page-info,
+            .topbar-divider,
+            .topbar-clock,
+            .topbar-center {
+                display: none !important;
+            }
+            .topbar-actions {
+                gap: 8px;
+                padding-right: 12px;
+                margin-left: auto;
+            }
             .topbar-circle-btn { width: 34px; height: 34px; font-size: 13px; }
-            .topbar-center { padding: 0 8px; }
-            .topbar-page-title { font-size: 12.5px; max-width: 220px; }
+            .topbar-user-name { max-width: 90px; font-size: 11.5px; }
 
             /* Breadcrumb compact */
             .breadcrumb { font-size: 12px; margin-bottom: 12px; }
@@ -1214,14 +1229,17 @@
             .brand-title { font-size: 13px; }
             .brand-logo { width: 32px; height: 32px; }
             .topbar-brand { gap: 8px; }
-            .topbar-center { padding: 0 6px; }
-            .topbar-page-title { font-size: 11.5px; max-width: 140px; }
-            .topbar-sep { font-size: 12px; }
+            .topbar-center,
+            .topbar-page-info,
+            .topbar-divider,
+            .topbar-clock {
+                display: none !important;
+            }
+            .topbar-user-name { display: none; }
         }
 
         @media (max-width: 380px) {
             .brand-text { display: none; }
-            .topbar-page-title { max-width: 160px; }
 
             /* Tabs scroll */
             .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -1567,6 +1585,12 @@
                 $roleIcon = 'fa-crown';
                 $subHeadline = 'Multi-Gudang (Akses Penuh)';
                 $subDesc = 'Monitoring pusat & seluruh proyek';
+            } elseif ($authUser->hasRole('Admin Pusat')) {
+                $roleLabel = 'Admin Pusat';
+                $roleBadge = 'Admin';
+                $roleIcon = 'fa-user-shield';
+                $subHeadline = 'Kantor Pusat (Full Akses)';
+                $subDesc = 'Manajemen pengguna, gudang & sistem';
             } elseif ($authUser->hasRole('Admin Gudang Pusat') || ($authUser->hasRole('Admin') && !$authUser->hasRole('Admin Gudang Proyek'))) {
                 $roleLabel = 'Admin Gudang Pusat';
                 $roleBadge = 'Pusat';
@@ -1649,14 +1673,29 @@
             @canAny(['view materials', 'view tools', 'view inventory'])
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Logistik</div>
+                @can('view goods receipts')
+                <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+                    <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
+                </a>
+                @endcan
+                
                 @can('view materials')
                 <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
                     <i class="fas fa-boxes-stacked"></i> Material
                 </a>
+                @can('view material usages')
+                <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
+                    <i class="fas fa-dolly"></i> Pemakaian Material
+                </a>
+                @endcan
+
                 @endcan
                 @can('view tools')
                 <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
                     <i class="fas fa-screwdriver-wrench"></i> Alat
+                </a>
+                <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
+                    <i class="fas fa-hand-holding"></i> Peminjaman Alat
                 </a>
                 @endcan
                 @can('view inventory')
@@ -1670,29 +1709,19 @@
             <!-- TRANSAKSI -->
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Transaksi</div>
-                @can('view goods receipts')
-                <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                    <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
-                </a>
-                @endcan
+                
                 @can('view material requests')
                 <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                     <i class="fas fa-file-circle-plus"></i> Permintaan Material
                 </a>
                 @endcan
-                <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
-                    <i class="fas fa-hand-holding"></i> Peminjaman Alat
-                </a>
+                
                 @can('view distributions')
                 <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                     <i class="fas fa-right-left"></i> Surat Jalan
                 </a>
                 @endcan
-                @can('view material usages')
-                <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
-                    <i class="fas fa-dolly"></i> Pemakaian Material
-                </a>
-                @endcan
+                
                 @if(!auth()->user()->hasRole('Karyawan'))
                 <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
                     <i class="fas fa-calendar-check"></i> Log Harian Proyek
@@ -1710,8 +1739,8 @@
                 @endcan
             </div>
 
-            <!-- PENGADAAN (Admin PO & Owner) -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
+            <!-- PENGADAAN (Admin PO, Admin Pusat & Owner) -->
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin PO']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Pengadaan</div>
                 <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
@@ -1742,24 +1771,29 @@
             @endcan
 
             <!-- LAPORAN -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Laporan</div>
                 <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i> Laporan
                 </a>
+                @can('view audit logs')
                 <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
                     <i class="fas fa-shield-halved"></i> Audit Log
                 </a>
+                @endcan
             </div>
             @endif
 
-            <!-- ADMIN -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin']))
+            <!-- ADMIN (Pengguna, Jabatan, Gudang, Proyek) -->
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Admin</div>
                 <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <i class="fas fa-users"></i> Pengguna
+                    <i class="fas fa-users"></i> Pengguna & Akun
+                </a>
+                <a href="{{ route('roles.index') }}" class="nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                    <i class="fas fa-id-badge"></i> Jabatan & Peran
                 </a>
                 <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs('warehouses.*') ? 'active' : '' }}">
                     <i class="fas fa-warehouse"></i> Gudang
@@ -1770,24 +1804,6 @@
             </div>
             @endif
         </nav>
-
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-info">
-                    <div class="user-name">{{ auth()->user()->name }}</div>
-                    <div class="user-role">{{ strtoupper($roleLabel) }}</div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="btn-logout" title="Logout">
-                        <i class="fas fa-right-from-bracket fa-flip-horizontal"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
     </aside>
 
     <!-- MAIN WRAPPER -->

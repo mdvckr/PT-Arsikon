@@ -83,14 +83,16 @@ class RoleAndPermissionSeeder extends Seeder
         $ownerRole = Role::firstOrCreate(['name' => 'Owner']);
         $ownerRole->syncPermissions(Permission::all());
 
-        // --- Admin Gudang Pusat (+ alias 'Admin' untuk backward compat) ---
-        $adminPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat']);
-        $adminRole      = Role::firstOrCreate(['name' => 'Admin']); // backward-compatible alias
-        $pusatPermissions = [
-            'view users', 'create users', 'edit users', 'delete users',
-            'projects.manage',
-            'warehouses.manage',
-            'view suppliers', 'create suppliers', 'edit suppliers', 'delete suppliers',
+        // --- Admin Pusat: Full Akses Seluruh Sistem, Manajemen Pengguna, Gudang, Jabatan, PO, Logistik ---
+        $adminPusatRole = Role::firstOrCreate(['name' => 'Admin Pusat']);
+        $adminRole      = Role::firstOrCreate(['name' => 'Admin']); // alias kompatibilitas
+        $adminPusatRole->syncPermissions(Permission::all());
+        $adminRole->syncPermissions(Permission::all());
+
+        // --- Admin Gudang Pusat: Khusus Operasional Logistik Pergudangan Sentral ---
+        $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat']);
+        $gudangPusatPermissions = [
+            'view suppliers',
             'view materials', 'create materials', 'edit materials', 'delete materials',
             'view tools', 'create tools', 'edit tools', 'delete tools',
             'view categories', 'create categories', 'edit categories', 'delete categories',
@@ -102,16 +104,10 @@ class RoleAndPermissionSeeder extends Seeder
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
             'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
-            // Procurement & Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
-            'view procurement', 'create procurement', 'approve procurement',
-            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
-            'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
-            'view payments', 'create payments', 'verify payments',
             'view returns', 'approve returns', 'receive returns',
-            'view reports', 'view audit logs',
+            'view reports',
         ];
-        $adminPusatRole->syncPermissions($pusatPermissions);
-        $adminRole->syncPermissions($pusatPermissions);
+        $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
 
         // --- Admin Gudang Proyek (+ alias 'User' untuk backward compat) ---
         $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
@@ -255,16 +251,33 @@ class RoleAndPermissionSeeder extends Seeder
             $projectWarehouseB->id,
         ]);
 
-        // 2. Admin Gudang Pusat
+        // 2. Admin Pusat (Full Akses & Kelola Akun/Gudang/Jabatan)
         $adminPusatUser = User::firstOrCreate(
             ['email' => 'admin.pusat@arsikon.co.id'],
+            [
+                'name'     => 'Admin Pusat',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
+            ]
+        );
+        $adminPusatUser->update(['name' => 'Admin Pusat']);
+        $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
+        $adminPusatUser->warehouses()->syncWithoutDetaching([
+            $centralWarehouse->id,
+            $projectWarehouseA->id,
+            $projectWarehouseB->id,
+        ]);
+
+        // 3. Admin Gudang Pusat (Hanya Akses Logistik)
+        $adminGudangPusatUser = User::firstOrCreate(
+            ['email' => 'gudang.pusat@arsikon.co.id'],
             [
                 'name'     => 'Admin Gudang Pusat',
                 'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
             ]
         );
-        $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
-        $adminPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
+        $adminGudangPusatUser->update(['name' => 'Admin Gudang Pusat']);
+        $adminGudangPusatUser->syncRoles([$adminGudangPusatRole]);
+        $adminGudangPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
         // 3. Admin Gudang Proyek (Proyek A)
         $adminProyek1 = User::firstOrCreate(

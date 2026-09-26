@@ -60,12 +60,67 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
         }
 
         .daily-kpi-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px -2px rgba(0,0,0,0.06);
+            box-shadow: 0 6px 16px -2px rgba(37,99,235,0.12);
+            border-color: #93c5fd;
+        }
+
+        .daily-kpi-card:active {
+            transform: translateY(0);
+        }
+
+        .btn-tab-filter {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-tab-filter:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+        .btn-tab-filter.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(37,99,235,0.25);
+        }
+
+        @keyframes targetSectionHighlight {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37,99,235,0);
+                border-color: #e2e8f0;
+            }
+            25% {
+                box-shadow: 0 0 0 4px rgba(37,99,235,0.35);
+                border-color: #2563eb;
+            }
+            100% {
+                box-shadow: 0 2px 6px -1px rgba(0,0,0,0.03);
+                border-color: #e2e8f0;
+            }
+        }
+
+        .section-highlight {
+            animation: targetSectionHighlight 2s ease forwards;
         }
 
         .daily-kpi-icon {
@@ -226,7 +281,7 @@
     {{-- KPI Metric Cards (5 Cards) --}}
     <div class="daily-kpi-grid mb-3">
         {{-- 1. Material Masuk --}}
-        <div class="daily-kpi-card">
+        <div class="daily-kpi-card" onclick="goToSection('section-material-masuk', 'material')" title="Klik untuk menuju ke rincian Penerimaan Material Masuk">
             <div class="daily-kpi-icon" style="background:#eff6ff;color:#2563eb;">
                 <i class="fas fa-truck-ramp-box"></i>
             </div>
@@ -241,7 +296,7 @@
         </div>
 
         {{-- 2. Material Dipakai --}}
-        <div class="daily-kpi-card">
+        <div class="daily-kpi-card" onclick="goToSection('section-material-dipakai', 'material')" title="Klik untuk menuju ke rincian Pemakaian Material Lapangan">
             <div class="daily-kpi-icon" style="background:#fff7ed;color:#ea580c;">
                 <i class="fas fa-dolly"></i>
             </div>
@@ -256,7 +311,7 @@
         </div>
 
         {{-- 3. Alat Ready --}}
-        <div class="daily-kpi-card">
+        <div class="daily-kpi-card" onclick="goToSection('section-kesiapan-alat', 'tool')" title="Klik untuk menuju ke rincian Kesiapan Alat Kerja di Gudang">
             <div class="daily-kpi-icon" style="background:#ecfdf5;color:#059669;">
                 <i class="fas fa-screwdriver-wrench"></i>
             </div>
@@ -271,7 +326,7 @@
         </div>
 
         {{-- 4. Alat di Lapangan --}}
-        <div class="daily-kpi-card">
+        <div class="daily-kpi-card" onclick="goToSection('section-alat-lapangan', 'tool')" title="Klik untuk menuju ke rincian Pantauan Alat di Lapangan">
             <div class="daily-kpi-icon" style="background:#f5f3ff;color:#7c3aed;">
                 <i class="fas fa-hand-holding"></i>
             </div>
@@ -286,7 +341,7 @@
         </div>
 
         {{-- 5. Alat Rusak / Servis --}}
-        <div class="daily-kpi-card">
+        <div class="daily-kpi-card" onclick="goToSection('section-kesiapan-alat', 'tool')" title="Klik untuk menuju ke rincian Alat yang Perlu Servis / Rusak">
             <div class="daily-kpi-icon" style="background:#fef2f2;color:{{ $totalToolsDamaged > 0 ? '#dc2626' : '#94a3b8' }};">
                 <i class="fas fa-triangle-exclamation"></i>
             </div>
@@ -301,8 +356,29 @@
         </div>
     </div>
 
+    {{-- Filter Tab Material vs Alat Kerja --}}
+    <div class="daily-filter-tabs mb-3" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#ffffff;padding:8px 14px;border-radius:10px;border:1px solid #e2e8f0;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:#475569;margin-right:4px;display:inline-flex;align-items:center;gap:5px;">
+                <i class="fas fa-filter text-primary" style="font-size:11px;"></i> Filter Bagian:
+            </span>
+            <button type="button" class="btn-tab-filter active" data-filter="all" onclick="filterSections('all')">
+                <i class="fas fa-layer-group"></i> Semua Bagian
+            </button>
+            <button type="button" class="btn-tab-filter" data-filter="material" onclick="filterSections('material')">
+                <i class="fas fa-boxes-stacked"></i> Khusus Material
+            </button>
+            <button type="button" class="btn-tab-filter" data-filter="tool" onclick="filterSections('tool')">
+                <i class="fas fa-screwdriver-wrench"></i> Khusus Alat Kerja
+            </button>
+        </div>
+        <div class="text-muted" style="font-size:11px;">
+            <i class="fas fa-mouse-pointer me-1 text-primary"></i> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.
+        </div>
+    </div>
+
     {{-- ==================== SECTION 1: PEMAKAIAN MATERIAL LAPANGAN ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-material-dipakai" data-category="material">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:22px;height:22px;border-radius:6px;background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">1</span>
@@ -371,7 +447,7 @@
     </div>
 
     {{-- ==================== SECTION 2: MATERIAL MASUK ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-material-masuk" data-category="material">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:22px;height:22px;border-radius:6px;background:#ecfdf5;color:#047857;font-weight:700;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">2</span>
@@ -473,7 +549,7 @@
     </div>
 
     {{-- ==================== SECTION 3: DISTRIBUSI KELUAR ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-distribusi-keluar" data-category="material">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:22px;height:22px;border-radius:6px;background:#f5f3ff;color:#7c3aed;font-weight:700;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">3</span>
@@ -544,7 +620,7 @@
     </div>
 
     {{-- ==================== SECTION 4: RETUR MATERIAL ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-retur-material" data-category="material">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:22px;height:22px;border-radius:6px;background:#fffbeb;color:#b45309;font-weight:700;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">4</span>
@@ -612,7 +688,7 @@
     </div>
 
     {{-- ==================== SECTION 5: PANTAUAN ALAT KERJA ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-alat-lapangan" data-category="tool">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:22px;height:22px;border-radius:6px;background:#f5f3ff;color:#6d28d9;font-weight:700;font-size:11px;display:inline-flex;align-items:center;justify-content:center;">5</span>
@@ -698,7 +774,7 @@
     </div>
 
     {{-- ==================== SECTION 6: NERACA SISA STOK MATERIAL ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-neraca-material" data-category="material">
         <div class="daily-section-header">
             <div>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -775,7 +851,7 @@
     </div>
 
     {{-- ==================== SECTION 7: KESIAPAN ALAT KERJA ==================== --}}
-    <div class="daily-section-card">
+    <div class="daily-section-card" id="section-kesiapan-alat" data-category="tool">
         <div class="daily-section-header">
             <div>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -892,4 +968,63 @@
             @endif
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function filterSections(category) {
+            // Update active tab buttons
+            document.querySelectorAll('.btn-tab-filter').forEach(btn => {
+                if (btn.getAttribute('data-filter') === category) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Show or hide sections based on category
+            const sections = document.querySelectorAll('.daily-section-card[data-category]');
+            sections.forEach(sec => {
+                const secCat = sec.getAttribute('data-category');
+                if (category === 'all' || secCat === category) {
+                    sec.style.display = '';
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        }
+
+        function goToSection(sectionId, category) {
+            // Check active filter tab
+            const activeBtn = document.querySelector('.btn-tab-filter.active');
+            const currentFilter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+
+            // If the target section is hidden under current filter, switch to that category
+            if (currentFilter !== 'all' && currentFilter !== category) {
+                filterSections(category);
+            }
+
+            const target = document.getElementById(sectionId);
+            if (target) {
+                target.style.display = '';
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                target.classList.remove('section-highlight');
+                void target.offsetWidth; // trigger reflow
+                target.classList.add('section-highlight');
+            }
+        }
+
+        // Support URL hash navigation on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.location.hash) {
+                const hashId = window.location.hash.substring(1);
+                const el = document.getElementById(hashId);
+                if (el) {
+                    const cat = el.getAttribute('data-category') || 'all';
+                    goToSection(hashId, cat);
+                }
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>

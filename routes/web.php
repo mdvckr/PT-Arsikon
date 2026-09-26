@@ -15,6 +15,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\NotificationController;
@@ -57,7 +58,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // Master Data
+    Route::post('/materials/delete-group', [MaterialController::class, 'deleteGroup'])->name('materials.delete-group');
     Route::resource('materials', MaterialController::class);
+    Route::post('/tools/delete-group', [ToolController::class, 'deleteGroup'])->name('tools.delete-group');
     Route::post('/tools/{tool}/add-stock', [ToolController::class, 'addStock'])->name('tools.addStock');
     Route::resource('tools', ToolController::class);
     Route::resource('suppliers', SupplierController::class);
@@ -73,6 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     // Goods Receipts
+    Route::get('/goods-receipts/scheduled-incoming', [GoodsReceiptController::class, 'getScheduledIncoming'])->name('goods-receipts.scheduledIncoming');
     Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
     Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
     Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
@@ -132,7 +136,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
 
     // Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
-    Route::group(['middleware' => ['role:Owner|Super Admin|Admin|Admin Gudang Pusat|Admin PO']], function () {
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO']], function () {
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
@@ -152,8 +156,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
     Route::post('/returns/{return}/reject',  [ReturnController::class, 'reject'])->name('returns.reject');
 
-    // Admin: Users, Warehouses, Projects
+    // Admin: Users, Roles, Warehouses, Projects
     Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class)->only(['index', 'store', 'destroy']);
     Route::resource('warehouses', WarehouseController::class)->except(['show']);
     Route::resource('projects', ProjectController::class)->except(['show']);
 

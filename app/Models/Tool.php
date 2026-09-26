@@ -68,6 +68,11 @@ class Tool extends Model
         return $this->hasMany(Maintenance::class);
     }
 
+    public function setCodeAttribute($value): void
+    {
+        $this->attributes['code'] = !empty($value) ? strtoupper(trim($value)) : $value;
+    }
+
     /**
      * Accessor: aggregate total stock across all warehouses.
      */

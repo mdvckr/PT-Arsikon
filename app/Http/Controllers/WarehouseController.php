@@ -8,12 +8,51 @@ use Illuminate\Http\Request;
 
 class WarehouseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('warehouses.manage');
-        $warehouses = Warehouse::withCount(['inventories', 'users'])->latest()->paginate(15);
 
-        return view('warehouses.index', compact('warehouses'));
+        $query = Warehouse::with(['project'])->withCount(['inventories', 'users']);
+
+        if ($request->filled('search')) {
+            $s = trim($request->search);
+            $query->where(function($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('code', 'like', "%{$s}%")
+                  ->orWhere('address', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('type')) {
+            if (in_array($request->type, ['main', 'central', 'pusat'])) {
+                $query->where(function($q) {
+                    $q->where('is_central', true)->orWhereIn('type', ['central', 'main', 'pusat']);
+                });
+            } elseif ($request->type === 'project') {
+                $query->where(function($q) {
+                    $q->where('is_central', false)->where('type', 'project');
+                });
+            }
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $warehouses = $query->latest()->paginate(15)->withQueryString();
+
+        $stats = [
+            'total'   => Warehouse::count(),
+            'central' => Warehouse::where('is_central', true)->orWhereIn('type', ['central', 'main', 'pusat'])->count(),
+            'project' => Warehouse::where('is_central', false)->where('type', 'project')->count(),
+            'active'  => Warehouse::where('is_active', true)->count(),
+        ];
+
+        return view('warehouses.index', compact('warehouses', 'stats'));
     }
 
     public function create()

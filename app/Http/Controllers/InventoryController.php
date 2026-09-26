@@ -17,20 +17,40 @@ class InventoryController extends Controller
 
         $user = auth()->user();
 
-        // Non-admin users: force scope ke warehouse mereka sendiri
-        $isAdmin = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
+        // Cek hak akses admin/owner yang dapat melihat seluruh gudang
+        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
+        $accessibleWarehouses = $this->accessibleWarehouses();
 
-        if ($isAdmin) {
-            $warehouseId = session('active_warehouse_id');
+        // Ambil input warehouse_id dari request query
+        $requestedWarehouseId = $request->query('warehouse_id');
+
+        if ($canViewAllWarehouses) {
+            if ($requestedWarehouseId === 'all') {
+                $warehouseId = null;
+                $selectedWarehouseId = 'all';
+            } elseif (!empty($requestedWarehouseId) && is_numeric($requestedWarehouseId)) {
+                $warehouseId = (int) $requestedWarehouseId;
+                $selectedWarehouseId = $warehouseId;
+            } elseif ($request->has('warehouse_id') && empty($requestedWarehouseId)) {
+                $warehouseId = null;
+                $selectedWarehouseId = 'all';
+            } else {
+                // Default saat awal load: tampilkan 'all' (semua gudang) agar admin dapat melihat inventori secara konsolidasi
+                $selectedWarehouseId = 'all';
+                $warehouseId = null;
+            }
         } else {
-            // Untuk Admin Proyek / Karyawan: paksa ke active warehouse user,
-            // atau warehouse pertama yang dimiliki jika sesi belum di-set.
-            $warehouseId = session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
-
-            // Pastikan warehouseId yang dipilih memang milik user ini
+            // Untuk Admin Proyek / Karyawan: batasi pilihan hanya pada gudang yang ditugaskan kepadanya
             $userWhIds = $user->accessibleWarehouseIds();
-            if ($warehouseId && !in_array($warehouseId, $userWhIds)) {
-                $warehouseId = $userWhIds[0] ?? null;
+            if (!empty($requestedWarehouseId) && in_array((int)$requestedWarehouseId, $userWhIds)) {
+                $warehouseId = (int)$requestedWarehouseId;
+                $selectedWarehouseId = $warehouseId;
+            } else {
+                $warehouseId = session('active_warehouse_id') ?? ($userWhIds[0] ?? null);
+                if ($warehouseId && !in_array($warehouseId, $userWhIds)) {
+                    $warehouseId = $userWhIds[0] ?? null;
+                }
+                $selectedWarehouseId = $warehouseId;
             }
         }
         $itemType    = $request->query('item_type'); // 'material', 'tool', or empty (semua)
@@ -172,6 +192,7 @@ class InventoryController extends Controller
                         if ($warehouseId) {
                             $invQ->where('warehouse_id', $warehouseId);
                         }
+                        $invQ->with('warehouse');
                     }]);
 
                     if ($warehouseId) {
@@ -243,7 +264,7 @@ class InventoryController extends Controller
         }
 
         $filterCategories = Category::orderBy('name')->get();
-        $warehouses = $this->accessibleWarehouses();
+        $warehouses = $accessibleWarehouses;
 
         return view('inventory.index', compact(
             'categoriesData',
@@ -251,6 +272,9 @@ class InventoryController extends Controller
             'cascadingData',
             'filterCategories',
             'warehouses',
+            'accessibleWarehouses',
+            'canViewAllWarehouses',
+            'selectedWarehouseId',
             'warehouseId',
             'itemType',
             'categoryId',

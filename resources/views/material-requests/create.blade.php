@@ -270,14 +270,15 @@
                                 <thead>
                                     <tr style="background:#fef3c7;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:#92400e;">
                                         <th style="min-width:180px;padding:6px 8px;">Nama Barang (Manual)</th>
-                                        <th style="width:80px;text-align:center;padding:6px 8px;">Satuan</th>
-                                        <th style="width:90px;text-align:center;padding:6px 8px;">Jumlah</th>
+                                        <th style="min-width:140px;padding:6px 8px;">Kategori</th>
+                                        <th style="width:75px;text-align:center;padding:6px 8px;">Satuan</th>
+                                        <th style="width:85px;text-align:center;padding:6px 8px;">Jumlah</th>
                                         <th style="width:36px;text-align:center;padding:6px 4px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="customRequestBody">
                                     <tr id="customRequestEmpty">
-                                        <td colspan="4" class="text-center text-muted" style="padding:10px;font-size:11px;">Belum ada barang manual. Klik "Tambah Baris".</td>
+                                        <td colspan="5" class="text-center text-muted" style="padding:10px;font-size:11px;">Belum ada barang manual. Klik "Tambah Baris".</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -339,8 +340,19 @@
             if (empty) empty.style.display = 'none';
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #fef3c7';
+
+            let categoryOptions = `<option value="">Material Khusus Proyek (Otomatis)</option>`;
+            @foreach($materialCategories as $cat)
+                categoryOptions += `<option value="{{ $cat->id }}">{{ addslashes($cat->name) }}</option>`;
+            @endforeach
+
             tr.innerHTML = `
                 <td style="padding:5px 8px;"><input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:30px;border-radius:4px;"></td>
+                <td style="padding:5px 6px;">
+                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11.5px;height:30px;border-radius:4px;">
+                        ${categoryOptions}
+                    </select>
+                </td>
                 <td style="padding:5px 6px;"><input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:30px;border-radius:4px;"></td>
                 <td style="padding:5px 6px;"><input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="height:30px;" oninput="calculateTotal()"></td>
                 <td style="text-align:center;padding:5px 4px;"><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:9px;"></i></button></td>

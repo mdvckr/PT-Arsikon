@@ -26,8 +26,27 @@
                     </div>
                 </div>
 
-                {{-- Kolom Jenis Item (Dipindahkan tepat di samping Pencarian) --}}
-                <div style="width:220px;min-width:180px;">
+                {{-- Kolom Lokasi Gudang (Role Admin / Owner dapat melihat semua atau memfilter per gudang) --}}
+                <div style="width:230px;min-width:180px;">
+                    <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">
+                        Lokasi Gudang
+                    </label>
+                    <select name="warehouse_id" id="filter_warehouse_id" class="form-control" onchange="this.form.submit()" style="height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
+                        @if(!empty($canViewAllWarehouses))
+                            <option value="all" {{ ($selectedWarehouseId === 'all' || empty($selectedWarehouseId)) ? 'selected' : '' }}>
+                                Semua Gudang (Konsolidasi)
+                            </option>
+                        @endif
+                        @foreach($accessibleWarehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
+                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Kolom Jenis Item --}}
+                <div style="width:200px;min-width:160px;">
                     <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">
                         Jenis Item
                     </label>
@@ -43,7 +62,7 @@
                     <button type="submit" class="btn btn-secondary" style="height:38px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;">
                         Cari
                     </button>
-                    @if(request('search') || request('item_type'))
+                    @if(request('search') || request('item_type') || (request('warehouse_id') && request('warehouse_id') !== 'all'))
                     <a href="{{ route('inventory.index') }}" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:13px;color:#64748b;" title="Reset Filter">
                         Reset
                     </a>
@@ -108,9 +127,6 @@
                                         ({{ $totalMaterials }} material)
                                     </span>
                                 </div>
-                                <span style="font-size:11px;color:#94a3b8;font-weight:500;">
-                                    Buka / Tutup
-                                </span>
                             </div>
                         </td>
                     </tr>
@@ -130,9 +146,6 @@
                                         ({{ $materialsInType->count() }})
                                     </span>
                                 </div>
-                                <span style="font-size:11px;color:#94a3b8;">
-                                    Buka / Tutup
-                                </span>
                             </div>
                         </td>
                     </tr>
@@ -164,7 +177,10 @@
                                 {{ $category->name }}
                             </td>
                             <td style="padding:8px 12px;font-size:12px;color:#334155;font-weight:500;vertical-align:middle;">
-                                {{ $inv->warehouse?->name ?? '-' }}
+                                <span style="display:inline-flex;align-items:center;gap:5.5px;padding:2px 8px;border-radius:5px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11.5px;color:#1e293b;font-weight:600;">
+                                    <i class="fas fa-warehouse" style="font-size:10px;color:#64748b;"></i>
+                                    {{ $inv->warehouse?->name ?? '-' }}
+                                </span>
                             </td>
                             <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
                                 <span class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
@@ -315,11 +331,15 @@
                             {{ $toolCategory->name }}
                         </td>
                         <td style="padding:8px 12px;font-size:12px;color:#334155;font-weight:500;vertical-align:middle;">
-                            @if($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
-                                {{ $tool->inventories->first()->warehouse?->name ?? '-' }}
-                            @else
-                                {{ $tool->currentWarehouse?->name ?? 'Gudang Pusat' }}
-                            @endif
+                            @php
+                                $whName = ($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
+                                    ? ($tool->inventories->first()->warehouse?->name ?? '-')
+                                    : ($tool->currentWarehouse?->name ?? 'Gudang Pusat');
+                            @endphp
+                            <span style="display:inline-flex;align-items:center;gap:5.5px;padding:2px 8px;border-radius:5px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11.5px;color:#1e293b;font-weight:600;">
+                                <i class="fas fa-warehouse" style="font-size:10px;color:#64748b;"></i>
+                                {{ $whName }}
+                            </span>
                         </td>
                         <td style="text-align:center;padding:8px 12px;vertical-align:middle;">
                             <span class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>

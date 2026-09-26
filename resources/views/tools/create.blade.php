@@ -32,9 +32,16 @@
                     <div class="grid grid-3" style="gap:16px;">
                         {{-- Kategori --}}
                         <div>
-                            <label class="form-label" for="category_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                Kategori <span style="color:#ef4444;">*</span>
-                            </label>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                <label class="form-label mb-0" for="category_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                    Kategori <span style="color:#ef4444;">*</span>
+                                </label>
+                                @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+                                <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;" title="Hapus kategori yang dipilih jika salah memasukkan">
+                                    <i class="fas fa-trash-can me-1"></i> Hapus Kategori
+                                </button>
+                                @endif
+                            </div>
                             <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange()" style="height:38px;border-radius:6px;font-size:13px;" required>
                                 <option value="">— Pilih Kategori —</option>
                                 @foreach($categories as $cat)
@@ -101,7 +108,8 @@
                             <input type="text" name="code" value="{{ old('code') }}"
                                 class="form-control font-monospace @error('code') is-invalid @enderror"
                                 placeholder="Contoh: TLS-GEN-001 / MOLEN-01"
-                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;" required>
+                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;text-transform:uppercase;"
+                                oninput="this.value = this.value.toUpperCase()" required>
                             @error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
@@ -177,6 +185,49 @@
                 </div>
             </div>
 
+            {{-- SECTION 4: TAHAP KEDATANGAN ALAT --}}
+            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
+                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div>
+                        <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-calendar-alt text-warning me-1" style="color:#d97706;"></i> 4. Tahap Kedatangan Alat</div>
+                        <div class="text-muted" style="font-size:12px;margin-top:1px;">Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong>.</div>
+                    </div>
+                    <button type="button" onclick="addStageRow()" class="btn btn-sm btn-warning" style="height:32px;font-size:12px;font-weight:700;color:#fff;background:#d97706;border:none;">
+                        <i class="fas fa-plus me-1"></i> Tambah Tahap
+                    </button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;font-size:12.5px;border-collapse:collapse;min-width:680px;" id="stages_table">
+                        <thead>
+                            <tr style="background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;">
+                                <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
+                                <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
+                                <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Unit</th>
+                                <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
+                                <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
+                                <th style="padding:10px 14px;width:50px;text-align:center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="stages_tbody">
+                            {{-- Baris dinamis --}}
+                        </tbody>
+                    </table>
+                    <div id="stages_empty" style="display:none;padding:24px;text-align:center;color:#94a3b8;">
+                        <div style="font-size:13px;">Belum ada tahap. Klik <strong>Tambah Tahap</strong> bila ada jadwal pengiriman terencana.</div>
+                    </div>
+                </div>
+                <div style="padding:10px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:16px;font-size:12px;">
+                        <div>Masuk: <strong id="summary_received" style="color:#16a34a;">0</strong> Unit</div>
+                        <div>Rencana: <strong id="summary_planned" style="color:#b45309;">0</strong> Unit</div>
+                        <div>Total: <strong id="summary_total" style="color:#0f172a;">0</strong> Unit</div>
+                    </div>
+                    <div class="text-muted" style="font-size:11.5px;">
+                        <i class="fas fa-lock text-muted me-1"></i> Status terkunci otomatis sebagai <strong>Rencana</strong>, dan akan berubah ke <strong>Sudah Masuk</strong> otomatis saat dicatat di menu Penerimaan Barang.
+                    </div>
+                </div>
+            </div>
+
             {{-- ACTION BUTTONS --}}
             <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
                 <button type="submit" class="btn btn-primary" style="height:38px;padding:0 20px;font-size:13px;font-weight:600;border-radius:6px;">
@@ -205,7 +256,7 @@
             <div class="grid" style="gap:12px;">
                 <div>
                     <label class="form-label" style="font-weight:600;color:#334155;">Kode Alat <span style="color:#ef4444;">*</span></label>
-                    <input type="text" name="manual_items[][code]" id="manual_tool_code" class="form-control font-monospace" placeholder="Contoh: TLS-GEN-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
+                    <input type="text" name="manual_items[][code]" id="manual_tool_code" class="form-control font-monospace" placeholder="Contoh: TLS-GEN-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
                 </div>
                 <div>
                     <label class="form-label" style="font-weight:600;color:#334155;">Nama Alat <span style="color:#ef4444;">*</span></label>
@@ -250,12 +301,74 @@
     <script>
         var existingGroups = @json($existingGroups ?? []);
 
+        function updateDeleteCategoryBtn() {
+            var sel = document.getElementById('category_select');
+            var btn = document.getElementById('btn_delete_cat');
+            if (!btn) return;
+            if (sel && sel.value && sel.value !== '__new__') {
+                btn.style.display = 'inline-flex';
+                var optText = sel.options[sel.selectedIndex].text;
+                btn.title = 'Hapus kategori "' + optText + '" jika salah memasukkannya';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function deleteSelectedCategory() {
+            var sel = document.getElementById('category_select');
+            if (!sel || !sel.value || sel.value === '__new__') return;
+            var catId = sel.value;
+            var catName = sel.options[sel.selectedIndex].text;
+
+            if (!confirm('Hapus kategori "' + catName + '"? Kategori yang salah dimasukkan akan dihapus dari sistem.')) {
+                return;
+            }
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '{{ csrf_token() }}';
+
+            fetch('{{ url("/categories") }}/' + catId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ _method: 'DELETE' })
+            })
+            .then(function(res) {
+                return res.json().then(function(data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function(res) {
+                if (res.ok && res.data.success) {
+                    alert(res.data.message || 'Kategori berhasil dihapus.');
+                    for (var i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value == catId) {
+                            sel.remove(i);
+                            break;
+                        }
+                    }
+                    sel.value = '';
+                    onCategoryChange();
+                } else {
+                    alert(res.data.message || 'Gagal menghapus kategori. Kategori mungkin masih memiliki data alat kerja.');
+                }
+            })
+            .catch(function(err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menghapus kategori.');
+            });
+        }
+
         function onCategoryChange() {
             var select = document.getElementById('category_select');
             var catId = select.value;
             var wrap = document.getElementById('new_category_wrap');
             var isNew = catId === '__new__';
             wrap.style.display = isNew ? 'block' : 'none';
+            updateDeleteCategoryBtn();
             if (isNew) { document.getElementById('new_category').focus(); return; }
 
             var datalist = document.getElementById('type_datalist');
@@ -306,6 +419,122 @@
             if (cat && cat.value === '__new__') cat.value = '';
         }
 
+        // ── Incoming Stages Logic (Locked Badge) ──────────────────────────
+        var stageIndex = 0;
+
+        function checkEmptyState() {
+            var tbody = document.getElementById('stages_tbody');
+            var empty = document.getElementById('stages_empty');
+            if (empty) empty.style.display = tbody.children.length === 0 ? 'block' : 'none';
+        }
+
+        function addStageRow(data) {
+            data = data || {};
+            var tbody   = document.getElementById('stages_tbody');
+            var tr      = document.createElement('tr');
+            tr.id       = 'stage_row_' + stageIndex;
+
+            var stageNum  = tbody.children.length + 1;
+            var stageVal  = data.stage  !== undefined ? data.stage  : 'T' + stageNum;
+            var dateVal   = data.date   || '';
+            var qtyVal    = data.qty    !== undefined ? data.qty    : '';
+            var statusVal = data.status || 'planned';
+            var notesVal  = data.notes  || '';
+
+            var statusBadge = (statusVal === 'received')
+                ? `<div style="display:inline-flex;flex-direction:column;gap:3px;">
+                       <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;width:fit-content;">
+                           <i class="fas fa-circle-check text-success"></i> Sudah Masuk
+                       </span>
+                   </div>`
+                : `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;" title="Status terkunci otomatis sebagai Rencana dan berubah ke Sudah Masuk saat alat diterima">
+                       <i class="fas fa-clock text-warning"></i> Rencana
+                   </span>`;
+
+            tr.innerHTML = `
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="text" name="incoming_stages[${stageIndex}][stage]" value="${stageVal}"
+                           class="form-control form-control-sm font-monospace"
+                           placeholder="T${stageNum}"
+                           style="height:36px;border-radius:6px;font-size:12.5px;font-weight:700;color:#0f172a;background:#f8fafc;width:75px;text-align:center;">
+                </td>
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="date" name="incoming_stages[${stageIndex}][date]" value="${dateVal}"
+                           class="form-control form-control-sm"
+                           style="height:36px;border-radius:6px;font-size:12.5px;">
+                </td>
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="number" step="1" min="1" name="incoming_stages[${stageIndex}][qty]" value="${qtyVal}"
+                           class="form-control form-control-sm stage-qty-input"
+                           placeholder="1"
+                           style="height:36px;border-radius:6px;font-size:13px;font-weight:700;text-align:right;"
+                           oninput="updateStagesSummary()">
+                </td>
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="hidden" name="incoming_stages[${stageIndex}][status]" value="${statusVal}" class="stage-status-select">
+                    ${statusBadge}
+                </td>
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}"
+                           class="form-control form-control-sm"
+                           placeholder="No. SJ / Truk / Keterangan"
+                           style="height:36px;border-radius:6px;font-size:12.5px;">
+                </td>
+                <td style="padding:10px 12px;text-align:center;vertical-align:middle;">
+                    <button type="button"
+                            onclick="removeStageRow(${stageIndex})"
+                            title="Hapus baris tahap"
+                            style="width:32px;height:32px;padding:0;color:#dc2626;background:#fff;border:1px solid #fecaca;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <i class="fas fa-trash-can" style="font-size:12px;"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            stageIndex++;
+            updateStagesSummary();
+            checkEmptyState();
+        }
+
+        function removeStageRow(index) {
+            var row = document.getElementById('stage_row_' + index);
+            if (row) { row.remove(); updateStagesSummary(); checkEmptyState(); }
+        }
+
+        function updateStagesSummary() {
+            var tbody = document.getElementById('stages_tbody');
+            var totalReceived = 0, totalPlanned = 0;
+
+            tbody.querySelectorAll('tr').forEach(function(row) {
+                var qtyInput = row.querySelector('.stage-qty-input');
+                var statusSel = row.querySelector('.stage-status-select');
+                if (!qtyInput || !statusSel) return;
+                var qty = parseFloat(qtyInput.value) || 0;
+                if (statusSel.value === 'received') {
+                    totalReceived += qty;
+                } else {
+                    totalPlanned += qty;
+                }
+            });
+
+            var totalAll = totalReceived + totalPlanned;
+            var fmt = function(n) { return n.toLocaleString('id-ID'); };
+
+            var elRec = document.getElementById('summary_received');
+            var elPln = document.getElementById('summary_planned');
+            var elTot = document.getElementById('summary_total');
+            if (elRec) elRec.textContent = fmt(totalReceived);
+            if (elPln) elPln.textContent = fmt(totalPlanned);
+            if (elTot) elTot.textContent = fmt(totalAll);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        checkEmptyState();
+
         // Initialize on page load
         onCategoryChange();
 
@@ -319,7 +548,7 @@
         }
 
         function addManualTool() {
-            var code = document.getElementById('manual_tool_code').value.trim();
+            var code = document.getElementById('manual_tool_code').value.trim().toUpperCase();
             var name = document.getElementById('manual_tool_name').value.trim();
             var qty = document.getElementById('manual_tool_qty').value || 0;
 

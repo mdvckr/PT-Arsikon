@@ -171,55 +171,70 @@
                     <table class="data-table receipt-detail-table mb-0">
                         <thead>
                             <tr>
-                                <th>Nama Material</th>
-                                <th>Kategori</th>
-                                <th style="text-align:right;width:110px;">Qty Diterima</th>
-                                <th style="width:80px;text-align:center;">Satuan</th>
-                                <th style="text-align:right;width:140px;">Harga Satuan</th>
-                                <th style="text-align:right;width:150px;">Subtotal</th>
+                                <th style="width:110px;">Tipe</th>
+                                <th>Nama Barang / Item</th>
+                                <th style="width:150px;">Kategori</th>
+                                <th style="text-align:center;width:130px;">Qty Diterima</th>
+                                <th style="width:90px;text-align:center;">Satuan</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @php $total = 0; @endphp
                             @forelse($goodsReceipt->items as $item)
                             @php
+                                $isTool   = $item->isTool();
                                 $qty      = (float) $item->qty_received;
-                                $price    = (float) $item->unit_price;
-                                $subtotal = $qty * $price;
-                                $total   += $subtotal;
+                                $itemName = $item->item_name;
+                                $itemCode = $item->item_code;
+                                $categoryName = $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Umum');
+                                $unitName = $item->item_unit;
                             @endphp
                             <tr>
                                 <td>
-                                    <div class="fw-600" style="color:#0f172a;font-size:12.5px;">{{ $item->material?->name }}</div>
-                                    <div class="text-muted" style="font-size:11px;margin-top:2px;display:flex;align-items:center;gap:4px;">
-                                        @if($item->material?->code)
-                                            <code style="background:#f1f5f9;color:#475569;padding:1px 4px;border-radius:3px;font-size:10px;">{{ $item->material->code }}</code>
+                                    @if($isTool)
+                                        <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">
+                                            <i class="fas fa-helmet-safety"></i> Alat
+                                        </span>
+                                    @else
+                                        <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:700;">
+                                            <i class="fas fa-box"></i> Material
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="fw-700" style="color:#0f172a;font-size:13px;">{{ $itemName }}</div>
+                                    <div class="text-muted" style="font-size:11px;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                        @if($itemCode && $itemCode !== '-')
+                                            <code style="background:#f1f5f9;color:#475569;padding:1px 5px;border-radius:3px;font-size:10.5px;"><i class="fas fa-barcode me-1"></i>{{ $itemCode }}</code>
+                                        @endif
+                                        @php
+                                            $brand = $isTool ? $item->tool?->brand : $item->material?->brand;
+                                            $size  = $isTool ? $item->tool?->size : $item->material?->size;
+                                        @endphp
+                                        @if($brand)
+                                            <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #e2e8f0;font-size:10.5px;">Merek: <strong>{{ $brand }}</strong></span>
+                                        @endif
+                                        @if($size)
+                                            <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10.5px;">Ukuran: <strong>{{ $size }}</strong></span>
                                         @endif
                                     </div>
                                 </td>
                                 <td>
                                     <span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:10.5px;padding:2px 6px;border-radius:4px;">
-                                        {{ $item->material?->category?->name ?? 'Umum' }}
+                                        {{ $categoryName }}
                                     </span>
                                 </td>
-                                <td style="text-align:right;font-weight:700;color:#0f172a;">
-                                    {{ number_format($qty, 2, ',', '.') }}
+                                <td style="text-align:center;font-weight:700;color:#0f172a;font-size:13.5px;">
+                                    {{ $isTool ? number_format($qty, 0) : number_format($qty, 2, ',', '.') }}
                                 </td>
                                 <td style="text-align:center;">
                                     <span class="text-muted" style="font-size:11.5px;font-weight:600;">
-                                        {{ $item->material?->unit?->abbreviation ?? 'unit' }}
+                                        {{ $unitName }}
                                     </span>
-                                </td>
-                                <td style="text-align:right;color:#475569;font-size:12px;">
-                                    Rp {{ number_format($price, 0, ',', '.') }}
-                                </td>
-                                <td style="text-align:right;font-weight:700;color:#0f172a;font-size:12.5px;">
-                                    Rp {{ number_format($subtotal, 0, ',', '.') }}
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">
+                                <td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">
                                     Tidak ada rincian item barang pada penerimaan ini.
                                 </td>
                             </tr>
@@ -227,11 +242,8 @@
                         </tbody>
                         <tfoot>
                             <tr style="background:#f8fafc;border-top:1.5px solid #e2e8f0;">
-                                <td colspan="4" style="text-align:right;font-weight:700;color:#475569;padding:10px 14px;font-size:12px;">
-                                    Total Nilai Pembelian / Penerimaan:
-                                </td>
-                                <td colspan="2" style="text-align:right;font-weight:800;color:#2563eb;padding:10px 14px;font-size:15px;">
-                                    Rp {{ number_format($total, 0, ',', '.') }}
+                                <td colspan="5" style="text-align:left;font-weight:600;color:#64748b;padding:10px 14px;font-size:12px;">
+                                    Total: <strong style="color:#0f172a;">{{ $goodsReceipt->items->count() }}</strong> jenis barang/alat diterima
                                 </td>
                             </tr>
                         </tfoot>
@@ -326,6 +338,14 @@
                     </div>
 
                     <div class="info-row">
+                        <span class="info-label">Nama Penerima</span>
+                        <span class="info-val" style="display:inline-flex;align-items:center;gap:4px;">
+                            <i class="fas fa-user-check text-muted" style="font-size:10px;"></i>
+                            {{ $goodsReceipt->received_by_name ?? $goodsReceipt->receivedBy?->name ?? '—' }}
+                        </span>
+                    </div>
+
+                    <div class="info-row">
                         <span class="info-label">Status</span>
                         <span class="info-val">
                             @if($goodsReceipt->isConfirmed())
@@ -368,7 +388,7 @@
                         Stok inventori di gudang belum bertambah sampai penerimaan ini dikonfirmasi.
                     </div>
                 </div>
-                @can('confirm goods receipts')
+                @if($goodsReceipt->canUserConfirm(auth()->user()))
                 <form method="POST" action="{{ route('goods-receipts.confirm', $goodsReceipt) }}" style="margin-top:10px;">
                     @csrf
                     <button type="submit" class="btn btn-success w-full" 
@@ -377,7 +397,12 @@
                         <i class="fas fa-check-circle me-1"></i> Konfirmasi Sekarang
                     </button>
                 </form>
-                @endcan
+                @else
+                <div style="margin-top:10px;padding:8px 10px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:11px;color:#991b1b;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-lock"></i>
+                    <span>Hanya petugas di <strong>{{ $goodsReceipt->warehouse?->name }}</strong> yang berhak mengonfirmasi penerimaan barang ini.</span>
+                </div>
+                @endif
             </div>
             @endif
 

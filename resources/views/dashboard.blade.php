@@ -341,6 +341,8 @@
         $activeWh = $authUser->activeWarehouse();
         if ($authUser->hasRole('Owner')) {
             $userRoleText = 'Owner / Direksi';
+        } elseif ($authUser->hasRole('Admin Pusat')) {
+            $userRoleText = 'Admin Pusat';
         } elseif ($authUser->hasRole('Admin Gudang Pusat') || ($authUser->hasRole('Admin') && !$authUser->hasRole('Admin Gudang Proyek'))) {
             $userRoleText = 'Admin Gudang Pusat';
         } elseif ($authUser->hasRole('Admin Gudang Proyek')) {

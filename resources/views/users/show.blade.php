@@ -12,9 +12,9 @@
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-user-circle text-primary"></i> <span class="card-title">Profil Pengguna</span>
-                @can('manage users')
+                @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
                 <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning"><i class="fas fa-pen"></i> Edit</a>
-                @endcan
+                @endif
             </div>
             <div class="card-body" style="text-align:center;">
                 <div style="width:80px;height:80px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;color:#64748b;font-weight:bold;">

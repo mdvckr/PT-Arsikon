@@ -107,11 +107,19 @@ class MaterialController extends Controller
         $user = Auth::user();
         $accessibleIds = $user->accessibleWarehouseIds();
 
+        if ($request->filled('sku')) {
+            $request->merge(['sku' => strtoupper(trim($request->sku))]);
+        }
+
         // Clean up manual_items if present but empty or invalid
         if ($request->has('manual_items') && is_array($request->manual_items)) {
-            $filteredManual = array_values(array_filter($request->manual_items, function ($item) {
-                return is_array($item) && !empty($item['name']) && !empty($item['sku']);
-            }));
+            $filteredManual = [];
+            foreach ($request->manual_items as $item) {
+                if (is_array($item) && !empty($item['name']) && !empty($item['sku'])) {
+                    $item['sku'] = strtoupper(trim($item['sku']));
+                    $filteredManual[] = $item;
+                }
+            }
             $request->merge(['manual_items' => !empty($filteredManual) ? $filteredManual : null]);
         }
 
@@ -146,6 +154,8 @@ class MaterialController extends Controller
             'manual_items.*.min_stock' => 'nullable|numeric|min:0',
             'manual_items.*.description' => 'nullable|string',
         ]);
+
+        $validated['sku'] = strtoupper(trim($validated['sku']));
 
         // Validasi warehouse_id — admin harus memilih gudang yang valid
         if (empty($validated['warehouse_id']) || !is_numeric($validated['warehouse_id'])) {
@@ -293,6 +303,10 @@ class MaterialController extends Controller
     {
         $this->authorize('edit materials');
 
+        if ($request->filled('sku')) {
+            $request->merge(['sku' => strtoupper(trim($request->sku))]);
+        }
+
         $validated = $request->validate([
             'sku'             => "required|string|max:50|unique:materials,sku,{$material->id}",
             'name'            => 'required|string|max:255',
@@ -308,6 +322,8 @@ class MaterialController extends Controller
             'description'     => 'nullable|string',
             'incoming_stages' => 'nullable|array',
         ]);
+
+        $validated['sku'] = strtoupper(trim($validated['sku']));
 
         $category = $this->resolveCategory($request);
         $validated['category_id'] = $category?->id;
@@ -394,7 +410,7 @@ class MaterialController extends Controller
                     'stage'  => $stageName ?: 'T' . (count($stages) + 1),
                     'date'   => !empty($item['date']) ? $item['date'] : null,
                     'qty'    => $qty,
-                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
+                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'planned',
                     'notes'  => trim($item['notes'] ?? ''),
                 ];
             }
@@ -483,5 +499,65 @@ class MaterialController extends Controller
         }
 
         return $supplier;
+    }
+
+    /**
+     * Hapus kelompok barang (type) di bawah kategori material:
+     * Dapat memindahkan material ke kelompok lain atau menghapus item jika belum ada transaksi stok aktif.
+     */
+    public function deleteGroup(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->can('delete materials') && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus kelompok material.');
+        }
+
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'type_name'   => 'required|string',
+            'action_type' => 'required|in:transfer,delete_items',
+            'target_type' => 'nullable|string|max:255',
+        ]);
+
+        $catId = $request->category_id;
+        $typeName = trim($request->type_name);
+        $materials = Material::where('category_id', $catId)->where('type', $typeName)->get();
+
+        if ($materials->isEmpty()) {
+            return back()->with('error', "Kelompok '{$typeName}' tidak ditemukan atau sudah tidak memiliki material.");
+        }
+
+        if ($request->action_type === 'transfer') {
+            $targetType = trim($request->target_type ?: 'Lainnya');
+            Material::where('category_id', $catId)
+                ->where('type', $typeName)
+                ->update(['type' => $targetType]);
+
+            return back()->with('success', "Kelompok '{$typeName}' berhasil dihapus. " . $materials->count() . " material dialihkan ke kelompok '{$targetType}'.");
+        }
+
+        if ($request->action_type === 'delete_items') {
+            $hasActiveTransactions = false;
+            foreach ($materials as $m) {
+                if ($m->stockMutations()->exists() || $m->inventories()->where('quantity', '>', 0)->exists()) {
+                    $hasActiveTransactions = true;
+                    break;
+                }
+            }
+
+            if ($hasActiveTransactions) {
+                return back()->with('error', "Material dalam kelompok '{$typeName}' memiliki data stok atau riwayat mutasi aktif. Silakan pilih opsi 'Pindahkan ke Kelompok Lain' untuk mengubah nama kelompoknya.");
+            }
+
+            $count = $materials->count();
+            foreach ($materials as $m) {
+                $m->inventories()->delete();
+                $m->delete();
+            }
+
+            return back()->with('success', "Kelompok '{$typeName}' beserta {$count} material di dalamnya berhasil dihapus.");
+        }
+
+        return back();
     }
 }

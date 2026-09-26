@@ -6,11 +6,11 @@
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Manajemen Proyek Konstruksi</h2>
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola data proyek konstruksi yang sedang atau telah berjalan</p>
         </div>
-        @can('manage projects')
+        @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
         <a href="{{ route('projects.create') }}" class="btn btn-primary">
             <i class="fas fa-plus"></i> Tambah Proyek
         </a>
-        @endcan
+        @endif
     </div>
 
     <div class="card mb-4">
@@ -77,13 +77,13 @@
                         </td>
                         <td>
                             <div class="flex gap-1">
-                                @can('manage projects')
+                                @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
                                 <a href="{{ route('projects.edit', $proj) }}" class="btn btn-sm btn-warning btn-icon" title="Edit"><i class="fas fa-pen"></i></a>
                                 <form method="POST" action="{{ route('projects.destroy', $proj) }}" onsubmit="return confirm('Hapus proyek {{ addslashes($proj->name) }}?')">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-sm btn-danger btn-icon" title="Hapus"><i class="fas fa-trash"></i></button>
                                 </form>
-                                @endcan
+                                @endif
                             </div>
                         </td>
                     </tr>

@@ -1,45 +1,197 @@
 <x-app-layout>
     <x-slot name="title">Edit Material: {{ $material->name }}</x-slot>
 
+    @push('styles')
+    <style>
+        .edit-material-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1100px;
+            margin-bottom: 40px;
+        }
+
+        .edit-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .edit-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .edit-card-header {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .edit-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .edit-card-body {
+            padding: 20px;
+        }
+
+        .stages-table {
+            width: 100%;
+            font-size: 12.5px;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .stages-table thead tr {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stages-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s ease;
+        }
+
+        .stages-table tbody tr:hover {
+            background: #fcfdfe;
+        }
+
+        .btn-delete-stage {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            color: #dc2626;
+            background: #ffffff;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-delete-stage:hover {
+            background: #fef2f2 !important;
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+            transform: scale(1.05);
+        }
+
+        .edit-actions-bar {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        @media (max-width: 768px) {
+            .grid-3 {
+                grid-template-columns: 1fr !important;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr !important;
+            }
+            .edit-actions-bar {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+            .edit-actions-bar > div,
+            .edit-actions-bar button,
+            .edit-actions-bar a {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+    </style>
+    @endpush
+
     {{-- Page Header --}}
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-            <div class="breadcrumb" style="margin-bottom:4px;">
+            <div class="breadcrumb" style="margin-bottom:4px;font-size:12px;">
                 <a href="{{ route('materials.index') }}">Material</a>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
                 <a href="{{ route('materials.show', $material) }}">{{ $material->name }}</a>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
                 <span>Edit</span>
             </div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Edit Material</h2>
+            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-pen-to-square text-primary"></i> Edit Material: {{ $material->name }}
+            </h2>
         </div>
         <div class="flex gap-2">
-            <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:13px;color:#475569;">
+            <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:6px 14px;">
                 <i class="fas fa-eye me-1"></i> Lihat Detail
             </a>
-            <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:13px;color:#475569;">
+            <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:6px 14px;">
                 <i class="fas fa-arrow-left me-1"></i> Kembali
             </a>
         </div>
     </div>
 
+    @if (isset($errors) && $errors->any())
+    <div class="alert alert-danger mb-4" style="border-radius:8px;padding:12px 16px;font-size:13px;">
+        <i class="fas fa-circle-exclamation me-2"></i>
+        <strong>Terdapat kesalahan input:</strong>
+        <ul style="margin:4px 0 0 16px;padding:0;">
+            @foreach ($errors->all() as $err)
+            <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('materials.update', $material) }}" onsubmit="prepareSubmit()" id="material-form">
         @csrf @method('PUT')
 
-        <div style="display:flex;flex-direction:column;gap:16px;max-width:960px;">
+        <div class="edit-material-layout">
 
-            {{-- SECTION 1: KLASIFIKASI MATERIAL --}}
-            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
-                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-layer-group me-1 text-primary"></i> 1. Klasifikasi Material</div>
+            {{-- ── SECTION 1: KLASIFIKASI MATERIAL ── --}}
+            <div class="edit-card">
+                <div class="edit-card-header">
+                    <div class="edit-card-title">
+                        <i class="fas fa-layer-group text-primary"></i> 1. Klasifikasi Material
+                    </div>
                 </div>
-                <div style="padding:18px;">
+                <div class="edit-card-body">
                     <div class="grid grid-3" style="gap:16px;">
                         {{-- Dropdown 1: Kategori --}}
                         <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                Kategori <span style="color:#ef4444;">*</span>
-                            </label>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                    Kategori <span style="color:#ef4444;">*</span>
+                                </label>
+                                @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+                                <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;" title="Hapus kategori yang dipilih jika salah memasukkan">
+                                    <i class="fas fa-trash-can me-1"></i> Hapus Kategori
+                                </button>
+                                @endif
+                            </div>
                             <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange()" style="height:38px;border-radius:6px;font-size:13px;">
                                 <option value="">— Pilih Kategori —</option>
                                 @foreach($categories as $cat)
@@ -103,19 +255,23 @@
                 </div>
             </div>
 
-            {{-- SECTION 2: INFORMASI MATERIAL --}}
-            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
-                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
-                    <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-cube me-1 text-primary"></i> 2. Informasi & Identitas Material</div>
+            {{-- ── SECTION 2: INFORMASI MATERIAL ── --}}
+            <div class="edit-card">
+                <div class="edit-card-header">
+                    <div class="edit-card-title">
+                        <i class="fas fa-cube text-primary"></i> 2. Informasi & Identitas Material
+                    </div>
                 </div>
-                <div style="padding:18px;">
+                <div class="edit-card-body">
                     <div class="grid grid-2" style="gap:16px;">
                         {{-- SKU --}}
                         <div>
                             <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">KODE MATERIAL (SKU) <span style="color:#ef4444;">*</span></label>
                             <input type="text" name="sku" value="{{ old('sku', $material->sku) }}"
                                 class="form-control font-monospace @error('sku') is-invalid @enderror"
-                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;" required>
+                                placeholder="Contoh: MAT-BES-001"
+                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;text-transform:uppercase;"
+                                oninput="this.value = this.value.toUpperCase()" required>
                             @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
@@ -187,59 +343,66 @@
                 </div>
             </div>
 
-            {{-- SECTION 3: TAHAP KEDATANGAN BARANG --}}
-            <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
-                <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            {{-- ── SECTION 3: TAHAP KEDATANGAN BARANG ── --}}
+            <div class="edit-card">
+                <div class="edit-card-header">
                     <div>
-                        <div class="fw-700" style="font-size:14px;color:#0f172a;"><i class="fas fa-calendar-alt me-1 text-primary"></i> 3. Tahap Kedatangan Barang</div>
+                        <div class="edit-card-title">
+                            <i class="fas fa-calendar-alt text-primary"></i> 3. Tahap Kedatangan Barang
+                        </div>
+                        <div class="text-muted" style="font-size:12px;margin-top:2px;">
+                            Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat barang diterima.
+                        </div>
                     </div>
-                    <button type="button" onclick="addStageRow()" class="btn btn-sm btn-secondary" style="height:32px;font-size:12px;font-weight:600;">
-                        <i class="fas fa-plus"></i> Tambah Tahap
+                    <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:34px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;">
+                        <i class="fas fa-plus me-1"></i> Tambah Tahap
                     </button>
                 </div>
 
                 <div style="overflow-x:auto;">
-                    <table style="width:100%;font-size:12.5px;border-collapse:collapse;min-width:680px;" id="stages_table">
+                    <table class="stages-table" id="stages_table">
                         <thead>
-                            <tr style="background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;">
-                                <th style="padding:9px 14px;width:90px;font-weight:700;">Tahap</th>
-                                <th style="padding:9px 14px;width:160px;font-weight:700;">Tanggal</th>
-                                <th style="padding:9px 14px;width:130px;font-weight:700;">Qty Masuk</th>
-                                <th style="padding:9px 14px;width:170px;font-weight:700;">Status</th>
-                                <th style="padding:9px 14px;font-weight:700;">Keterangan</th>
-                                <th style="padding:9px 14px;width:46px;"></th>
+                            <tr>
+                                <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
+                                <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
+                                <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Masuk</th>
+                                <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
+                                <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
+                                <th style="padding:10px 14px;width:50px;text-align:center;"></th>
                             </tr>
                         </thead>
                         <tbody id="stages_tbody">
                             {{-- Baris dinamis --}}
                         </tbody>
                     </table>
-                    <div id="stages_empty" style="display:none;padding:24px;text-align:center;color:#94a3b8;">
-                        <div style="font-size:13px;">Belum ada tahap. Klik <strong>Tambah Tahap</strong> bila ada jadwal bertahap.</div>
+                    <div id="stages_empty" style="display:none;padding:28px 16px;text-align:center;color:#94a3b8;">
+                        <i class="fas fa-calendar-plus" style="font-size:28px;margin-bottom:8px;color:#cbd5e1;display:block;"></i>
+                        <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada jadwal tahap kedatangan.</div>
+                        <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Klik <strong>Tambah Tahap</strong> bila material ini memiliki pengiriman terjadwal.</div>
                     </div>
                 </div>
 
                 {{-- Summary Bar --}}
-                <div style="padding:10px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-                    <div style="display:flex;align-items:center;gap:16px;font-size:12px;">
-                        <div>Masuk: <strong id="summary_received" style="color:#16a34a;">0</strong></div>
-                        <div>Rencana: <strong id="summary_planned" style="color:#b45309;">0</strong></div>
-                        <div>Total: <strong id="summary_total" style="color:#0f172a;">0</strong></div>
+                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;">
+                        <div>Masuk: <strong id="summary_received" style="color:#16a34a;font-size:13px;">0</strong></div>
+                        <div>Rencana: <strong id="summary_planned" style="color:#b45309;font-size:13px;">0</strong></div>
+                        <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong></div>
                     </div>
-                    <div class="text-muted" style="font-size:11px;">
-                        Ubah status ke <em>Sudah Masuk</em> bila barang tiba di lokasi
+                    <div class="text-muted" style="font-size:11.5px;">
+                        <i class="fas fa-lock text-muted me-1"></i> Status terkunci otomatis sebagai <strong>Rencana</strong>, dan akan berubah ke <strong>Sudah Masuk</strong> otomatis saat dicatat di menu Penerimaan Barang.
                     </div>
                 </div>
             </div>
 
-            {{-- ACTION BUTTONS --}}
-            <div style="display:flex;align-items:center;gap:10px;padding:12px 0 4px;">
-                <button type="submit" class="btn btn-primary" style="height:38px;padding:0 20px;font-size:13px;font-weight:600;border-radius:6px;">
-                    Simpan Perubahan
-                </button>
-                <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="height:38px;padding:0 16px;font-size:13px;font-weight:500;border-radius:6px;color:#64748b;">
-                    Batal
+            {{-- ── ACTION BUTTONS ── --}}
+            <div class="edit-actions-bar">
+                <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="height:38px;padding:0 18px;font-size:13px;font-weight:500;border-radius:7px;color:#64748b;display:inline-flex;align-items:center;">
+                    <i class="fas fa-times me-1"></i> Batal
                 </a>
+                <button type="submit" class="btn btn-primary" style="height:38px;padding:0 24px;font-size:13.5px;font-weight:700;border-radius:7px;box-shadow:0 2px 4px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-floppy-disk"></i> Simpan Perubahan
+                </button>
             </div>
 
         </div>
@@ -287,25 +450,73 @@
             onTypeChange();
         }
 
+        function updateDeleteCategoryBtn() {
+            var sel = document.getElementById('category_select');
+            var btn = document.getElementById('btn_delete_cat');
+            if (!btn) return;
+            var val = sel ? sel.value : '';
+            btn.style.display = (val && val !== '__new__') ? 'inline-flex' : 'none';
+        }
+
+        function deleteSelectedCategory() {
+            var sel = document.getElementById('category_select');
+            if (!sel || !sel.value || sel.value === '__new__') return;
+            var catId = sel.value;
+            var catName = sel.options[sel.selectedIndex].text;
+
+            if (!confirm(`Hapus kategori "${catName}" dari sistem?\n\nKategori hanya dapat dihapus bila tidak ada material yang menggunakannya.`)) {
+                return;
+            }
+
+            fetch(`{{ url('/categories') }}/${catId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Kategori berhasil dihapus.');
+                    sel.remove(sel.selectedIndex);
+                    sel.value = '';
+                    onCategoryChange();
+                } else {
+                    alert(data.message || 'Gagal menghapus kategori.');
+                }
+            })
+            .catch(() => alert('Terjadi kesalahan koneksi saat menghapus kategori.'));
+        }
+
         function onCategoryChange() {
-            var select  = document.getElementById('category_select');
-            var catId   = select.value;
-            var wrap    = document.getElementById('new_category_wrap');
-            var isNew   = catId === '__new__';
-            wrap.style.display = isNew ? 'block' : 'none';
-            if (isNew) { document.getElementById('new_category').focus(); return; }
+            updateDeleteCategoryBtn();
+            var catSelect = document.getElementById('category_select');
+            var newWrap   = document.getElementById('new_category_wrap');
+            var catId     = catSelect.value;
 
-            var select2 = document.getElementById('type_select');
-            var currentVal = (document.getElementById('type_input').value || '').trim();
+            if (catId === '__new__') {
+                newWrap.style.display = 'block';
+                document.getElementById('new_category').focus();
+            } else {
+                newWrap.style.display = 'none';
+            }
+
+            var select2    = document.getElementById('type_select');
+            var hint       = document.getElementById('type_hint');
+            var hiddenType = document.getElementById('type_input');
+            var currentVal = hiddenType.value;
+
             select2.innerHTML = '<option value="">— Pilih Kelompok —</option>';
-            var hint = document.getElementById('type_hint');
 
-            if (catId && existingGroups[catId] && existingGroups[catId].length > 0) {
+            if (catId && catId !== '__new__' && existingGroups[catId]) {
                 var groups = existingGroups[catId];
-                var found = false;
+                var found  = false;
                 groups.forEach(function(g) {
-                    var opt = document.createElement('option');
-                    opt.value = g; opt.textContent = g;
+                    var opt       = document.createElement('option');
+                    opt.value     = g;
+                    opt.textContent = g;
                     if (currentVal && currentVal === g) { opt.selected = true; found = true; }
                     select2.appendChild(opt);
                 });
@@ -396,7 +607,7 @@
         onCategoryChange();
         toggleNewUnit();
 
-        // ── Incoming Stages Logic ────────────────────────────
+        // ── Incoming Stages Logic (Read-only status badge) ──────────────
         var stageIndex = 0;
 
         function checkEmptyState() {
@@ -410,56 +621,60 @@
             var tbody   = document.getElementById('stages_tbody');
             var tr      = document.createElement('tr');
             tr.id       = 'stage_row_' + stageIndex;
-            tr.style.cssText = 'border-bottom:1px solid #f1f5f9;';
 
             var stageNum  = tbody.children.length + 1;
             var stageVal  = data.stage  !== undefined ? data.stage  : 'T' + stageNum;
             var dateVal   = data.date   || '';
             var qtyVal    = data.qty    !== undefined ? data.qty    : '';
-            var statusVal = data.status || 'received';
+            var statusVal = data.status || 'planned';
             var notesVal  = data.notes  || '';
 
+            var statusBadge = (statusVal === 'received')
+                ? `<div style="display:inline-flex;flex-direction:column;gap:3px;">
+                       <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;width:fit-content;">
+                           <i class="fas fa-circle-check text-success"></i> Sudah Masuk
+                       </span>
+                       ${data.received_gr ? `<span style="font-size:10px;color:#059669;font-weight:600;"><i class="fas fa-file-invoice me-1"></i> GR #${escapeHtml(data.received_gr)}</span>` : ''}
+                   </div>`
+                : `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;" title="Status terkunci otomatis sebagai Rencana dan berubah ke Sudah Masuk saat barang diterima">
+                       <i class="fas fa-clock text-warning"></i> Rencana
+                   </span>`;
+
             tr.innerHTML = `
-                <td style="padding:8px 12px;">
+                <td style="padding:10px 12px;vertical-align:middle;">
                     <input type="text" name="incoming_stages[${stageIndex}][stage]" value="${stageVal}"
                            class="form-control form-control-sm font-monospace"
                            placeholder="T${stageNum}"
-                           style="height:34px;border-radius:6px;font-size:12px;font-weight:700;color:#0f172a;background:#f8fafc;width:75px;text-align:center;">
+                           style="height:36px;border-radius:6px;font-size:12.5px;font-weight:700;color:#0f172a;background:#f8fafc;width:75px;text-align:center;">
                 </td>
-                <td style="padding:8px 12px;">
+                <td style="padding:10px 12px;vertical-align:middle;">
                     <input type="date" name="incoming_stages[${stageIndex}][date]" value="${dateVal}"
                            class="form-control form-control-sm"
-                           style="height:34px;border-radius:6px;font-size:12px;">
+                           style="height:36px;border-radius:6px;font-size:12.5px;">
                 </td>
-                <td style="padding:8px 12px;">
+                <td style="padding:10px 12px;vertical-align:middle;">
                     <input type="number" step="any" min="0" name="incoming_stages[${stageIndex}][qty]" value="${qtyVal}"
                            class="form-control form-control-sm stage-qty-input"
                            placeholder="0"
-                           style="height:34px;border-radius:6px;font-size:12.5px;font-weight:600;text-align:right;"
+                           style="height:36px;border-radius:6px;font-size:13px;font-weight:700;text-align:right;"
                            oninput="updateStagesSummary()">
                 </td>
-                <td style="padding:8px 12px;">
-                    <select name="incoming_stages[${stageIndex}][status]"
-                            class="form-control form-control-sm stage-status-select"
-                            style="height:34px;border-radius:6px;font-size:12px;"
-                            onchange="updateStagesSummary()">
-                        <option value="received" ${statusVal === 'received' ? 'selected' : ''}>Sudah Masuk</option>
-                        <option value="planned"  ${statusVal === 'planned'  ? 'selected' : ''}>Rencana</option>
-                    </select>
+                <td style="padding:10px 12px;vertical-align:middle;">
+                    <input type="hidden" name="incoming_stages[${stageIndex}][status]" value="${statusVal}" class="stage-status-select">
+                    ${statusBadge}
                 </td>
-                <td style="padding:8px 12px;">
+                <td style="padding:10px 12px;vertical-align:middle;">
                     <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}"
                            class="form-control form-control-sm"
                            placeholder="No. SJ / Truk / Keterangan"
-                           style="height:34px;border-radius:6px;font-size:12px;">
+                           style="height:36px;border-radius:6px;font-size:12.5px;">
                 </td>
-                <td style="padding:8px 12px;text-align:center;">
+                <td style="padding:10px 12px;text-align:center;vertical-align:middle;">
                     <button type="button"
                             onclick="removeStageRow(${stageIndex})"
-                            title="Hapus baris"
-                            class="btn btn-sm btn-light border"
-                            style="width:28px;height:28px;padding:0;color:#dc2626;display:inline-flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-trash" style="font-size:11px;"></i>
+                            title="Hapus baris tahap"
+                            class="btn-delete-stage">
+                        <i class="fas fa-trash-can" style="font-size:12px;"></i>
                     </button>
                 </td>
             `;
@@ -500,6 +715,11 @@
             if (elRec) elRec.textContent = fmt(totalReceived);
             if (elPln) elPln.textContent = fmt(totalPlanned);
             if (elTot) elTot.textContent = fmt(totalAll);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         // Prefill existing incoming stages

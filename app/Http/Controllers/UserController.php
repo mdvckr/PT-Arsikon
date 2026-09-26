@@ -14,7 +14,7 @@ class UserController extends Controller
     {
         $this->authorize('view users');
 
-        $query = User::with('roles');
+        $query = User::with(['roles', 'warehouses']);
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -55,7 +55,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|unique:users,email',
-            'password'        => ['required', 'string', 'min:12', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',],
+            'password'        => ['required', 'string', 'min:8', 'confirmed'],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',
@@ -117,7 +117,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => "required|email|unique:users,email,{$user->id}",
-            'password'        => ['nullable', 'string', 'min:12', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',],
+            'password'        => ['nullable', 'string', 'min:8', 'confirmed'],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',

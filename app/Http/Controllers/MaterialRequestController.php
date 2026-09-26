@@ -101,9 +101,10 @@ class MaterialRequestController extends Controller
             'notes'                     => 'nullable|string',
             'quantities'                => 'nullable|array',
             'custom_items'              => 'nullable|array',
-            'custom_items.*.name'       => 'required_with:custom_items|string|max:255',
-            'custom_items.*.unit'       => 'nullable|string|max:50',
-            'custom_items.*.qty'        => 'required_with:custom_items|numeric|min:0.01',
+            'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
+            'custom_items.*.category_id' => 'nullable|exists:categories,id',
+            'custom_items.*.unit'        => 'nullable|string|max:50',
+            'custom_items.*.qty'         => 'required_with:custom_items|numeric|min:0.01',
         ]);
 
         // Build items dari quantities[material_id] => qty (master) + custom_items manual
@@ -129,6 +130,7 @@ class MaterialRequestController extends Controller
                     'material_id'      => null,
                     'custom_item_name' => $name,
                     'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
+                    'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
                     'notes'            => 'Manual dari Gudang Proyek - tidak ada di Pusat',
                 ];

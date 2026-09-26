@@ -9,7 +9,7 @@ class ProjectController extends Controller
 {
     public function index()
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
         $projects = Project::withCount('warehouses')->latest()->paginate(15);
 
         return view('projects.index', compact('projects'));
@@ -17,51 +17,90 @@ class ProjectController extends Controller
 
     public function create()
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
         return view('projects.create');
     }
 
     public function store(Request $request)
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
+
+        if (!$request->filled('code')) {
+            $request->merge(['code' => 'PRJ-' . strtoupper(\Illuminate\Support\Str::random(5))]);
+        }
+
+        $rawStatus = $request->input('status');
+        if (in_array($rawStatus, ['active', 'ongoing', 'berjalan'])) {
+            $status = 'active';
+        } elseif (in_array($rawStatus, ['planning', 'completed', 'on_hold', 'suspended'])) {
+            $status = $rawStatus === 'suspended' ? 'on_hold' : $rawStatus;
+        } else {
+            $status = 'active';
+        }
+        $request->merge(['status' => $status]);
 
         $validated = $request->validate([
             'name'       => 'required|string|max:255',
-            'code'       => 'required|string|max:20|unique:projects,code',
+            'code'       => 'required|string|max:30|unique:projects,code',
             'location'   => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'status'     => 'required|in:active,completed,on_hold',
-            'description'=> 'nullable|string',
+            'status'     => 'required|in:planning,active,ongoing,completed,on_hold,suspended',
         ]);
 
-        Project::create($validated);
+        $project = Project::create([
+            'name'       => $validated['name'],
+            'code'       => strtoupper($validated['code']),
+            'location'   => $validated['location'] ?? null,
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date'   => $validated['end_date'] ?? null,
+            'status'     => $validated['status'],
+        ]);
 
         return redirect()->route('projects.index')
-            ->with('success', "Proyek '{$validated['name']}' berhasil ditambahkan.");
+            ->with('success', "Proyek '{$project->name}' berhasil ditambahkan.");
     }
 
     public function edit(Project $project)
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
         return view('projects.edit', compact('project'));
     }
 
     public function update(Request $request, Project $project)
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
+
+        $rawStatus = $request->input('status');
+        if (in_array($rawStatus, ['active', 'ongoing', 'berjalan'])) {
+            $status = 'active';
+        } elseif (in_array($rawStatus, ['planning', 'completed', 'on_hold', 'suspended'])) {
+            $status = $rawStatus === 'suspended' ? 'on_hold' : $rawStatus;
+        } else {
+            $status = 'active';
+        }
+        $request->merge(['status' => $status]);
+        if (!$request->filled('code')) {
+            $request->merge(['code' => $project->code]);
+        }
 
         $validated = $request->validate([
             'name'       => 'required|string|max:255',
-            'code'       => "required|string|max:20|unique:projects,code,{$project->id}",
+            'code'       => "required|string|max:30|unique:projects,code,{$project->id}",
             'location'   => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'status'     => 'required|in:active,completed,on_hold',
-            'description'=> 'nullable|string',
+            'status'     => 'required|in:planning,active,ongoing,completed,on_hold,suspended',
         ]);
 
-        $project->update($validated);
+        $project->update([
+            'name'       => $validated['name'],
+            'code'       => strtoupper($validated['code']),
+            'location'   => $validated['location'] ?? null,
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date'   => $validated['end_date'] ?? null,
+            'status'     => $validated['status'],
+        ]);
 
         return redirect()->route('projects.index')
             ->with('success', "Proyek '{$project->name}' berhasil diperbarui.");
@@ -69,11 +108,19 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        $this->authorize('view users');
+        $this->authorizeProjectAccess();
         $name = $project->name;
         $project->delete();
 
         return redirect()->route('projects.index')
             ->with('success', "Proyek '{$name}' berhasil dihapus.");
+    }
+
+    protected function authorizeProjectAccess(): void
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->can('projects.manage') && !$user->can('view users') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))) {
+            abort(403, 'Akses terbatas untuk Administrator Proyek.');
+        }
     }
 }

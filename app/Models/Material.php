@@ -63,10 +63,15 @@ class Material extends Model
         return $this->sku;
     }
 
+    public function setSkuAttribute($value): void
+    {
+        $this->attributes['sku'] = !empty($value) ? strtoupper(trim($value)) : $value;
+    }
+
     /**
      * Auto-register custom/manual item to master materials table.
      */
-    public static function autoRegisterCustom(string $name, ?string $unitName = 'unit'): Material
+    public static function autoRegisterCustom(string $name, ?string $unitName = 'unit', ?int $categoryId = null): Material
     {
         $cleanName = trim($name);
         $material = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
@@ -88,25 +93,30 @@ class Material extends Model
             );
         }
 
-        // Resolve default category
-        $category = Category::where('type', 'material')
-            ->where(function ($q) {
-                $q->where('name', 'like', '%Umum%')
-                  ->orWhere('name', 'like', '%Khusus%')
-                  ->orWhere('name', 'like', '%Proyek%');
-            })->first();
-
-        if (!$category) {
-            $category = Category::where('type', 'material')->first();
+        // Resolve category: prioritaskan pilihan user ($categoryId), atau cari kategori Khusus Proyek, jika belum ada buatkan CAT-CUST
+        $category = null;
+        if ($categoryId) {
+            $category = Category::where('type', 'material')->find($categoryId);
         }
 
         if (!$category) {
-            $category = Category::create([
-                'code' => 'CAT-CUST',
-                'name' => 'Material Khusus Proyek',
-                'type' => 'material',
-                'description' => 'Kategori otomatis untuk barang custom/manual dari pengadaan proyek',
-            ]);
+            $category = Category::where('type', 'material')
+                ->where(function ($q) {
+                    $q->where('code', 'CAT-CUST')
+                      ->orWhere('name', 'like', '%Khusus Proyek%')
+                      ->orWhere('name', 'like', '%Custom%');
+                })->first();
+        }
+
+        if (!$category) {
+            $category = Category::firstOrCreate(
+                ['code' => 'CAT-CUST'],
+                [
+                    'name' => 'Material Khusus Proyek',
+                    'type' => 'material',
+                    'description' => 'Kategori otomatis untuk barang custom/manual dari pengadaan proyek',
+                ]
+            );
         }
 
         // Generate unique SKU

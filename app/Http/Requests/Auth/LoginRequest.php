@@ -56,7 +56,7 @@ class LoginRequest extends FormRequest
             }
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => 'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.',
             ]);
         }
 

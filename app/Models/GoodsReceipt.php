@@ -15,8 +15,10 @@ class GoodsReceipt extends Model
         'receipt_number',
         'purchase_order_id',
         'supplier_id',
+        'supplier_name',
         'warehouse_id',
         'received_by_user_id',
+        'received_by_name',
         'created_by',
         'status',
         'invoice_number',
@@ -87,5 +89,38 @@ class GoodsReceipt extends Model
         $lastNumber = $latest ? (int) substr($latest->receipt_number, -4) : 0;
 
         return $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Memeriksa apakah user berhak mengonfirmasi penerimaan barang (Goods Receipt) ini.
+     * Hanya petugas di gudang tujuan (Pusat atau Proyek), Admin Pusat (bila tujuan pusat), atau Owner/Super Admin.
+     */
+    public function canUserConfirm(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        if ($this->status !== 'draft') {
+            return false;
+        }
+
+        if (!$user->can('confirm goods receipts')) {
+            return false;
+        }
+
+        // Owner & Super Admin ('Admin') always have full authority/override
+        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+            return true;
+        }
+
+        // Jika gudang tujuan adalah Gudang Pusat, Admin Gudang Pusat berhak
+        if ($this->warehouse?->is_central && $user->hasRole('Admin Gudang Pusat')) {
+            return true;
+        }
+
+        // Untuk Gudang Proyek, user WAJIB ditugaskan di gudang tujuan ini
+        return $user->warehouses()->where('warehouses.id', $this->warehouse_id)->exists();
     }
 }

@@ -30,9 +30,16 @@
                     <div class="grid grid-3" style="gap:16px;">
                         {{-- Dropdown 1: Kategori --}}
                         <div>
-                            <label class="form-label" for="category_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                Kategori <span style="color:#ef4444;">*</span>
-                            </label>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                <label class="form-label mb-0" for="category_select" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                    Kategori <span style="color:#ef4444;">*</span>
+                                </label>
+                                @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+                                <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;" title="Hapus kategori yang dipilih jika salah memasukkan">
+                                    <i class="fas fa-trash-can me-1"></i> Hapus Kategori
+                                </button>
+                                @endif
+                            </div>
                             <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange()" style="height:38px;border-radius:6px;font-size:13px;">
                                 <option value="">— Pilih Kategori —</option>
                                 @foreach($categories as $cat)
@@ -109,7 +116,8 @@
                             <input type="text" name="sku" value="{{ old('sku') }}"
                                 class="form-control font-monospace @error('sku') is-invalid @enderror"
                                 placeholder="Contoh: MAT-BES-001"
-                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;" required>
+                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;text-transform:uppercase;"
+                                oninput="this.value = this.value.toUpperCase()" required>
                             @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
@@ -223,8 +231,8 @@
                         <div>Rencana: <strong id="summary_planned" style="color:#b45309;">0</strong></div>
                         <div>Total: <strong id="summary_total" style="color:#0f172a;">0</strong></div>
                     </div>
-                    <div class="text-muted" style="font-size:11px;">
-                        Status <em>Sudah Masuk</em> otomatis diakumulasi ke stok awal
+                    <div class="text-muted" style="font-size:11.5px;">
+                        <i class="fas fa-circle-info text-primary me-1"></i> Status otomatis <strong>Rencana</strong>, dan akan berubah ke <strong>Sudah Masuk</strong> otomatis saat barang diterima.
                     </div>
                 </div>
             </div>
@@ -296,7 +304,7 @@
                         </div>
                         <div>
                             <label class="form-label" for="manual_item_sku" style="font-size:12px;font-weight:700;color:#334155;">Kode SKU <span style="color:#ef4444;">*</span></label>
-                            <input type="text" id="manual_item_sku" class="form-control font-monospace" placeholder="Contoh: MAT-XXX-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;">
+                            <input type="text" id="manual_item_sku" class="form-control font-monospace" placeholder="Contoh: MAT-XXX-001" style="height:36px;border-radius:6px;font-size:13px;font-weight:600;text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
                         </div>
                     </div>
                     <div class="grid grid-3" style="gap:12px;margin-top:12px;">
@@ -387,12 +395,74 @@
             onTypeChange();
         }
 
+        function updateDeleteCategoryBtn() {
+            var sel = document.getElementById('category_select');
+            var btn = document.getElementById('btn_delete_cat');
+            if (!btn) return;
+            if (sel && sel.value && sel.value !== '__new__') {
+                btn.style.display = 'inline-flex';
+                var optText = sel.options[sel.selectedIndex].text;
+                btn.title = 'Hapus kategori "' + optText + '" jika salah memasukkan';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function deleteSelectedCategory() {
+            var sel = document.getElementById('category_select');
+            if (!sel || !sel.value || sel.value === '__new__') return;
+            var catId = sel.value;
+            var catName = sel.options[sel.selectedIndex].text;
+
+            if (!confirm('Hapus kategori "' + catName + '"? Kategori yang salah dimasukkan akan dihapus dari sistem.')) {
+                return;
+            }
+
+            var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '{{ csrf_token() }}';
+
+            fetch('{{ url("/categories") }}/' + catId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ _method: 'DELETE' })
+            })
+            .then(function(res) {
+                return res.json().then(function(data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function(res) {
+                if (res.ok && res.data.success) {
+                    alert(res.data.message || 'Kategori berhasil dihapus.');
+                    for (var i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].value == catId) {
+                            sel.remove(i);
+                            break;
+                        }
+                    }
+                    sel.value = '';
+                    onCategoryChange();
+                } else {
+                    alert(res.data.message || 'Gagal menghapus kategori. Kategori mungkin masih memiliki data material.');
+                }
+            })
+            .catch(function(err) {
+                console.error(err);
+                alert('Terjadi kesalahan saat menghapus kategori.');
+            });
+        }
+
         function onCategoryChange() {
             var select  = document.getElementById('category_select');
             var catId   = select.value;
             var wrap    = document.getElementById('new_category_wrap');
             var isNew   = catId === '__new__';
             wrap.style.display = isNew ? 'block' : 'none';
+            updateDeleteCategoryBtn();
             if (isNew) { document.getElementById('new_category').focus(); return; }
 
             var select2 = document.getElementById('type_select');
@@ -518,8 +588,10 @@
             var stageVal  = data.stage  !== undefined ? data.stage  : 'T' + stageNum;
             var dateVal   = data.date   || '';
             var qtyVal    = data.qty    !== undefined ? data.qty    : '';
-            var statusVal = data.status || 'received';
+            var statusVal = data.status || 'planned';
             var notesVal  = data.notes  || '';
+
+            var grNotice  = data.received_gr ? `<div style="font-size:10px;color:#059669;font-weight:600;margin-top:2px;"><i class="fas fa-truck-ramp-box"></i> GR #${escapeHtml(data.received_gr)}</div>` : '';
 
             tr.innerHTML = `
                 <td style="padding:8px 12px;">
@@ -540,14 +612,20 @@
                            style="height:34px;border-radius:6px;font-size:12.5px;font-weight:600;text-align:right;"
                            oninput="updateStagesSummary()">
                 </td>
-                <td style="padding:8px 12px;">
-                    <select name="incoming_stages[${stageIndex}][status]"
-                            class="form-control form-control-sm stage-status-select"
-                            style="height:34px;border-radius:6px;font-size:12px;"
-                            onchange="updateStagesSummary()">
-                        <option value="received" ${statusVal === 'received' ? 'selected' : ''}>Sudah Masuk</option>
-                        <option value="planned"  ${statusVal === 'planned'  ? 'selected' : ''}>Rencana</option>
-                    </select>
+                <td style="padding:8px 12px;vertical-align:middle;">
+                    <input type="hidden" name="incoming_stages[${stageIndex}][status]" value="${statusVal}" class="stage-status-select">
+                    ${statusVal === 'received' ? `
+                        <div style="display:inline-flex;flex-direction:column;gap:2px;">
+                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:5px 10px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:5px;">
+                                <i class="fas fa-circle-check text-success"></i> Sudah Masuk
+                            </span>
+                            ${grNotice}
+                        </div>
+                    ` : `
+                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:5px 10px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:5px;" title="Status terkunci otomatis sebagai Rencana dan akan berubah ke Sudah Masuk saat barang diterima">
+                            <i class="fas fa-clock text-warning"></i> Rencana
+                        </span>
+                    `}
                 </td>
                 <td style="padding:8px 12px;">
                     <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}"
@@ -610,6 +688,24 @@
             }
         }
 
+        function onStageStatusSelectChange(sel) {
+            if (sel.value === 'received') {
+                sel.style.color = '#15803d';
+                sel.style.background = '#f0fdf4';
+                sel.style.borderColor = '#bbf7d0';
+            } else {
+                sel.style.color = '#b45309';
+                sel.style.background = '#fffbeb';
+                sel.style.borderColor = '#fde68a';
+            }
+            updateStagesSummary();
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         document.getElementById('initial_stock_input')?.addEventListener('input', function() {
             this.dataset.manual = 'true';
         });
@@ -636,7 +732,7 @@
             var whEl = document.getElementById('manual_item_warehouse') || document.querySelector('[name="warehouse_id"]');
 
             var name = nameEl ? nameEl.value.trim() : '';
-            var sku = skuEl ? skuEl.value.trim() : '';
+            var sku = skuEl ? skuEl.value.trim().toUpperCase() : '';
             var unit = (unitEl ? unitEl.value.trim() : '') || 'Pcs';
             var qty = qtyEl ? qtyEl.value : 0;
             var warehouseId = whEl ? whEl.value : '';

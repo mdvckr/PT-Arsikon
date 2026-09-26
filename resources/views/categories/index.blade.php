@@ -47,10 +47,9 @@
                                     </button>
                                     @endcan
                                     @can('delete categories')
-                                    <form method="POST" action="{{ route('categories.destroy', $cat) }}" onsubmit="return confirm('Hapus kategori ini?')">
-                                        @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-danger btn-icon"><i class="fas fa-trash"></i></button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-danger btn-icon" onclick="openDeleteCategory({{ $cat->id }}, '{{ addslashes($cat->name) }}', {{ $cat->materials_count + $cat->tools_count }})" title="Hapus Kategori">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                     @endcan
                                 </div>
                             </td>
@@ -224,6 +223,51 @@
         </div>
     </div>
 
+    {{-- Modal Hapus Kategori --}}
+    <div class="modal-overlay" id="modalDeleteCategory">
+        <div class="modal-box">
+            <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fee2e2;">
+                <i class="fas fa-trash-can text-danger"></i> <span class="modal-title" style="color:#991b1b;">Hapus Kategori</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+            </div>
+            <form method="POST" id="formDeleteCategory">
+                @csrf @method('DELETE')
+                <div class="modal-body">
+                    <div style="margin-bottom:14px;padding:12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;">Kategori yang Dipilih</div>
+                        <div id="delCatName" style="font-size:15px;font-weight:700;color:#0f172a;margin-top:2px;">-</div>
+                        <div id="delCatCount" style="margin-top:4px;font-size:12px;color:#64748b;">-</div>
+                    </div>
+
+                    <div id="delEmptyNotice" style="display:none;">
+                        <p style="font-size:13px;color:#475569;margin:0;">Kategori ini tidak memiliki material atau alat terkait dan dapat langsung dihapus.</p>
+                    </div>
+
+                    <div id="delHasItemsNotice" style="display:none;">
+                        <div class="alert alert-warning mb-3" style="font-size:12.5px;">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            <div>Kategori ini masih memiliki item di dalamnya. Pilih kategori tujuan untuk memindahkan seluruh item sebelum kategori dihapus:</div>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Pindahkan Item ke Kategori:</label>
+                            <select name="transfer_to_category_id" id="delTargetCatSelect" class="form-control">
+                                <option value="">— Pilih Kategori Tujuan —</option>
+                                @foreach($categories as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').classList.remove('show')">Batal</button>
+                    <button type="submit" id="delSubmitBtn" class="btn btn-danger">Hapus Kategori</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         function editCategory(id, name, desc) {
@@ -237,6 +281,44 @@
             document.getElementById('editUnitName').value = name;
             document.getElementById('editUnitAbbr').value = abbr;
             document.getElementById('modalEditUnit').classList.add('show');
+        }
+        function openDeleteCategory(id, name, totalItems) {
+            var modal = document.getElementById('modalDeleteCategory');
+            document.getElementById('formDeleteCategory').action = `/categories/${id}`;
+            document.getElementById('delCatName').textContent = name;
+            document.getElementById('delCatCount').textContent = 'Total: ' + totalItems + ' item (Material & Alat)';
+
+            var emptyNotice = document.getElementById('delEmptyNotice');
+            var hasNotice = document.getElementById('delHasItemsNotice');
+            var targetSelect = document.getElementById('delTargetCatSelect');
+            var submitBtn = document.getElementById('delSubmitBtn');
+
+            if (targetSelect) {
+                targetSelect.value = '';
+                Array.from(targetSelect.options).forEach(function(opt) {
+                    if (opt.value == id) {
+                        opt.style.display = 'none';
+                        opt.disabled = true;
+                    } else {
+                        opt.style.display = '';
+                        opt.disabled = false;
+                    }
+                });
+            }
+
+            if (totalItems > 0) {
+                emptyNotice.style.display = 'none';
+                hasNotice.style.display = 'block';
+                if (targetSelect) targetSelect.required = true;
+                submitBtn.textContent = 'Pindahkan Item & Hapus';
+            } else {
+                emptyNotice.style.display = 'block';
+                hasNotice.style.display = 'none';
+                if (targetSelect) targetSelect.required = false;
+                submitBtn.textContent = 'Ya, Hapus Kategori';
+            }
+
+            modal.classList.add('show');
         }
     </script>
     @endpush

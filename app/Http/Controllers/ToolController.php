@@ -98,6 +98,25 @@ class ToolController extends Controller
         $user = Auth::user();
         $accessibleIds = $user->accessibleWarehouseIds();
 
+        if ($request->filled('code')) {
+            $request->merge(['code' => strtoupper(trim($request->code))]);
+        }
+
+        if ($request->has('manual_items') && is_array($request->manual_items)) {
+            $filteredManual = [];
+            foreach ($request->manual_items as $item) {
+                if (is_array($item)) {
+                    if (!empty($item['code'])) {
+                        $item['code'] = strtoupper(trim($item['code']));
+                    }
+                    if (!empty($item['name']) && !empty($item['code'])) {
+                        $filteredManual[] = $item;
+                    }
+                }
+            }
+            $request->merge(['manual_items' => !empty($filteredManual) ? $filteredManual : null]);
+        }
+
         $validated = $request->validate([
             'code'            => 'required|string|max:50|unique:tools,code',
             'name'            => 'required|string|max:255',
@@ -109,6 +128,7 @@ class ToolController extends Controller
             'warehouse_id'    => 'required|integer|exists:warehouses,id',
             'notes'           => 'nullable|string',
             'stock_total'     => 'nullable|integer|min:0',
+            'incoming_stages' => 'nullable|array',
             'manual_items'    => 'nullable|array',
             'manual_items.*.code'  => 'required|string|max:50|unique:tools,code',
             'manual_items.*.name'  => 'required|string|max:255',
@@ -263,6 +283,10 @@ class ToolController extends Controller
     {
         $this->authorize('edit tools');
 
+        if ($request->filled('code')) {
+            $request->merge(['code' => strtoupper(trim($request->code))]);
+        }
+
         $validated = $request->validate([
             'code'              => "required|string|max:50|unique:tools,code,{$tool->id}",
             'name'              => 'required|string|max:255',
@@ -277,6 +301,7 @@ class ToolController extends Controller
             'stock_available'   => 'required|integer|min:0',
             'stock_maintenance' => 'nullable|integer|min:0',
             'stock_damaged'     => 'nullable|integer|min:0',
+            'incoming_stages'   => 'nullable|array',
         ]);
 
         $category = $this->resolveCategory($request);
@@ -313,16 +338,68 @@ class ToolController extends Controller
             ? Warehouse::find($validated['warehouse_id'])
             : $tool->currentWarehouse;
 
-        if ($warehouse) {
+        $inventoriesCount = $tool->inventories()->count();
+
+        if ($inventoriesCount <= 1 && $warehouse) {
+            $stockAvail = (int) $validated['stock_available'];
+            $stockMaint = (int) ($validated['stock_maintenance'] ?? 0);
+            $stockDamag = (int) ($validated['stock_damaged'] ?? 0);
+            $stockBorr  = (int) $tool->stock_borrowed;
+            $stockTotal = $stockAvail + $stockBorr + $stockMaint + $stockDamag;
+
+            $tool->update([
+                'stock_total'       => $stockTotal,
+                'stock_available'   => $stockAvail,
+                'stock_maintenance' => $stockMaint,
+                'stock_damaged'     => $stockDamag,
+            ]);
+
             $this->toolInvService->syncStock(
                 $warehouse,
                 $tool,
-                (int) $validated['stock_total'],
-                (int) $validated['stock_available'],
-                0,
-                (int) ($validated['stock_maintenance'] ?? 0),
-                (int) ($validated['stock_damaged'] ?? 0)
+                $stockTotal,
+                $stockAvail,
+                null,
+                $stockMaint,
+                $stockDamag
             );
+        } else {
+            if ($warehouse) {
+                $targetInv = ToolInventory::where('warehouse_id', $warehouse->id)
+                    ->where('tool_id', $tool->id)
+                    ->first();
+
+                if ($targetInv) {
+                    $avail = (int) $validated['stock_available'];
+                    $maint = (int) ($validated['stock_maintenance'] ?? 0);
+                    $damag = (int) ($validated['stock_damaged'] ?? 0);
+                    $borr  = (int) $targetInv->stock_borrowed;
+                    $tot   = $avail + $borr + $maint + $damag;
+
+                    $targetInv->update([
+                        'stock_total'       => $tot,
+                        'stock_available'   => $avail,
+                        'stock_maintenance' => $maint,
+                        'stock_damaged'     => $damag,
+                    ]);
+                    $targetInv->validateInvariants();
+                }
+            }
+
+            foreach ($tool->inventories as $inv) {
+                $calcInvTotal = (int)$inv->stock_available + (int)$inv->stock_borrowed + (int)$inv->stock_maintenance + (int)$inv->stock_damaged;
+                if ($inv->stock_total !== $calcInvTotal) {
+                    $inv->update(['stock_total' => $calcInvTotal]);
+                }
+                $inv->validateInvariants();
+            }
+
+            $tool->stock_available   = (int) $tool->inventories()->sum('stock_available');
+            $tool->stock_borrowed    = (int) $tool->inventories()->sum('stock_borrowed');
+            $tool->stock_maintenance = (int) $tool->inventories()->sum('stock_maintenance');
+            $tool->stock_damaged     = (int) $tool->inventories()->sum('stock_damaged');
+            $tool->stock_total       = $tool->stock_available + $tool->stock_borrowed + $tool->stock_maintenance + $tool->stock_damaged;
+            $tool->save();
         }
 
         return redirect()->route('tools.index')
@@ -399,12 +476,72 @@ class ToolController extends Controller
                     'stage'  => $stageName ?: 'T' . (count($stages) + 1),
                     'date'   => !empty($item['date']) ? $item['date'] : null,
                     'qty'    => $qty,
-                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'received',
+                    'status' => in_array($item['status'] ?? '', ['received', 'planned']) ? $item['status'] : 'planned',
                     'notes'  => trim($item['notes'] ?? ''),
                 ];
             }
         }
 
         return !empty($stages) ? $stages : null;
+    }
+
+    /**
+     * Hapus kelompok alat (type) di bawah kategori:
+     * Dapat memindahkan alat ke kelompok lain atau menghapus item jika tidak sedang dalam peminjaman aktif.
+     */
+    public function deleteGroup(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->can('delete tools') && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menghapus kelompok alat.');
+        }
+
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'type_name'   => 'required|string',
+            'action_type' => 'required|in:transfer,delete_items',
+            'target_type' => 'nullable|string|max:255',
+        ]);
+
+        $catId = $request->category_id;
+        $typeName = trim($request->type_name);
+        $tools = Tool::where('category_id', $catId)->where('type', $typeName)->get();
+
+        if ($tools->isEmpty()) {
+            return back()->with('error', "Kelompok '{$typeName}' tidak ditemukan atau sudah tidak memiliki alat.");
+        }
+
+        if ($request->action_type === 'transfer') {
+            $targetType = trim($request->target_type ?: 'Lainnya');
+            Tool::where('category_id', $catId)
+                ->where('type', $typeName)
+                ->update(['type' => $targetType]);
+
+            return back()->with('success', "Kelompok '{$typeName}' berhasil dihapus. " . $tools->count() . " alat dialihkan ke kelompok '{$targetType}'.");
+        }
+
+        if ($request->action_type === 'delete_items') {
+            $hasActiveLoan = false;
+            foreach ($tools as $t) {
+                if ($t->assignments()->exists() || $t->stock_borrowed > 0) {
+                    $hasActiveLoan = true;
+                    break;
+                }
+            }
+
+            if ($hasActiveLoan) {
+                return back()->with('error', "Alat dalam kelompok '{$typeName}' sedang dipinjam atau memiliki riwayat peminjaman aktif. Silakan pilih opsi 'Pindahkan ke Kelompok Lain'.");
+            }
+
+            $count = $tools->count();
+            foreach ($tools as $t) {
+                $t->inventories()->delete();
+                $t->delete();
+            }
+
+            return back()->with('success', "Kelompok '{$typeName}' beserta {$count} alat di dalamnya berhasil dihapus.");
+        }
+
+        return back();
     }
 }

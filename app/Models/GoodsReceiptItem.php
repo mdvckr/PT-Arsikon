@@ -12,9 +12,13 @@ class GoodsReceiptItem extends Model
 
     protected $fillable = [
         'goods_receipt_id',
+        'item_type',
         'purchase_order_item_id',
+        'stage_reference',
         'material_id',
+        'tool_id',
         'qty_received',
+        'condition',
         'unit_price',
         'notes',
     ];
@@ -34,9 +38,43 @@ class GoodsReceiptItem extends Model
         return $this->belongsTo(Material::class);
     }
 
+    public function tool(): BelongsTo
+    {
+        return $this->belongsTo(Tool::class);
+    }
+
     public function purchaseOrderItem(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrderItem::class);
+    }
+
+    public function isTool(): bool
+    {
+        return $this->item_type === 'tool' || !empty($this->tool_id);
+    }
+
+    public function getItemNameAttribute(): string
+    {
+        if ($this->isTool()) {
+            return $this->tool?->name ?? 'Alat #' . $this->tool_id;
+        }
+        return $this->material?->name ?? 'Material #' . $this->material_id;
+    }
+
+    public function getItemCodeAttribute(): string
+    {
+        if ($this->isTool()) {
+            return $this->tool?->code ?? '-';
+        }
+        return $this->material?->sku ?? $this->material?->code ?? '-';
+    }
+
+    public function getItemUnitAttribute(): string
+    {
+        if ($this->isTool()) {
+            return 'Unit';
+        }
+        return $this->material?->unit?->abbreviation ?? 'Unit';
     }
 
     // Alias attribute agar DailyLogController yang pakai 'quantity_received' tetap bisa berjalan
