@@ -28,6 +28,7 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PrintTemplateController;
+use App\Http\Controllers\SupabaseSyncController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -172,6 +173,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         [PrintTemplateController::class, 'file'])
         ->name('print-templates.file')
         ->middleware('signed');
+
+    // Supabase Cloud Backup & Sync (Master Material & Tools)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin']], function () {
+        Route::get('/supabase-sync', [SupabaseSyncController::class, 'index'])->name('supabase-sync.index');
+        Route::post('/supabase-sync/test-connection', [SupabaseSyncController::class, 'testConnection'])->name('supabase-sync.test');
+        Route::post('/supabase-sync/push', [SupabaseSyncController::class, 'push'])->name('supabase-sync.push');
+        Route::post('/supabase-sync/pull', [SupabaseSyncController::class, 'pull'])->name('supabase-sync.pull');
+    });
 });
 
 require __DIR__.'/auth.php';

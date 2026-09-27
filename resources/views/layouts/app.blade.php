@@ -1801,6 +1801,9 @@
                 <a href="{{ route('projects.index') }}" class="nav-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
                     <i class="fas fa-building-columns"></i> Proyek
                 </a>
+                <a href="{{ route('supabase-sync.index') }}" class="nav-item {{ request()->routeIs('supabase-sync.*') ? 'active' : '' }}">
+                    <i class="fas fa-cloud-arrow-up"></i> Backup Supabase
+                </a>
             </div>
             @endif
         </nav>

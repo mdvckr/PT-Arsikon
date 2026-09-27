@@ -54,13 +54,16 @@ class DistributionAndReceivingTest extends TestCase
             ['code' => 'SUP-TEST'],
             ['code' => 'SUP-TEST', 'name' => 'Supplier Test', 'contact_person' => 'Test', 'phone' => '08123456789', 'address' => 'Test Address', 'is_active' => true]
         );
-        $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+        $this->semenMaterial = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
 
-        // Stock Central with 500 bags of Semen
+        // Stock Central with 1000 bags of Semen
         $this->stockService->addStock(
             $this->centralWarehouse,
             $this->semenMaterial,
-            500.0,
+            1000.0,
             'goods_receipt',
             1,
             $this->adminUser->id,
@@ -129,11 +132,11 @@ class DistributionAndReceivingTest extends TestCase
         $this->assertStringStartsWith('DST-', $completedDistribution->surat_jalan,
             'surat_jalan number should use DST- prefix');
 
-        // Project stock on hand: seeder adds ~38, plus 195 received = 233
+        // Project stock on hand: initial 0 + 195 received = 195
         $projectStock = Inventory::where('warehouse_id', $this->projectWarehouse->id)
             ->where('material_id', $this->semenMaterial->id)
             ->value('quantity');
-        $this->assertEquals(233, $projectStock);
+        $this->assertEquals(195, $projectStock);
 
         // Project in_transit stock should now be 0
         $projectInTransitAfter = Inventory::where('warehouse_id', $this->projectWarehouse->id)

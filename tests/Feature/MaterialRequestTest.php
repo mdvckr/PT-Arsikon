@@ -32,7 +32,10 @@ class MaterialRequestTest extends TestCase
         $this->centralWarehouse = Warehouse::where('is_central', true)->firstOrFail();
         $this->projectUser = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+        $this->semenMaterial = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
     }
 
     public function test_project_user_can_create_and_submit_material_request(): void
