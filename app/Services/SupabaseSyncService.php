@@ -5,15 +5,19 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Material;
+use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Tool;
 use App\Models\ToolInventory;
 use App\Models\Unit;
+use App\Models\User;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 use Throwable;
 
 class SupabaseSyncService
@@ -193,10 +197,36 @@ class SupabaseSyncService
                 PRIMARY KEY (warehouse_code, tool_code)
             );
         ");
+
+        // 7. Tabel backup_warehouses (Master Gudang Central & Gudang Proyek)
+        $conn->statement("
+            CREATE TABLE IF NOT EXISTS backup_warehouses (
+                code VARCHAR(50) PRIMARY KEY,
+                name VARCHAR(150) NOT NULL,
+                type VARCHAR(50) DEFAULT 'project',
+                is_central BOOLEAN DEFAULT FALSE,
+                address TEXT,
+                project_name VARCHAR(150),
+                project_code VARCHAR(50),
+                synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        ");
+
+        // 8. Tabel backup_users (Akun User, Role & Penugasan Gudang Proyek)
+        $conn->statement("
+            CREATE TABLE IF NOT EXISTS backup_users (
+                email VARCHAR(150) PRIMARY KEY,
+                name VARCHAR(150) NOT NULL,
+                role_names JSONB,
+                assigned_warehouse_codes JSONB,
+                is_active BOOLEAN DEFAULT TRUE,
+                synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+        ");
     }
 
     /**
-     * PUSH: Cadangkan Kategori, Satuan, Material, Alat, & Stok per Gudang dari MySQL lokal ke Supabase.
+     * PUSH: Cadangkan Kategori, Satuan, Material, Alat, Gudang, Akun User & Role, serta Stok per Gudang dari MySQL lokal ke Supabase.
      */
     public function pushToSupabase(): array
     {
@@ -210,7 +240,65 @@ class SupabaseSyncService
         $conn = DB::connection(self::CONNECTION_NAME);
         $now = now()->toIso8601String();
 
-        // 1. Cadangkan Categories
+        // 1. Cadangkan Warehouses
+        $warehouses = Warehouse::with('project')->get();
+        $warehousesCount = 0;
+        foreach ($warehouses as $wh) {
+            $code = $wh->code ?: ('WH-' . $wh->id);
+            $conn->statement("
+                INSERT INTO backup_warehouses (
+                    code, name, type, is_central, address, project_name, project_code, synced_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (code) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    type = EXCLUDED.type,
+                    is_central = EXCLUDED.is_central,
+                    address = EXCLUDED.address,
+                    project_name = EXCLUDED.project_name,
+                    project_code = EXCLUDED.project_code,
+                    synced_at = EXCLUDED.synced_at;
+            ", [
+                $code,
+                $wh->name,
+                $wh->type ?? ($wh->is_central ? 'central' : 'project'),
+                (bool) $wh->is_central ? 'true' : 'false',
+                $wh->address,
+                $wh->project?->name,
+                $wh->project?->code,
+                $now,
+            ]);
+            $warehousesCount++;
+        }
+
+        // 2. Cadangkan Users & Role Penugasan Gudang
+        $users = User::with(['roles', 'warehouses'])->get();
+        $usersCount = 0;
+        foreach ($users as $u) {
+            $roleNames = $u->roles->pluck('name')->toArray();
+            $whCodes = $u->warehouses->map(fn($w) => $w->code ?: ('WH-' . $w->id))->toArray();
+
+            $conn->statement("
+                INSERT INTO backup_users (
+                    email, name, role_names, assigned_warehouse_codes, is_active, synced_at
+                ) VALUES (?, ?, ?::jsonb, ?::jsonb, ?, ?)
+                ON CONFLICT (email) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    role_names = EXCLUDED.role_names,
+                    assigned_warehouse_codes = EXCLUDED.assigned_warehouse_codes,
+                    is_active = EXCLUDED.is_active,
+                    synced_at = EXCLUDED.synced_at;
+            ", [
+                $u->email,
+                $u->name,
+                json_encode($roleNames),
+                json_encode($whCodes),
+                (bool) ($u->is_active ?? true) ? 'true' : 'false',
+                $now,
+            ]);
+            $usersCount++;
+        }
+
+        // 3. Cadangkan Categories
         $categories = Category::all();
         $categoriesCount = 0;
         foreach ($categories as $cat) {
@@ -233,7 +321,7 @@ class SupabaseSyncService
             $categoriesCount++;
         }
 
-        // 2. Cadangkan Units
+        // 4. Cadangkan Units
         $units = Unit::all();
         $unitsCount = 0;
         foreach ($units as $u) {
@@ -253,7 +341,7 @@ class SupabaseSyncService
             $unitsCount++;
         }
 
-        // 3. Cadangkan Materials
+        // 5. Cadangkan Materials
         $materials = Material::with(['category', 'unit', 'supplier'])->get();
         $materialsCount = 0;
         foreach ($materials as $m) {
@@ -311,7 +399,7 @@ class SupabaseSyncService
             $materialsCount++;
         }
 
-        // 4. Cadangkan Tools
+        // 6. Cadangkan Tools
         $tools = Tool::with(['category'])->get();
         $toolsCount = 0;
         foreach ($tools as $t) {
@@ -369,7 +457,7 @@ class SupabaseSyncService
             $toolsCount++;
         }
 
-        // 5. Cadangkan Inventories (Stok Material per Gudang)
+        // 7. Cadangkan Inventories (Stok Material per Gudang)
         $inventories = Inventory::with(['warehouse', 'material'])->get();
         $inventoriesCount = 0;
         foreach ($inventories as $inv) {
@@ -403,7 +491,7 @@ class SupabaseSyncService
             $inventoriesCount++;
         }
 
-        // 6. Cadangkan ToolInventories (Stok Alat per Gudang)
+        // 8. Cadangkan ToolInventories (Stok Alat per Gudang)
         $toolInventories = ToolInventory::with(['warehouse', 'tool'])->get();
         $toolInventoriesCount = 0;
         foreach ($toolInventories as $tInv) {
@@ -444,7 +532,9 @@ class SupabaseSyncService
 
         return [
             'success'                => true,
-            'message'                => "Berhasil mencadangkan {$categoriesCount} Kategori, {$unitsCount} Satuan, {$materialsCount} Material, {$toolsCount} Alat, {$inventoriesCount} Stok Material Gudang, dan {$toolInventoriesCount} Stok Alat Gudang ke Supabase Cloud.",
+            'message'                => "Berhasil mencadangkan {$warehousesCount} Gudang, {$usersCount} Akun User & Role, {$categoriesCount} Kategori, {$unitsCount} Satuan, {$materialsCount} Material, {$toolsCount} Alat, {$inventoriesCount} Stok Material Gudang, dan {$toolInventoriesCount} Stok Alat Gudang ke Supabase Cloud.",
+            'warehouses_count'       => $warehousesCount,
+            'users_count'            => $usersCount,
             'categories_count'       => $categoriesCount,
             'units_count'            => $unitsCount,
             'materials_count'        => $materialsCount,
@@ -456,7 +546,7 @@ class SupabaseSyncService
     }
 
     /**
-     * PULL / RESTORE: Tarik Kategori, Satuan, Material, Alat, & Stok per Gudang dari Supabase Cloud ke MySQL lokal.
+     * PULL / RESTORE: Tarik Gudang, Akun User & Role, Kategori, Satuan, Material, Alat, & Stok per Gudang dari Supabase Cloud ke MySQL lokal.
      */
     public function pullFromSupabase(): array
     {
@@ -469,7 +559,76 @@ class SupabaseSyncService
 
         $conn = DB::connection(self::CONNECTION_NAME);
 
-        // 1. Tarik Categories
+        // 1. Tarik Warehouses
+        $cloudWarehouses = $conn->table('backup_warehouses')->get();
+        $warehousesRestored = 0;
+        foreach ($cloudWarehouses as $wRow) {
+            $project = null;
+            if (!empty($wRow->project_name)) {
+                $project = Project::firstOrCreate(
+                    ['code' => $wRow->project_code ?: 'PRJ-' . strtoupper(substr(md5($wRow->project_name), 0, 6))],
+                    ['name' => $wRow->project_name, 'status' => 'active']
+                );
+            }
+
+            Warehouse::updateOrCreate(
+                ['code' => $wRow->code],
+                [
+                    'name'       => $wRow->name,
+                    'type'       => $wRow->type ?? (filter_var($wRow->is_central ?? false, FILTER_VALIDATE_BOOLEAN) ? 'central' : 'project'),
+                    'is_central' => filter_var($wRow->is_central ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'address'    => $wRow->address,
+                    'project_id' => $project?->id,
+                ]
+            );
+            $warehousesRestored++;
+        }
+
+        // 2. Tarik Users & Roles & Akses Gudang
+        $cloudUsers = $conn->table('backup_users')->get();
+        $usersRestored = 0;
+        foreach ($cloudUsers as $uRow) {
+            $roleNames = !empty($uRow->role_names)
+                ? (is_string($uRow->role_names) ? json_decode($uRow->role_names, true) : (array) $uRow->role_names)
+                : [];
+
+            $assignedWhCodes = !empty($uRow->assigned_warehouse_codes)
+                ? (is_string($uRow->assigned_warehouse_codes) ? json_decode($uRow->assigned_warehouse_codes, true) : (array) $uRow->assigned_warehouse_codes)
+                : [];
+
+            $user = User::firstOrCreate(
+                ['email' => $uRow->email],
+                [
+                    'name'      => $uRow->name,
+                    'password'  => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
+                    'is_active' => filter_var($uRow->is_active ?? true, FILTER_VALIDATE_BOOLEAN),
+                ]
+            );
+            $user->update([
+                'name'      => $uRow->name,
+                'is_active' => filter_var($uRow->is_active ?? true, FILTER_VALIDATE_BOOLEAN),
+            ]);
+
+            // Restore Roles
+            if (!empty($roleNames)) {
+                $rolesToSync = [];
+                foreach ($roleNames as $rName) {
+                    $role = Role::firstOrCreate(['name' => $rName]);
+                    $rolesToSync[] = $role;
+                }
+                $user->syncRoles($rolesToSync);
+            }
+
+            // Restore Assigned Warehouses
+            if (!empty($assignedWhCodes)) {
+                $whIds = Warehouse::whereIn('code', $assignedWhCodes)->pluck('id')->toArray();
+                $user->warehouses()->syncWithoutDetaching($whIds);
+            }
+
+            $usersRestored++;
+        }
+
+        // 3. Tarik Categories
         $cloudCategories = $conn->table('backup_categories')->get();
         $categoriesRestored = 0;
         foreach ($cloudCategories as $catRow) {
@@ -484,7 +643,7 @@ class SupabaseSyncService
             $categoriesRestored++;
         }
 
-        // 2. Tarik Units
+        // 4. Tarik Units
         $cloudUnits = $conn->table('backup_units')->get();
         $unitsRestored = 0;
         foreach ($cloudUnits as $uRow) {
@@ -498,7 +657,7 @@ class SupabaseSyncService
             $unitsRestored++;
         }
 
-        // 3. Tarik Materials
+        // 5. Tarik Materials
         $cloudMaterials = $conn->table('backup_materials')->get();
         $materialsRestored = 0;
         foreach ($cloudMaterials as $row) {
@@ -567,7 +726,7 @@ class SupabaseSyncService
             $materialsRestored++;
         }
 
-        // 4. Tarik Tools
+        // 6. Tarik Tools
         $cloudTools = $conn->table('backup_tools')->get();
         $toolsRestored = 0;
         foreach ($cloudTools as $row) {
@@ -615,7 +774,7 @@ class SupabaseSyncService
             $toolsRestored++;
         }
 
-        // 5. Tarik Inventories (Stok Material per Gudang)
+        // 7. Tarik Inventories (Stok Material per Gudang)
         $cloudInventories = $conn->table('backup_inventories')->get();
         $inventoriesRestored = 0;
         foreach ($cloudInventories as $row) {
@@ -649,7 +808,7 @@ class SupabaseSyncService
             }
         }
 
-        // 6. Tarik ToolInventories (Stok Alat per Gudang)
+        // 8. Tarik ToolInventories (Stok Alat per Gudang)
         $cloudToolInventories = $conn->table('backup_tool_inventories')->get();
         $toolInventoriesRestored = 0;
         foreach ($cloudToolInventories as $row) {
@@ -687,7 +846,9 @@ class SupabaseSyncService
 
         return [
             'success'                   => true,
-            'message'                   => "Berhasil menarik {$categoriesRestored} Kategori, {$unitsRestored} Satuan, {$materialsRestored} Material, {$toolsRestored} Alat, {$inventoriesRestored} Stok Material Gudang, dan {$toolInventoriesRestored} Stok Alat Gudang dari Supabase ke database lokal.",
+            'message'                   => "Berhasil menarik {$warehousesRestored} Gudang, {$usersRestored} Akun User & Role, {$categoriesRestored} Kategori, {$unitsRestored} Satuan, {$materialsRestored} Material, {$toolsRestored} Alat, {$inventoriesRestored} Stok Material Gudang, dan {$toolInventoriesRestored} Stok Alat Gudang dari Supabase ke database lokal.",
+            'warehouses_restored'       => $warehousesRestored,
+            'users_restored'            => $usersRestored,
             'categories_restored'       => $categoriesRestored,
             'units_restored'            => $unitsRestored,
             'materials_restored'        => $materialsRestored,
@@ -702,6 +863,8 @@ class SupabaseSyncService
      */
     public function getStats(): array
     {
+        $localWarehousesCount = Warehouse::count();
+        $localUsersCount = User::count();
         $localCategoriesCount = Category::count();
         $localUnitsCount = Unit::count();
         $localMaterialsCount = Material::count();
@@ -709,6 +872,8 @@ class SupabaseSyncService
         $localInventoriesCount = Inventory::count();
         $localToolInventoriesCount = ToolInventory::count();
 
+        $cloudWarehousesCount = null;
+        $cloudUsersCount = null;
         $cloudCategoriesCount = null;
         $cloudUnitsCount = null;
         $cloudMaterialsCount = null;
@@ -724,6 +889,8 @@ class SupabaseSyncService
                 $this->ensureTablesExist();
                 $conn = DB::connection(self::CONNECTION_NAME);
 
+                $cloudWarehousesCount = $conn->table('backup_warehouses')->count();
+                $cloudUsersCount = $conn->table('backup_users')->count();
                 $cloudCategoriesCount = $conn->table('backup_categories')->count();
                 $cloudUnitsCount = $conn->table('backup_units')->count();
                 $cloudMaterialsCount = $conn->table('backup_materials')->count();
@@ -731,6 +898,8 @@ class SupabaseSyncService
                 $cloudInventoriesCount = $conn->table('backup_inventories')->count();
                 $cloudToolInventoriesCount = $conn->table('backup_tool_inventories')->count();
 
+                $latestWh = $conn->table('backup_warehouses')->max('synced_at');
+                $latestUsr = $conn->table('backup_users')->max('synced_at');
                 $latestCat = $conn->table('backup_categories')->max('synced_at');
                 $latestUnit = $conn->table('backup_units')->max('synced_at');
                 $latestMat = $conn->table('backup_materials')->max('synced_at');
@@ -738,7 +907,7 @@ class SupabaseSyncService
                 $latestInv = $conn->table('backup_inventories')->max('synced_at');
                 $latestToolInv = $conn->table('backup_tool_inventories')->max('synced_at');
 
-                $lastSyncedAt = max($latestCat, $latestUnit, $latestMat, $latestTool, $latestInv, $latestToolInv);
+                $lastSyncedAt = max($latestWh, $latestUsr, $latestCat, $latestUnit, $latestMat, $latestTool, $latestInv, $latestToolInv);
             } catch (Throwable $e) {
                 Log::warning('Error fetching cloud stats: ' . $e->getMessage());
             }
@@ -747,6 +916,8 @@ class SupabaseSyncService
         return [
             'connection' => $test,
             'local' => [
+                'warehouses_count'       => $localWarehousesCount,
+                'users_count'            => $localUsersCount,
                 'categories_count'       => $localCategoriesCount,
                 'units_count'            => $localUnitsCount,
                 'materials_count'        => $localMaterialsCount,
@@ -755,6 +926,8 @@ class SupabaseSyncService
                 'tool_inventories_count' => $localToolInventoriesCount,
             ],
             'cloud' => [
+                'warehouses_count'       => $cloudWarehousesCount,
+                'users_count'            => $cloudUsersCount,
                 'categories_count'       => $cloudCategoriesCount,
                 'units_count'            => $cloudUnitsCount,
                 'materials_count'        => $cloudMaterialsCount,
@@ -766,4 +939,5 @@ class SupabaseSyncService
         ];
     }
 }
+
 

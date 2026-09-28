@@ -86,6 +86,8 @@ class SupabaseSyncCommand extends Command
         try {
             $result = $this->syncService->pushToSupabase();
             $this->info('✔ ' . $result['message']);
+            $this->line("  Gudang dicadangkan           : {$result['warehouses_count']} item");
+            $this->line("  Akun User & Role             : {$result['users_count']} item");
             $this->line("  Kategori dicadangkan         : {$result['categories_count']} item");
             $this->line("  Satuan dicadangkan           : {$result['units_count']} item");
             $this->line("  Material dicadangkan         : {$result['materials_count']} item");
@@ -107,6 +109,8 @@ class SupabaseSyncCommand extends Command
         try {
             $result = $this->syncService->pullFromSupabase();
             $this->info('✔ ' . $result['message']);
+            $this->line("  Gudang dipulihkan           : {$result['warehouses_restored']} item");
+            $this->line("  Akun User & Role            : {$result['users_restored']} item");
             $this->line("  Kategori dipulihkan         : {$result['categories_restored']} item");
             $this->line("  Satuan dipulihkan           : {$result['units_restored']} item");
             $this->line("  Material dipulihkan         : {$result['materials_restored']} item");

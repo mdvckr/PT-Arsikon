@@ -77,18 +77,25 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Gudang & Proyek</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
-                            {{ number_format($stats['local']['categories_count']) }}
+                            {{ number_format($stats['local']['warehouses_count'] ?? 0) }}
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Arsitek, MEP...</div>
+                        <div style="font-size:10px;color:#94a3b8;">Gudang Central & Proyek</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Satuan</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Akun User & Role</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
-                            {{ number_format($stats['local']['units_count']) }}
+                            {{ number_format($stats['local']['users_count'] ?? 0) }}
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">kg, sak, btg...</div>
+                        <div style="font-size:10px;color:#94a3b8;">Role & Hak Penugasan</div>
+                    </div>
+                    <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori / Satuan</div>
+                        <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
+                            {{ number_format($stats['local']['categories_count']) }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ number_format($stats['local']['units_count']) }}</span>
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;">Kategori & Unit Satuan</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
                         <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Material (Katalog / Stok)</div>
@@ -126,16 +133,23 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori Cloud</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Gudang Cloud</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
-                            {{ $stats['cloud']['categories_count'] !== null ? number_format($stats['cloud']['categories_count']) : '-' }}
+                            {{ $stats['cloud']['warehouses_count'] !== null ? number_format($stats['cloud']['warehouses_count']) : '-' }}
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Tersimpan</div>
+                        <div style="font-size:10px;color:#94a3b8;">Lokasi Gudang</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Satuan Cloud</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Akun User & Role Cloud</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
-                            {{ $stats['cloud']['units_count'] !== null ? number_format($stats['cloud']['units_count']) : '-' }}
+                            {{ $stats['cloud']['users_count'] !== null ? number_format($stats['cloud']['users_count']) : '-' }}
+                        </div>
+                        <div style="font-size:10px;color:#94a3b8;">User & Hak Akses</div>
+                    </div>
+                    <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori / Satuan Cloud</div>
+                        <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
+                            {{ $stats['cloud']['categories_count'] !== null ? number_format($stats['cloud']['categories_count']) : '-' }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ $stats['cloud']['units_count'] !== null ? number_format($stats['cloud']['units_count']) : '-' }}</span>
                         </div>
                         <div style="font-size:10px;color:#94a3b8;">Tersimpan</div>
                     </div>
