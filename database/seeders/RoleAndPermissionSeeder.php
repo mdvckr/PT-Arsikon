@@ -186,70 +186,13 @@ class RoleAndPermissionSeeder extends Seeder
                 'name'       => 'Gudang Pusat PT Arsikon',
                 'type'       => 'central',
                 'is_central' => true,
-                'address'    => 'Jl. Industri Utama No. 1, Jakarta',
-            ]
-        );
-
-        $sampleProjectA = Project::firstOrCreate(
-            ['code' => 'PRJ-001'],
-            [
-                'name'       => 'Proyek Pembangunan Gedung A',
-                'location'   => 'Jakarta Selatan',
-                'status'     => 'active',
-                'start_date' => now()->toDateString(),
-            ]
-        );
-
-        $projectWarehouseA = Warehouse::firstOrCreate(
-            ['code' => 'W-PRJ-001'],
-            [
-                'project_id' => $sampleProjectA->id,
-                'name'       => 'Gudang Proyek FK Teknik',
-                'type'       => 'project',
-                'is_central' => false,
-                'address'    => 'Site Office FK Teknik, Ciamis',
-            ]
-        );
-
-        $sampleProjectB = Project::firstOrCreate(
-            ['code' => 'PRJ-002'],
-            [
-                'name'       => 'Proyek Pembangunan Gedung B',
-                'location'   => 'Bekasi Timur',
-                'status'     => 'active',
-                'start_date' => now()->toDateString(),
-            ]
-        );
-
-        $projectWarehouseB = Warehouse::firstOrCreate(
-            ['code' => 'W-PRJ-002'],
-            [
-                'project_id' => $sampleProjectB->id,
-                'name'       => 'Gudang Proyek Gedung B',
-                'type'       => 'project',
-                'is_central' => false,
-                'address'    => 'Site Office Gedung B, Bekasi',
+                'address'    => 'Sleman',
             ]
         );
 
         // ==========================================================
         // 4. Create Default System Users
         // ==========================================================
-
-        // 1. Owner
-        $ownerUser = User::firstOrCreate(
-            ['email' => 'owner@arsikon.co.id'],
-            [
-                'name'     => 'Bapak Owner',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
-            ]
-        );
-        $ownerUser->syncRoles([$ownerRole]);
-        $ownerUser->warehouses()->syncWithoutDetaching([
-            $centralWarehouse->id,
-            $projectWarehouseA->id,
-            $projectWarehouseB->id,
-        ]);
 
         // 2. Admin Pusat (Full Akses & Kelola Akun/Gudang/Jabatan)
         $adminPusatUser = User::firstOrCreate(
@@ -263,8 +206,6 @@ class RoleAndPermissionSeeder extends Seeder
         $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
         $adminPusatUser->warehouses()->syncWithoutDetaching([
             $centralWarehouse->id,
-            $projectWarehouseA->id,
-            $projectWarehouseB->id,
         ]);
 
         // 3. Admin Gudang Pusat (Hanya Akses Logistik)
@@ -278,49 +219,5 @@ class RoleAndPermissionSeeder extends Seeder
         $adminGudangPusatUser->update(['name' => 'Admin Gudang Pusat']);
         $adminGudangPusatUser->syncRoles([$adminGudangPusatRole]);
         $adminGudangPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
-
-        // 3. Admin Gudang Proyek (Proyek A)
-        $adminProyek1 = User::firstOrCreate(
-            ['email' => 'admin.proyek1@arsikon.co.id'],
-            [
-                'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
-        $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 4. User Proyek (Proyek A)
-        $userProyek = User::firstOrCreate(
-            ['email' => 'user.proyek@arsikon.co.id'],
-            [
-                'name'     => 'User Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $userProyek->syncRoles([$userRole, $adminProyekRole]);
-        $userProyek->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 5. Admin PO (Pengadaan)
-        $adminPOUser = User::firstOrCreate(
-            ['email' => 'admin.po@arsikon.co.id'],
-            [
-                'name'     => 'Admin Pengadaan (PO)',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $adminPOUser->syncRoles([$adminPORole]);
-        $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
-
-        // 6. Karyawan (akses terbatas)
-        $karyawanUser = User::firstOrCreate(
-            ['email' => 'karyawan@arsikon.co.id'],
-            [
-                'name'     => 'Pekerja Lapangan',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $karyawanUser->syncRoles([$karyawanRole]);
-        $karyawanUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
     }
 }

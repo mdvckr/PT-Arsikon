@@ -86,11 +86,13 @@ class SupabaseSyncCommand extends Command
         try {
             $result = $this->syncService->pushToSupabase();
             $this->info('✔ ' . $result['message']);
-            $this->line("  Kategori dicadangkan : {$result['categories_count']} item");
-            $this->line("  Satuan dicadangkan   : {$result['units_count']} item");
-            $this->line("  Material dicadangkan : {$result['materials_count']} item");
-            $this->line("  Alat dicadangkan     : {$result['tools_count']} item");
-            $this->line("  Timestamp            : {$result['synced_at']}");
+            $this->line("  Kategori dicadangkan         : {$result['categories_count']} item");
+            $this->line("  Satuan dicadangkan           : {$result['units_count']} item");
+            $this->line("  Material dicadangkan         : {$result['materials_count']} item");
+            $this->line("  Alat dicadangkan             : {$result['tools_count']} item");
+            $this->line("  Stok Material Gudang         : {$result['inventories_count']} item");
+            $this->line("  Stok Alat Gudang             : {$result['tool_inventories_count']} item");
+            $this->line("  Timestamp                    : {$result['synced_at']}");
             return Command::SUCCESS;
         } catch (Throwable $e) {
             $this->error('✖ Gagal melakukan PUSH: ' . $e->getMessage());
@@ -105,10 +107,12 @@ class SupabaseSyncCommand extends Command
         try {
             $result = $this->syncService->pullFromSupabase();
             $this->info('✔ ' . $result['message']);
-            $this->line("  Kategori dipulihkan : {$result['categories_restored']} item");
-            $this->line("  Satuan dipulihkan   : {$result['units_restored']} item");
-            $this->line("  Material dipulihkan : {$result['materials_restored']} item");
-            $this->line("  Alat dipulihkan     : {$result['tools_restored']} item");
+            $this->line("  Kategori dipulihkan         : {$result['categories_restored']} item");
+            $this->line("  Satuan dipulihkan           : {$result['units_restored']} item");
+            $this->line("  Material dipulihkan         : {$result['materials_restored']} item");
+            $this->line("  Alat dipulihkan             : {$result['tools_restored']} item");
+            $this->line("  Stok Material Gudang        : {$result['inventories_restored']} item");
+            $this->line("  Stok Alat Gudang            : {$result['tool_inventories_restored']} item");
             return Command::SUCCESS;
         } catch (Throwable $e) {
             $this->error('✖ Gagal melakukan PULL: ' . $e->getMessage());

@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Inventory;
 use App\Models\Material;
 use App\Models\Supplier;
 use App\Models\Tool;
+use App\Models\ToolInventory;
 use App\Models\Unit;
+use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -158,10 +161,42 @@ class SupabaseSyncService
                 synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
         ");
+
+        // 5. Tabel backup_inventories (Stok Real Material per Gudang/Proyek)
+        $conn->statement("
+            CREATE TABLE IF NOT EXISTS backup_inventories (
+                warehouse_code VARCHAR(50) NOT NULL,
+                material_sku VARCHAR(100) NOT NULL,
+                warehouse_name VARCHAR(150),
+                material_name VARCHAR(255),
+                quantity NUMERIC(15, 2) DEFAULT 0,
+                qty_allocated NUMERIC(15, 2) DEFAULT 0,
+                qty_in_transit NUMERIC(15, 2) DEFAULT 0,
+                synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (warehouse_code, material_sku)
+            );
+        ");
+
+        // 6. Tabel backup_tool_inventories (Stok Real Alat per Gudang/Proyek)
+        $conn->statement("
+            CREATE TABLE IF NOT EXISTS backup_tool_inventories (
+                warehouse_code VARCHAR(50) NOT NULL,
+                tool_code VARCHAR(100) NOT NULL,
+                warehouse_name VARCHAR(150),
+                tool_name VARCHAR(255),
+                stock_total INTEGER DEFAULT 0,
+                stock_available INTEGER DEFAULT 0,
+                stock_borrowed INTEGER DEFAULT 0,
+                stock_maintenance INTEGER DEFAULT 0,
+                stock_damaged INTEGER DEFAULT 0,
+                synced_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (warehouse_code, tool_code)
+            );
+        ");
     }
 
     /**
-     * PUSH: Cadangkan Kategori, Satuan, Material & Alat dari MySQL lokal ke Supabase.
+     * PUSH: Cadangkan Kategori, Satuan, Material, Alat, & Stok per Gudang dari MySQL lokal ke Supabase.
      */
     public function pushToSupabase(): array
     {
@@ -334,19 +369,94 @@ class SupabaseSyncService
             $toolsCount++;
         }
 
+        // 5. Cadangkan Inventories (Stok Material per Gudang)
+        $inventories = Inventory::with(['warehouse', 'material'])->get();
+        $inventoriesCount = 0;
+        foreach ($inventories as $inv) {
+            if (!$inv->warehouse || !$inv->material) {
+                continue;
+            }
+            $whCode = $inv->warehouse->code ?: ('WH-' . $inv->warehouse->id);
+
+            $conn->statement("
+                INSERT INTO backup_inventories (
+                    warehouse_code, material_sku, warehouse_name, material_name,
+                    quantity, qty_allocated, qty_in_transit, synced_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (warehouse_code, material_sku) DO UPDATE SET
+                    warehouse_name = EXCLUDED.warehouse_name,
+                    material_name = EXCLUDED.material_name,
+                    quantity = EXCLUDED.quantity,
+                    qty_allocated = EXCLUDED.qty_allocated,
+                    qty_in_transit = EXCLUDED.qty_in_transit,
+                    synced_at = EXCLUDED.synced_at;
+            ", [
+                $whCode,
+                $inv->material->sku,
+                $inv->warehouse->name,
+                $inv->material->name,
+                (float) ($inv->quantity ?? 0),
+                (float) ($inv->qty_allocated ?? 0),
+                (float) ($inv->qty_in_transit ?? 0),
+                $now,
+            ]);
+            $inventoriesCount++;
+        }
+
+        // 6. Cadangkan ToolInventories (Stok Alat per Gudang)
+        $toolInventories = ToolInventory::with(['warehouse', 'tool'])->get();
+        $toolInventoriesCount = 0;
+        foreach ($toolInventories as $tInv) {
+            if (!$tInv->warehouse || !$tInv->tool) {
+                continue;
+            }
+            $whCode = $tInv->warehouse->code ?: ('WH-' . $tInv->warehouse->id);
+
+            $conn->statement("
+                INSERT INTO backup_tool_inventories (
+                    warehouse_code, tool_code, warehouse_name, tool_name,
+                    stock_total, stock_available, stock_borrowed,
+                    stock_maintenance, stock_damaged, synced_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (warehouse_code, tool_code) DO UPDATE SET
+                    warehouse_name = EXCLUDED.warehouse_name,
+                    tool_name = EXCLUDED.tool_name,
+                    stock_total = EXCLUDED.stock_total,
+                    stock_available = EXCLUDED.stock_available,
+                    stock_borrowed = EXCLUDED.stock_borrowed,
+                    stock_maintenance = EXCLUDED.stock_maintenance,
+                    stock_damaged = EXCLUDED.stock_damaged,
+                    synced_at = EXCLUDED.synced_at;
+            ", [
+                $whCode,
+                $tInv->tool->code,
+                $tInv->warehouse->name,
+                $tInv->tool->name,
+                (int) ($tInv->stock_total ?? 0),
+                (int) ($tInv->stock_available ?? 0),
+                (int) ($tInv->stock_borrowed ?? 0),
+                (int) ($tInv->stock_maintenance ?? 0),
+                (int) ($tInv->stock_damaged ?? 0),
+                $now,
+            ]);
+            $toolInventoriesCount++;
+        }
+
         return [
-            'success'          => true,
-            'message'          => "Berhasil mencadangkan {$categoriesCount} Kategori, {$unitsCount} Satuan, {$materialsCount} Material, dan {$toolsCount} Alat ke Supabase Cloud.",
-            'categories_count' => $categoriesCount,
-            'units_count'      => $unitsCount,
-            'materials_count'  => $materialsCount,
-            'tools_count'      => $toolsCount,
-            'synced_at'        => $now,
+            'success'                => true,
+            'message'                => "Berhasil mencadangkan {$categoriesCount} Kategori, {$unitsCount} Satuan, {$materialsCount} Material, {$toolsCount} Alat, {$inventoriesCount} Stok Material Gudang, dan {$toolInventoriesCount} Stok Alat Gudang ke Supabase Cloud.",
+            'categories_count'       => $categoriesCount,
+            'units_count'            => $unitsCount,
+            'materials_count'        => $materialsCount,
+            'tools_count'            => $toolsCount,
+            'inventories_count'      => $inventoriesCount,
+            'tool_inventories_count' => $toolInventoriesCount,
+            'synced_at'              => $now,
         ];
     }
 
     /**
-     * PULL / RESTORE: Tarik Kategori, Satuan, Material & Alat dari Supabase Cloud ke MySQL lokal.
+     * PULL / RESTORE: Tarik Kategori, Satuan, Material, Alat, & Stok per Gudang dari Supabase Cloud ke MySQL lokal.
      */
     public function pullFromSupabase(): array
     {
@@ -505,13 +615,85 @@ class SupabaseSyncService
             $toolsRestored++;
         }
 
+        // 5. Tarik Inventories (Stok Material per Gudang)
+        $cloudInventories = $conn->table('backup_inventories')->get();
+        $inventoriesRestored = 0;
+        foreach ($cloudInventories as $row) {
+            $warehouse = Warehouse::where('code', $row->warehouse_code)->first();
+            if (!$warehouse && !empty($row->warehouse_name)) {
+                $warehouse = Warehouse::where('name', $row->warehouse_name)->first();
+            }
+            if (!$warehouse) {
+                $warehouse = Warehouse::create([
+                    'code'       => $row->warehouse_code ?: 'WH-' . time(),
+                    'name'       => $row->warehouse_name ?: 'Gudang Proyek',
+                    'type'       => str_contains(strtolower($row->warehouse_name ?? ''), 'pusat') ? 'central' : 'project',
+                    'is_central' => str_contains(strtolower($row->warehouse_name ?? ''), 'pusat'),
+                ]);
+            }
+
+            $material = Material::where('sku', $row->material_sku)->first();
+            if ($material) {
+                Inventory::updateOrCreate(
+                    [
+                        'warehouse_id' => $warehouse->id,
+                        'material_id'  => $material->id,
+                    ],
+                    [
+                        'quantity'       => (float) ($row->quantity ?? 0),
+                        'qty_allocated'  => (float) ($row->qty_allocated ?? 0),
+                        'qty_in_transit' => (float) ($row->qty_in_transit ?? 0),
+                    ]
+                );
+                $inventoriesRestored++;
+            }
+        }
+
+        // 6. Tarik ToolInventories (Stok Alat per Gudang)
+        $cloudToolInventories = $conn->table('backup_tool_inventories')->get();
+        $toolInventoriesRestored = 0;
+        foreach ($cloudToolInventories as $row) {
+            $warehouse = Warehouse::where('code', $row->warehouse_code)->first();
+            if (!$warehouse && !empty($row->warehouse_name)) {
+                $warehouse = Warehouse::where('name', $row->warehouse_name)->first();
+            }
+            if (!$warehouse) {
+                $warehouse = Warehouse::create([
+                    'code'       => $row->warehouse_code ?: 'WH-' . time(),
+                    'name'       => $row->warehouse_name ?: 'Gudang Proyek',
+                    'type'       => str_contains(strtolower($row->warehouse_name ?? ''), 'pusat') ? 'central' : 'project',
+                    'is_central' => str_contains(strtolower($row->warehouse_name ?? ''), 'pusat'),
+                ]);
+            }
+
+            $tool = Tool::where('code', $row->tool_code)->first();
+            if ($tool) {
+                ToolInventory::updateOrCreate(
+                    [
+                        'warehouse_id' => $warehouse->id,
+                        'tool_id'      => $tool->id,
+                    ],
+                    [
+                        'stock_total'       => (int) ($row->stock_total ?? 0),
+                        'stock_available'   => (int) ($row->stock_available ?? 0),
+                        'stock_borrowed'    => (int) ($row->stock_borrowed ?? 0),
+                        'stock_maintenance' => (int) ($row->stock_maintenance ?? 0),
+                        'stock_damaged'     => (int) ($row->stock_damaged ?? 0),
+                    ]
+                );
+                $toolInventoriesRestored++;
+            }
+        }
+
         return [
-            'success'             => true,
-            'message'             => "Berhasil menarik {$categoriesRestored} Kategori, {$unitsRestored} Satuan, {$materialsRestored} Material, dan {$toolsRestored} Alat dari Supabase ke database lokal.",
-            'categories_restored' => $categoriesRestored,
-            'units_restored'      => $unitsRestored,
-            'materials_restored'  => $materialsRestored,
-            'tools_restored'      => $toolsRestored,
+            'success'                   => true,
+            'message'                   => "Berhasil menarik {$categoriesRestored} Kategori, {$unitsRestored} Satuan, {$materialsRestored} Material, {$toolsRestored} Alat, {$inventoriesRestored} Stok Material Gudang, dan {$toolInventoriesRestored} Stok Alat Gudang dari Supabase ke database lokal.",
+            'categories_restored'       => $categoriesRestored,
+            'units_restored'            => $unitsRestored,
+            'materials_restored'        => $materialsRestored,
+            'tools_restored'            => $toolsRestored,
+            'inventories_restored'      => $inventoriesRestored,
+            'tool_inventories_restored' => $toolInventoriesRestored,
         ];
     }
 
@@ -524,11 +706,15 @@ class SupabaseSyncService
         $localUnitsCount = Unit::count();
         $localMaterialsCount = Material::count();
         $localToolsCount = Tool::count();
+        $localInventoriesCount = Inventory::count();
+        $localToolInventoriesCount = ToolInventory::count();
 
         $cloudCategoriesCount = null;
         $cloudUnitsCount = null;
         $cloudMaterialsCount = null;
         $cloudToolsCount = null;
+        $cloudInventoriesCount = null;
+        $cloudToolInventoriesCount = null;
         $lastSyncedAt = null;
 
         $test = $this->testConnection();
@@ -542,13 +728,17 @@ class SupabaseSyncService
                 $cloudUnitsCount = $conn->table('backup_units')->count();
                 $cloudMaterialsCount = $conn->table('backup_materials')->count();
                 $cloudToolsCount = $conn->table('backup_tools')->count();
+                $cloudInventoriesCount = $conn->table('backup_inventories')->count();
+                $cloudToolInventoriesCount = $conn->table('backup_tool_inventories')->count();
 
                 $latestCat = $conn->table('backup_categories')->max('synced_at');
                 $latestUnit = $conn->table('backup_units')->max('synced_at');
                 $latestMat = $conn->table('backup_materials')->max('synced_at');
                 $latestTool = $conn->table('backup_tools')->max('synced_at');
+                $latestInv = $conn->table('backup_inventories')->max('synced_at');
+                $latestToolInv = $conn->table('backup_tool_inventories')->max('synced_at');
 
-                $lastSyncedAt = max($latestCat, $latestUnit, $latestMat, $latestTool);
+                $lastSyncedAt = max($latestCat, $latestUnit, $latestMat, $latestTool, $latestInv, $latestToolInv);
             } catch (Throwable $e) {
                 Log::warning('Error fetching cloud stats: ' . $e->getMessage());
             }
@@ -557,18 +747,23 @@ class SupabaseSyncService
         return [
             'connection' => $test,
             'local' => [
-                'categories_count' => $localCategoriesCount,
-                'units_count'      => $localUnitsCount,
-                'materials_count'  => $localMaterialsCount,
-                'tools_count'      => $localToolsCount,
+                'categories_count'       => $localCategoriesCount,
+                'units_count'            => $localUnitsCount,
+                'materials_count'        => $localMaterialsCount,
+                'tools_count'            => $localToolsCount,
+                'inventories_count'      => $localInventoriesCount,
+                'tool_inventories_count' => $localToolInventoriesCount,
             ],
             'cloud' => [
-                'categories_count' => $cloudCategoriesCount,
-                'units_count'      => $cloudUnitsCount,
-                'materials_count'  => $cloudMaterialsCount,
-                'tools_count'      => $cloudToolsCount,
-                'last_synced_at'   => $lastSyncedAt,
+                'categories_count'       => $cloudCategoriesCount,
+                'units_count'            => $cloudUnitsCount,
+                'materials_count'        => $cloudMaterialsCount,
+                'tools_count'            => $cloudToolsCount,
+                'inventories_count'      => $cloudInventoriesCount,
+                'tool_inventories_count' => $cloudToolInventoriesCount,
+                'last_synced_at'         => $lastSyncedAt,
             ],
         ];
     }
 }
+

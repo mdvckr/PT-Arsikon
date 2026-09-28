@@ -75,7 +75,7 @@
                     <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">Aktif</span>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
                         <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
@@ -91,18 +91,18 @@
                         <div style="font-size:10px;color:#94a3b8;">kg, sak, btg...</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Material</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Material (Katalog / Stok)</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;" id="localMatCount">
-                            {{ number_format($stats['local']['materials_count']) }}
+                            {{ number_format($stats['local']['materials_count']) }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ number_format($stats['local']['inventories_count'] ?? 0) }} rec</span>
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Item katalog</div>
+                        <div style="font-size:10px;color:#94a3b8;">Item & Stok Per Gudang</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Alat</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Alat (Katalog / Stok)</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;" id="localToolCount">
-                            {{ number_format($stats['local']['tools_count']) }}
+                            {{ number_format($stats['local']['tools_count']) }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ number_format($stats['local']['tool_inventories_count'] ?? 0) }} rec</span>
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Unit inventaris</div>
+                        <div style="font-size:10px;color:#94a3b8;">Unit & Stok Per Gudang</div>
                     </div>
                 </div>
             </div>
@@ -124,7 +124,7 @@
                     <span class="badge" style="background:#dcfce7;color:#15803d;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">Cloud Backup</span>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
                         <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Kategori Cloud</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">
@@ -140,18 +140,18 @@
                         <div style="font-size:10px;color:#94a3b8;">Tersimpan</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Material Cloud</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Material Cloud (Stok)</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;" id="cloudMatCount">
-                            {{ $stats['cloud']['materials_count'] !== null ? number_format($stats['cloud']['materials_count']) : '-' }}
+                            {{ $stats['cloud']['materials_count'] !== null ? number_format($stats['cloud']['materials_count']) : '-' }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ $stats['cloud']['inventories_count'] !== null ? number_format($stats['cloud']['inventories_count']) : '-' }} rec</span>
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Tersimpan</div>
+                        <div style="font-size:10px;color:#94a3b8;">Katalog & Stok Gudang</div>
                     </div>
                     <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #f1f5f9;">
-                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Alat Cloud</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;">Alat Cloud (Stok)</div>
                         <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;" id="cloudToolCount">
-                            {{ $stats['cloud']['tools_count'] !== null ? number_format($stats['cloud']['tools_count']) : '-' }}
+                            {{ $stats['cloud']['tools_count'] !== null ? number_format($stats['cloud']['tools_count']) : '-' }} <span style="font-size:12px;color:#64748b;font-weight:600;">/ {{ $stats['cloud']['tool_inventories_count'] !== null ? number_format($stats['cloud']['tool_inventories_count']) : '-' }} rec</span>
                         </div>
-                        <div style="font-size:10px;color:#94a3b8;">Tersimpan</div>
+                        <div style="font-size:10px;color:#94a3b8;">Unit & Stok Gudang</div>
                     </div>
                 </div>
             </div>
