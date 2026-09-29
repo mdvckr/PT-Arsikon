@@ -224,7 +224,7 @@
                                     </span>
                                 </td>
                                 <td style="text-align:center;font-weight:700;color:#0f172a;font-size:13.5px;">
-                                    {{ $isTool ? number_format($qty, 0) : number_format($qty, 2, ',', '.') }}
+                                    {{ format_quantity($qty) }}
                                 </td>
                                 <td style="text-align:center;">
                                     <span class="text-muted" style="font-size:11.5px;font-weight:600;">

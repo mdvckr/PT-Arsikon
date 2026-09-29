@@ -154,7 +154,7 @@
                             @endif
                         </td>
                         <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
-                            {{ $m->supplier?->name ?? $m->supplier_name ?? '-' }}
+                            {{ $m->display_supplier_name }}
                         </td>
                         <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
                             {{ $m->size ?: '-' }}

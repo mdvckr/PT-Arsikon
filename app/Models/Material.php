@@ -63,6 +63,43 @@ class Material extends Model
         return $this->sku;
     }
 
+    public function getDisplaySupplierNameAttribute(): string
+    {
+        if (!empty($this->supplier?->name)) {
+            return $this->supplier->name;
+        }
+
+        if (!empty($this->supplier_name)) {
+            return $this->supplier_name;
+        }
+
+        $grItem = GoodsReceiptItem::where('material_id', $this->id)
+            ->whereHas('goodsReceipt')
+            ->latest()
+            ->first();
+
+        if ($grItem && $grItem->goodsReceipt) {
+            $grSup = $grItem->goodsReceipt->supplier?->name ?: $grItem->goodsReceipt->supplier_name;
+            if (!empty($grSup)) {
+                return $grSup;
+            }
+        }
+
+        $poItem = PurchaseOrderItem::where('material_id', $this->id)
+            ->whereHas('purchaseOrder')
+            ->latest()
+            ->first();
+
+        if ($poItem && $poItem->purchaseOrder) {
+            $poSup = $poItem->purchaseOrder->supplier?->name ?: $poItem->purchaseOrder->supplier_name;
+            if (!empty($poSup)) {
+                return $poSup;
+            }
+        }
+
+        return '-';
+    }
+
     public function setSkuAttribute($value): void
     {
         $this->attributes['sku'] = !empty($value) ? strtoupper(trim($value)) : $value;

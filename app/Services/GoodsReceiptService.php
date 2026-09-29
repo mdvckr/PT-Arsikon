@@ -208,6 +208,13 @@ class GoodsReceiptService
                         continue;
                     }
 
+                    if (empty($material->supplier_id) && empty($material->supplier_name) && ($receipt->supplier_id || $receipt->supplier_name)) {
+                        $material->update([
+                            'supplier_id'   => $receipt->supplier_id,
+                            'supplier_name' => $receipt->supplier_name ?: $receipt->supplier?->name,
+                        ]);
+                    }
+
                     $this->stockService->addStock(
                         $warehouse,
                         $material,
