@@ -99,18 +99,27 @@
                             </div>
 
                             <div class="mb-3" id="projectWrapper" style="display:{{ old('type', 'project') == 'project' ? 'block' : 'none' }};">
-                                <label class="form-label" for="projectId">
+                                <label class="form-label" for="projectNameInput">
                                     Terkait Proyek <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-folder input-icon"></i>
-                                    <select name="project_id" class="form-control with-icon" id="projectId">
-                                        <option value="">Pilih Proyek Terkait</option>
-                                        @foreach(\App\Models\Project::where('status', '!=', 'completed')->orderBy('name')->get() as $proj)
-                                        <option value="{{ $proj->id }}" {{ old('project_id') == $proj->id ? 'selected' : '' }}>{{ $proj->name }}</option>
+                                    <i class="fas fa-building-columns input-icon"></i>
+                                    <input type="text" 
+                                           id="projectNameInput" 
+                                           name="project_name" 
+                                           list="projectSuggestions" 
+                                           value="{{ old('project_name') }}" 
+                                           class="form-control with-icon" 
+                                           placeholder="Ketik nama proyek (mis. Proyek Pembangunan Gedung A)...">
+                                    <datalist id="projectSuggestions">
+                                        @foreach(\App\Models\Project::orderBy('name')->get() as $proj)
+                                        <option value="{{ $proj->name }}">
                                         @endforeach
-                                    </select>
+                                    </datalist>
                                 </div>
+                                <span class="text-muted" style="font-size:11.5px;display:block;margin-top:4px;">
+                                    Ketik nama proyek langsung (otomatis terhubung atau dibuatkan proyek baru).
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -285,17 +294,34 @@
         function toggleProject() {
             const type = document.getElementById('warehouseType').value;
             const projectWrapper = document.getElementById('projectWrapper');
-            const projectId = document.getElementById('projectId');
+            const projectNameInput = document.getElementById('projectNameInput');
             if (type === 'project') {
                 projectWrapper.style.display = 'block';
-                projectId.required = true;
+                if (projectNameInput) projectNameInput.required = true;
             } else {
                 projectWrapper.style.display = 'none';
-                projectId.required = false;
-                projectId.value = '';
+                if (projectNameInput) {
+                    projectNameInput.required = false;
+                    projectNameInput.value = '';
+                }
             }
         }
-        document.addEventListener('DOMContentLoaded', toggleProject);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleProject();
+            const whName = document.getElementById('whName');
+            const projectNameInput = document.getElementById('projectNameInput');
+            if (whName && projectNameInput) {
+                whName.addEventListener('input', function() {
+                    if (!projectNameInput.dataset.touched) {
+                        projectNameInput.value = this.value.replace(/^Gudang\s+(Site\s+)?/i, '').trim();
+                    }
+                });
+                projectNameInput.addEventListener('input', function() {
+                    this.dataset.touched = '1';
+                });
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

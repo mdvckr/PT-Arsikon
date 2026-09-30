@@ -1,6 +1,115 @@
 let rowCount = 0;
 let currentScheduledData = [];
 let currentTabFilter = 'all';
+// ============================================================
+// WAREHOUSE AUTO-LOCK & SELECTION
+// Sesuai aturan:
+// - Jika ada item dengan tahapan kedatangan -> Gudang DIKUNCI (tidak bisa diubah).
+// - Jika belum ada tahapan -> Gudang BISA DIUBAH secara bebas.
+// ============================================================
+
+function onUserWarehouseChange(sel) {
+    const hint = document.getElementById('warehouseAutoHint');
+    if (hint) {
+        if (sel.value) {
+            const opt = sel.options[sel.selectedIndex];
+            hint.style.display = 'block';
+            hint.style.cssText = 'font-size:11px;color:#0369a1;margin-top:5px;background:#f0f9ff;padding:4px 8px;border-radius:6px;border:1px solid #bae6fd;';
+            hint.innerHTML = '<i class="fas fa-hand-pointer me-1"></i> Gudang tujuan dipilih: <strong>' + escHtml(opt.text) + '</strong> (Belum ada tahapan yang mengunci, dapat diubah bebas)';
+        } else {
+            hint.style.display = 'none';
+        }
+    }
+}
+
+function checkAndUpdateWarehouseLock() {
+    const rows = document.querySelectorAll('#itemsBody tr.item-row');
+    let lockedWhId = null;
+    let lockedWhName = null;
+    let lockedItemName = null;
+    let lockedStageName = null;
+    let hasAnyItemWithStage = false;
+
+    rows.forEach(function(row) {
+        const rowType = row.getAttribute('data-type');
+        const isTool = (rowType === 'tool');
+        const sel = row.querySelector('.item-select');
+        const stageInput = row.querySelector('[id^="stage-input-"]');
+        const stageVal = stageInput ? stageInput.value.trim() : '';
+
+        if (sel && sel.value) {
+            const list = isTool ? grTools : grMaterials;
+            const item = list.find(function(i) { return i.id == sel.value; });
+            if (item) {
+                // Barang dianggap punya tahapan jika:
+                // 1. Memiliki planned_stages atau has_stages
+                // 2. Atau stage_reference terisi
+                const hasStages = (item.has_stages || (item.planned_stages && item.planned_stages.length > 0) || stageVal !== '');
+                if (hasStages && item.warehouse_id) {
+                    hasAnyItemWithStage = true;
+                    if (!lockedWhId) {
+                        lockedWhId = item.warehouse_id;
+                        lockedWhName = item.warehouse_name;
+                        lockedItemName = item.name;
+                        lockedStageName = stageVal || (item.planned_stages && item.planned_stages[0] ? item.planned_stages[0].stage : 'Jadwal Rencana');
+                    }
+                }
+            }
+        }
+    });
+
+    const whSelect = document.getElementById('warehouseSelect');
+    const lockBadge = document.getElementById('warehouseLockBadge');
+    const hint = document.getElementById('warehouseAutoHint');
+    const icon = document.getElementById('warehouseInputIcon');
+
+    if (!whSelect) return;
+
+    if (hasAnyItemWithStage && lockedWhId) {
+        // KUNCI GUDANG: Sesuai aturan, barang memiliki tahapan maka TIDAK BISA DIUBAH
+        let found = false;
+        for (let i = 0; i < whSelect.options.length; i++) {
+            if (whSelect.options[i].value == lockedWhId) {
+                whSelect.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+        if (found) flashEl(whSelect, '#fef3c7');
+
+        whSelect.style.pointerEvents = 'none';
+        whSelect.style.backgroundColor = '#f1f5f9';
+        whSelect.style.color = '#334155';
+        whSelect.style.fontWeight = '700';
+        whSelect.tabIndex = -1;
+
+        if (lockBadge) lockBadge.style.display = 'inline-flex';
+        if (icon) icon.className = 'fas fa-lock input-icon text-warning';
+
+        if (hint) {
+            hint.style.display = 'block';
+            hint.style.cssText = 'font-size:11.5px;color:#92400e;margin-top:5px;background:#fef3c7;padding:6px 10px;border-radius:6px;border:1px solid #fde68a;display:flex;align-items:center;gap:6px;line-height:1.4;';
+            hint.innerHTML = '<i class="fas fa-lock" style="color:#d97706;font-size:13px;flex-shrink:0;"></i>'
+                + '<div>Gudang tujuan <strong>terkunci otomatis</strong> ke: <strong>' + escHtml(lockedWhName || ('Gudang #' + lockedWhId))
+                + '</strong><div style="font-size:10.5px;color:#b45309;margin-top:1px;">(Sesuai tahapan ' + escHtml(lockedStageName) + ' pada barang <em>' + escHtml(lockedItemName) + '</em> — tidak dapat diubah).</div></div>';
+        }
+    } else {
+        // BELUM ADA TAHAPAN: Buka kunci, pengguna bebas mengubah / memilih gudang
+        whSelect.style.pointerEvents = 'auto';
+        whSelect.style.backgroundColor = '#ffffff';
+        whSelect.style.color = '#0f172a';
+        whSelect.style.fontWeight = '400';
+        whSelect.tabIndex = 0;
+
+        if (lockBadge) lockBadge.style.display = 'none';
+        if (icon) icon.className = 'fas fa-warehouse input-icon';
+
+        if (hint) {
+            hint.style.display = 'none';
+            hint.innerHTML = '';
+        }
+    }
+}
 
 // ============================================================
 // ROW MANAGEMENT
@@ -49,34 +158,41 @@ function addRow(type, opts) {
     const selectName = isTool ? ('items[' + idx + '][tool_id]') : ('items[' + idx + '][material_id]');
     const defaultPrompt = isTool ? '-- Pilih Alat --' : '-- Pilih Material --';
 
-    const qty = (opts.qty != null) ? opts.qty : ((opts.quantity != null) ? opts.quantity : '');
+    let qty = (opts.qty != null) ? opts.qty : ((opts.quantity != null) ? opts.quantity : '');
+    if (isTool && qty !== '' && qty !== null) {
+        const numQty = parseFloat(qty);
+        qty = (isNaN(numQty) || numQty < 1) ? 1 : Math.round(numQty);
+    }
     const stageRef = opts.stage_reference || '';
     const unitAbbr = opts.unit_abbr || (isTool ? 'Unit' : '--');
 
     const row = '<tr id="row-' + idx + '" class="item-row" data-type="' + (isTool ? 'tool' : 'material') + '">'
-        + '<td style="vertical-align:top;padding-top:10px;">'
+        + '<td class="col-type" style="vertical-align:top;padding-top:10px;">'
         + typeInput + poItemInput
         + '<input type="hidden" name="items[' + idx + '][stage_reference]" id="stage-input-' + idx + '" value="' + escHtml(stageRef) + '">'
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="0">'
         + typeBadge + '</td>'
-        + '<td style="vertical-align:top;padding-top:10px;">'
+        + '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
         + '<select name="' + selectName + '" class="form-control item-select" required '
         + 'onchange="onItemChange(this,' + idx + ',' + (isTool ? 'true' : 'false') + ')" '
         + 'style="font-weight:600;font-size:12.5px;">'
         + '<option value="">' + defaultPrompt + '</option>' + optionsHtml
         + '</select>'
         + '<div id="item-meta-' + idx + '" class="item-meta-container"></div></td>'
-        + '<td style="vertical-align:top;padding-top:10px;">'
+        + '<td class="col-qty" style="vertical-align:top;padding-top:10px;">'
+        + '<div class="mobile-label-tag">Qty Masuk *</div>'
         + '<input type="number" name="items[' + idx + '][quantity]" class="form-control qty-input text-center" '
-        + 'value="' + qty + '" min="0.01" step="' + (isTool ? '1' : '0.01') + '" '
-        + 'placeholder="0" required data-idx="' + idx + '" '
-        + 'oninput="recalcRow(' + idx + ')" style="font-weight:700;font-size:13px;"></td>'
-        + '<td style="text-align:center;vertical-align:top;padding-top:14px;">'
+        + 'value="' + qty + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
+        + 'placeholder="' + (isTool ? '1' : '0') + '" required data-idx="' + idx + '" '
+        + 'oninput="recalcRow(' + idx + ')" onchange="validateQtyInput(this, ' + (isTool ? 'true' : 'false') + ')" '
+        + 'style="font-weight:700;font-size:13px;"></td>'
+        + '<td class="col-unit" style="text-align:center;vertical-align:top;padding-top:14px;">'
+        + '<div class="mobile-label-tag">Satuan</div>'
         + '<span class="badge" id="unit-' + idx + '" '
         + 'style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-size:11px;padding:3px 7px;border-radius:4px;font-weight:600;">'
         + unitAbbr + '</span></td>'
-        + '<td style="text-align:center;vertical-align:top;padding-top:10px;">'
+        + '<td class="col-action" style="text-align:center;vertical-align:top;padding-top:10px;">'
         + '<button type="button" class="btn-delete-row" onclick="removeRow(' + idx + ')" title="Hapus Baris">'
         + '<i class="fas fa-trash-can"></i></button></td></tr>';
 
@@ -103,6 +219,7 @@ function removeRow(idx) {
     if (tbody.querySelectorAll('tr.item-row').length === 0) {
         addRow('material');
     }
+    checkAndUpdateWarehouseLock();
 }
 
 // ============================================================
@@ -117,6 +234,7 @@ function onItemChange(sel, idx, isTool) {
         const unitEl = document.getElementById('unit-' + idx);
         if (unitEl) unitEl.textContent = isTool ? 'Unit' : '-';
         if (metaContainer) metaContainer.innerHTML = '';
+        checkAndUpdateWarehouseLock();
         return;
     }
 
@@ -143,8 +261,13 @@ function onItemChange(sel, idx, isTool) {
     const firstPlanned = (item.planned_stages || [])[0];
     if (firstPlanned) {
         const qtyInput = document.querySelector('[name="items[' + idx + '][quantity]"]');
-        if (qtyInput && (!qtyInput.value || parseFloat(qtyInput.value) === 0)) {
-            qtyInput.value = firstPlanned.qty || '';
+        if (qtyInput && (!qtyInput.value || parseFloat(qtyInput.value) <= 0)) {
+            const pQty = parseFloat(firstPlanned.qty);
+            if (!isNaN(pQty) && pQty > 0) {
+                qtyInput.value = isTool ? Math.max(1, Math.round(pQty)) : pQty;
+            } else {
+                qtyInput.value = isTool ? 1 : '';
+            }
         }
         // AUTO-FILL tanggal dari tahap pertama
         if (firstPlanned.date) {
@@ -178,6 +301,10 @@ function onItemChange(sel, idx, isTool) {
         metaHtml += '<span class="badge" style="background:#f0fdf4;color:#166534;font-size:10.5px;border:1px solid #bbf7d0;">'
             + '<i class="fas fa-building me-1"></i>Supplier: <strong>' + escHtml(item.supplier_name) + '</strong></span>';
     }
+    if (item.warehouse_name) {
+        metaHtml += '<span class="badge" style="background:#ecfeff;color:#0e7490;font-size:10.5px;border:1px solid #a5f3fc;">'
+            + '<i class="fas fa-warehouse me-1"></i>Lokasi: <strong>' + escHtml(item.warehouse_name) + '</strong></span>';
+    }
     metaHtml += '</div>';
 
     // Render tahapan
@@ -204,10 +331,13 @@ function onItemChange(sel, idx, isTool) {
             if (isPlanned) {
                 const supId = JSON.stringify(item.supplier_id || null);
                 const supName = JSON.stringify(item.supplier_name || null);
-                const safeQty = stg.qty ? stg.qty : 0;
+                const rawQty = stg.qty ? stg.qty : 0;
+                const safeQty = isTool ? Math.max(1, Math.round(parseFloat(rawQty) || 1)) : rawQty;
+                const whId = JSON.stringify(stg.warehouse_id || item.warehouse_id || null);
+                const whName = JSON.stringify(stg.warehouse_name || item.warehouse_name || null);
                 metaHtml += '<button type="button" class="btn-stage-pill' + activeClass + '" '
                     + 'id="stage-pill-' + idx + '-' + sIdx + '" '
-                    + 'onclick="selectStageForItem(' + idx + ',\'' + safeStage + '\',' + safeQty + ',\'' + (stg.date || '') + '\',' + sIdx + ',' + supId + ',' + supName + ')" '
+                    + 'onclick="selectStageForItem(' + idx + ',\'' + safeStage + '\',' + safeQty + ',\'' + (stg.date || '') + '\',' + sIdx + ',' + supId + ',' + supName + ',' + whId + ',' + whName + ')" '
                     + 'title="Klik: ' + safeStage + ' - ' + safeQty + ' ' + item.abbr + ' (' + stageDate + ')">'
                     + '<i class="fas fa-clock text-warning"></i>'
                     + '<strong>' + safeStage + '</strong>: ' + safeQty + ' ' + item.abbr
@@ -216,11 +346,11 @@ function onItemChange(sel, idx, isTool) {
 
                 // Auto-trigger tahap terpilih atau tahap pertama
                 if (isSelected || isAutoFirst) {
-                    (function(s, sI) {
+                    (function(s, sI, sQty, sWhId, sWhName) {
                         setTimeout(function() {
-                            selectStageForItem(idx, s.stage || ('T' + (sI + 1)), s.qty, s.date || '', sI, item.supplier_id, item.supplier_name);
+                            selectStageForItem(idx, s.stage || ('T' + (sI + 1)), sQty, s.date || '', sI, item.supplier_id, item.supplier_name, sWhId, sWhName);
                         }, 0);
-                    })(stg, sIdx);
+                    })(stg, sIdx, safeQty, (stg.warehouse_id || item.warehouse_id || null), (stg.warehouse_name || item.warehouse_name || null));
                 }
             } else {
                 metaHtml += '<span class="btn-stage-pill" '
@@ -237,21 +367,29 @@ function onItemChange(sel, idx, isTool) {
 
     if (metaContainer) metaContainer.innerHTML = metaHtml;
     recalcRow(idx);
+    checkAndUpdateWarehouseLock();
 }
 
 // ============================================================
-// SELECT STAGE - auto-fill qty, tanggal, supplier
+// SELECT STAGE - auto-fill qty, tanggal, supplier, gudang
 // ============================================================
 
-function selectStageForItem(idx, stageName, qty, date, sIdx, supplierId, supplierName) {
+function selectStageForItem(idx, stageName, qty, date, sIdx, supplierId, supplierName, warehouseId, warehouseName) {
     // 1. Stage reference
     const stageInput = document.getElementById('stage-input-' + idx);
     if (stageInput) stageInput.value = stageName;
 
     // 2. Auto-fill qty
     const qtyInput = document.querySelector('[name="items[' + idx + '][quantity]"]');
-    if (qtyInput && qty) {
-        qtyInput.value = qty;
+    if (qtyInput) {
+        const rowEl = document.getElementById('row-' + idx);
+        const isToolRow = rowEl && rowEl.getAttribute('data-type') === 'tool';
+        const numQty = parseFloat(qty);
+        if (!isNaN(numQty) && numQty > 0) {
+            qtyInput.value = isToolRow ? Math.max(1, Math.round(numQty)) : numQty;
+        } else if (!qtyInput.value || parseFloat(qtyInput.value) <= 0) {
+            qtyInput.value = 1;
+        }
         flashEl(qtyInput, '#ecfdf5');
     }
 
@@ -272,7 +410,10 @@ function selectStageForItem(idx, stageName, qty, date, sIdx, supplierId, supplie
         }
     }
 
-    // 5. Highlight pill aktif
+    // 5. Kunci gudang tujuan otomatis sesuai tahapan
+    checkAndUpdateWarehouseLock();
+
+    // 6. Highlight pill aktif
     const allPills = document.querySelectorAll('[id^="stage-pill-' + idx + '-"]');
     allPills.forEach(function(p) { p.classList.remove('active'); });
     const activePill = document.getElementById('stage-pill-' + idx + '-' + sIdx);
@@ -640,6 +781,7 @@ function applySelectedScheduledItems() {
     }
 
     let firstSupplierId = null, firstSupplierName = null, firstScheduledDate = null;
+    let firstWarehouseId = null, firstWarehouseName = null;
 
     checkboxes.forEach(function(cb) {
         const idx = parseInt(cb.value);
@@ -652,6 +794,10 @@ function applySelectedScheduledItems() {
         if (item.scheduled_date && item.scheduled_date !== '-' && !firstScheduledDate) {
             firstScheduledDate = item.scheduled_date;
         }
+        if (item.warehouse_id && !firstWarehouseId) {
+            firstWarehouseId = item.warehouse_id;
+            firstWarehouseName = item.warehouse_name || null;
+        }
         addRow(item.item_type, {
             item_type: item.item_type,
             material_id: item.material_id,
@@ -662,6 +808,9 @@ function applySelectedScheduledItems() {
             condition: 'good',
         });
     });
+
+    // Update dan kunci gudang tujuan sesuai item/tahapan
+    checkAndUpdateWarehouseLock();
 
     // Auto-fill supplier
     if (firstSupplierId || firstSupplierName) {
@@ -767,6 +916,22 @@ function recalcRow(idx) {
     updateGrandTotal();
 }
 
+function validateQtyInput(input, isTool) {
+    let val = parseFloat(input.value);
+    if (isTool) {
+        if (isNaN(val) || val < 1) {
+            input.value = 1;
+        } else {
+            input.value = Math.max(1, Math.round(val));
+        }
+    } else {
+        if (isNaN(val) || val <= 0) {
+            input.value = 1;
+        }
+    }
+    updateGrandTotal();
+}
+
 // ============================================================
 // UTILITIES
 // ============================================================
@@ -802,4 +967,5 @@ function flashEl(el, color) {
 document.addEventListener('DOMContentLoaded', function() {
     addRow('material');
     checkAndShowScheduledPrompt();
+    checkAndUpdateWarehouseLock();
 });

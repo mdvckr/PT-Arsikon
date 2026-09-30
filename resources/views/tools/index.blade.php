@@ -3,7 +3,7 @@
 
     <div class="flex items-center justify-between mb-4">
         <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Inventaris Alat</h2>
+            <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Alat</h2>
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola inventaris alat kerja dan stok pemakaian per kategori</p>
         </div>
     </div>
@@ -45,11 +45,12 @@
                     <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
                         <th style="width:130px;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kode Alat</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Nama Alat & Model</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk & Spesifikasi</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Keterangan</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Total Stock</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Dipinjam</th>
+                        <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#dc2626;">Kondisi Rusak</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Stock Sisa</th>
                         <th style="text-align:center;width:95px;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Aksi</th>
                     </tr>
@@ -74,7 +75,7 @@
                     @endphp
                     {{-- Level 1: Category Header --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="9" style="padding:8px 14px !important;">
+                        <td colspan="10" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between" style="gap:12px;flex-wrap:nowrap;">
                                 <div class="flex items-center" style="gap:8px;min-width:0;">
                                     <i class="fas fa-chevron-down group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -108,7 +109,7 @@
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($toolTypeName); @endphp
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
                     <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="9" style="padding:6px 14px 6px 28px !important;">
+                        <td colspan="10" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <i class="fas fa-chevron-down subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -160,8 +161,79 @@
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td style="padding:9px 14px;font-size:12px;color:#475569;line-height:1.4;max-width:240px;vertical-align:middle;">
-                            {{ $tool->notes ?: '-' }}
+                        <td style="padding:9px 14px;white-space:nowrap;vertical-align:middle;">
+                            @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
+                                @php
+                                    $stages = collect($tool->incoming_stages);
+                                    $stageCount = $stages->count();
+                                    $receivedStages = $stages->where('status', 'received');
+                                    $plannedStages = $stages->where('status', 'planned');
+                                    $recCount = $receivedStages->count();
+                                    $planCount = $plannedStages->count();
+                                    $recQty = (int) $receivedStages->sum('qty');
+                                    $planQty = (int) $plannedStages->sum('qty');
+                                    $unitAbbr = 'unit';
+                                @endphp
+
+                                @if($stageCount === 1)
+                                    @php
+                                        $stg = $stages->first();
+                                        $isReceived = ($stg['status'] ?? 'received') === 'received';
+                                        $bg = $isReceived ? '#f0fdf4' : '#fffbeb';
+                                        $border = $isReceived ? '#bbf7d0' : '#fde68a';
+                                        $color = $isReceived ? '#166534' : '#92400e';
+                                        $icon = $isReceived ? 'fa-check-circle' : 'fa-clock';
+                                        $iconColor = $isReceived ? '#16a34a' : '#d97706';
+                                        $statusLabel = $isReceived ? 'Masuk' : 'Rencana';
+                                        $stageDate = !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') : null;
+                                    @endphp
+                                    <span style="display:inline-flex;align-items:center;gap:3.5px;padding:2.5px 7px;border-radius:5px;font-size:10.5px;font-weight:500;background:{{ $bg }};border:1px solid {{ $border }};color:{{ $color }};"
+                                          title="{{ $stg['stage'] ?? 'T1' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} unit ({{ $statusLabel }}){{ $stageDate ? ' · '.$stageDate : '' }}{{ !empty($stg['notes']) ? ' · '.$stg['notes'] : '' }}">
+                                        <i class="fas {{ $icon }}" style="font-size:9.5px;color:{{ $iconColor }};"></i>
+                                        <strong style="font-weight:700;">{{ $stg['stage'] ?? 'T1' }}</strong>:
+                                        <span>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</span>
+                                        <span style="font-size:9.5px;opacity:0.9;">({{ $statusLabel }})</span>
+                                    </span>
+                                @else
+                                    @php
+                                        $allReceived = ($recCount === $stageCount);
+                                        $btnBg = $allReceived ? '#f0fdf4' : '#f8fafc';
+                                        $btnBorder = $allReceived ? '#bbf7d0' : '#cbd5e1';
+                                        $btnColor = $allReceived ? '#166534' : '#334155';
+                                    @endphp
+                                    <button type="button"
+                                            class="btn-stage-detail"
+                                            onclick="openStagesFromBtn(this)"
+                                            data-name="{{ $tool->name }}"
+                                            data-sku="{{ $tool->code ?? '-' }}"
+                                            data-unit="unit"
+                                            data-stages='@json($stages)'
+                                            style="display:inline-flex;align-items:center;gap:5px;padding:2.5px 8px;border-radius:5px;font-size:10.5px;font-weight:500;background:{{ $btnBg }};border:1px solid {{ $btnBorder }};color:{{ $btnColor }};cursor:pointer;line-height:1.3;transition:all .15s ease;"
+                                            onmouseover="this.style.opacity='0.85';"
+                                            onmouseout="this.style.opacity='1';">
+                                        @if($allReceived)
+                                            <i class="fas fa-check-circle" style="font-size:9.5px;color:#16a34a;"></i>
+                                            <span><strong style="font-weight:700;">{{ $stageCount }}/{{ $stageCount }}</strong> Masuk</span>
+                                            <span style="color:#86efac;">•</span>
+                                            <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }} unit</span>
+                                        @elseif($recCount === 0)
+                                            <i class="fas fa-clock" style="font-size:9.5px;color:#d97706;"></i>
+                                            <span><strong style="font-weight:700;">{{ $stageCount }}</strong> Tahap Rencana</span>
+                                            <span style="color:#cbd5e1;">•</span>
+                                            <span style="font-weight:600;color:#92400e;">{{ number_format($planQty, 0, ',', '.') }} unit</span>
+                                        @else
+                                            <i class="fas fa-layer-group" style="font-size:9.5px;color:#64748b;"></i>
+                                            <span style="color:#166534;font-weight:600;"><i class="fas fa-check-circle" style="font-size:9px;color:#16a34a;margin-right:2px;"></i>{{ $recCount }}/{{ $stageCount }} Masuk</span>
+                                            <span style="color:#cbd5e1;">•</span>
+                                            <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }}</span>
+                                            <span style="font-size:9.5px;color:#92400e;font-weight:500;">(+{{ number_format($planQty, 0, ',', '.') }})</span>
+                                        @endif
+                                        <i class="fas fa-search-plus" style="font-size:8.5px;color:#94a3b8;margin-left:2px;" title="Lihat rincian tahapan"></i>
+                                    </button>
+                                @endif
+                            @else
+                                <span class="text-muted" style="font-size:12px;">-</span>
+                            @endif
                         </td>
                         <td style="padding:9px 14px;font-size:12px;color:#64748b;white-space:nowrap;vertical-align:middle;">
                             {{ $tool->created_at ? $tool->created_at->format('d/m/Y') : '-' }}
@@ -173,6 +245,32 @@
                         <td style="text-align:center;padding:9px 14px;vertical-align:middle;white-space:nowrap;">
                             <span style="font-size:12.5px;color:#64748b;font-variant-numeric:tabular-nums;">{{ number_format($tool->stock_borrowed, 0, ',', '.') }}</span>
                             <span class="text-muted" style="font-size:11px;"> unit</span>
+                        </td>
+                        <td style="text-align:center;padding:9px 14px;vertical-align:middle;white-space:nowrap;">
+                            @php
+                                $damagedCount = (int) $tool->stock_damaged;
+                                $maintCount   = (int) $tool->stock_maintenance;
+                            @endphp
+                            @if($damagedCount > 0 || $maintCount > 0)
+                                <div class="fw-700" style="font-size:13px;color:#dc2626;font-variant-numeric:tabular-nums;">
+                                    {{ number_format($damagedCount + $maintCount, 0, ',', '.') }} <span class="text-muted" style="font-size:11px;font-weight:normal;">unit</span>
+                                </div>
+                                @if($damagedCount > 0 && $maintCount > 0)
+                                    <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-top:2px;display:inline-block;" title="{{ $damagedCount }} Rusak, {{ $maintCount }} Maintenance">
+                                        <i class="fas fa-triangle-exclamation" style="font-size:9px;margin-right:2px;"></i> {{ $damagedCount }} Rusak • {{ $maintCount }} Maint
+                                    </span>
+                                @elseif($damagedCount > 0)
+                                    <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-top:2px;display:inline-block;">
+                                        <i class="fas fa-triangle-exclamation" style="font-size:9px;margin-right:2px;"></i> Rusak
+                                    </span>
+                                @else
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-top:2px;display:inline-block;">
+                                        <i class="fas fa-wrench" style="font-size:9px;margin-right:2px;"></i> Maintenance
+                                    </span>
+                                @endif
+                            @else
+                                <span style="font-size:12.5px;color:#94a3b8;font-variant-numeric:tabular-nums;">0 unit</span>
+                            @endif
                         </td>
                         <td style="text-align:center;padding:9px 14px;vertical-align:middle;white-space:nowrap;">
                             <div class="fw-700" style="font-size:13px;color:#0f172a;font-variant-numeric:tabular-nums;">
@@ -210,7 +308,7 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <i class="fas fa-tools"></i>
                                 <h3>Belum Ada Alat</h3>
@@ -221,6 +319,48 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+    {{-- Modal Rincian Tahapan Kedatangan Alat --}}
+    <div id="modalStages" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:440px;overflow:hidden;">
+            {{-- Modal Header --}}
+            <div style="background:#f8fafc;padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;">
+                        <i class="fas fa-calendar-alt" style="color:#475569;"></i>
+                        <span>Jadwal & Tahapan Kedatangan Alat</span>
+                    </div>
+                    <div id="modalToolName" style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px;"></div>
+                    <div id="modalToolCode" style="font-size:11px;color:#64748b;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;margin-top:1px;"></div>
+                </div>
+                <button type="button" onclick="closeStagesModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;font-size:14px;line-height:1;border-radius:4px;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            {{-- Summary Stats --}}
+            <div style="padding:12px 18px;background:#ffffff;border-bottom:1px solid #f1f5f9;display:flex;gap:12px;">
+                <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;">
+                    <div style="font-size:10.5px;color:#166534;font-weight:600;">Sudah Masuk</div>
+                    <div id="modalTotalRec" style="font-size:14px;font-weight:700;color:#15803d;margin-top:1px;">0</div>
+                </div>
+                <div style="flex:1;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;">
+                    <div style="font-size:10.5px;color:#92400e;font-weight:600;">Rencana Kedatangan</div>
+                    <div id="modalTotalPlan" style="font-size:14px;font-weight:700;color:#b45309;margin-top:1px;">0</div>
+                </div>
+            </div>
+
+            {{-- Timeline Stages List --}}
+            <div id="modalStagesList" style="max-height:280px;overflow-y:auto;padding:6px 18px;">
+                {{-- Injected dynamically --}}
+            </div>
+
+            {{-- Modal Footer --}}
+            <div style="background:#f8fafc;padding:10px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+                <button type="button" onclick="closeStagesModal()" class="btn btn-secondary" style="height:32px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:600;">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 
@@ -446,6 +586,98 @@
             if (wrap) {
                 wrap.style.display = val === 'transfer' ? 'block' : 'none';
             }
+        }
+
+        function openStagesFromBtn(btn) {
+            try {
+                var stages = JSON.parse(btn.getAttribute('data-stages') || '[]');
+                var name = btn.getAttribute('data-name') || '-';
+                var code = btn.getAttribute('data-sku') || '-';
+                var unit = btn.getAttribute('data-unit') || 'unit';
+                openStagesModal({ name: name, code: code, unit: unit, stages: stages });
+            } catch(e) {
+                console.error('Error parsing stages data:', e);
+            }
+        }
+
+        function openStagesModal(data) {
+            document.getElementById('modalToolName').textContent = data.name || '-';
+            document.getElementById('modalToolCode').textContent = 'Kode: ' + (data.code || '-');
+
+            var unit = data.unit || 'unit';
+            var list = document.getElementById('modalStagesList');
+            list.innerHTML = '';
+
+            var stages = data.stages || [];
+            var recQty = 0;
+            var planQty = 0;
+
+            stages.forEach(function(stg, idx) {
+                var isReceived = (stg.status || 'received') === 'received';
+                var qty = parseFloat(stg.qty || 0);
+                if (isReceived) {
+                    recQty += qty;
+                } else {
+                    planQty += qty;
+                }
+
+                var stageLabel = stg.stage || ('T' + (idx + 1));
+                var statusLabel = isReceived ? 'Sudah Masuk' : 'Rencana';
+                var statusBg = isReceived ? '#f0fdf4' : '#fffbeb';
+                var statusBorder = isReceived ? '#bbf7d0' : '#fde68a';
+                var statusColor = isReceived ? '#166534' : '#92400e';
+                var icon = isReceived ? 'fa-check' : 'fa-clock';
+                var iconColor = isReceived ? '#16a34a' : '#d97706';
+                var dateFormatted = stg.date ? formatDate(stg.date) : null;
+
+                var row = document.createElement('div');
+                row.style.cssText = 'padding:10px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;';
+                row.innerHTML = `
+                    <div style="display:flex;align-items:flex-start;gap:9px;">
+                        <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${statusBg};color:${iconColor};border:1px solid ${statusBorder};font-size:9.5px;margin-top:1px;flex-shrink:0;">
+                            <i class="fas ${icon}"></i>
+                        </span>
+                        <div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="font-weight:700;font-size:12.5px;color:#0f172a;">${stageLabel}</span>
+                                <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:${statusBg};color:${statusColor};border:1px solid ${statusBorder};">
+                                    ${statusLabel}
+                                </span>
+                            </div>
+                            ${dateFormatted ? `<div style="font-size:11px;color:#64748b;margin-top:2px;"><i class="far fa-calendar-alt" style="font-size:10px;margin-right:4px;"></i>${dateFormatted}</div>` : ''}
+                            ${stg.notes ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;"><i class="far fa-sticky-note" style="font-size:10px;margin-right:4px;"></i>${stg.notes}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="text-align:right;white-space:nowrap;padding-top:1px;">
+                        <div style="font-weight:700;font-size:13px;color:#0f172a;">${numberFormat(qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+
+            document.getElementById('modalTotalRec').textContent = numberFormat(recQty) + ' ' + unit;
+            document.getElementById('modalTotalPlan').textContent = numberFormat(planQty) + ' ' + unit;
+
+            document.getElementById('modalStages').style.display = 'flex';
+        }
+
+        function closeStagesModal() {
+            var modal = document.getElementById('modalStages');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function formatDate(dStr) {
+            try {
+                var p = dStr.split('-');
+                if (p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+                return dStr;
+            } catch(e) {
+                return dStr;
+            }
+        }
+
+        function numberFormat(n) {
+            return new Intl.NumberFormat('id-ID').format(n);
         }
 
         function initToolAccordion() {

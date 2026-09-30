@@ -1,16 +1,37 @@
 <x-app-layout>
     <x-slot name="title">Data Proyek</x-slot>
 
-    <div class="flex items-center justify-between mb-4">
-        <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Manajemen Proyek Konstruksi</h2>
-            <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola data proyek konstruksi yang sedang atau telah berjalan</p>
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,0.12);color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:18px;">
+                <i class="fas fa-building-columns"></i>
+            </div>
+            <div>
+                <h2 class="fw-800" style="font-size:22px;color:#0f172a;line-height:1.2;">Data Proyek Konstruksi</h2>
+                <p class="text-muted" style="font-size:13px;margin:2px 0 0 0;">Kelola data proyek konstruksi beserta site pergudangan terkait.</p>
+            </div>
         </div>
         @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
-        <a href="{{ route('projects.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Tambah Proyek
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('projects.create') }}" class="btn btn-primary" style="border-radius:9px;padding:9px 18px;font-weight:700;">
+                <i class="fas fa-plus-circle"></i> Tambah Proyek & Gudang
+            </a>
+        </div>
         @endif
+    </div>
+
+    <!-- TAB SWITCHER GUDANG & PROYEK -->
+    <div class="flex items-center gap-2 mb-4" style="background:#f1f5f9;padding:5px;border-radius:12px;width:fit-content;border:1px solid #e2e8f0;">
+        <a href="{{ route('warehouses.index') }}" class="btn btn-sm" style="border-radius:9px;font-weight:600;padding:8px 18px;display:flex;align-items:center;gap:8px;color:#475569;background:transparent;border:none;">
+            <i class="fas fa-warehouse"></i>
+            <span>Data Gudang</span>
+            <span class="badge" style="background:#e2e8f0;color:#334155;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Warehouse::count() }}</span>
+        </a>
+        <a href="{{ route('projects.index') }}" class="btn btn-sm btn-primary" style="border-radius:9px;font-weight:700;padding:8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <i class="fas fa-building-columns"></i>
+            <span>Data Proyek</span>
+            <span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Project::count() }}</span>
+        </a>
     </div>
 
     <div class="card mb-4">

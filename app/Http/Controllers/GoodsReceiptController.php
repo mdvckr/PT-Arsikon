@@ -58,13 +58,15 @@ class GoodsReceiptController extends Controller
 
         $suppliers  = Supplier::orderBy('name')->get();
         $warehouses = $this->accessibleWarehouses();
-        $materials  = Material::with(['unit', 'category', 'supplier'])->orderBy('name')->get();
+        $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
 
         $materialsJson = $materials->map(function ($m) {
             $stages = collect($m->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
             // supplier_name: dari field langsung, atau dari relasi jika ada
             $supplierName = $m->supplier_name ?: ($m->supplier?->name);
+            $firstInv = $m->inventories->first();
+            $warehouseIds = $m->inventories->pluck('warehouse_id')->unique()->values()->all();
             return [
                 'id'              => $m->id,
                 'code'            => $m->sku ?? $m->code,
@@ -78,17 +80,23 @@ class GoodsReceiptController extends Controller
                 'price'           => $m->unit_price ?? 0,
                 'supplier_id'     => $m->supplier_id ?? null,
                 'supplier_name'   => $supplierName,
+                'warehouse_id'    => $firstInv?->warehouse_id,
+                'warehouse_name'  => $firstInv?->warehouse?->name,
+                'warehouse_ids'   => $warehouseIds,
                 'incoming_stages' => $stages->toArray(),
                 'planned_stages'  => $planned->toArray(),
                 'has_stages'      => $stages->isNotEmpty(),
             ];
         });
 
-        $tools = \App\Models\Tool::with(['category'])->where('is_active', true)->orderBy('name')->get();
+        $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true)->orderBy('name')->get();
 
         $toolsJson = $tools->map(function ($t) {
             $stages = collect($t->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
+            $whId = $t->current_warehouse_id ?? $t->inventories->first()?->warehouse_id;
+            $whName = $t->currentWarehouse?->name ?? $t->inventories->first()?->warehouse?->name;
+            $whIds = array_values(array_filter(array_unique(array_merge([$t->current_warehouse_id], $t->inventories->pluck('warehouse_id')->all()))));
             return [
                 'id'              => $t->id,
                 'code'            => $t->code,
@@ -100,6 +108,9 @@ class GoodsReceiptController extends Controller
                 'category_name'   => $t->category?->name ?? 'Alat / Mesin',
                 'abbr'            => 'Unit',
                 'price'           => 0,
+                'warehouse_id'    => $whId,
+                'warehouse_name'  => $whName,
+                'warehouse_ids'   => $whIds,
                 'incoming_stages' => $stages->toArray(),
                 'planned_stages'  => $planned->toArray(),
                 'has_stages'      => $stages->isNotEmpty(),
@@ -127,7 +138,7 @@ class GoodsReceiptController extends Controller
         $results = [];
 
         // 1. Ambil dari incoming_stages Material yang berstatus 'planned'
-        $materials = Material::with(['unit', 'category', 'supplier'])
+        $materials = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])
             ->whereNotNull('incoming_stages')
             ->get();
 
@@ -136,6 +147,7 @@ class GoodsReceiptController extends Controller
             foreach ($m->incoming_stages as $idx => $stg) {
                 if (($stg['status'] ?? '') === 'planned') {
                     if (empty($date) || $date === 'all' || ($stg['date'] ?? '') === $date) {
+                        $firstInv = $m->inventories->first();
                         $results[] = [
                             'item_type'       => 'material',
                             'material_id'     => $m->id,
@@ -148,6 +160,8 @@ class GoodsReceiptController extends Controller
                             'scheduled_date'  => $stg['date'] ?? '-',
                             'quantity'        => (float) ($stg['qty'] ?? 1),
                             'notes'           => $stg['notes'] ?? null,
+                            'warehouse_id'    => $stg['warehouse_id'] ?? $firstInv?->warehouse_id,
+                            'warehouse_name'  => $firstInv?->warehouse?->name,
                             'supplier_id'     => $m->supplier_id ?? null,
                             'supplier_name'   => $m->supplier_name ?? $m->supplier?->name ?? null,
                         ];
@@ -157,7 +171,7 @@ class GoodsReceiptController extends Controller
         }
 
         // 2. Ambil dari incoming_stages Tool yang berstatus 'planned'
-        $tools = \App\Models\Tool::with(['category'])
+        $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])
             ->whereNotNull('incoming_stages')
             ->get();
 
@@ -166,6 +180,8 @@ class GoodsReceiptController extends Controller
             foreach ($t->incoming_stages as $idx => $stg) {
                 if (($stg['status'] ?? '') === 'planned') {
                     if (empty($date) || $date === 'all' || ($stg['date'] ?? '') === $date) {
+                        $whId = $stg['warehouse_id'] ?? $t->current_warehouse_id ?? $t->inventories->first()?->warehouse_id;
+                        $whName = $t->currentWarehouse?->name ?? $t->inventories->first()?->warehouse?->name;
                         $results[] = [
                             'item_type'       => 'tool',
                             'material_id'     => null,
@@ -176,8 +192,10 @@ class GoodsReceiptController extends Controller
                             'unit'            => 'Unit',
                             'stage_reference' => $stg['stage'] ?? ("Tahap " . ($idx + 1)),
                             'scheduled_date'  => $stg['date'] ?? '-',
-                            'quantity'        => (float) ($stg['qty'] ?? 1),
+                            'quantity'        => max(1, (int) round((float) ($stg['qty'] ?? 1))),
                             'notes'           => $stg['notes'] ?? null,
+                            'warehouse_id'    => $whId,
+                            'warehouse_name'  => $whName,
                             'supplier_id'     => null,
                             'supplier_name'   => null,
                         ];

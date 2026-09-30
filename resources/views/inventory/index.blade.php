@@ -77,7 +77,7 @@
     <div class="card mb-4" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
         <div class="card-header flex items-center justify-between" style="background:#f8fafc;padding:12px 18px;border-bottom:1px solid #e2e8f0;">
             <div>
-                <span class="fw-700" style="font-size:14px;color:#0f172a;">Inventori Material</span>
+                <span class="fw-700" style="font-size:14px;color:#0f172a;">MATERIAL</span>
             </div>
             <span class="text-muted" style="font-size:12px;">
                 {{ $categoriesData->sum(fn($c) => $c->materials->count()) }} varian terdaftar
@@ -229,7 +229,7 @@
     <div class="card mb-4" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
         <div class="card-header flex items-center justify-between" style="background:#f8fafc;padding:12px 18px;border-bottom:1px solid #e2e8f0;">
             <div>
-                <span class="fw-700" style="font-size:14px;color:#0f172a;">Inventori Alat Kerja</span>
+                <span class="fw-700" style="font-size:14px;color:#0f172a;">ALAT KERJA</span>
             </div>
             <span class="text-muted" style="font-size:12px;">
                 {{ $toolsCategoriesData->sum(fn($c) => $c->tools->count()) }} alat terdaftar
@@ -277,9 +277,6 @@
                                         ({{ $totalTools }} alat)
                                     </span>
                                 </div>
-                                <span style="font-size:11px;color:#94a3b8;font-weight:500;">
-                                    Buka / Tutup
-                                </span>
                             </div>
                         </td>
                     </tr>

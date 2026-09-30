@@ -186,7 +186,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'name'       => 'Gudang Pusat PT Arsikon',
                 'type'       => 'central',
                 'is_central' => true,
-                'address'    => 'Sleman',
+                'address'    => 'Jl. Pasir Luhur No.1, Taranan, Sinduharjo, Kec. Ngaglik, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55581',
             ]
         );
 

@@ -177,11 +177,6 @@
                             class="form-control @error('stock_total') is-invalid @enderror" placeholder="1" style="height:38px;border-radius:6px;font-size:13px;font-weight:600;" required>
                         @error('stock_total')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                    <div>
-                        <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">CATATAN / KETERANGAN TAMBAHAN <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
-                        <textarea name="notes" class="form-control" rows="3"
-                            placeholder="Deskripsi, kelengkapan aksesoris, atau catatan teknis alat..." style="border-radius:6px;font-size:13px;resize:vertical;">{{ old('notes') }}</textarea>
-                    </div>
                 </div>
             </div>
 

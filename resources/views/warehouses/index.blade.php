@@ -15,17 +15,30 @@
             </div>
         </div>
         @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
-        <div class="warehouse-header-action">
+        <div class="warehouse-header-action flex items-center gap-2">
             <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-add-wh">
                 <i class="fas fa-plus-circle"></i> Tambah Gudang
+            </a>
+            <a href="{{ route('projects.create') }}" class="btn btn-secondary" style="border-radius:9px;font-size:13px;padding:9px 15px;">
+                <i class="fas fa-folder-plus text-primary"></i> Tambah Proyek Terpadu
             </a>
         </div>
         @endif
     </div>
 
-
-
-    <!-- Filter & Search Bar -->
+    <!-- TAB SWITCHER GUDANG & PROYEK -->
+    <div class="flex items-center gap-2 mb-4" style="background:#f1f5f9;padding:5px;border-radius:12px;width:fit-content;border:1px solid #e2e8f0;">
+        <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-primary" style="border-radius:9px;font-weight:700;padding:8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <i class="fas fa-warehouse"></i>
+            <span>Data Gudang</span>
+            <span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Warehouse::count() }}</span>
+        </a>
+        <a href="{{ route('projects.index') }}" class="btn btn-sm" style="border-radius:9px;font-weight:600;padding:8px 18px;display:flex;align-items:center;gap:8px;color:#475569;background:transparent;border:none;">
+            <i class="fas fa-building-columns"></i>
+            <span>Data Proyek</span>
+            <span class="badge" style="background:#e2e8f0;color:#334155;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Project::count() }}</span>
+        </a>
+    </div>
     <div class="card mb-4 wh-filter-card">
         <div class="card-body" style="padding:16px 20px;">
             <form method="GET" action="{{ route('warehouses.index') }}" class="wh-filter-form">

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProjectController extends Controller
 {
@@ -48,17 +50,57 @@ class ProjectController extends Controller
             'status'     => 'required|in:planning,active,ongoing,completed,on_hold,suspended',
         ]);
 
-        $project = Project::create([
-            'name'       => $validated['name'],
-            'code'       => strtoupper($validated['code']),
-            'location'   => $validated['location'] ?? null,
-            'start_date' => $validated['start_date'] ?? null,
-            'end_date'   => $validated['end_date'] ?? null,
-            'status'     => $validated['status'],
-        ]);
+        $autoCreateWh = $request->has('create_warehouse') || $request->has('auto_create_warehouse');
+        if ($autoCreateWh) {
+            $request->validate([
+                'warehouse_code' => 'nullable|string|max:30|unique:warehouses,code',
+            ]);
+        }
+
+        $project = DB::transaction(function () use ($validated, $request, $autoCreateWh) {
+            $project = Project::create([
+                'name'        => $validated['name'],
+                'code'        => strtoupper($validated['code']),
+                'location'    => $validated['location'] ?? null,
+                'start_date'  => $validated['start_date'] ?? null,
+                'end_date'    => $validated['end_date'] ?? null,
+                'status'      => $validated['status'],
+                'description' => $request->input('description'),
+            ]);
+
+            if ($autoCreateWh) {
+                $whName = $request->filled('warehouse_name')
+                    ? trim($request->input('warehouse_name'))
+                    : 'Gudang Site ' . $project->name;
+
+                $whCode = $request->filled('warehouse_code')
+                    ? strtoupper(trim($request->input('warehouse_code')))
+                    : 'W-' . $project->code;
+
+                if (Warehouse::where('code', $whCode)->exists()) {
+                    $whCode = 'W-' . $project->code . '-' . rand(10, 99);
+                }
+
+                Warehouse::create([
+                    'name'       => $whName,
+                    'code'       => $whCode,
+                    'type'       => 'project',
+                    'is_central' => false,
+                    'is_active'  => true,
+                    'project_id' => $project->id,
+                    'address'    => $request->input('warehouse_address') ?: ($validated['location'] ?? null),
+                ]);
+            }
+
+            return $project;
+        });
+
+        $msg = $autoCreateWh
+            ? "Proyek '{$project->name}' dan Gudang Site terkait berhasil ditambahkan sekaligus."
+            : "Proyek '{$project->name}' berhasil ditambahkan.";
 
         return redirect()->route('projects.index')
-            ->with('success', "Proyek '{$project->name}' berhasil ditambahkan.");
+            ->with('success', $msg);
     }
 
     public function edit(Project $project)

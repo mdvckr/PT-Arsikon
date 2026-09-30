@@ -78,6 +78,7 @@
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Total Stok</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Tersedia</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:right;">Dipinjam</th>
+                                <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#dc2626;text-align:right;">Kondisi Rusak</th>
                                 <th style="padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#475569;text-align:center;">Status</th>
                             </tr>
                         </thead>
@@ -99,11 +100,26 @@
                                 <td style="padding:10px 16px;text-align:right;font-weight:600;color:#c2410c;">
                                     {{ number_format($inv->stock_borrowed, 0, ',', '.') }} <span class="text-muted" style="font-size:11px;font-weight:normal;">unit</span>
                                 </td>
+                                <td style="padding:10px 16px;text-align:right;font-weight:600;color:#dc2626;">
+                                    @php
+                                        $invDamaged = (int) ($inv->stock_damaged ?? 0);
+                                        $invMaint   = (int) ($inv->stock_maintenance ?? 0);
+                                    @endphp
+                                    @if($invDamaged > 0 || $invMaint > 0)
+                                        <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:700;padding:2px 7px;border-radius:4px;font-size:11px;">
+                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ number_format($invDamaged + $invMaint, 0, ',', '.') }} unit
+                                        </span>
+                                    @else
+                                        <span class="text-muted" style="font-size:12px;font-weight:normal;">0 unit</span>
+                                    @endif
+                                </td>
                                 <td style="padding:10px 16px;text-align:center;font-size:12px;">
                                     @if($inv->stock_available > 0)
                                         <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-weight:600;">Tersedia</span>
                                     @elseif($inv->stock_borrowed > 0)
                                         <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:600;">Dipinjam</span>
+                                    @elseif(($inv->stock_damaged ?? 0) > 0 || ($inv->stock_maintenance ?? 0) > 0)
+                                        <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:600;">Rusak</span>
                                     @else
                                         <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-weight:600;">Kosong</span>
                                     @endif
@@ -122,6 +138,19 @@
                                 </td>
                                 <td style="padding:10px 16px;text-align:right;font-weight:600;color:#c2410c;">
                                     {{ number_format($tool->stock_borrowed, 0, ',', '.') }} unit
+                                </td>
+                                <td style="padding:10px 16px;text-align:right;font-weight:600;color:#dc2626;">
+                                    @php
+                                        $tDamaged = (int) ($tool->stock_damaged ?? 0);
+                                        $tMaint   = (int) ($tool->stock_maintenance ?? 0);
+                                    @endphp
+                                    @if($tDamaged > 0 || $tMaint > 0)
+                                        <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:700;padding:2px 7px;border-radius:4px;font-size:11px;">
+                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ number_format($tDamaged + $tMaint, 0, ',', '.') }} unit
+                                        </span>
+                                    @else
+                                        <span class="text-muted" style="font-size:12px;font-weight:normal;">0 unit</span>
+                                    @endif
                                 </td>
                                 <td style="padding:10px 16px;text-align:center;font-size:12px;">
                                     <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-weight:600;">Tersedia</span>

@@ -79,6 +79,21 @@ class WarehouseController extends Controller
             $request->merge(['code' => 'W-' . strtoupper(\Illuminate\Support\Str::random(5))]);
         }
 
+        // Resolusi project_id jika diinput lewat teks project_name
+        if ($type === 'project' && $request->filled('project_name')) {
+            $projName = trim($request->input('project_name'));
+            $project = Project::firstOrCreate(
+                ['name' => $projName],
+                [
+                    'code'       => 'PRJ-' . strtoupper(\Illuminate\Support\Str::random(5)),
+                    'location'   => $request->input('address') ?? null,
+                    'status'     => 'active',
+                    'start_date' => date('Y-m-d'),
+                ]
+            );
+            $request->merge(['project_id' => $project->id]);
+        }
+
         $validated = $request->validate([
             'name'       => 'required|string|max:255',
             'code'       => 'required|string|max:30|unique:warehouses,code',
@@ -124,6 +139,21 @@ class WarehouseController extends Controller
             'address' => $request->input('address') ?? $request->input('location'),
             'code'    => $request->filled('code') ? $request->input('code') : $warehouse->code,
         ]);
+
+        // Resolusi project_id jika diinput lewat teks project_name
+        if ($type === 'project' && $request->filled('project_name')) {
+            $projName = trim($request->input('project_name'));
+            $project = Project::firstOrCreate(
+                ['name' => $projName],
+                [
+                    'code'       => 'PRJ-' . strtoupper(\Illuminate\Support\Str::random(5)),
+                    'location'   => $request->input('address') ?? null,
+                    'status'     => 'active',
+                    'start_date' => date('Y-m-d'),
+                ]
+            );
+            $request->merge(['project_id' => $project->id]);
+        }
 
         $validated = $request->validate([
             'name'       => 'required|string|max:255',

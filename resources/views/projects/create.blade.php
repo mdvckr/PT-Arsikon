@@ -150,13 +150,68 @@
                                 <textarea id="projectDesc" name="description" class="form-control with-icon" rows="3" placeholder="Informasi ringkas mengenai spesifikasi pengerjaan proyek...">{{ old('description') }}</textarea>
                             </div>
                         </div>
+                    <div class="form-divider"></div>
+
+                    <!-- SECTION 4: GUDANG SITE LOGISTIK TERPADU -->
+                    <div class="form-section mb-4" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">
+                        <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+                            <div class="flex items-center gap-2">
+                                <div style="width:34px;height:34px;border-radius:8px;background:rgba(234,88,12,0.12);color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:16px;">
+                                    <i class="fas fa-warehouse"></i>
+                                </div>
+                                <div>
+                                    <h3 class="section-title" style="margin:0;font-size:15px;color:#0f172a;">Gudang Site Logistik Terpadu</h3>
+                                    <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Otomatis daftarkan tempat penyimpanan material & alat di site proyek ini sekaligus.</p>
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-2" style="cursor:pointer;background:#fff;padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;font-size:13px;color:#1e293b;">
+                                <input type="checkbox" id="autoCreateWarehouse" name="auto_create_warehouse" value="1" {{ old('auto_create_warehouse', '1') == '1' ? 'checked' : '' }} onchange="toggleWhBox()" style="width:16px;height:16px;accent-color:#ea580c;">
+                                <span>Buat Gudang Site Sekaligus</span>
+                            </label>
+                        </div>
+
+                        <div id="whFieldsContainer" style="display:{{ old('auto_create_warehouse', '1') == '1' ? 'block' : 'none' }};margin-top:14px;padding-top:14px;border-top:1px dashed #cbd5e1;">
+                            <div class="grid grid-2 responsive-grid">
+                                <div class="mb-3">
+                                    <label class="form-label" for="whName">
+                                        Nama Gudang Site
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-warehouse input-icon"></i>
+                                        <input type="text" id="whName" name="warehouse_name" value="{{ old('warehouse_name') }}" class="form-control with-icon" placeholder="Otomatis: Gudang Site [Nama Proyek]">
+                                    </div>
+                                    <span class="text-muted" style="font-size:11.5px;">Otomatis terisi mengikuti nama proyek bila dikosongkan.</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="whCode">
+                                        Kode Gudang Site
+                                    </label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-barcode input-icon"></i>
+                                        <input type="text" id="whCode" name="warehouse_code" value="{{ old('warehouse_code') }}" class="form-control with-icon" placeholder="Otomatis (contoh: W-PRJ-005)">
+                                    </div>
+                                    <span class="text-muted" style="font-size:11.5px;">Otomatis dibuat dari kode proyek bila dikosongkan.</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label" for="whAddress">
+                                    Alamat / Titik Gudang Site
+                                </label>
+                                <div class="input-icon-wrap" style="align-items:flex-start;">
+                                    <i class="fas fa-location-arrow input-icon" style="top:12px;"></i>
+                                    <textarea id="whAddress" name="warehouse_address" class="form-control with-icon" rows="2" placeholder="Otomatis mengambil dari lokasi proyek bila dikosongkan...">{{ old('warehouse_address') }}</textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- FORM FOOTER ACTIONS -->
                     <div class="form-actions-bar">
                         <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
                             <button type="submit" class="btn btn-primary btn-submit-form">
-                                <i class="fas fa-plus-circle"></i> Simpan Proyek Baru
+                                <i class="fas fa-plus-circle"></i> <span id="btnSubmitLabel">Simpan Proyek & Gudang Sekaligus</span>
                             </button>
                             <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-cancel-form">
                                 <i class="fas fa-xmark"></i> Batal
@@ -295,5 +350,68 @@
             }
         }
     </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        function toggleWhBox() {
+            const chk = document.getElementById('autoCreateWarehouse');
+            const container = document.getElementById('whFieldsContainer');
+            const btnLabel = document.getElementById('btnSubmitLabel');
+            if (chk && container) {
+                container.style.display = chk.checked ? 'block' : 'none';
+            }
+            if (btnLabel && chk) {
+                btnLabel.textContent = chk.checked ? 'Simpan Proyek & Gudang Sekaligus' : 'Simpan Proyek Baru';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const projName = document.getElementById('projectName');
+            const whName = document.getElementById('whName');
+            const projLoc = document.getElementById('projectLocation');
+            const whAddress = document.getElementById('whAddress');
+            const projCode = document.getElementById('projectCode');
+            const whCode = document.getElementById('whCode');
+
+            let whNameEdited = false;
+            let whCodeEdited = false;
+            let whAddrEdited = false;
+
+            if (whName) {
+                whName.addEventListener('input', () => { whNameEdited = true; });
+            }
+            if (whCode) {
+                whCode.addEventListener('input', () => { whCodeEdited = true; });
+            }
+            if (whAddress) {
+                whAddress.addEventListener('input', () => { whAddrEdited = true; });
+            }
+
+            if (projName && whName) {
+                projName.addEventListener('input', function() {
+                    if (!whNameEdited) {
+                        whName.value = this.value.trim() ? ('Gudang Site ' + this.value.trim()) : '';
+                    }
+                });
+            }
+
+            if (projCode && whCode) {
+                projCode.addEventListener('input', function() {
+                    if (!whCodeEdited) {
+                        whCode.value = this.value.trim() ? ('W-' + this.value.trim()) : '';
+                    }
+                });
+            }
+
+            if (projLoc && whAddress) {
+                projLoc.addEventListener('input', function() {
+                    if (!whAddrEdited) {
+                        whAddress.value = this.value;
+                    }
+                });
+            }
+        });
+    </script>
     @endpush
 </x-app-layout>

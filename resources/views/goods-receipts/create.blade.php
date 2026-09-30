@@ -438,12 +438,261 @@
             box-shadow: 0 1px 4px rgba(37,99,235,0.1);
         }
 
+        .mobile-label-tag {
+            display: none;
+        }
+
         @media (max-width: 992px) {
             .receipt-create-layout {
                 grid-template-columns: 1fr;
             }
             .sidebar-sticky-box {
                 position: static !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .receipt-card-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                padding: 12px 14px !important;
+                gap: 12px !important;
+            }
+
+            .receipt-header-title-box {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+            }
+
+            .receipt-tabs-wrap {
+                width: 100% !important;
+                display: flex !important;
+                justify-content: stretch !important;
+                gap: 4px !important;
+            }
+
+            .receipt-tabs-wrap .btn-tab-filter {
+                flex: 1 1 0% !important;
+                justify-content: center !important;
+                padding: 6px 4px !important;
+                font-size: 11.5px !important;
+            }
+
+            .receipt-btn-actions {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+
+            .receipt-btn-actions .btn-sched-import {
+                grid-column: 1 / -1 !important;
+                width: 100% !important;
+                padding: 9px 12px !important;
+                font-size: 12px !important;
+                text-align: center !important;
+                justify-content: center !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .receipt-btn-actions .btn-add-mat,
+            .receipt-btn-actions .btn-add-tool {
+                width: 100% !important;
+                padding: 8px 10px !important;
+                text-align: center !important;
+                justify-content: center !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            /* Responsive Card Items for Table on Mobile */
+            .table-wrap {
+                overflow-x: visible !important;
+            }
+
+            .receipt-items-table {
+                display: block !important;
+                width: 100% !important;
+                border: none !important;
+            }
+
+            .receipt-items-table thead {
+                display: none !important;
+            }
+
+            .receipt-items-table tbody {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                padding: 12px !important;
+                background: #f8fafc !important;
+            }
+
+            .receipt-items-table tr.item-row {
+                display: grid !important;
+                grid-template-columns: 1fr auto !important;
+                grid-template-areas:
+                    "type   action"
+                    "item   item"
+                    "qty    unit";
+                gap: 10px 12px !important;
+                padding: 14px !important;
+                background: #ffffff !important;
+                border: 1.5px solid #e2e8f0 !important;
+                border-radius: 12px !important;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+                margin-bottom: 0 !important;
+            }
+
+            .receipt-items-table tr.item-row[data-type="tool"] {
+                border-left: 5px solid #d97706 !important;
+            }
+
+            .receipt-items-table tr.item-row[data-type="material"] {
+                border-left: 5px solid #2563eb !important;
+            }
+
+            .receipt-items-table td.col-type {
+                grid-area: type;
+                padding: 0 !important;
+                border: none !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .receipt-items-table td.col-action {
+                grid-area: action;
+                padding: 0 !important;
+                border: none !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                align-items: center !important;
+            }
+
+            .receipt-items-table td.col-action .btn-delete-row {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 13px !important;
+                border-radius: 7px !important;
+                background: #fef2f2 !important;
+                border: 1px solid #fecaca !important;
+                color: #ef4444 !important;
+            }
+
+            .receipt-items-table td.col-item {
+                grid-area: item;
+                padding: 0 !important;
+                border: none !important;
+                width: 100% !important;
+            }
+
+            .receipt-items-table td.col-item .form-control.item-select {
+                width: 100% !important;
+                font-size: 13px !important;
+                padding: 9px 12px !important;
+                border-radius: 8px !important;
+                border: 1.5px solid #cbd5e1 !important;
+                background-color: #ffffff !important;
+            }
+
+            .receipt-items-table td.col-qty {
+                grid-area: qty;
+                padding: 0 !important;
+                border: none !important;
+            }
+
+            .receipt-items-table td.col-qty .form-control.qty-input {
+                width: 100% !important;
+                font-size: 14px !important;
+                font-weight: 700 !important;
+                padding: 8px 12px !important;
+                border-radius: 8px !important;
+                text-align: left !important;
+                border: 1.5px solid #cbd5e1 !important;
+            }
+
+            .receipt-items-table td.col-unit {
+                grid-area: unit;
+                padding: 0 !important;
+                border: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-end !important;
+                min-width: 85px !important;
+            }
+
+            .receipt-items-table td.col-unit .badge {
+                height: 38px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 12px !important;
+                font-weight: 700 !important;
+                border-radius: 8px !important;
+                background: #f1f5f9 !important;
+                color: #475569 !important;
+                border: 1.5px solid #cbd5e1 !important;
+            }
+
+            .mobile-label-tag {
+                display: block !important;
+                font-size: 10.5px !important;
+                font-weight: 700 !important;
+                color: #64748b !important;
+                margin-bottom: 4px !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+            }
+
+            .item-stages-box {
+                padding: 8px 10px !important;
+            }
+
+            .stage-chips-wrap {
+                gap: 6px !important;
+            }
+
+            .btn-stage-pill {
+                padding: 5px 10px !important;
+                font-size: 11.5px !important;
+            }
+
+            .receipt-summary-strip {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 8px !important;
+                padding: 12px 14px !important;
+            }
+
+            .receipt-summary-strip .summary-links {
+                flex-wrap: wrap !important;
+                gap: 6px !important;
+            }
+
+            .submit-bar {
+                flex-direction: column-reverse !important;
+                align-items: stretch !important;
+                padding: 14px 16px !important;
+                gap: 12px !important;
+            }
+
+            .submit-bar > div:last-child {
+                display: flex !important;
+                flex-direction: column-reverse !important;
+                width: 100% !important;
+                gap: 8px !important;
+            }
+
+            .submit-bar .save-btn,
+            .submit-bar .btn-secondary {
+                width: 100% !important;
+                text-align: center !important;
+                justify-content: center !important;
+                display: flex !important;
+                align-items: center !important;
+                padding: 11px 18px !important;
             }
         }
     </style>
@@ -493,17 +742,17 @@
 
             {{-- ── 1. Bagian Atas: Rincian Barang & Alat Masuk (Full Width) ── --}}
             <div class="card shadow-sm" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;overflow:hidden;">
-                <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div class="card-header receipt-card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                     
                     {{-- Judul & Filter Tab (Material sendiri, Alat sendiri, Semua) --}}
-                    <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-3 flex-wrap receipt-header-title-box">
                         <div style="display:flex;align-items:center;gap:6px;">
                             <i class="fas fa-boxes-stacked text-primary" style="font-size:15px;"></i>
                             <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Rincian Barang & Alat Diterima</span>
                         </div>
 
                         {{-- Filter Tabs (Material sendiri & Alat sendiri) --}}
-                        <div class="flex items-center gap-1" style="background:#e2e8f0;padding:3px;border-radius:8px;">
+                        <div class="flex items-center gap-1 receipt-tabs-wrap" style="background:#e2e8f0;padding:3px;border-radius:8px;">
                             <button type="button" class="btn-tab-filter active" id="tab-btn-all" onclick="filterItemsTab('all')">
                                 <i class="fas fa-list"></i> Semua <span class="count-badge" id="count-all">0</span>
                             </button>
@@ -517,14 +766,14 @@
                     </div>
 
                     {{-- Tombol Tambah & Tarik dari Jadwal --}}
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button type="button" class="btn btn-sm btn-info" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#0891b2;border:none;">
+                    <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
+                        <button type="button" class="btn btn-sm btn-info btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#0891b2;border:none;">
                             <i class="fas fa-calendar-check me-1"></i> Tarik dari Jadwal Kedatangan <span class="badge" id="badgeSchedCount" style="background:rgba(255,255,255,0.25);font-size:11px;margin-left:3px;display:none;">0</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-primary" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;">
+                        <button type="button" class="btn btn-sm btn-primary btn-add-mat" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;">
                             <i class="fas fa-box-open me-1"></i> + Material
                         </button>
-                        <button type="button" class="btn btn-sm btn-warning" id="btnAddTool" onclick="addRow('tool')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#d97706;">
+                        <button type="button" class="btn btn-sm btn-warning btn-add-tool" id="btnAddTool" onclick="addRow('tool')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#d97706;">
                             <i class="fas fa-helmet-safety me-1"></i> + Alat
                         </button>
                     </div>
@@ -564,11 +813,11 @@
                 </div>
 
                 {{-- Total Summary Strip --}}
-                <div style="padding:10px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div class="receipt-summary-strip" style="padding:10px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                     <div style="font-size:12px;color:#64748b;" id="totalItemCount">
                         Total: <strong>0</strong> item barang & alat
                     </div>
-                    <div class="flex items-center gap-2" style="font-size:11.5px;color:#64748b;">
+                    <div class="flex items-center gap-2 summary-links" style="font-size:11.5px;color:#64748b;">
                         <span>Barang belum ada di pilihan?</span>
                         <a href="{{ route('materials.create') }}" target="_blank" class="text-primary fw-600">+ Master Material</a>
                         <span>•</span>
@@ -617,12 +866,15 @@
                             </div>
 
                             <div class="mb-0">
-                                <label class="form-label">
-                                    Gudang Tujuan <span class="text-danger">*</span>
+                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <span>Gudang Tujuan <span class="text-danger">*</span></span>
+                                    <span id="warehouseLockBadge" style="display:none;font-size:10.5px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:2px 8px;border-radius:4px;align-items:center;gap:4px;">
+                                        <i class="fas fa-lock"></i> Terkunci Sesuai Tahapan
+                                    </span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-warehouse input-icon"></i>
-                                    <select name="warehouse_id" class="form-control @error('warehouse_id') is-invalid @enderror" required>
+                                    <i class="fas fa-warehouse input-icon" id="warehouseInputIcon"></i>
+                                    <select name="warehouse_id" id="warehouseSelect" class="form-control @error('warehouse_id') is-invalid @enderror" required onchange="onUserWarehouseChange(this)">
                                         <option value="">— Pilih Gudang —</option>
                                         @foreach($warehouses as $wh)
                                         <option value="{{ $wh->id }}" {{ (old('warehouse_id') == $wh->id || (empty(old('warehouse_id')) && (session('active_warehouse_id') == $wh->id || $warehouses->count() === 1))) ? 'selected' : '' }}>
@@ -631,6 +883,7 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div id="warehouseAutoHint" style="font-size:11px;margin-top:5px;display:none;"></div>
                                 @error('warehouse_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
                             </div>
                         </div>
@@ -841,7 +1094,23 @@
         today:        '{{ date("Y-m-d") }}'
     };
     </script>
-    <script src="{{ asset('js/goods-receipt-create.js') }}"></script>
+    <script src="{{ asset('js/goods-receipt-create.js') }}?v={{ filemtime(public_path('js/goods-receipt-create.js')) }}"></script>
+    <script>
+    // Safeguard tambahan untuk memastikan input Qty alat adalah bilangan bulat (integer >= 1)
+    document.addEventListener('input', function(e) {
+        if (e.target && e.target.classList.contains('qty-input')) {
+            var row = e.target.closest('tr');
+            var isTool = row && row.getAttribute('data-type') === 'tool';
+            if (isTool) {
+                e.target.min = "1";
+                e.target.step = "1";
+            } else {
+                e.target.min = "0.01";
+                e.target.step = "any";
+            }
+        }
+    }, true);
+    </script>
     @endpush
 </x-app-layout>
 

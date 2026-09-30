@@ -1530,13 +1530,6 @@
 
         <div class="topbar-center">
             <div class="topbar-left-info">
-                @if(isset($title))
-                <div class="topbar-page-info">
-                    <div class="topbar-breadcrumb-icon"><i class="fas fa-layer-group"></i></div>
-                    <h2 class="topbar-page-title">{{ $title }}</h2>
-                </div>
-                <div class="topbar-divider"></div>
-                @endif
                 <div class="topbar-greeting">
                     <span class="topbar-greeting-text">{{ $greeting }},</span>
                     <span class="topbar-greeting-name">{{ explode(' ', $userName)[0] }}</span>
@@ -1792,17 +1785,8 @@
                 <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Pengguna & Akun
                 </a>
-                <a href="{{ route('roles.index') }}" class="nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                    <i class="fas fa-id-badge"></i> Jabatan & Peran
-                </a>
-                <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs('warehouses.*') ? 'active' : '' }}">
-                    <i class="fas fa-warehouse"></i> Gudang
-                </a>
-                <a href="{{ route('projects.index') }}" class="nav-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
-                    <i class="fas fa-building-columns"></i> Proyek
-                </a>
-                <a href="{{ route('supabase-sync.index') }}" class="nav-item {{ request()->routeIs('supabase-sync.*') ? 'active' : '' }}">
-                    <i class="fas fa-cloud-arrow-up"></i> Backup Supabase
+                <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
+                    <i class="fas fa-warehouse"></i> Gudang & Proyek
                 </a>
             </div>
             @endif
