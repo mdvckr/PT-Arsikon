@@ -19,14 +19,6 @@
                         style="height:38px;border-radius:6px;font-size:13px;padding-left:34px;border:1px solid #cbd5e1;">
                     <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;"></i>
                 </div>
-                <button type="submit" class="btn btn-secondary" style="height:38px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;">
-                    Cari
-                </button>
-                @if(request('search'))
-                <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:13px;color:#64748b;" title="Reset Pencarian">
-                    Reset
-                </a>
-                @endif
                  @can('create materials')
         <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:38px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
             <i class="fas fa-plus"></i> Tambah Material
@@ -48,6 +40,7 @@
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Nama Material</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Supplier</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Ukuran</th>
+                        <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Gudang Asal</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Total Stok</th>
@@ -75,7 +68,7 @@
                     @endphp
                     {{-- Level 1: Category Header (Clean, minimal, no excessive colors) --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f1f5f9 !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="10" style="padding:9px 16px !important;">
+                        <td colspan="11" style="padding:9px 16px !important;">
                             <div class="flex items-center justify-between" style="gap:10px;">
                                 <div class="flex items-center" style="gap:8px;">
                                     <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -109,7 +102,7 @@
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($typeName); @endphp
                     {{-- Level 2: Sub-Group Header (Simple indentation, clean typography, no random icons) --}}
                     <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-bottom:1px solid #edf2f7;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="10" style="padding:7px 16px 7px 34px !important;">
+                        <td colspan="11" style="padding:7px 16px 7px 34px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -158,6 +151,28 @@
                         </td>
                         <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
                             {{ $m->size ?: '-' }}
+                        </td>
+                        <td style="padding:10px 14px;font-size:12.5px;vertical-align:middle;">
+                            @php
+                                $whInvs = $m->inventories->filter(fn($inv) => $inv->warehouse_id);
+                            @endphp
+                            @if($whInvs->count() > 0)
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                                    @foreach($whInvs as $inv)
+                                        @if($inv->warehouse)
+                                            <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;" title="Gudang {{ $inv->warehouse->name }} (Stok: {{ number_format($inv->quantity, 0, ',', '.') }} {{ $m->unit?->abbreviation ?? $m->unit?->name }})">
+                                                <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
+                                                <span>{{ $inv->warehouse->name }}</span>
+                                                @if($inv->warehouse->is_central)
+                                                    <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
+                                                @endif
+                                            </span>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-muted" style="font-size:12px;">-</span>
+                            @endif
                         </td>
                         <td style="padding:10px 14px;white-space:nowrap;vertical-align:middle;">
                             @if(!empty($m->incoming_stages) && count($m->incoming_stages) > 0)

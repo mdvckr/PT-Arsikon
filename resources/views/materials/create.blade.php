@@ -747,6 +747,14 @@
                 return;
             }
 
+            var warehouseName = '';
+            if (whEl && whEl.tagName === 'SELECT' && whEl.options[whEl.selectedIndex]) {
+                warehouseName = whEl.options[whEl.selectedIndex].text;
+            } else {
+                var whLabelEl = document.querySelector('[value="' + warehouseId + '"]');
+                warehouseName = whLabelEl ? whLabelEl.textContent.trim() : 'Gudang';
+            }
+
             var container = document.getElementById('manual_items_container');
             if (!container) return;
 
@@ -760,6 +768,7 @@
                     <strong style="color:#0f172a;">${name}</strong>
                     <span class="font-monospace text-muted" style="font-size:11.5px;margin-left:6px;">(${sku})</span>
                     <span style="margin-left:8px;font-size:11px;padding:2px 6px;background:#f1f5f9;border-radius:4px;border:1px solid #e2e8f0;color:#334155;">Stok: ${qty} ${unit}</span>
+                    <span style="margin-left:6px;font-size:11px;padding:2px 6px;background:#eff6ff;border-radius:4px;border:1px solid #bfdbfe;color:#1e40af;"><i class="fas fa-warehouse me-1"></i>${warehouseName}</span>
                     <input type="hidden" name="manual_items[${manualItemCount}][name]" value="${name}">
                     <input type="hidden" name="manual_items[${manualItemCount}][sku]" value="${sku}">
                     <input type="hidden" name="manual_items[${manualItemCount}][unit_id]" value="${unit}">

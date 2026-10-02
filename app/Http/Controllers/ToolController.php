@@ -30,7 +30,7 @@ class ToolController extends Controller
         $categoryQuery = Category::query()
             ->where('type', 'tool')
             ->with(['tools' => function ($q) use ($request, $accessibleIds) {
-                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds)]);
+                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds)->with('warehouse')]);
                 if ($request->search) {
                     $q->where(function ($qq) use ($request) {
                         $qq->where('name', 'like', "%{$request->search}%")

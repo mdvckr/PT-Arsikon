@@ -23,7 +23,7 @@ class MaterialController extends Controller
         $categoryQuery = Category::query()
             ->where('type', 'material')
             ->with(['materials' => function ($q) use ($request, $accessibleIds) {
-                $q->with(['unit', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds), 'stockMutations', 'supplier']);
+                $q->with(['unit', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds)->with('warehouse'), 'stockMutations', 'supplier']);
                 if ($request->search) {
                     $q->where(function ($sub) use ($request) {
                         $sub->where('name', 'like', "%{$request->search}%")

@@ -46,6 +46,7 @@
                         <th style="width:130px;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kode Alat</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Nama Alat & Model</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Gudang Asal</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Total Stock</th>
@@ -75,7 +76,7 @@
                     @endphp
                     {{-- Level 1: Category Header --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="10" style="padding:8px 14px !important;">
+                        <td colspan="11" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between" style="gap:12px;flex-wrap:nowrap;">
                                 <div class="flex items-center" style="gap:8px;min-width:0;">
                                     <i class="fas fa-chevron-down group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -109,7 +110,7 @@
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($toolTypeName); @endphp
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
                     <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="10" style="padding:6px 14px 6px 28px !important;">
+                        <td colspan="11" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <i class="fas fa-chevron-down subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -159,6 +160,36 @@
                                 <span>{{ $tool->size }}</span>
                             @else
                                 <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td style="padding:9px 14px;font-size:12.5px;vertical-align:middle;">
+                            @php
+                                $toolInvs = $tool->inventories->filter(fn($inv) => $inv->warehouse_id);
+                            @endphp
+                            @if($toolInvs->count() > 0)
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                                    @foreach($toolInvs as $inv)
+                                        @if($inv->warehouse)
+                                            <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;" title="Gudang {{ $inv->warehouse->name }} (Stok Total: {{ number_format($inv->stock_total, 0, ',', '.') }} unit)">
+                                                <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
+                                                <span>{{ $inv->warehouse->name }}</span>
+                                                @if($inv->warehouse->is_central)
+                                                    <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
+                                                @endif
+                                            </span>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @elseif($tool->currentWarehouse)
+                                <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                                    <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
+                                    <span>{{ $tool->currentWarehouse->name }}</span>
+                                    @if($tool->currentWarehouse->is_central)
+                                        <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
+                                    @endif
+                                </span>
+                            @else
+                                <span class="text-muted" style="font-size:12px;">-</span>
                             @endif
                         </td>
                         <td style="padding:9px 14px;white-space:nowrap;vertical-align:middle;">
