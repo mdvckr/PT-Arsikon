@@ -83,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
 
     // Material Requests
+    Route::get('/material-requests/stock', [MaterialRequestController::class, 'getStock'])->name('material-requests.stock');
     Route::post('/material-requests/{materialRequest}/approve', [MaterialRequestController::class, 'approve'])->name('material-requests.approve');
     Route::post('/material-requests/{materialRequest}/reject', [MaterialRequestController::class, 'reject'])->name('material-requests.reject');
     Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);

@@ -70,6 +70,18 @@
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
+        .qty-input.qty-warning {
+            border-color: #f59e0b !important;
+            background-color: #fffbeb !important;
+            color: #b45309 !important;
+        }
+
+        .qty-input.qty-exceeds {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+
         @media (max-width: 992px) {
             .mr-create-layout {
                 grid-template-columns: 1fr !important;
@@ -95,13 +107,20 @@
         <span>Buat Permintaan Baru</span>
     </div>
 
-    @if ($errors->has('quantities'))
-    <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-triangle-exclamation"></i> {{ $errors->first('quantities') }}
+    @if ($errors->any())
+    <div class="alert alert-danger mb-3" style="border-radius:8px;padding:10px 14px;font-size:12px;">
+        <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada formulir permintaan:
+        </div>
+        <ul class="mb-0" style="padding-left:18px;">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
     </div>
     @endif
 
-    <form method="POST" action="{{ route('material-requests.store') }}">
+    <form id="materialRequestForm" method="POST" action="{{ route('material-requests.store') }}">
         @csrf
         <div class="mr-create-layout mb-3">
 
@@ -156,7 +175,7 @@
                                 </tr>
                                 @foreach($category->materials as $mat)
                                 @php $totalStock = $mat->inventories->sum('quantity'); @endphp
-                                <tr class="mat-row cat-rows {{ $groupKey }}" style="border-bottom:1px solid #f1f5f9;">
+                                <tr class="mat-row cat-rows {{ $groupKey }}" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 10px 6px 22px;">
                                         <div class="fw-600" style="font-size:12.5px;color:#0f172a;">{{ $mat->name }}</div>
                                         <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
@@ -174,7 +193,7 @@
                                         @endif
                                     </td>
                                     <td style="text-align:center;">
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
+                                        <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
                                             {{ number_format($totalStock, 0, ',', '.') }}
                                         </span>
                                         <span class="text-muted" style="font-size:10px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</span>
@@ -185,7 +204,7 @@
                                                class="form-control qty-input"
                                                min="0" step="0.01"
                                                value="{{ old('quantities.'.$mat->id, 0) }}"
-                                               oninput="calculateTotal()">
+                                               oninput="validateQtyRow(this); calculateTotal()">
                                     </td>
                                 </tr>
                                 @endforeach
@@ -204,7 +223,7 @@
                                 </tr>
                                 @foreach($uncategorizedMaterials as $mat)
                                 @php $totalStock = $mat->inventories->sum('quantity'); @endphp
-                                <tr class="mat-row cat-rows mcat-uncategorized" style="border-bottom:1px solid #f1f5f9;">
+                                <tr class="mat-row cat-rows mcat-uncategorized" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 10px 6px 22px;">
                                         <div class="fw-600" style="font-size:12.5px;color:#0f172a;">{{ $mat->name }}</div>
                                         <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
@@ -222,7 +241,7 @@
                                         @endif
                                     </td>
                                     <td style="text-align:center;">
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
+                                        <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
                                             {{ number_format($totalStock, 0, ',', '.') }}
                                         </span>
                                         <span class="text-muted" style="font-size:10px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</span>
@@ -233,7 +252,7 @@
                                                class="form-control qty-input"
                                                min="0" step="0.01"
                                                value="{{ old('quantities.'.$mat->id, 0) }}"
-                                               oninput="calculateTotal()">
+                                               oninput="validateQtyRow(this); calculateTotal()">
                                     </td>
                                 </tr>
                                 @endforeach
@@ -298,12 +317,47 @@
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
                             Gudang Pemohon <span class="text-danger">*</span>
                         </label>
-                        <select name="warehouse_id" class="form-control" required style="font-weight:500;">
+                        <select name="warehouse_id" id="warehouse_id" class="form-control" required style="font-weight:500;" onchange="syncWarehouseOptions()">
                             <option value="">Pilih Gudang</option>
                             @foreach($warehouses as $wh)
                             <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
                             @endforeach
                         </select>
+                        @error('warehouse_id')
+                        <div class="text-danger" style="font-size:10.5px;margin-top:3px;">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
+                            Sumber Gudang Material <span class="text-danger">*</span>
+                        </label>
+                        <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" required style="font-weight:500;" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
+                            <option value="">Pilih Sumber Gudang</option>
+                            @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
+                            @foreach($sourceWarehouses as $swh)
+                                @if($swh->is_central && !$isCentralGroupStarted)
+                                    <optgroup label="── Gudang Pusat ──">
+                                    @php $isCentralGroupStarted = true; @endphp
+                                @elseif(!$swh->is_central && !$isProjectGroupStarted)
+                                    @if($isCentralGroupStarted) </optgroup> @endif
+                                    <optgroup label="── Gudang Proyek ──">
+                                    @php $isProjectGroupStarted = true; @endphp
+                                @endif
+                                <option value="{{ $swh->id }}" {{ old('source_warehouse_id', $defaultSourceWarehouseId) == $swh->id ? 'selected' : '' }}>
+                                    {{ $swh->name }}{{ $swh->is_central ? ' (Pusat)' : '' }}
+                                </option>
+                            @endforeach
+                            @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
+                        </select>
+                        <div id="warehouse-conflict-warning" style="display:none;font-size:10.5px;color:#dc2626;margin-top:4px;font-weight:600;">
+                            <i class="fas fa-triangle-exclamation"></i> Sumber gudang tidak boleh sama dengan gudang pemohon!
+                        </div>
+                        @error('source_warehouse_id')
+                        <div class="text-danger" style="font-size:10.5px;margin-top:3px;">{{ $message }}</div>
+                        @enderror
+                        <div id="source-wh-loading" style="display:none;font-size:10.5px;color:#64748b;margin-top:3px;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:10px;"></i> Memuat stok...
+                        </div>
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
@@ -333,6 +387,131 @@
 
     @push('scripts')
     <script>
+        // ============================================================
+        // Sinkronisasi Dropdown: Cegah Pemilihan Gudang yang Sama
+        // ============================================================
+        function syncWarehouseOptions() {
+            var whSelect = document.getElementById('warehouse_id');
+            var srcSelect = document.getElementById('source_warehouse_id');
+            var whVal = whSelect ? whSelect.value : '';
+            var srcVal = srcSelect ? srcSelect.value : '';
+
+            var conflictWarning = document.getElementById('warehouse-conflict-warning');
+            if (whVal && srcVal && parseInt(whVal) === parseInt(srcVal)) {
+                if (conflictWarning) conflictWarning.style.display = 'block';
+                if (srcSelect) srcSelect.style.borderColor = '#ef4444';
+                if (whSelect) whSelect.style.borderColor = '#ef4444';
+            } else {
+                if (conflictWarning) conflictWarning.style.display = 'none';
+                if (srcSelect) srcSelect.style.borderColor = '';
+                if (whSelect) whSelect.style.borderColor = '';
+            }
+
+            // Disable pilihan gudang pemohon di dropdown sumber
+            if (srcSelect) {
+                Array.from(srcSelect.options).forEach(function(opt) {
+                    if (!opt.value) return;
+                    if (whVal && parseInt(opt.value) === parseInt(whVal)) {
+                        opt.disabled = true;
+                        opt.style.color = '#94a3b8';
+                    } else {
+                        opt.disabled = false;
+                        opt.style.color = '';
+                    }
+                });
+            }
+
+            // Disable pilihan sumber di dropdown pemohon
+            if (whSelect) {
+                Array.from(whSelect.options).forEach(function(opt) {
+                    if (!opt.value) return;
+                    if (srcVal && parseInt(opt.value) === parseInt(srcVal)) {
+                        opt.disabled = true;
+                        opt.style.color = '#94a3b8';
+                    } else {
+                        opt.disabled = false;
+                        opt.style.color = '';
+                    }
+                });
+            }
+        }
+
+        // ============================================================
+        // Validasi Kuantitas Input vs Stok Gudang Sumber
+        // ============================================================
+        function validateQtyRow(input) {
+            var val = parseFloat(input.value) || 0;
+            if (val < 0) {
+                val = 0;
+                input.value = 0;
+            }
+            var row = input.closest('.mat-row');
+            if (!row) return;
+            var stock = parseFloat(row.getAttribute('data-stock')) || 0;
+
+            input.classList.remove('qty-warning', 'qty-exceeds');
+            input.removeAttribute('title');
+
+            if (val > 0) {
+                if (stock <= 0) {
+                    input.classList.add('qty-exceeds');
+                    input.title = 'Perhatian: Stok material di gudang sumber saat ini kosong (0)';
+                } else if (val > stock) {
+                    input.classList.add('qty-warning');
+                    input.title = 'Perhatian: Jumlah yang diminta (' + val + ') melebihi stok yang tersedia (' + stock + ')';
+                }
+            }
+        }
+
+        // ============================================================
+        // AJAX: Update stok saat Sumber Gudang berubah
+        // ============================================================
+        function onSourceWarehouseChange(warehouseId, warehouseName) {
+            if (!warehouseId) return;
+
+            var loadingEl = document.getElementById('source-wh-loading');
+            if (loadingEl) loadingEl.style.display = '';
+
+            // Update label info di header tabel
+            var infoEl = document.querySelector('.alert.alert-info strong');
+            if (infoEl) infoEl.textContent = warehouseName;
+
+            fetch('{{ route('material-requests.stock') }}?warehouse_id=' + warehouseId, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(stocks) {
+                // Update setiap badge stok di tabel & update data-stock attribute
+                document.querySelectorAll('.mat-row').forEach(function(row) {
+                    var matId = row.getAttribute('data-material-id');
+                    if (!matId) return;
+                    var stockBadge = row.querySelector('.stock-badge');
+                    var qty = stocks[matId] !== undefined ? parseFloat(stocks[matId]) : 0;
+                    row.setAttribute('data-stock', qty);
+                    if (stockBadge) {
+                        stockBadge.textContent = qty.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+                        // Warna berdasarkan stok
+                        if (qty <= 0) {
+                            stockBadge.style.background = '#fef2f2';
+                            stockBadge.style.color = '#b91c1c';
+                        } else if (qty < 10) {
+                            stockBadge.style.background = '#fffbeb';
+                            stockBadge.style.color = '#b45309';
+                        } else {
+                            stockBadge.style.background = '#ecfdf5';
+                            stockBadge.style.color = '#047857';
+                        }
+                    }
+                    var input = row.querySelector('.qty-input');
+                    if (input) validateQtyRow(input);
+                });
+                if (loadingEl) loadingEl.style.display = 'none';
+            })
+            .catch(function() {
+                if (loadingEl) loadingEl.style.display = 'none';
+            });
+        }
+
         let customReqIndex = 0;
         function addCustomRequestRow() {
             const tbody = document.getElementById('customRequestBody');
@@ -409,6 +588,63 @@
             });
         }
 
+        function initFormValidation() {
+            var form = document.getElementById('materialRequestForm');
+            if (!form) return;
+
+            form.addEventListener('submit', function(e) {
+                var whSelect = document.getElementById('warehouse_id');
+                var srcSelect = document.getElementById('source_warehouse_id');
+                var whVal = whSelect ? whSelect.value : '';
+                var srcVal = srcSelect ? srcSelect.value : '';
+
+                if (!whVal) {
+                    e.preventDefault();
+                    alert('Silakan pilih Gudang Pemohon terlebih dahulu.');
+                    if (whSelect) whSelect.focus();
+                    return false;
+                }
+
+                if (!srcVal) {
+                    e.preventDefault();
+                    alert('Silakan pilih Sumber Gudang Material terlebih dahulu.');
+                    if (srcSelect) srcSelect.focus();
+                    return false;
+                }
+
+                if (parseInt(whVal) === parseInt(srcVal)) {
+                    e.preventDefault();
+                    alert('Validasi Gagal: Sumber gudang material tidak boleh sama dengan gudang pemohon!');
+                    var conflictWarning = document.getElementById('warehouse-conflict-warning');
+                    if (conflictWarning) conflictWarning.style.display = 'block';
+                    if (srcSelect) srcSelect.focus();
+                    return false;
+                }
+
+                // Cek apakah ada minimal 1 item diminta (master atau custom)
+                var totalMaster = 0;
+                document.querySelectorAll('#materialsTable .qty-input').forEach(function(input) {
+                    totalMaster += parseFloat(input.value) || 0;
+                });
+
+                var customRows = document.querySelectorAll('#customRequestBody tr:not(#customRequestEmpty)');
+                var totalCustom = 0;
+                customRows.forEach(function(row) {
+                    var qtyInput = row.querySelector('.qty-input');
+                    var nameInput = row.querySelector('input[name*="[name]"]');
+                    if (qtyInput && nameInput && nameInput.value.trim() !== '') {
+                        totalCustom += parseFloat(qtyInput.value) || 0;
+                    }
+                });
+
+                if (totalMaster <= 0 && totalCustom <= 0) {
+                    e.preventDefault();
+                    alert('Silakan masukkan minimal 1 barang yang diminta (isi kuantitas pada daftar material atau tambahkan barang manual).');
+                    return false;
+                }
+            });
+        }
+
         (function () {
             function initAccordion() {
                 document.querySelectorAll('.cat-toggle').forEach(function (row) {
@@ -425,10 +661,24 @@
                     });
                 });
             }
+
+            function setupInitial() {
+                initAccordion();
+                syncWarehouseOptions();
+                initFormValidation();
+                calculateTotal();
+                // Validasi baris kuantitas awal jika ada input dari old()
+                document.querySelectorAll('#materialsTable .qty-input').forEach(function(input) {
+                    if (parseFloat(input.value) > 0) {
+                        validateQtyRow(input);
+                    }
+                });
+            }
+
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function () { initAccordion(); calculateTotal(); });
+                document.addEventListener('DOMContentLoaded', setupInitial);
             } else {
-                initAccordion(); calculateTotal();
+                setupInitial();
             }
         })();
     </script>

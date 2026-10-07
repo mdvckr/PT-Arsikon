@@ -12,7 +12,7 @@
 
         .source-selection-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 16px;
         }
 
@@ -161,12 +161,7 @@
                                     <i class="fas fa-xmark"></i>
                                 </button>
                             </span>
-                            <span id="badge-ta-connected" class="badge" style="display:none;font-size:11.5px;padding:4px 10px;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
-                                Alat: <strong id="ta-active-name">-</strong>
-                                <button type="button" onclick="clearTaSource()" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0 2px;margin-left:4px;" title="Batalkan Peminjaman Alat ini">
-                                    <i class="fas fa-xmark"></i>
-                                </button>
-                            </span>
+
                             <button type="button" class="btn btn-sm btn-light border text-danger" onclick="clearSelectedSource()" style="height:28px;padding:2px 10px;font-size:11.5px;font-weight:600;border-radius:6px;" title="Batalkan semua sumber">
                                 <i class="fas fa-xmark"></i> Reset
                             </button>
@@ -187,7 +182,7 @@
                                     <option value="">— Pilih Permintaan Material —</option>
                                     @foreach($mrsJson as $mr)
                                     <option value="{{ $mr['id'] }}" {{ $initialMrId == $mr['id'] ? 'selected' : '' }}>
-                                        #{{ $mr['number'] }} &bull; {{ $mr['to_warehouse'] }} ({{ $mr['requester'] }}) [{{ $mr['status_label'] }}]
+                                        #{{ $mr['number'] }} &bull; {{ $mr['from_warehouse'] }} &rarr; {{ $mr['to_warehouse'] }} ({{ $mr['requester'] }}) [{{ $mr['status_label'] }}]
                                     </option>
                                     @endforeach
                                 </select>
@@ -198,25 +193,6 @@
                                 @endif
                             </div>
 
-                            {{-- Dropdown Peminjaman Alat --}}
-                            <div>
-                                <label class="form-label" style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">
-                                    Peminjaman Alat Kerja
-                                </label>
-                                <select id="select-source-ta" class="form-control" style="font-size:12.5px;height:38px;border-radius:8px;font-weight:500;border-color:#cbd5e1;" onchange="onSourceTaSelected(this.value)">
-                                    <option value="">— Pilih Peminjaman Alat —</option>
-                                    @foreach($tasJson as $ta)
-                                    <option value="{{ $ta['id'] }}" {{ $initialLoanId == $ta['id'] ? 'selected' : '' }}>
-                                        #{{ $ta['number'] }} &bull; {{ $ta['borrower'] }} ({{ count($ta['items']) }} Alat) - {{ $ta['location'] }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @if(empty($tasJson) || count($tasJson) === 0)
-                                <div class="text-muted" style="font-size:11px;margin-top:4px;color:#94a3b8;">
-                                    Tidak ada pengajuan peminjaman alat yang menunggu pengiriman.
-                                </div>
-                                @endif
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -387,8 +363,8 @@
                         <i class="fas fa-route text-primary" style="font-size:15px;"></i>
                         <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Rute Pengiriman</span>
                     </div>
-                    <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;font-weight:600;padding:4px 8px;border-radius:20px;">
-                        <i class="fas fa-lock" style="font-size:9.5px;"></i> Pusat &rarr; Proyek
+                    <span id="route-type-badge" class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;font-weight:600;padding:4px 8px;border-radius:20px;">
+                        <i class="fas fa-route" style="font-size:9.5px;"></i> <span id="route-type-text">Pusat &rarr; Proyek</span>
                     </span>
                 </div>
                 <div class="card-body" style="padding:18px;">
@@ -413,13 +389,16 @@
                             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
                                 <div style="font-weight:600;font-size:13px;color:#1e293b;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;">
                                     <i class="fas fa-warehouse text-primary" style="font-size:13px;flex-shrink:0;"></i>
-                                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    <span id="display-from-warehouse-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                         {{ $originWarehouse?->name ?? 'Gudang Pusat' }}
                                     </span>
                                 </div>
-                                <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600;flex-shrink:0;">
-                                    Pusat
+                                <span id="display-from-warehouse-badge" class="badge" style="background:#e0f2fe;color:#0369a1;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600;flex-shrink:0;">
+                                    {{ ($originWarehouse?->is_central ?? true) ? 'Pusat' : 'Proyek' }}
                                 </span>
+                            </div>
+                            <div id="mr-route-lock-note" style="display:none;font-size:11px;color:#2563eb;margin-top:4px;font-weight:600;">
+                                <i class="fas fa-link me-1"></i> Asal pengiriman ditentukan dari Permintaan Material
                             </div>
                         </div>
 
@@ -431,26 +410,30 @@
                             </div>
 
                             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:5px;">
-                                Gudang Tujuan (Proyek) <span class="text-danger">*</span>
+                                Gudang Tujuan (Penerima) <span class="text-danger">*</span>
                             </div>
 
                             <select name="to_warehouse_id" id="to-warehouse" class="form-control" required style="font-size:13px;height:38px;border-radius:8px;font-weight:500;border-color:#cbd5e1;">
-                                <option value="">— Pilih Gudang Proyek —</option>
+                                <option value="">— Pilih Gudang Tujuan —</option>
+                                @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
                                 @foreach($warehouses as $wh)
-                                    @if(!$wh->is_central)
-                                    <option value="{{ $wh->id }}" {{ old('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                        {{ $wh->name }} (Proyek)
-                                    </option>
+                                    @if($wh->is_central && !$isCentralGroupStarted)
+                                        <optgroup label="── Gudang Pusat ──">
+                                        @php $isCentralGroupStarted = true; @endphp
+                                    @elseif(!$wh->is_central && !$isProjectGroupStarted)
+                                        @if($isCentralGroupStarted) </optgroup> @endif
+                                        <optgroup label="── Gudang Proyek ──">
+                                        @php $isProjectGroupStarted = true; @endphp
                                     @endif
-                                @endforeach
-                                @foreach($warehouses as $wh)
-                                    @if($wh->is_central && $wh->id !== ($originWarehouse?->id ?? ($warehouses->firstWhere('is_central', true)?->id)))
                                     <option value="{{ $wh->id }}" {{ old('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                        {{ $wh->name }} (Pusat Lain)
+                                        {{ $wh->name }} ({{ $wh->is_central ? 'Pusat' : 'Proyek' }})
                                     </option>
-                                    @endif
                                 @endforeach
+                                @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
                             </select>
+                            <div id="mr-to-lock-note" style="display:none;font-size:11px;color:#16a34a;margin-top:4px;font-weight:600;">
+                                <i class="fas fa-check-circle me-1"></i> Tujuan otomatis dari gudang yang minta (MR)
+                            </div>
                         </div>
                     </div>
 
@@ -559,6 +542,33 @@
             if (sourceMrSelect) sourceMrSelect.value = '';
             if (hiddenMrId) hiddenMrId.value = '';
             itemsBody.querySelectorAll('tr[data-source="mr"]').forEach(r => r.remove());
+
+            // Reset Gudang Asal ke default origin
+            const defaultOriginWh = whs.find(w => w.is_central) || whs[0];
+            if (defaultOriginWh) {
+                fromSelect.value = defaultOriginWh.id;
+                const fromNameEl = document.getElementById('display-from-warehouse-name');
+                const fromBadgeEl = document.getElementById('display-from-warehouse-badge');
+                if (fromNameEl) fromNameEl.textContent = defaultOriginWh.name;
+                if (fromBadgeEl) {
+                    fromBadgeEl.textContent = defaultOriginWh.is_central ? 'Pusat' : 'Proyek';
+                    fromBadgeEl.style.background = '#e0f2fe';
+                    fromBadgeEl.style.color = '#0369a1';
+                }
+            }
+            if (toSelect) toSelect.value = '';
+
+            const routeLockNote = document.getElementById('mr-route-lock-note');
+            if (routeLockNote) routeLockNote.style.display = 'none';
+
+            const toLockNote = document.getElementById('mr-to-lock-note');
+            if (toLockNote) toLockNote.style.display = 'none';
+
+            const routeTypeText = document.getElementById('route-type-text');
+            if (routeTypeText) routeTypeText.innerHTML = `Pusat &rarr; Proyek`;
+
+            fromSelect.dispatchEvent(new Event('change'));
+
             updateSourceIndicator();
             updateBadge();
             updateManualSelect();
@@ -593,9 +603,38 @@
             const mrActiveName = document.getElementById('mr-active-name');
             if (mrActiveName) mrActiveName.textContent = `#${mr.number}`;
 
-            // Auto-fill Gudang jika belum diatur
-            if (mr.from_warehouse_id) fromSelect.value = mr.from_warehouse_id;
-            if (mr.to_warehouse_id) toSelect.value = mr.to_warehouse_id;
+            // Auto-fill Gudang Rute Pengiriman (Asal = Sumber MR, Tujuan = Gudang yang minta MR)
+            if (mr.from_warehouse_id) {
+                fromSelect.value = mr.from_warehouse_id;
+                const fromNameEl = document.getElementById('display-from-warehouse-name');
+                const fromBadgeEl = document.getElementById('display-from-warehouse-badge');
+                if (fromNameEl) fromNameEl.textContent = mr.from_warehouse;
+                if (fromBadgeEl) {
+                    fromBadgeEl.textContent = mr.from_is_central ? 'Pusat' : 'Proyek';
+                    fromBadgeEl.style.background = mr.from_is_central ? '#e0f2fe' : '#fef3c7';
+                    fromBadgeEl.style.color = mr.from_is_central ? '#0369a1' : '#92400e';
+                }
+            }
+            if (mr.to_warehouse_id && toSelect) {
+                toSelect.value = String(mr.to_warehouse_id);
+            }
+
+            // Update badge rute & lock note
+            const routeLockNote = document.getElementById('mr-route-lock-note');
+            if (routeLockNote) routeLockNote.style.display = 'block';
+
+            const toLockNote = document.getElementById('mr-to-lock-note');
+            if (toLockNote) toLockNote.style.display = 'block';
+
+            const routeTypeText = document.getElementById('route-type-text');
+            if (routeTypeText) {
+                const fromType = mr.from_is_central ? 'Pusat' : 'Proyek';
+                const toType = mr.to_is_central ? 'Pusat' : 'Proyek';
+                routeTypeText.innerHTML = `${fromType} &rarr; ${toType}`;
+            }
+
+            // Trigger change event to refresh stock contexts
+            fromSelect.dispatchEvent(new Event('change'));
 
             // Auto-fill Catatan Pengiriman jika masih kosong atau tambahkan
             if (!notesInput.value) {

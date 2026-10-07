@@ -27,10 +27,32 @@ class ToolController extends Controller
         $user = Auth::user();
         $accessibleIds = $user->accessibleWarehouseIds();
 
+        // Tentukan apakah user punya akses global (semua gudang)
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+
+        // Untuk akses global, bisa filter per gudang tertentu via query param
+        if ($isGlobalAccess && $request->filled('warehouse_id')) {
+            $filterWarehouseIds = [(int) $request->warehouse_id];
+        } else {
+            $filterWarehouseIds = $accessibleIds;
+        }
+
+        // Daftar gudang yang bisa diakses (untuk dropdown filter di view)
+        $accessibleWarehouses = $user->accessibleWarehouses();
+
         $categoryQuery = Category::query()
             ->where('type', 'tool')
-            ->with(['tools' => function ($q) use ($request, $accessibleIds) {
-                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $accessibleIds)->with('warehouse')]);
+            ->with(['tools' => function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
+                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse')]);
+
+                // Untuk non-global: hanya tampilkan alat yang punya stok di gudang yang diakses
+                if (!$isGlobalAccess) {
+                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
+                } elseif (!empty($filterWarehouseIds) && count($filterWarehouseIds) < count(Warehouse::pluck('id')->toArray())) {
+                    // Untuk global + filter gudang tertentu
+                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
+                }
+
                 if ($request->search) {
                     $q->where(function ($qq) use ($request) {
                         $qq->where('name', 'like', "%{$request->search}%")
@@ -48,20 +70,40 @@ class ToolController extends Controller
         }
 
         if ($request->search) {
-            $categoryQuery->whereHas('tools', function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('code', 'like', "%{$request->search}%")
-                  ->orWhere('brand', 'like', "%{$request->search}%")
-                  ->orWhere('type', 'like', "%{$request->search}%")
-                  ->orWhere('size', 'like', "%{$request->search}%");
+            $categoryQuery->whereHas('tools', function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
+                // Filter pencarian hanya pada alat yang accessible
+                if (!$isGlobalAccess) {
+                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
+                }
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('name', 'like', "%{$request->search}%")
+                      ->orWhere('code', 'like', "%{$request->search}%")
+                      ->orWhere('brand', 'like', "%{$request->search}%")
+                      ->orWhere('type', 'like', "%{$request->search}%")
+                      ->orWhere('size', 'like', "%{$request->search}%");
+                });
             });
+        }
+
+        // Untuk non-global: sembunyikan kategori yang tidak punya alat di gudang user
+        if (!$isGlobalAccess) {
+            $categoryQuery->whereHas('tools', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
+        } elseif ($request->filled('warehouse_id')) {
+            $categoryQuery->whereHas('tools', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
         }
 
         $categoriesData = $categoryQuery->orderBy('name')->get();
         $categories = $categoriesData;
         $filterCategories = Category::query()->where('type', 'tool')->orderBy('name')->get();
 
-        return view('tools.index', compact('categoriesData', 'categories', 'filterCategories', 'accessibleIds'));
+        return view('tools.index', compact(
+            'categoriesData',
+            'categories',
+            'filterCategories',
+            'accessibleIds',
+            'isGlobalAccess',
+            'accessibleWarehouses'
+        ));
     }
 
     public function create(Request $request)

@@ -1,32 +1,129 @@
 <x-app-layout>
     <x-slot name="title">Data Material</x-slot>
 
+    @push('styles')
+    <style>
+        .action-btn-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .action-btn-view {
+            color: #2563eb;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+        .action-btn-view:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(37,99,235,0.25);
+        }
+        .action-btn-edit {
+            color: #d97706;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+        }
+        .action-btn-edit:hover {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 4px rgba(217,119,6,0.25);
+        }
+        .action-btn-delete {
+            color: #dc2626;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+        .action-btn-delete:hover {
+            background: #dc2626;
+            color: #ffffff;
+            border-color: #dc2626;
+            box-shadow: 0 2px 4px rgba(220,38,38,0.25);
+        }
+        /* Fix empty-state conflict from global styles */
+        .empty-custom-box i {
+            display: inline-block !important;
+            margin: 0 !important;
+            opacity: 1 !important;
+        }
+    </style>
+    @endpush
+
     {{-- Page Header --}}
-    <div class="flex items-center justify-between mb-4" style="flex-wrap:wrap;gap:12px;">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Material</h2>
-            <p class="text-muted" style="font-size:12.5px;margin:2px 0 0;">Daftar seluruh master material konstruksi, spesifikasi, dan stok</p>
+            <div class="flex items-center gap-2.5">
+                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Material</h2>
+                @if(!$isGlobalAccess)
+                    @php
+                        $whNames = $accessibleWarehouses->pluck('name')->toArray();
+                        $whLabel = count($whNames) > 0 ? implode(', ', $whNames) : null;
+                    @endphp
+                    @if($whLabel)
+                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;" title="Gudang: {{ $whLabel }}">
+                        <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i> {{ $whLabel }}
+                    </span>
+                    @endif
+                @endif
+            </div>
+            <p class="text-muted" style="font-size:12.5px;margin:3px 0 0 0;">Daftar seluruh master material konstruksi, spesifikasi, dan stok</p>
         </div>
+        @can('create materials')
+        <div>
+            <a href="{{ route('materials.create') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+                <i class="fas fa-plus"></i> Tambah Material
+            </a>
+        </div>
+        @endcan
     </div>
 
-    {{-- Simple Search Bar (Filter Kategori Dihapus) --}}
-    <div class="card mb-3" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;">
+    {{-- Search & Filter Bar --}}
+    <div class="card mb-3" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;background:#ffffff;">
         <div class="card-body" style="padding:12px 16px;">
-            <form method="GET" style="display:flex;gap:10px;align-items:center;">
-                <div style="flex:1;position:relative;">
+            <form method="GET" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <div style="flex:1;min-width:240px;position:relative;">
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control"
                         placeholder="Cari material berdasarkan nama, SKU, atau ukuran..."
                         style="height:38px;border-radius:6px;font-size:13px;padding-left:34px;border:1px solid #cbd5e1;">
-                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;"></i>
+                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;"></i>
                 </div>
-                 @can('create materials')
-        <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:38px;padding:0 16px;font-size:13px;display:inline-flex;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
-            <i class="fas fa-plus"></i> Tambah Material
-        </a>
-        @endcan
+                @if($isGlobalAccess)
+                <div style="min-width:200px;">
+                    <select name="warehouse_id" id="material-warehouse-filter" class="form-control" style="height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;" onchange="this.form.submit()">
+                        <option value="">&#127981; Semua Gudang</option>
+                        @foreach($accessibleWarehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                            {{ $wh->name }}{{ $wh->is_central ? ' (Pusat)' : '' }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                @if(request('search') || request('warehouse_id'))
+                <div>
+                    <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:38px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#64748b;background:#ffffff;" title="Reset Filter">
+                        <i class="fas fa-times"></i> Reset
+                    </a>
+                </div>
+                @endif
             </form>
         </div>
-        
     </div>
     
 
@@ -40,7 +137,6 @@
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Nama Material</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Supplier</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Ukuran</th>
-                        <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Gudang Asal</th>
                         <th style="padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:7px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;background:#fafafa;border-bottom:1px solid #e2e8f0;">Total Stok</th>
@@ -68,7 +164,7 @@
                     @endphp
                     {{-- Level 1: Category Header (Clean, minimal, no excessive colors) --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f1f5f9 !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="11" style="padding:9px 16px !important;">
+                        <td colspan="10" style="padding:9px 16px !important;">
                             <div class="flex items-center justify-between" style="gap:10px;">
                                 <div class="flex items-center" style="gap:8px;">
                                     <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -102,7 +198,7 @@
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($typeName); @endphp
                     {{-- Level 2: Sub-Group Header (Simple indentation, clean typography, no random icons) --}}
                     <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-bottom:1px solid #edf2f7;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="11" style="padding:7px 16px 7px 34px !important;">
+                        <td colspan="10" style="padding:7px 16px 7px 34px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -152,28 +248,7 @@
                         <td style="padding:10px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
                             {{ $m->size ?: '-' }}
                         </td>
-                        <td style="padding:10px 14px;font-size:12.5px;vertical-align:middle;">
-                            @php
-                                $whInvs = $m->inventories->filter(fn($inv) => $inv->warehouse_id);
-                            @endphp
-                            @if($whInvs->count() > 0)
-                                <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                                    @foreach($whInvs as $inv)
-                                        @if($inv->warehouse)
-                                            <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;" title="Gudang {{ $inv->warehouse->name }} (Stok: {{ number_format($inv->quantity, 0, ',', '.') }} {{ $m->unit?->abbreviation ?? $m->unit?->name }})">
-                                                <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
-                                                <span>{{ $inv->warehouse->name }}</span>
-                                                @if($inv->warehouse->is_central)
-                                                    <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
-                                                @endif
-                                            </span>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @else
-                                <span class="text-muted" style="font-size:12px;">-</span>
-                            @endif
-                        </td>
+
                         <td style="padding:10px 14px;white-space:nowrap;vertical-align:middle;">
                             @if(!empty($m->incoming_stages) && count($m->incoming_stages) > 0)
                                 @php
@@ -296,22 +371,22 @@
                             @endif
                         </td>
 
-                        <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
-                            <div class="flex items-center justify-center" style="gap:4px;">
-                                <a href="{{ route('materials.show', $m) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Detail Material">
-                                    <i class="fas fa-eye" style="font-size:11px;"></i>
+                        <td style="text-align:center;padding:8px 12px;vertical-align:middle;white-space:nowrap;width:110px;">
+                            <div class="action-btn-group">
+                                <a href="{{ route('materials.show', $m) }}" class="action-btn action-btn-view" title="Detail Material">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                                 @can('edit materials')
-                                <a href="{{ route('materials.edit', $m) }}" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:6px;background:#ffffff;" title="Edit Material">
-                                    <i class="fas fa-pen" style="font-size:11px;"></i>
+                                <a href="{{ route('materials.edit', $m) }}" class="action-btn action-btn-edit" title="Edit Material">
+                                    <i class="fas fa-pen"></i>
                                 </a>
                                 @endcan
                                 @can('delete materials')
                                 <form method="POST" action="{{ route('materials.destroy', $m) }}"
                                     onsubmit="return confirm('Hapus material {{ addslashes($m->name) }}?')" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-light border" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;border-radius:6px;background:#ffffff;" title="Hapus Material">
-                                        <i class="fas fa-trash" style="font-size:11px;"></i>
+                                    <button type="submit" class="action-btn action-btn-delete" title="Hapus Material">
+                                        <i class="fas fa-trash-can"></i>
                                     </button>
                                 </form>
                                 @endcan
@@ -322,13 +397,23 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10" style="padding:40px 20px;text-align:center;">
-                            <div class="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                                <h3 style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;">Belum Ada Material</h3>
-                                <p class="text-muted" style="font-size:13px;max-width:320px;margin-bottom:14px;">Tambahkan material pertama Anda untuk mulai mengelola stok dan inventori.</p>
+                        <td colspan="10" style="padding:48px 20px;text-align:center;">
+                            <div class="empty-custom-box" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:360px;margin:0 auto;">
+                                <div style="width:56px;height:56px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;color:#94a3b8;">
+                                    <i class="fas fa-boxes-stacked" style="font-size:22px !important;color:#94a3b8 !important;"></i>
+                                </div>
+                                <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px 0;">Belum Ada Material</h3>
+                                <p class="text-muted" style="font-size:13px;line-height:1.5;margin:0 0 16px 0;">
+                                    @if(request('search') || request('warehouse_id'))
+                                        Tidak ada material yang sesuai dengan kriteria filter saat ini.
+                                    @else
+                                        Tambahkan material pertama Anda untuk mulai mengelola stok dan inventori.
+                                    @endif
+                                </p>
                                 @can('create materials')
-                                <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:36px;padding:0 16px;border-radius:6px;font-size:13px;font-weight:600;">
-                                    Tambah Material
+                                <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:36px;padding:0 18px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+                                    <i class="fas fa-plus" style="font-size:11px !important;line-height:1 !important;"></i>
+                                    <span>Tambah Material</span>
                                 </a>
                                 @endcan
                             </div>

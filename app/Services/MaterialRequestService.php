@@ -13,20 +13,25 @@ use Illuminate\Support\Facades\DB;
 class MaterialRequestService
 {
     /**
-     * Create Material Request from Project Warehouse to Central Warehouse.
+     * Create Material Request from any source Warehouse to a Project Warehouse.
      */
     public function createRequest(
-        Warehouse $fromWarehouse,
+        Warehouse $toWarehouse,
+        Warehouse $sourceWarehouse,
         User $requestedBy,
         array $itemsData,
         bool $submitImmediately = true,
         ?string $notes = null
     ): MaterialRequest {
-        if ($fromWarehouse->is_central) {
-            throw new Exception("Request pengajuan barang hanya boleh dibuat oleh Gudang Proyek.");
+        if ($toWarehouse->is_central) {
+            throw new Exception("Permintaan material hanya dapat ditujukan ke Gudang Proyek.");
         }
 
-        if (!$requestedBy->hasAccessToWarehouse($fromWarehouse)) {
+        if ($toWarehouse->id === $sourceWarehouse->id) {
+            throw new Exception("Gudang sumber tidak boleh sama dengan gudang tujuan.");
+        }
+
+        if (!$requestedBy->hasAccessToWarehouse($toWarehouse)) {
             throw new Exception("User tidak memiliki akses ke Gudang Proyek ini.");
         }
 
@@ -34,16 +39,14 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        $centralWarehouse = Warehouse::where('is_central', true)->firstOrFail();
-
-        return DB::transaction(function () use ($fromWarehouse, $centralWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes) {
+        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes) {
             $request = MaterialRequest::create([
-                'request_number' => MaterialRequest::generateRequestNumber(),
-                'from_warehouse_id' => $fromWarehouse->id,
-                'to_warehouse_id' => $centralWarehouse->id,
-                'requested_by_user_id' => $requestedBy->id,
-                'status' => $submitImmediately ? 'submitted' : 'draft',
-                'notes' => $notes,
+                'request_number'        => MaterialRequest::generateRequestNumber(),
+                'from_warehouse_id'     => $sourceWarehouse->id,  // gudang asal/sumber material
+                'to_warehouse_id'       => $toWarehouse->id,      // gudang tujuan (pemohon)
+                'requested_by_user_id'  => $requestedBy->id,
+                'status'                => $submitImmediately ? 'submitted' : 'draft',
+                'notes'                 => $notes,
             ]);
 
             foreach ($itemsData as $item) {
@@ -52,7 +55,7 @@ class MaterialRequestService
                     throw new Exception("Jumlah pengajuan harus > 0.");
                 }
 
-                // Custom manual item (tidak ada di Gudang Pusat)
+                // Custom manual item (tidak ada di gudang sumber)
                 if (empty($item['material_id'])) {
                     $customName = trim($item['custom_item_name'] ?? '');
                     if ($customName === '') {
@@ -60,12 +63,12 @@ class MaterialRequestService
                     }
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
-                        'material_id' => null,
-                        'custom_item_name' => $customName,
-                        'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
-                        'qty_requested' => $qtyRequested,
-                        'qty_approved' => $submitImmediately ? $qtyRequested : 0,
-                        'notes' => $item['notes'] ?? null,
+                        'material_id'         => null,
+                        'custom_item_name'    => $customName,
+                        'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                        'qty_requested'       => $qtyRequested,
+                        'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
+                        'notes'               => $item['notes'] ?? null,
                     ]);
                     continue;
                 }
@@ -74,10 +77,10 @@ class MaterialRequestService
 
                 MaterialRequestItem::create([
                     'material_request_id' => $request->id,
-                    'material_id' => $material->id,
-                    'qty_requested' => $qtyRequested,
-                    'qty_approved' => $submitImmediately ? $qtyRequested : 0,
-                    'notes' => $item['notes'] ?? null,
+                    'material_id'         => $material->id,
+                    'qty_requested'       => $qtyRequested,
+                    'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
+                    'notes'               => $item['notes'] ?? null,
                 ]);
             }
 
@@ -86,18 +89,36 @@ class MaterialRequestService
             if ($submitImmediately) {
                 NotificationHelper::notifyCentralWarehouseAdmins(
                     "Permintaan Material: #{$request->request_number}",
-                    "Permintaan material diajukan oleh {$requestedBy->name} dari {$fromWarehouse->name}.",
+                    "Permintaan material diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
                     "approval_needed",
                     route('material-requests.show', $request)
                 );
 
-                // Jika terdapat item manual/custom (tidak ada di inventori manapun), kirim notifikasi ke Admin PO
+                // Jika sumber adalah Gudang Proyek lain, beritahu juga admin gudang proyek sumber tersebut
+                if (!$sourceWarehouse->is_central) {
+                    $sourceAdmins = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $sourceWarehouse->id))
+                        ->whereHas('roles', fn($r) => $r->whereIn('name', ['Admin Gudang Proyek', 'User']))
+                        ->get();
+                    foreach ($sourceAdmins as $sAdmin) {
+                        if ($sAdmin->id !== $requestedBy->id) {
+                            NotificationHelper::notifyUser(
+                                $sAdmin,
+                                "Permintaan Material Keluar: #{$request->request_number}",
+                                "Gudang {$toWarehouse->name} mengajukan permintaan material dari {$sourceWarehouse->name}.",
+                                "info",
+                                route('material-requests.show', $request)
+                            );
+                        }
+                    }
+                }
+
+                // Jika terdapat item manual/custom, kirim notifikasi ke Admin PO
                 $hasCustomItems = $request->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
                 if ($hasCustomItems) {
                     $customCount = $request->items->whereNull('material_id')->count();
                     NotificationHelper::notifyPurchasingAdmins(
                         "Kebutuhan Pengadaan (MR Manual): #{$request->request_number}",
-                        "Terdapat {$customCount} item barang manual dari {$fromWarehouse->name} yang memerlukan pengadaan / penerbitan PO.",
+                        "Terdapat {$customCount} item barang manual dari {$toWarehouse->name} yang memerlukan pengadaan / penerbitan PO.",
                         "warning",
                         route('purchase-orders.create', ['from_mr_id' => $request->id])
                     );
@@ -237,13 +258,8 @@ class MaterialRequestService
             return $query;
         }
 
-        // Admin Gudang Pusat: hanya melihat pengajuan yang melibatkan Gudang Pusat
+        // Admin Gudang Pusat: dapat melihat seluruh pengajuan untuk keperluan approval dan monitoring
         if ($user->hasRole('Admin Gudang Pusat')) {
-            $centralWarehouseIds = Warehouse::where('is_central', true)->pluck('id')->toArray();
-            $query->where(function ($q) use ($centralWarehouseIds) {
-                $q->whereIn('to_warehouse_id', $centralWarehouseIds)
-                  ->orWhereIn('from_warehouse_id', $centralWarehouseIds);
-            });
             return $query;
         }
 

@@ -1,25 +1,114 @@
 <x-app-layout>
     <x-slot name="title">Data Alat</x-slot>
 
-    <div class="flex items-center justify-between mb-4">
+    @push('styles')
+    <style>
+        .action-btn-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .action-btn-view {
+            color: #2563eb;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+        .action-btn-view:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(37,99,235,0.25);
+        }
+        .action-btn-edit {
+            color: #d97706;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+        }
+        .action-btn-edit:hover {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 4px rgba(217,119,6,0.25);
+        }
+        .action-btn-delete {
+            color: #dc2626;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+        .action-btn-delete:hover {
+            background: #dc2626;
+            color: #ffffff;
+            border-color: #dc2626;
+            box-shadow: 0 2px 4px rgba(220,38,38,0.25);
+        }
+        /* Fix empty-state conflict from global styles */
+        .empty-custom-box i {
+            display: inline-block !important;
+            margin: 0 !important;
+            opacity: 1 !important;
+        }
+    </style>
+    @endpush
+
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Alat</h2>
-            <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola inventaris alat kerja dan stok pemakaian per kategori</p>
+            <div class="flex items-center gap-2.5">
+                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Alat</h2>
+                @if(!$isGlobalAccess)
+                    @php
+                        $whNames = $accessibleWarehouses->pluck('name')->toArray();
+                        $whLabel = count($whNames) > 0 ? implode(', ', $whNames) : null;
+                    @endphp
+                    @if($whLabel)
+                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;" title="Gudang: {{ $whLabel }}">
+                        <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i> {{ $whLabel }}
+                    </span>
+                    @endif
+                @endif
+            </div>
+            <p class="text-muted" style="font-size:13px;margin:3px 0 0 0;">Kelola inventaris alat kerja dan stok pemakaian per kategori</p>
         </div>
+        @can('create tools')
+        <div>
+            <a href="{{ route('tools.create') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+                <i class="fas fa-plus"></i> Tambah Alat
+            </a>
+        </div>
+        @endcan
     </div>
 
-    {{-- Filter --}}
-    <div class="card mb-4">
-        <div class="card-body" style="padding:16px 20px;">
-            <form method="GET" class="flex gap-3" style="flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:200px;">
-                    <label class="form-label">Cari Alat</label>
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control"
-                        placeholder="Nama, kode alat, merk, kelompok, atau ukuran...">
+    {{-- Filter Card --}}
+    <div class="card mb-4" style="border:1px solid #e2e8f0;border-radius:8px;box-shadow:none;background:#ffffff;">
+        <div class="card-body" style="padding:14px 18px;">
+            <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                <div style="flex:1;min-width:240px;">
+                    <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Cari Alat</label>
+                    <div style="position:relative;">
+                        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control"
+                            placeholder="Nama, kode alat, merk, kelompok, atau ukuran..."
+                            style="padding-left:34px;height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
+                    </div>
                 </div>
                 <div style="min-width:180px;">
-                    <label class="form-label">Kategori</label>
-                    <select name="category_id" class="form-control" onchange="this.form.submit()">
+                    <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Kategori</label>
+                    <select name="category_id" class="form-control" onchange="this.form.submit()"
+                        style="height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
                         <option value="">Semua Kategori</option>
                         @foreach($filterCategories as $cat)
                         <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
@@ -28,11 +117,27 @@
                         @endforeach
                     </select>
                 </div>
-                 @can('create tools')
-        <a href="{{ route('tools.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Tambah Alat
-        </a>
-        @endcan
+                @if($isGlobalAccess)
+                <div style="min-width:190px;">
+                    <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Filter Gudang</label>
+                    <select name="warehouse_id" id="tool-warehouse-filter" class="form-control" onchange="this.form.submit()"
+                        style="height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
+                        <option value="">&#127981; Semua Gudang</option>
+                        @foreach($accessibleWarehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                            {{ $wh->name }}{{ $wh->is_central ? ' (Pusat)' : '' }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                @if(request('search') || request('category_id') || request('warehouse_id'))
+                <div>
+                    <a href="{{ route('tools.index') }}" class="btn btn-light border" style="height:38px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#64748b;background:#ffffff;" title="Reset Filter">
+                        <i class="fas fa-times"></i> Reset
+                    </a>
+                </div>
+                @endif
             </form>
         </div>
     </div>
@@ -46,7 +151,6 @@
                         <th style="width:130px;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kode Alat</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Nama Alat & Model</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk</th>
-                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Gudang Asal</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Total Stock</th>
@@ -76,7 +180,7 @@
                     @endphp
                     {{-- Level 1: Category Header --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="11" style="padding:8px 14px !important;">
+                        <td colspan="10" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between" style="gap:12px;flex-wrap:nowrap;">
                                 <div class="flex items-center" style="gap:8px;min-width:0;">
                                     <i class="fas fa-chevron-down group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -109,8 +213,8 @@
                     @foreach($typeGroups as $toolTypeName => $toolsInType)
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($toolTypeName); @endphp
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
-                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="11" style="padding:6px 14px 6px 28px !important;">
+                    <tr class="group-rows group-cat-{{ $category->id }}" subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
+                        <td colspan="10" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <i class="fas fa-chevron-down subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
@@ -162,36 +266,7 @@
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td style="padding:9px 14px;font-size:12.5px;vertical-align:middle;">
-                            @php
-                                $toolInvs = $tool->inventories->filter(fn($inv) => $inv->warehouse_id);
-                            @endphp
-                            @if($toolInvs->count() > 0)
-                                <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                                    @foreach($toolInvs as $inv)
-                                        @if($inv->warehouse)
-                                            <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;" title="Gudang {{ $inv->warehouse->name }} (Stok Total: {{ number_format($inv->stock_total, 0, ',', '.') }} unit)">
-                                                <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
-                                                <span>{{ $inv->warehouse->name }}</span>
-                                                @if($inv->warehouse->is_central)
-                                                    <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
-                                                @endif
-                                            </span>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @elseif($tool->currentWarehouse)
-                                <span class="badge" style="background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:3.5px 8px;border-radius:5px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
-                                    <i class="fas fa-warehouse text-primary" style="font-size:9.5px;"></i>
-                                    <span>{{ $tool->currentWarehouse->name }}</span>
-                                    @if($tool->currentWarehouse->is_central)
-                                        <span style="font-size:9px;background:#e0f2fe;color:#0369a1;padding:1px 4px;border-radius:3px;font-weight:700;">Pusat</span>
-                                    @endif
-                                </span>
-                            @else
-                                <span class="text-muted" style="font-size:12px;">-</span>
-                            @endif
-                        </td>
+
                         <td style="padding:9px 14px;white-space:nowrap;vertical-align:middle;">
                             @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
                                 @php
@@ -313,22 +388,22 @@
                                 <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;margin-top:2px;display:inline-block;">Habis</span>
                             @endif
                         </td>
-                        <td style="text-align:center;padding:9px 14px;vertical-align:middle;white-space:nowrap;">
-                            <div class="flex items-center justify-center" style="gap:4px;">
-                                <a href="{{ route('tools.show', $tool) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:5px;background:#f8fafc;" title="Detail Alat">
-                                    <i class="fas fa-eye" style="font-size:11px;"></i>
+                        <td style="text-align:center;padding:8px 12px;vertical-align:middle;white-space:nowrap;width:110px;">
+                            <div class="action-btn-group">
+                                <a href="{{ route('tools.show', $tool) }}" class="action-btn action-btn-view" title="Detail Alat">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                                 @can('edit tools')
-                                <a href="{{ route('tools.edit', $tool) }}" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#475569;border-radius:5px;background:#f8fafc;" title="Edit Alat">
-                                    <i class="fas fa-pen" style="font-size:11px;"></i>
+                                <a href="{{ route('tools.edit', $tool) }}" class="action-btn action-btn-edit" title="Edit Alat">
+                                    <i class="fas fa-pen"></i>
                                 </a>
                                 @endcan
                                 @can('delete tools')
                                 <form method="POST" action="{{ route('tools.destroy', $tool) }}"
                                     onsubmit="return confirm('Hapus alat {{ addslashes($tool->name) }}?')" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-light border" style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#dc2626;border-radius:5px;background:#f8fafc;" title="Hapus Alat">
-                                        <i class="fas fa-trash" style="font-size:11px;"></i>
+                                    <button type="submit" class="action-btn action-btn-delete" title="Hapus Alat">
+                                        <i class="fas fa-trash-can"></i>
                                     </button>
                                 </form>
                                 @endcan
@@ -339,11 +414,25 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10">
-                            <div class="empty-state">
-                                <i class="fas fa-tools"></i>
-                                <h3>Belum Ada Alat</h3>
-                                <p>Tambahkan alat kerja pertama untuk memulai inventaris.</p>
+                        <td colspan="10" style="padding:48px 20px;text-align:center;">
+                            <div class="empty-custom-box" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:360px;margin:0 auto;">
+                                <div style="width:56px;height:56px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;color:#94a3b8;">
+                                    <i class="fas fa-tools" style="font-size:22px !important;color:#94a3b8 !important;"></i>
+                                </div>
+                                <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px 0;">Belum Ada Alat</h3>
+                                <p class="text-muted" style="font-size:13px;line-height:1.5;margin:0 0 16px 0;">
+                                    @if(request('search') || request('category_id') || request('warehouse_id'))
+                                        Tidak ada alat yang sesuai dengan kriteria filter saat ini.
+                                    @else
+                                        Tambahkan alat kerja pertama untuk memulai inventaris gudang.
+                                    @endif
+                                </p>
+                                @can('create tools')
+                                <a href="{{ route('tools.create') }}" class="btn btn-primary" style="height:36px;padding:0 18px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+                                    <i class="fas fa-plus" style="font-size:11px !important;line-height:1 !important;"></i>
+                                    <span>Tambah Alat</span>
+                                </a>
+                                @endcan
                             </div>
                         </td>
                     </tr>

@@ -57,8 +57,10 @@ class DistributionController extends Controller
     {
         $this->authorize('create distributions');
         $user = Auth::user();
-        $warehouses = $this->accessibleWarehouses();
-        $originWarehouse = $warehouses->firstWhere('is_central', true) ?? $warehouses->first();
+        $accessibleWarehouses = $this->accessibleWarehouses();
+        $originWarehouse = $accessibleWarehouses->firstWhere('is_central', true) ?? $accessibleWarehouses->first();
+        // Seluruh gudang aktif tersedia sebagai pilihan tujuan pengiriman
+        $warehouses = Warehouse::where('is_active', true)->orderByRaw('is_central DESC')->orderBy('name')->get();
 
         // 1. Permintaan Material (MR) dari user / proyek (submitted, approved, partially_fulfilled)
         $materialRequests = \App\Models\MaterialRequest::with([
@@ -113,10 +115,12 @@ class DistributionController extends Controller
                 'id'                => $mr->id,
                 'number'            => $mr->request_number,
                 'requester'         => $mr->requestedBy?->name ?? 'User Proyek',
-                'from_warehouse_id' => $mr->to_warehouse_id,   // Asal kirim = gudang penyedia (Pusat)
-                'to_warehouse_id'   => $mr->from_warehouse_id, // Tujuan = gudang pemohon (Proyek)
-                'from_warehouse'    => $mr->toWarehouse?->name ?? 'Gudang Pusat',
-                'to_warehouse'      => $mr->fromWarehouse?->name ?? 'Gudang Proyek',
+                'from_warehouse_id' => $mr->from_warehouse_id, // Asal kirim = Gudang Sumber Penyedia
+                'to_warehouse_id'   => $mr->to_warehouse_id,   // Tujuan kirim = Gudang Pemohon (Yang Minta)
+                'from_warehouse'    => $mr->fromWarehouse?->name ?? 'Gudang Sumber',
+                'to_warehouse'      => $mr->toWarehouse?->name ?? 'Gudang Pemohon',
+                'from_is_central'   => (bool) ($mr->fromWarehouse?->is_central ?? false),
+                'to_is_central'     => (bool) ($mr->toWarehouse?->is_central ?? false),
                 'status'            => $mr->status,
                 'status_label'      => $statusLabels[$mr->status] ?? $mr->status,
                 'date'              => $mr->created_at?->format('d/m/Y') ?? '',
