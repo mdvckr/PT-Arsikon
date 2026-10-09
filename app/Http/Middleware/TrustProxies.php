@@ -10,9 +10,13 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * Gunakan '*' jika menggunakan Cloudflare sebagai reverse proxy,
+     * agar Laravel melihat IP asli pengunjung (bukan IP Cloudflare).
+     * Ini PENTING agar rate limiting berfungsi berdasarkan IP user.
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.

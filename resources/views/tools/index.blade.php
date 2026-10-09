@@ -213,7 +213,7 @@
                     @foreach($typeGroups as $toolTypeName => $toolsInType)
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($toolTypeName); @endphp
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
-                    <tr class="group-rows group-cat-{{ $category->id }}" subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
+                    <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
                         <td colspan="10" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
@@ -879,6 +879,19 @@
                                 }
                             }
                         });
+
+                        // Jika hanya ada 1 sub-kelompok di kategori ini, otomatis buka agar data langsung terlihat
+                        var subTogglesInCat = document.querySelectorAll('.' + group + '.subgroup-toggle');
+                        if (subTogglesInCat.length === 1) {
+                            var singleSub = subTogglesInCat[0];
+                            singleSub.classList.remove('collapsed');
+                            var singleSubChev = singleSub.querySelector('.subgroup-chev');
+                            if (singleSubChev) singleSubChev.style.transform = '';
+                            var singleSubKey = singleSub.getAttribute('data-group');
+                            document.querySelectorAll('.' + singleSubKey).forEach(function (r) {
+                                r.style.display = '';
+                            });
+                        }
                     } else {
                         // Tutup kategori ini
                         newRow.classList.add('collapsed');

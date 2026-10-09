@@ -1,0 +1,53 @@
+# ==============================================================================
+# MySQL Tuning untuk VPS 4GB RAM (Hetzner CX32 / sejenisnya)
+# ==============================================================================
+# Salin blok ini ke /etc/mysql/mysql.conf.d/99-arsikon-tuning.cnf
+# Restart MySQL setelah menyalin: systemctl restart mysql
+# ==============================================================================
+
+[mysqld]
+# --- InnoDB Buffer Pool ---
+# Rule: 50-70% dari total RAM yang tersedia untuk MySQL
+# VPS 4GB: sisakan ~1.5GB untuk OS+PHP+Nginx+Redis → MySQL dapat ~2.5GB
+innodb_buffer_pool_size = 1536M
+
+# Jumlah instances (1 per GB buffer pool)
+innodb_buffer_pool_instances = 2
+
+# --- InnoDB Log ---
+innodb_log_file_size = 256M
+innodb_log_buffer_size = 16M
+
+# --- InnoDB Flush ---
+# 2 = flush ke OS cache setiap detik (balance performance vs durability)
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# --- Connection & Thread Pool ---
+max_connections = 100
+thread_cache_size = 16
+table_open_cache = 2000
+
+# --- Temp Tables ---
+tmp_table_size = 64M
+max_heap_table_size = 64M
+
+# --- Query Cache (MySQL 8.0 sudah deprecated, untuk MariaDB) ---
+# query_cache_type = 1
+# query_cache_size = 64M
+
+# --- Sort & Join Buffer ---
+sort_buffer_size = 4M
+join_buffer_size = 4M
+read_rnd_buffer_size = 4M
+
+# --- Slow Query Log (untuk monitoring) ---
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
+
+# --- Binary Log (untuk backup & replication, opsional) ---
+# server-id = 1
+# log_bin = /var/log/mysql/mysql-bin.log
+# expire_logs_days = 14
+# max_binlog_size = 100M
