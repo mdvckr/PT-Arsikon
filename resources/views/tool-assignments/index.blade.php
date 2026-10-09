@@ -214,8 +214,18 @@
                         <td class="nowrap text-center">
                             @if($loan->status === 'pending')
                                 <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">Menunggu</span>
-                            @elseif($loan->status === 'returned')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">Dikembalikan</span>
+                            @elseif(in_array($loan->status, ['returned', 'lost']))
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">{{ $loan->status === 'lost' ? 'Hilang' : 'Dikembalikan' }}</span>
+                                @if(($loan->returned_damaged ?? 0) > 0 || ($loan->returned_lost ?? 0) > 0)
+                                    <div style="font-size:9.5px;margin-top:3px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                                        @if(($loan->returned_damaged ?? 0) > 0)
+                                            <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;padding:1px 4px;font-size:9px;">{{ $loan->returned_damaged }} Rusak</span>
+                                        @endif
+                                        @if(($loan->returned_lost ?? 0) > 0)
+                                            <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 4px;font-size:9px;">{{ $loan->returned_lost }} Hilang</span>
+                                        @endif
+                                    </div>
+                                @endif
                             @elseif($loan->status === 'overdue')
                                 <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">Terlambat</span>
                             @elseif($loan->status === 'rejected')

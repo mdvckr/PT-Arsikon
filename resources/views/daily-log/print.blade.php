@@ -402,6 +402,40 @@
             </tbody>
         </table>
 
+        @if(isset($opnameAdjustments) && $opnameAdjustments->isNotEmpty())
+        <!-- Penyesuaian Stock Opname -->
+        <div class="section-header">
+            <span>Penyesuaian Fisik Stock Opname Hari Ini</span>
+            <span style="font-weight:600;font-size:10px;">{{ $opnameAdjustments->count() }} Dokumen Disetujui</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px;text-align:center;">No</th>
+                    <th style="width:130px;">No. Opname</th>
+                    <th style="width:140px;">Pemeriksa & Approver</th>
+                    <th>Material & Penyesuaian Qty</th>
+                    <th style="width:90px;text-align:center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($opnameAdjustments as $opIdx => $op)
+                <tr>
+                    <td style="text-align:center;">{{ $opIdx + 1 }}</td>
+                    <td><strong>{{ $op->opname_number }}</strong></td>
+                    <td>{{ $op->conductedBy?->name ?? '-' }} (Appr: {{ $op->approvedBy?->name ?? '-' }})</td>
+                    <td>
+                        @foreach($op->items as $oItem)
+                        <div>• <strong>{{ $oItem->material?->name }}</strong>: Sistem {{ format_quantity($oItem->qty_system) }} → Fisik {{ format_quantity($oItem->qty_physical) }} ({{ $oItem->qty_difference > 0 ? '+'.format_quantity($oItem->qty_difference) : format_quantity($oItem->qty_difference) }} {{ $oItem->material?->unit?->abbreviation ?? 'unit' }})</div>
+                        @endforeach
+                    </td>
+                    <td style="text-align:center;font-weight:700;color:#166534;">APPROVED</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
         <!-- 3. Status Alat Kerja -->
         <div class="section-header">
             <span>3. Pantauan Alat Kerja di Lapangan (Tools Monitoring)</span>

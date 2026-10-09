@@ -10,13 +10,51 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Payment::with(['purchaseOrder.supplier','creator']);
+        $query = Payment::with(['purchaseOrder.supplier', 'creator']);
 
-        if ($request->status) $query->where('status', $request->status);
-        if ($request->search) $query->where('payment_number', 'like', "%{$request->search}%");
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
 
-        $payments = $query->latest()->paginate(15)->withQueryString();
-        return view('payments.index', compact('payments'));
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('payment_number', 'like', "%{$search}%")
+                  ->orWhere('reference_number', 'like', "%{$search}%")
+                  ->orWhere('bank_account', 'like', "%{$search}%")
+                  ->orWhereHas('purchaseOrder', function ($poQ) use ($search) {
+                      $poQ->where('po_number', 'like', "%{$search}%")
+                          ->orWhereHas('supplier', function ($supQ) use ($search) {
+                              $supQ->where('name', 'like', "%{$search}%");
+                          });
+                  });
+            });
+        }
+
+        if ($request->payment_method) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        if ($request->start_date) {
+            $query->whereDate('payment_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('payment_date', '<=', $request->end_date);
+        }
+
+        $payments = $query->latest('payment_date')->latest('id')->paginate(15)->withQueryString();
+
+        $metrics = [
+            'total_verified_amount' => (float) Payment::where('status', 'verified')->sum('amount'),
+            'verified_count'        => (int) Payment::where('status', 'verified')->count(),
+            'pending_count'         => (int) Payment::where('status', 'pending')->count(),
+            'pending_amount'        => (float) Payment::where('status', 'pending')->sum('amount'),
+            'total_count'           => (int) Payment::count(),
+            'rejected_count'        => (int) Payment::where('status', 'rejected')->count(),
+        ];
+
+        return view('payments.index', compact('payments', 'metrics'));
     }
 
     public function create(Request $request)

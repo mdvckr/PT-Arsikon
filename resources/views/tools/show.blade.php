@@ -209,8 +209,18 @@
                                     @endif
                                 </td>
                                 <td style="padding:10px 16px;text-align:center;vertical-align:middle;">
-                                    @if($assign->status === 'returned')
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-weight:600;">Dikembalikan</span>
+                                    @if(in_array($assign->status, ['returned', 'lost']))
+                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-weight:600;">{{ $assign->status === 'lost' ? 'Hilang' : 'Dikembalikan' }}</span>
+                                        @if(($assign->returned_damaged ?? 0) > 0 || ($assign->returned_lost ?? 0) > 0)
+                                        <div style="font-size:10px;margin-top:3px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                                            @if(($assign->returned_damaged ?? 0) > 0)
+                                                <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;padding:1px 5px;font-size:9.5px;font-weight:700;">{{ $assign->returned_damaged }} Rusak</span>
+                                            @endif
+                                            @if(($assign->returned_lost ?? 0) > 0)
+                                                <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 5px;font-size:9.5px;font-weight:700;">{{ $assign->returned_lost }} Hilang</span>
+                                            @endif
+                                        </div>
+                                        @endif
                                     @elseif($assign->status === 'active')
                                         <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-weight:600;">Dipinjam</span>
                                     @elseif($assign->status === 'pending')

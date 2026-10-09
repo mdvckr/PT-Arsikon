@@ -375,52 +375,144 @@ class ToolAssignmentController extends Controller
 
         $request->validate([
             'returned_at' => 'required|date',
-            'condition'   => 'required|in:good,damaged,under_maintenance',
+            'returns'     => 'nullable|array',
+            'returns.*.returned_good'    => 'nullable|integer|min:0',
+            'returns.*.returned_damaged' => 'nullable|integer|min:0',
+            'returns.*.returned_lost'    => 'nullable|integer|min:0',
+            'returns.*.notes'            => 'nullable|string|max:500',
+            'condition'   => 'nullable|in:good,damaged,under_maintenance',
             'notes'       => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($request, $toolLoan) {
-            foreach ($toolLoan->items as $item) {
-                if ($item->status === 'returned') continue;
+        try {
+            DB::transaction(function () use ($request, $toolLoan) {
+                $totalGoodAll = 0;
+                $totalDamagedAll = 0;
+                $totalLostAll = 0;
 
-                $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
-                if ($warehouse && $item->tool) {
-                    $this->toolInvService->returnStock($warehouse, $item->tool, (int)$item->quantity, $request->condition);
+                foreach ($toolLoan->items as $item) {
+                    if ($item->status === 'returned' || $item->status === 'lost') continue;
+
+                    $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
+                    $itemQty = (int) $item->quantity;
+
+                    if ($request->has('returns') && isset($request->returns[$item->id])) {
+                        $retData = $request->returns[$item->id];
+                        $qtyGood = isset($retData['returned_good']) ? (int)$retData['returned_good'] : 0;
+                        $qtyDamaged = isset($retData['returned_damaged']) ? (int)$retData['returned_damaged'] : 0;
+                        $qtyLost = isset($retData['returned_lost']) ? (int)$retData['returned_lost'] : 0;
+                        $itemNotes = $retData['notes'] ?? null;
+
+                        $sum = $qtyGood + $qtyDamaged + $qtyLost;
+                        if ($sum !== $itemQty) {
+                            $toolName = $item->tool?->name ?? 'Alat';
+                            throw new \Exception("Total pengembalian alat '{$toolName}' ({$qtyGood} Baik + {$qtyDamaged} Rusak + {$qtyLost} Hilang = {$sum}) harus sama dengan jumlah pinjam ({$itemQty} Unit).");
+                        }
+
+                        if ($warehouse && $item->tool) {
+                            $this->toolInvService->returnStockDetailed($warehouse, $item->tool, $qtyGood, $qtyDamaged, $qtyLost);
+                        }
+
+                        $condSummary = [];
+                        if ($qtyGood > 0) $condSummary[] = "{$qtyGood} Baik";
+                        if ($qtyDamaged > 0) $condSummary[] = "{$qtyDamaged} Rusak";
+                        if ($qtyLost > 0) $condSummary[] = "{$qtyLost} Hilang";
+
+                        $overallCond = 'good';
+                        if ($qtyLost > 0 && $qtyGood === 0 && $qtyDamaged === 0) {
+                            $overallCond = 'lost';
+                        } elseif ($qtyDamaged > 0 && $qtyGood === 0 && $qtyLost === 0) {
+                            $overallCond = 'damaged';
+                        } elseif ($qtyDamaged > 0 || $qtyLost > 0) {
+                            $overallCond = 'partial';
+                        }
+
+                        $item->update([
+                            'returned_at'      => $request->returned_at,
+                            'returned_good'    => $qtyGood,
+                            'returned_damaged' => $qtyDamaged,
+                            'returned_lost'    => $qtyLost,
+                            'condition'        => $overallCond,
+                            'return_notes'     => $itemNotes,
+                            'status'           => ($qtyLost === $itemQty) ? 'lost' : 'returned',
+                            'notes'            => trim(($item->notes ?? '') . ' | Dikembalikan: ' . implode(', ', $condSummary) . ($itemNotes ? " ({$itemNotes})" : '')),
+                        ]);
+
+                        $totalGoodAll += $qtyGood;
+                        $totalDamagedAll += $qtyDamaged;
+                        $totalLostAll += $qtyLost;
+                    } else {
+                        // Fallback legacy
+                        $cond = $request->condition ?? 'good';
+                        $qtyGood = ($cond === 'good') ? $itemQty : 0;
+                        $qtyDamaged = in_array($cond, ['damaged', 'under_maintenance']) ? $itemQty : 0;
+                        $qtyLost = 0;
+
+                        if ($warehouse && $item->tool) {
+                            $this->toolInvService->returnStockDetailed($warehouse, $item->tool, $qtyGood, $qtyDamaged, $qtyLost);
+                        }
+
+                        $item->update([
+                            'returned_at'      => $request->returned_at,
+                            'returned_good'    => $qtyGood,
+                            'returned_damaged' => $qtyDamaged,
+                            'returned_lost'    => $qtyLost,
+                            'condition'        => $cond,
+                            'return_notes'     => $request->notes,
+                            'status'           => 'returned',
+                            'notes'            => trim(($item->notes ?? '') . ' | Dikembalikan: ' . $cond . ($request->notes ? " ({$request->notes})" : '')),
+                        ]);
+
+                        $totalGoodAll += $qtyGood;
+                        $totalDamagedAll += $qtyDamaged;
+                        $totalLostAll += $qtyLost;
+                    }
                 }
 
-                $item->update([
-                    'returned_at' => $request->returned_at,
-                    'status'      => 'returned',
-                    'notes'       => $item->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
-                ]);
-            }
+                $summaryParts = [];
+                if ($totalGoodAll > 0) $summaryParts[] = "{$totalGoodAll} Baik";
+                if ($totalDamagedAll > 0) $summaryParts[] = "{$totalDamagedAll} Rusak";
+                if ($totalLostAll > 0) $summaryParts[] = "{$totalLostAll} Hilang";
 
-            $toolLoan->update([
-                'returned_at' => $request->returned_at,
-                'status'      => 'returned',
-                'notes'       => $toolLoan->notes . ' | Dikembalikan: ' . $request->condition . ($request->notes ? " ({$request->notes})" : ''),
-            ]);
-        });
+                $toolLoan->update([
+                    'returned_at'      => $request->returned_at,
+                    'returned_good'    => $totalGoodAll,
+                    'returned_damaged' => $totalDamagedAll,
+                    'returned_lost'    => $totalLostAll,
+                    'return_notes'     => $request->notes,
+                    'status'           => ($totalLostAll > 0 && $totalGoodAll === 0 && $totalDamagedAll === 0) ? 'lost' : 'returned',
+                    'notes'            => trim(($toolLoan->notes ?? '') . ' | Dikembalikan: ' . implode(', ', $summaryParts) . ($request->notes ? " ({$request->notes})" : '')),
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         $wh = $toolLoan->fromWarehouse;
+        $summaryText = [];
+        if ($toolLoan->returned_good > 0) $summaryText[] = "{$toolLoan->returned_good} Baik";
+        if ($toolLoan->returned_damaged > 0) $summaryText[] = "{$toolLoan->returned_damaged} Rusak";
+        if ($toolLoan->returned_lost > 0) $summaryText[] = "{$toolLoan->returned_lost} Hilang";
+        $summaryStr = !empty($summaryText) ? implode(', ', $summaryText) : 'Lengkap';
+
         if ($wh && !$wh->is_central) {
             \App\Services\NotificationHelper::notifyProjectWarehouseAdmins(
                 $wh->id,
                 "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
-                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan ({$summaryStr}).",
                 "info",
                 route('tool-assignments.show', $toolLoan->id)
             );
         } else {
             \App\Services\NotificationHelper::notifyCentralWarehouseAdmins(
                 "Pengembalian Peminjaman Alat: #{$toolLoan->loan_number}",
-                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan dengan kondisi " . strtoupper($request->condition) . ".",
+                "Peminjaman alat #{$toolLoan->loan_number} ({$toolLoan->borrower_name}) telah dikembalikan ({$summaryStr}).",
                 "info",
                 route('tool-assignments.show', $toolLoan->id)
             );
         }
 
-        return back()->with('success', "Semua alat dalam peminjaman #{$toolLoan->loan_number} berhasil dikembalikan.");
+        return back()->with('success', "Pengembalian peminjaman #{$toolLoan->loan_number} berhasil dicatat ({$summaryStr}) dan stok inventaris gudang telah disinkronkan.");
     }
 
     public function cancel(Request $request, $id)

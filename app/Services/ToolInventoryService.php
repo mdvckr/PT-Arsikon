@@ -160,6 +160,86 @@ class ToolInventoryService
     }
 
     /**
+     * Return stock with structured condition breakdown (good, damaged, lost).
+     */
+    public function returnStockDetailed(Warehouse $warehouse, Tool $tool, int $qtyGood, int $qtyDamaged, int $qtyLost): ToolInventory
+    {
+        if ($qtyGood < 0 || $qtyDamaged < 0 || $qtyLost < 0) {
+            throw new Exception('Kuantitas pengembalian tidak boleh negatif.');
+        }
+
+        $totalQty = $qtyGood + $qtyDamaged + $qtyLost;
+        if ($totalQty <= 0) {
+            throw new Exception('Total kuantitas pengembalian harus lebih besar dari 0.');
+        }
+
+        return DB::transaction(function () use ($warehouse, $tool, $qtyGood, $qtyDamaged, $qtyLost, $totalQty) {
+            $inventory = ToolInventory::where('warehouse_id', $warehouse->id)
+                ->where('tool_id', $tool->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$inventory) {
+                $inventory = ToolInventory::create([
+                    'warehouse_id'      => $warehouse->id,
+                    'tool_id'           => $tool->id,
+                    'stock_total'       => $totalQty,
+                    'stock_available'   => 0,
+                    'stock_borrowed'    => $totalQty,
+                    'stock_maintenance' => 0,
+                    'stock_damaged'     => 0,
+                ]);
+            }
+
+            $currentBorrowed = (int) $inventory->stock_borrowed;
+            $borrowedToDecrement = min($totalQty, $currentBorrowed);
+            if ($borrowedToDecrement > 0) {
+                $inventory->decrement('stock_borrowed', $borrowedToDecrement);
+            }
+
+            $untracked = $totalQty - $borrowedToDecrement;
+            if ($untracked > 0) {
+                $inventory->increment('stock_total', $untracked);
+            }
+
+            if ($qtyGood > 0) {
+                $inventory->increment('stock_available', $qtyGood);
+            }
+
+            if ($qtyDamaged > 0) {
+                $inventory->increment('stock_damaged', $qtyDamaged);
+            }
+
+            if ($qtyLost > 0) {
+                $inventory->decrement('stock_total', $qtyLost);
+            }
+
+            $inventory->validateInvariants();
+
+            $currentToolBorrowed = (int) $tool->stock_borrowed;
+            $toolBorrowedToDecrement = min($totalQty, $currentToolBorrowed);
+            if ($toolBorrowedToDecrement > 0) {
+                $tool->decrement('stock_borrowed', $toolBorrowedToDecrement);
+            }
+            $toolUntracked = $totalQty - $toolBorrowedToDecrement;
+            if ($toolUntracked > 0) {
+                $tool->increment('stock_total', $toolUntracked);
+            }
+            if ($qtyGood > 0) {
+                $tool->increment('stock_available', $qtyGood);
+            }
+            if ($qtyDamaged > 0) {
+                $tool->increment('stock_damaged', $qtyDamaged);
+            }
+            if ($qtyLost > 0) {
+                $tool->decrement('stock_total', $qtyLost);
+            }
+
+            return $inventory->fresh();
+        });
+    }
+
+    /**
      * Sync an entire stock snapshot for a tool in a specific warehouse.
      * Accepts optional deltas for total, available, borrowed, maintenance, damaged.
      */

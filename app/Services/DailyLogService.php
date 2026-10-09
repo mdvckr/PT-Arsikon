@@ -55,7 +55,7 @@ class DailyLogService
             ->get();
 
         // Stock Opname approvals hari ini (penyesuaian stok)
-        $opnameAdjustments = StockOpname::with(['items.material.unit', 'items.material.category'])
+        $opnameAdjustments = StockOpname::with(['items.material.unit', 'items.material.category', 'conductedBy', 'approvedBy'])
             ->where('warehouse_id', $selectedWarehouse->id)
             ->where('status', 'approved')
             ->whereDate('updated_at', $date)
