@@ -26,13 +26,22 @@ class MasterDataTest extends TestCase
         $this->assertGreaterThan(0, Unit::count());
         $this->assertGreaterThan(0, Category::count());
         $this->assertGreaterThan(0, Supplier::count());
-        $this->assertGreaterThan(0, Material::count());
-        $this->assertGreaterThan(0, Tool::count());
+        $this->assertEquals(0, Material::count());
+        $this->assertEquals(0, Tool::count());
     }
 
     public function test_material_belongs_to_category_and_unit(): void
     {
-        $material = Material::first();
+        $category = Category::where('type', 'material')->firstOrFail();
+        $unit = Unit::firstOrFail();
+
+        $material = Material::create([
+            'sku' => 'TEST-MAT-001',
+            'name' => 'Semen Padang 50kg',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
 
         $this->assertNotNull($material);
         $this->assertNotNull($material->category);
@@ -41,7 +50,14 @@ class MasterDataTest extends TestCase
 
     public function test_tool_belongs_to_category(): void
     {
-        $tool = Tool::first();
+        $category = Category::where('type', 'tool')->firstOrFail();
+
+        $tool = Tool::create([
+            'code' => 'TEST-TOOL-001',
+            'name' => 'Bor Tangan Listrik',
+            'category_id' => $category->id,
+            'is_active' => true,
+        ]);
 
         $this->assertNotNull($tool);
         $this->assertNotNull($tool->category);
@@ -81,7 +97,15 @@ class MasterDataTest extends TestCase
     public function test_can_add_stock_to_existing_tool(): void
     {
         $admin = \App\Models\User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $tool = Tool::firstOrFail();
+        $category = Category::where('type', 'tool')->firstOrFail();
+        $tool = Tool::create([
+            'code' => 'TOOL-EXISTING-01',
+            'name' => 'Genset Silent 5000W',
+            'category_id' => $category->id,
+            'stock_total' => 5,
+            'stock_available' => 5,
+            'is_active' => true,
+        ]);
         $initialStock = $tool->stock_total;
 
         $response = $this->actingAs($admin)->post(route('tools.addStock', $tool), [
@@ -92,5 +116,42 @@ class MasterDataTest extends TestCase
 
         $tool->refresh();
         $this->assertEquals($initialStock + 10, $tool->stock_total);
+    }
+
+    public function test_can_update_material_with_supplier_and_new_category_and_unit(): void
+    {
+        $admin = \App\Models\User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
+        $category = Category::where('type', 'material')->firstOrFail();
+        $unit = Unit::firstOrFail();
+
+        $material = Material::create([
+            'sku' => 'MAT-UPDATE-TEST',
+            'name' => 'Semen Gresik Awal',
+            'category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('materials.update', $material), [
+            'sku'          => $material->sku,
+            'name'         => 'Semen Gresik Super 50kg',
+            'brand'        => 'Gresik',
+            'size'         => '50kg',
+            'type'         => 'Semen',
+            'supplier'     => 'PT Semen Indonesia Sejahtera',
+            'new_category' => 'Bahan Perekat & Adukan',
+            'new_unit'     => 'Zak',
+            'description'  => 'Material update test description',
+        ]);
+
+        $response->assertRedirect(route('materials.index'));
+        $response->assertSessionHas('success');
+
+        $material->refresh();
+        $this->assertEquals('Semen Gresik Super 50kg', $material->name);
+        $this->assertEquals('Gresik', $material->brand);
+        $this->assertEquals('PT Semen Indonesia Sejahtera', $material->supplier_name);
+        $this->assertEquals('Bahan Perekat & Adukan', $material->category->name);
+        $this->assertEquals('Zak', $material->unit->name);
     }
 }

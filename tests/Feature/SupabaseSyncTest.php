@@ -64,8 +64,19 @@ class SupabaseSyncTest extends TestCase
 
     public function test_artisan_command_test_flag_exits_cleanly(): void
     {
+        $mockService = $this->mock(SupabaseSyncService::class);
+        $mockService->shouldReceive('testConnection')
+            ->once()
+            ->andReturn([
+                'connected' => true,
+                'message' => 'Terhubung ke Supabase Cloud (PostgreSQL)',
+                'latency_ms' => 10.5,
+                'version' => 'PostgreSQL 15.1',
+            ]);
+
         $this->artisan('supabase:sync', ['--test' => true])
             ->expectsOutputToContain('PT-Arsikon — Supabase Cloud Catalog Sync')
             ->assertExitCode(0);
     }
 }
+

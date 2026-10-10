@@ -30,28 +30,58 @@ class ToolController extends Controller
         // Tentukan apakah user punya akses global (semua gudang)
         $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
 
-        // Untuk akses global, bisa filter per gudang tertentu via query param
-        if ($isGlobalAccess && $request->filled('warehouse_id')) {
-            $filterWarehouseIds = [(int) $request->warehouse_id];
-        } else {
-            $filterWarehouseIds = $accessibleIds;
-        }
-
         // Daftar gudang yang bisa diakses (untuk dropdown filter di view)
         $accessibleWarehouses = $user->accessibleWarehouses();
 
+        // Tentukan gudang yang dipilih (warehouse filter)
+        $requestedWh = $request->query('warehouse_id');
+
+        if ($isGlobalAccess) {
+            if ($requestedWh === 'all') {
+                $filterWarehouseIds = $accessibleIds;
+                $selectedWarehouseId = 'all';
+            } elseif (!empty($requestedWh) && is_numeric($requestedWh)) {
+                $whId = (int) $requestedWh;
+                $filterWarehouseIds = [$whId];
+                $selectedWarehouseId = $whId;
+            } elseif ($request->has('warehouse_id') && empty($requestedWh)) {
+                $filterWarehouseIds = $accessibleIds;
+                $selectedWarehouseId = 'all';
+            } else {
+                // Default: prioritaskan active warehouse user (Gudang Pusat untuk Admin Pusat)
+                $defaultWh = $user->activeWarehouse();
+                if ($defaultWh) {
+                    $filterWarehouseIds = [$defaultWh->id];
+                    $selectedWarehouseId = $defaultWh->id;
+                } else {
+                    $filterWarehouseIds = $accessibleIds;
+                    $selectedWarehouseId = 'all';
+                }
+            }
+        } else {
+            // User non-global: hanya gudang yang diizinkan
+            if (!empty($requestedWh) && in_array((int) $requestedWh, $accessibleIds)) {
+                $whId = (int) $requestedWh;
+                $filterWarehouseIds = [$whId];
+                $selectedWarehouseId = $whId;
+            } else {
+                $defaultWh = $user->activeWarehouse();
+                $whId = $defaultWh && in_array($defaultWh->id, $accessibleIds) ? $defaultWh->id : ($accessibleIds[0] ?? null);
+                $filterWarehouseIds = $whId ? [$whId] : $accessibleIds;
+                $selectedWarehouseId = $whId;
+            }
+        }
+
         $categoryQuery = Category::query()
             ->where('type', 'tool')
-            ->with(['tools' => function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
-                $q->with(['currentWarehouse', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse')]);
+            ->with(['tools' => function ($q) use ($request, $filterWarehouseIds, $selectedWarehouseId) {
+                $q->with([
+                    'currentWarehouse',
+                    'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse')
+                ]);
 
-                // Untuk non-global: hanya tampilkan alat yang punya stok di gudang yang diakses
-                if (!$isGlobalAccess) {
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                } elseif (!empty($filterWarehouseIds) && count($filterWarehouseIds) < count(Warehouse::pluck('id')->toArray())) {
-                    // Untuk global + filter gudang tertentu
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                }
+                // Filter alat berdasarkan gudang yang aktif/dipilih
+                $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
 
                 if ($request->search) {
                     $q->where(function ($qq) use ($request) {
@@ -70,11 +100,8 @@ class ToolController extends Controller
         }
 
         if ($request->search) {
-            $categoryQuery->whereHas('tools', function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
-                // Filter pencarian hanya pada alat yang accessible
-                if (!$isGlobalAccess) {
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                }
+            $categoryQuery->whereHas('tools', function ($q) use ($request, $filterWarehouseIds) {
+                $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
                 $q->where(function ($sub) use ($request) {
                     $sub->where('name', 'like', "%{$request->search}%")
                       ->orWhere('code', 'like', "%{$request->search}%")
@@ -85,12 +112,8 @@ class ToolController extends Controller
             });
         }
 
-        // Untuk non-global: sembunyikan kategori yang tidak punya alat di gudang user
-        if (!$isGlobalAccess) {
-            $categoryQuery->whereHas('tools', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
-        } elseif ($request->filled('warehouse_id')) {
-            $categoryQuery->whereHas('tools', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
-        }
+        // Sembunyikan kategori yang tidak punya alat di gudang yang dipilih
+        $categoryQuery->whereHas('tools', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
 
         $categoriesData = $categoryQuery->orderBy('name')->get();
         $categories = $categoriesData;
@@ -102,7 +125,9 @@ class ToolController extends Controller
             'filterCategories',
             'accessibleIds',
             'isGlobalAccess',
-            'accessibleWarehouses'
+            'accessibleWarehouses',
+            'selectedWarehouseId',
+            'filterWarehouseIds'
         ));
     }
 
@@ -215,11 +240,25 @@ class ToolController extends Controller
             'stock_damaged'        => 0,
         ]);
 
-        if ($stockTotal > 0) {
-            $warehouse = Warehouse::find($validated['warehouse_id']);
-            if ($warehouse) {
+        $warehouse = Warehouse::find($validated['warehouse_id']);
+        if ($warehouse) {
+            if ($stockTotal > 0) {
                 $this->toolInvService->addStock($warehouse, $tool, $stockTotal);
                 $tool->refresh();
+            } else {
+                \App\Models\ToolInventory::firstOrCreate(
+                    [
+                        'warehouse_id' => $warehouse->id,
+                        'tool_id'      => $tool->id,
+                    ],
+                    [
+                        'stock_total'      => 0,
+                        'stock_available'  => 0,
+                        'stock_borrowed'   => 0,
+                        'stock_maintenance'=> 0,
+                        'stock_damaged'    => 0,
+                    ]
+                );
             }
         }
 
@@ -244,10 +283,25 @@ class ToolController extends Controller
                     'stock_maintenance' => 0,
                     'stock_damaged'     => 0,
                 ]);
-                if ($manualItem['stock_total'] > 0) {
-                    $wh = Warehouse::find($manualItem['warehouse_id']);
-                    if ($wh) {
-                        $this->toolInvService->addStock($wh, $manualTool, (int) $manualItem['stock_total']);
+                $wh = Warehouse::find($manualItem['warehouse_id']);
+                if ($wh) {
+                    $mStock = (int) ($manualItem['stock_total'] ?? 0);
+                    if ($mStock > 0) {
+                        $this->toolInvService->addStock($wh, $manualTool, $mStock);
+                    } else {
+                        \App\Models\ToolInventory::firstOrCreate(
+                            [
+                                'warehouse_id' => $wh->id,
+                                'tool_id'      => $manualTool->id,
+                            ],
+                            [
+                                'stock_total'      => 0,
+                                'stock_available'  => 0,
+                                'stock_borrowed'   => 0,
+                                'stock_maintenance'=> 0,
+                                'stock_damaged'    => 0,
+                            ]
+                        );
                     }
                 }
                 $manualCreatedCount++;
@@ -287,15 +341,28 @@ class ToolController extends Controller
     public function show(Tool $tool)
     {
         $this->authorize('view tools');
+        $user = Auth::user();
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $accessibleIds = $user->accessibleWarehouseIds();
+
         $tool->load([
             'category',
             'currentWarehouse',
-            'inventories.warehouse',
-            'assignments.fromWarehouse',
-            'assignments.toWarehouse',
-            'assignments.assignedBy',
-            'assignments.assignedTo',
-            'assignments.toolLoan',
+            'inventories' => function ($q) use ($isGlobalAccess, $accessibleIds) {
+                if (!$isGlobalAccess) {
+                    $q->whereIn('warehouse_id', $accessibleIds);
+                }
+                $q->with('warehouse');
+            },
+            'assignments' => function ($q) use ($isGlobalAccess, $accessibleIds) {
+                if (!$isGlobalAccess) {
+                    $q->where(function ($sub) use ($accessibleIds) {
+                        $sub->whereIn('from_warehouse_id', $accessibleIds)
+                            ->orWhereIn('to_warehouse_id', $accessibleIds);
+                    });
+                }
+                $q->with(['fromWarehouse', 'toWarehouse', 'assignedBy', 'assignedTo', 'toolLoan']);
+            },
             'maintenances',
         ]);
 

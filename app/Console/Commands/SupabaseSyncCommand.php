@@ -21,16 +21,15 @@ class SupabaseSyncCommand extends Command
      */
     protected $description = 'Sinkronisasi dua arah katalog Material & Alat antara MySQL lokal dan Supabase Cloud';
 
-    public function __construct(protected SupabaseSyncService $syncService)
-    {
-        parent::__construct();
-    }
+    protected ?SupabaseSyncService $syncService = null;
 
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(SupabaseSyncService $syncService): int
     {
+        $this->syncService = $syncService;
+
         $this->info('====================================================');
         $this->info('   PT-Arsikon — Supabase Cloud Catalog Sync');
         $this->info('====================================================');

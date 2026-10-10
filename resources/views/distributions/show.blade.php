@@ -235,8 +235,15 @@
                                 <th style="width:36px;text-align:center;">#</th>
                                 <th style="padding:7px 12px;">Barang / Alat</th>
                                 <th style="text-align:center;">Dikirim</th>
-                                <th style="text-align:center;">Diterima</th>
-                                <th style="text-align:center;">Terima Sekarang</th>
+                                @if($canReceive)
+                                <th style="text-align:center;width:95px;">Terima Baik</th>
+                                <th style="text-align:center;width:85px;">Rusak</th>
+                                <th style="text-align:center;width:95px;">Hilang/Kurang</th>
+                                @else
+                                <th style="text-align:center;">Diterima Baik</th>
+                                <th style="text-align:center;">Rusak</th>
+                                <th style="text-align:center;">Hilang / Kurang</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -263,31 +270,67 @@
                                     </div>
                                     @endif
                                 </td>
-                                <td class="fw-600" style="text-align:center;">{{ number_format($item->qty_shipped, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
+                                <td class="fw-600" style="text-align:center;">
+                                    {{ number_format($item->qty_shipped, 0, ',', '.') }} {{ $item->unitAbbr() }}
+                                </td>
+                                @if($canReceive)
+                                    @php
+                                        $remaining = (float) $item->qty_shipped - (float) $item->qty_received - (float) $item->qty_damaged_or_lost - (float) $item->qty_lost;
+                                    @endphp
+                                    @if($remaining > 0)
+                                    <input type="hidden" name="items[{{ $i }}][distribution_item_id]" value="{{ $item->id }}">
+                                    <td style="text-align:center;">
+                                        <input type="number" name="items[{{ $i }}][received_quantity]"
+                                            id="recv_{{ $i }}"
+                                            value="{{ $remaining }}" min="0" max="{{ $remaining }}" step="0.01"
+                                            style="width:75px;height:30px;text-align:center;font-weight:700;font-size:12px;border-radius:5px;border:1.5px solid #cbd5e1;padding:0 4px;" required
+                                            oninput="validateRowQuantities({{ $i }}, {{ $remaining }})">
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <input type="number" name="items[{{ $i }}][qty_damaged]"
+                                            id="dmg_{{ $i }}"
+                                            value="0" min="0" max="{{ $remaining }}" step="0.01" title="Rusak Fisik"
+                                            style="width:65px;height:30px;text-align:center;font-size:12px;border-radius:5px;border:1.5px solid #fca5a5;padding:0 4px;color:#b91c1c;font-weight:600;"
+                                            oninput="validateRowQuantities({{ $i }}, {{ $remaining }})">
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <input type="number" name="items[{{ $i }}][qty_lost]"
+                                            id="lost_{{ $i }}"
+                                            value="0" min="0" max="{{ $remaining }}" step="0.01" title="Hilang / Kurang di Jalan"
+                                            style="width:65px;height:30px;text-align:center;font-size:12px;border-radius:5px;border:1.5px solid #fcd34d;padding:0 4px;color:#b45309;font-weight:600;"
+                                            oninput="validateRowQuantities({{ $i }}, {{ $remaining }})">
+                                    </td>
+                                    @else
+                                    <td colspan="3" style="text-align:center;">
+                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;">
+                                            <i class="fas fa-check" style="font-size:8px;"></i> Selesai
+                                        </span>
+                                    </td>
+                                    @endif
+                                @else
                                 <td style="text-align:center;">
                                     <span class="fw-600" style="color:#047857;">{{ number_format($item->qty_received, 0, ',', '.') }}</span>
                                     <span class="text-muted" style="font-size:10.5px;">{{ $item->unitAbbr() }}</span>
                                 </td>
                                 <td style="text-align:center;">
-                                    @if($canReceive)
-                                        @php $remaining = (float) $item->qty_shipped - (float) $item->qty_received - (float) $item->qty_damaged_or_lost; @endphp
-                                        @if($remaining > 0)
-                                        <input type="hidden" name="items[{{ $i }}][distribution_item_id]" value="{{ $item->id }}">
-                                        <div style="display:inline-flex;align-items:center;gap:4px;">
-                                            <input type="number" name="items[{{ $i }}][received_quantity]"
-                                                value="{{ $remaining }}" min="0" max="{{ $remaining }}" step="0.01"
-                                                style="width:60px;height:28px;text-align:center;font-weight:700;font-size:11.5px;border-radius:4px;border:1px solid #cbd5e1;padding:0 2px;" required>
-                                            <input type="number" name="items[{{ $i }}][qty_damaged_or_lost]"
-                                                value="0" min="0" step="0.01" title="Rusak / Hilang"
-                                                style="width:50px;height:28px;text-align:center;font-size:11.5px;border-radius:4px;border:1px solid #fca5a5;padding:0 2px;color:#b91c1c;">
-                                        </div>
-                                        @else
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;"><i class="fas fa-check" style="font-size:8px;"></i> Selesai</span>
-                                        @endif
+                                    @if($item->qty_damaged_or_lost > 0)
+                                        <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-weight:700;font-size:11px;padding:2px 7px;">
+                                            {{ number_format($item->qty_damaged_or_lost, 0, ',', '.') }} {{ $item->unitAbbr() }}
+                                        </span>
                                     @else
-                                        <span class="text-muted">-</span>
+                                        <span class="text-muted" style="font-size:11px;">0</span>
                                     @endif
                                 </td>
+                                <td style="text-align:center;">
+                                    @if($item->qty_lost > 0)
+                                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-weight:700;font-size:11px;padding:2px 7px;">
+                                            {{ number_format($item->qty_lost, 0, ',', '.') }} {{ $item->unitAbbr() }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted" style="font-size:11px;">0</span>
+                                    @endif
+                                </td>
+                                @endif
                             </tr>
                             @endforeach
                         </tbody>
@@ -481,6 +524,29 @@ function submitShipForm() {
         // safety reset if redirect fails (e.g. validation error)
         setTimeout(() => { isSubmitting = false; }, 3000);
     }, 100);
+}
+
+function validateRowQuantities(index, maxShipped) {
+    const recvInput = document.getElementById('recv_' + index);
+    const dmgInput  = document.getElementById('dmg_' + index);
+    const lostInput = document.getElementById('lost_' + index);
+
+    if (!recvInput || !dmgInput || !lostInput) return;
+
+    let recv = parseFloat(recvInput.value) || 0;
+    let dmg  = parseFloat(dmgInput.value) || 0;
+    let lost = parseFloat(lostInput.value) || 0;
+
+    let total = recv + dmg + lost;
+    if (total > maxShipped) {
+        recvInput.style.borderColor = '#ef4444';
+        dmgInput.style.borderColor  = '#ef4444';
+        lostInput.style.borderColor = '#ef4444';
+    } else {
+        recvInput.style.borderColor = '#cbd5e1';
+        dmgInput.style.borderColor  = '#fca5a5';
+        lostInput.style.borderColor = '#fcd34d';
+    }
 }
 
 // Close on overlay click

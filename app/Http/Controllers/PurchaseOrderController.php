@@ -16,8 +16,8 @@ class PurchaseOrderController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
-            if (!$user || (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']) && !$user->can('view purchase orders'))) {
-                abort(403, 'Akses ditolak: Hanya Admin Gudang Pusat dan Admin PO yang berhak mengakses Purchase Order.');
+            if (!$user || (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin', 'Admin PO']) && !$user->can('view purchase orders'))) {
+                abort(403, 'Akses ditolak: Hanya Admin Pusat, Admin Gudang Pusat, dan Admin PO yang berhak mengakses Purchase Order.');
             }
             return $next($request);
         });
@@ -66,6 +66,7 @@ class PurchaseOrderController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('create purchase orders');
         $suppliers    = Supplier::orderBy('name')->get();
         $materials    = Material::with('unit')->orderBy('name')->get();
         $approvedPRs  = ProcurementRequest::where('status','approved')->with('items.material')->get();
@@ -99,6 +100,7 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create purchase orders');
         $validated = $request->validate([
             'supplier_id'                      => 'nullable|exists:suppliers,id',
             'supplier_name'                    => 'nullable|string|max:255',

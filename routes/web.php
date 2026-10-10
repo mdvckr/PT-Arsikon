@@ -160,7 +160,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Admin: Users, Roles, Warehouses, Projects
     Route::resource('users', UserController::class);
-    Route::resource('roles', RoleController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('warehouses', WarehouseController::class)->except(['show']);
     Route::resource('projects', ProjectController::class)->except(['show']);
 

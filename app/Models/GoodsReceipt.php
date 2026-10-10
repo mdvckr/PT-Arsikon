@@ -110,8 +110,8 @@ class GoodsReceipt extends Model
             return false;
         }
 
-        // Owner & Super Admin ('Admin') always have full authority/override
-        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+        // Admin Pusat always has full authority/override
+        if ($user->hasRole('Admin Pusat')) {
             return true;
         }
 

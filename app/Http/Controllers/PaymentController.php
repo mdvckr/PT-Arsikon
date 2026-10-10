@@ -104,6 +104,8 @@ class PaymentController extends Controller
 
     public function verify(Payment $payment)
     {
+        $this->authorize('verify payments');
+
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Status tidak valid untuk diverifikasi.');
         }
@@ -122,6 +124,8 @@ class PaymentController extends Controller
 
     public function reject(Request $request, Payment $payment)
     {
+        $this->authorize('verify payments');
+
         $request->validate(['rejection_reason' => 'required|string']);
         $payment->update([
             'status'           => 'rejected',

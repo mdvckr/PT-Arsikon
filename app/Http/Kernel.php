@@ -17,6 +17,7 @@ class Kernel extends HttpKernel
         // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\SecurityHeaders::class,
+        \App\Http\Middleware\DdosProtection::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
@@ -36,6 +37,7 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\EnsureNotReadOnlyOwner::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\EnsureActiveWorkspace::class,
         ],
@@ -70,6 +72,7 @@ class Kernel extends HttpKernel
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'anti-ddos' => \App\Http\Middleware\DdosProtection::class,
+        'owner.readonly' => \App\Http\Middleware\EnsureNotReadOnlyOwner::class,
     ];
 
 }

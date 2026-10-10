@@ -106,8 +106,8 @@ class Distribution extends Model
             return false;
         }
 
-        // Owner & Super Admin ('Admin') always have full authority/override
-        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+        // Admin Pusat always has full authority/override
+        if ($user->hasRole('Admin Pusat')) {
             return true;
         }
 
@@ -122,7 +122,7 @@ class Distribution extends Model
 
     /**
      * Memeriksa apakah user berhak menyetujui / mengonfirmasi penerimaan (Receive) Surat Jalan ini.
-     * Hanya petugas di GUDANG TUJUAN, Admin Pusat (bila tujuan pusat), atau Owner/Super Admin.
+     * Hanya petugas di GUDANG TUJUAN, Admin Pusat (bila tujuan pusat), atau Admin Pusat.
      */
     public function canUserReceive(?User $user = null): bool
     {
@@ -139,8 +139,8 @@ class Distribution extends Model
             return false;
         }
 
-        // Owner & Super Admin ('Admin') always have full authority/override
-        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+        // Admin Pusat always has full authority/override
+        if ($user->hasRole('Admin Pusat')) {
             return true;
         }
 

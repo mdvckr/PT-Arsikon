@@ -54,9 +54,9 @@ class ProcurementController extends Controller
             ]);
         }
 
-        \App\Services\NotificationHelper::notifyAdmins(
+        \App\Services\NotificationHelper::notifyApprovers(
             "Pengajuan Pengadaan Baru: #{$pr->pr_number}",
-            "Pengajuan pengadaan baru diajukan oleh " . (auth()->user()->name ?? 'User') . ".",
+            "Pengajuan pengadaan baru #{$pr->pr_number} diajukan oleh " . (auth()->user()->name ?? 'User') . ".",
             "approval_needed",
             route('procurement.show', $pr)
         );
@@ -75,6 +75,8 @@ class ProcurementController extends Controller
 
     public function approve(ProcurementRequest $procurement)
     {
+        $this->authorize('approve procurement');
+
         if ($procurement->status !== 'submitted') {
             return back()->with('error', 'Status tidak valid untuk disetujui.');
         }
@@ -88,6 +90,8 @@ class ProcurementController extends Controller
 
     public function reject(Request $request, ProcurementRequest $procurement)
     {
+        $this->authorize('approve procurement');
+
         $request->validate(['rejection_reason' => 'required|string']);
         $procurement->update([
             'status'           => 'rejected',

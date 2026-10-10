@@ -3,394 +3,555 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cetak Surat Jalan — {{ $distribution->distribution_number }}</title>
+    <title>Surat Jalan — {{ $distribution->distribution_number }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: #fff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f1f5f9;
             color: #0f172a;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.45;
         }
 
-        .print-sheet {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 24px 32px;
-            background: #fff;
-        }
-
-        /* ===== KOP SURAT ===== */
-        .kop {
+        /* ===== TOOLBAR CETAK (HANYA DITAMPILKAN DI LAYAR) ===== */
+        .print-toolbar {
+            max-width: 860px;
+            margin: 16px auto;
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding-bottom: 12px;
-            border-bottom: 4px double #c2410c;
+            justify-content: space-between;
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
         }
 
-        .kop-logo {
-            width: 74px;
-            height: 74px;
-            object-fit: contain;
-            flex-shrink: 0;
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
 
-        .kop-text {
-            flex: 1;
-            text-align: center;
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .kop-text .company {
-            font-size: 24px;
-            font-weight: 800;
-            color: #c2410c;
-            letter-spacing: 0.02em;
-        }
-
-        .kop-text .tagline {
-            font-size: 12px;
+        .btn-toolbar {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-toolbar.back {
+            background: #f8fafc;
+            color: #475569;
+            border: 1.5px solid #cbd5e1;
+        }
+        .btn-toolbar.back:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .btn-toolbar.print {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+        .btn-toolbar.print:hover {
+            background: #1d4ed8;
+        }
+
+        .toggle-kop-label {
+            font-size: 12.5px;
             color: #334155;
-            margin-top: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 500;
         }
 
-        .kop-text .address {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 4px;
+        /* ===== A4 PRINT SHEET ===== */
+        .print-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 30px auto;
+            background-color: #ffffff;
+            background-repeat: no-repeat;
+            background-position: top center;
+            background-size: 210mm 297mm;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            position: relative;
+            padding: 48mm 20mm 42mm 20mm; /* Menghindari area Kop di atas dan Ribbon di bawah */
         }
 
-        /* ===== JUDUL DOKUMEN ===== */
-        .doc-title {
+        /* Kelas dengan Background Template Kop */
+        .with-kop-bg {
+            background-image: url('{{ asset('assets/kop-surat-arsikon.png') }}');
+        }
+
+        /* ===== JUDUL SURAT JALAN ===== */
+        .doc-title-block {
             text-align: center;
-            margin: 20px 0 6px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #0f172a;
         }
 
-        .doc-title h2 {
-            font-size: 20px;
+        .doc-title-block h2 {
+            font-size: 17px;
             font-weight: 800;
             color: #0f172a;
             text-transform: uppercase;
             letter-spacing: 0.06em;
+            margin-bottom: 3px;
         }
 
-        .doc-title .doc-no {
-            font-size: 12px;
-            color: #475569;
+        .doc-title-block .doc-number {
+            font-size: 13px;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: 0.03em;
+        }
+
+        .doc-title-block .doc-ref {
+            font-size: 11px;
+            color: #64748b;
             margin-top: 2px;
         }
 
-        /* ===== INFO BARIS ===== */
-        .info-section {
-            margin: 16px 0;
+        /* ===== INFORMASI PENGIRIMAN (METADATA) ===== */
+        .meta-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            margin-bottom: 14px;
         }
 
-        .info-table {
+        .meta-grid {
             width: 100%;
             border-collapse: collapse;
+            font-size: 11.5px;
         }
 
-        .info-table td {
-            padding: 3px 8px;
+        .meta-grid td {
+            padding: 2.5px 4px;
             vertical-align: top;
-            font-size: 12.5px;
-            color: #1e293b;
         }
 
-        .info-table .label {
-            width: 150px;
-            color: #64748b;
+        .meta-grid .lbl {
+            width: 120px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .meta-grid .val {
+            color: #0f172a;
             font-weight: 500;
         }
 
-        /* ===== TABEL ITEM ===== */
-        .item-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
+        .meta-grid .colon {
+            width: 10px;
+            color: #64748b;
+            text-align: center;
         }
 
-        .item-table th {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            padding: 8px 10px;
-            text-align: center;
-            font-size: 11px;
+        /* ===== TABEL DAFTAR BARANG & ALAT ===== */
+        .section-label {
+            font-size: 11.5px;
             font-weight: 700;
-            color: #334155;
             text-transform: uppercase;
+            color: #1e293b;
+            margin: 12px 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             letter-spacing: 0.02em;
         }
 
-        .item-table td {
-            border: 1px solid #cbd5e1;
-            padding: 7px 10px;
-            color: #334155;
-            vertical-align: top;
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.98);
         }
 
-        .item-table td.no { text-align: center; width: 30px; }
-        .item-table td.center { text-align: center; }
-
-        /* ===== TANDA TANGAN ===== */
-        .sign-section {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
+        .table-items thead th {
+            background: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #94a3b8;
+            padding: 6px 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.03em;
             text-align: center;
         }
 
-        .sign-block {
-            width: 45%;
+        .table-items tbody td {
+            border: 1px solid #94a3b8;
+            padding: 5px 7px;
+            color: #1e293b;
+            vertical-align: middle;
         }
 
-        .sign-block .role {
-            font-weight: 700;
-            color: #334155;
-            font-size: 12.5px;
+        .table-items tbody tr:nth-child(even) {
+            background: #fafbfc;
         }
 
-        .sign-block .space {
-            height: 60px;
-        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
 
-        .sign-block .name {
-            font-weight: 600;
-            color: #0f172a;
+        .sku-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 10px;
+            color: #475569;
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 3px;
+            border: 1px solid #e2e8f0;
+            display: inline-block;
         }
-
-        .sign-block .empty { color: #64748b; }
 
         /* ===== CATATAN ===== */
-        .notes-block {
-            margin-top: 16px;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #475569;
+        .notes-card {
+            border: 1px dashed #94a3b8;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            color: #334155;
+            margin-top: 10px;
+            margin-bottom: 16px;
         }
 
-        .notes-block strong { color: #334155; }
-
-        /* ===== TOMBOL PRINT (hanya di layar) ===== */
-        .print-toolbar {
-            text-align: right;
-            padding: 12px 0;
-            max-width: 800px;
-            margin: 0 auto;
+        /* ===== TANDA TANGAN FORMAL ===== */
+        .signature-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: transparent;
         }
 
-        .print-toolbar button {
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 13px;
+        .signature-cell {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 8px;
+        }
+
+        .sig-role {
+            font-size: 11px;
             font-weight: 600;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            margin-left: 8px;
+            color: #334155;
+            margin-bottom: 2px;
         }
 
-        .print-toolbar button:hover { background: #1d4ed8; }
-        .print-toolbar button.back {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
+        .sig-sub {
+            font-size: 10px;
+            color: #64748b;
         }
-        .print-toolbar button.back:hover { background: #e2e8f0; }
 
-        /* ===== PRINT RULES ===== */
+        .sig-space {
+            height: 52px;
+        }
+
+        .sig-name {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #0f172a;
+            border-bottom: 1px solid #0f172a;
+            display: inline-block;
+            min-width: 130px;
+            padding-bottom: 2px;
+        }
+
+        .sig-date {
+            font-size: 9.5px;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        /* ===== MEDIA CETAK (PRINT RULES) ===== */
         @media print {
-            @page {
-                size: A4;
-                margin: 12mm 14mm;
+            body {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
-            body { background: #fff; }
-
-            .print-toolbar { display: none; }
+            .print-toolbar {
+                display: none !important;
+            }
 
             .print-sheet {
-                max-width: 100%;
-                margin: 0;
-                padding: 0;
+                width: 210mm !important;
+                min-height: 297mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
-            .item-table th { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
         }
     </style>
 </head>
 <body>
+
+    {{-- TOOLBAR ATAS (HANYA LAYAR) --}}
     <div class="print-toolbar">
-        <button class="back" onclick="window.history.back()"><i class="fas fa-arrow-left"></i> Kembali</button>
-        <button onclick="window.print()">🖨 Cetak</button>
+        <div class="toolbar-left">
+            <a href="{{ route('distributions.show', $distribution) }}" class="btn-toolbar back">
+                <i class="fas fa-arrow-left"></i> Kembali ke Detail
+            </a>
+            <label class="toggle-kop-label" title="Centang untuk menyertakan background Kop Resmi PT Arsikon saat mencetak">
+                <input type="checkbox" id="toggleKopCheckbox" checked onchange="toggleKopBackground(this)">
+                <span>Sertakan Kop Surat Resmi PT Arsikon</span>
+            </label>
+        </div>
+        <div class="toolbar-right">
+            <button type="button" class="btn-toolbar print" onclick="window.print()">
+                <i class="fas fa-print"></i> Cetak Dokumen (A4)
+            </button>
+        </div>
     </div>
 
-    <div class="print-sheet">
-        {{-- KOP SURAT --}}
-        <div class="kop">
-            <img src="{{ asset('assets/Logo-Dashboard.png') }}" alt="PT ARSIKON CIPTA KARYA" class="kop-logo">
-            <div class="kop-text">
-                <div class="company">PT ARSIKON CIPTA KARYA</div>
-                <div class="tagline">General Contractor </div>
-                <div class="address">Jl. Menuju Cinta &middot; Telp: (021) 555-1234 &middot; Email: info@arsikon.co.id</div>
-            </div>
-        </div>
+    {{-- LEMBAR A4 DOKUMEN --}}
+    <div class="print-sheet with-kop-bg" id="printSheet">
 
         {{-- JUDUL SURAT JALAN --}}
-        <div class="doc-title">
+        <div class="doc-title-block">
             <h2>SURAT JALAN PENGIRIMAN ALAT & MATERIAL</h2>
-            <div class="doc-no">No. {{ $distribution->distribution_number }}</div>
+            <div class="doc-number">No: {{ $distribution->distribution_number }}</div>
+            @if($distribution->surat_jalan)
+                <div class="doc-ref">Ref. Fisik Surat Jalan: <strong>{{ $distribution->surat_jalan }}</strong></div>
+            @endif
         </div>
 
-        {{-- INFO --}}
-        <div class="info-section">
-            <table class="info-table">
+        {{-- METADATA PENGIRIMAN --}}
+        <div class="meta-card">
+            <table class="meta-grid">
                 <tr>
-                    <td class="label">Gudang Asal</td>
-                    <td>:&nbsp;{{ $distribution->fromWarehouse?->name ?? '-' }}</td>
-                    <td class="label">Tanggal Kirim</td>
-                    <td>:&nbsp;{{ $distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-' }}</td>
+                    <td class="lbl">Gudang Asal</td>
+                    <td class="colon">:</td>
+                    <td class="val"><strong>{{ $distribution->fromWarehouse?->name ?? '-' }}</strong></td>
+                    <td class="lbl" style="padding-left:14px;">Tanggal Kirim</td>
+                    <td class="colon">:</td>
+                    <td class="val">{{ $distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="label">Gudang Tujuan</td>
-                    <td>:&nbsp;{{ $distribution->toWarehouse?->name ?? '-' }}</td>
-                    <td class="label">Supir</td>
-                    <td>:&nbsp;{{ $distribution->driver_name ?? '-' }}</td>
+                    <td class="lbl">Gudang Tujuan</td>
+                    <td class="colon">:</td>
+                    <td class="val"><strong>{{ $distribution->toWarehouse?->name ?? '-' }}</strong></td>
+                    <td class="lbl" style="padding-left:14px;">Nama Pengemudi</td>
+                    <td class="colon">:</td>
+                    <td class="val">{{ $distribution->driver_name ?? '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="label">No. Permintaan (Ref)</td>
-                    <td>:&nbsp;{{ $distribution->materialRequest?->request_number ?? '-' }}</td>
-                    <td class="label">No. Polisi</td>
-                    <td>:&nbsp;{{ $distribution->vehicle_number ?? '-' }}</td>
+                    <td class="lbl">No. Permintaan (Ref)</td>
+                    <td class="colon">:</td>
+                    <td class="val">{{ $distribution->materialRequest?->request_number ?? '-' }}</td>
+                    <td class="lbl" style="padding-left:14px;">No. Polisi Kendaraan</td>
+                    <td class="colon">:</td>
+                    <td class="val">{{ $distribution->vehicle_number ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="lbl">Status Pengiriman</td>
+                    <td class="colon">:</td>
+                    <td class="val" style="text-transform:uppercase;font-weight:700;">
+                        {{ $distribution->status === 'completed' ? 'Selesai / Diterima' : ($distribution->status === 'in_transit' ? 'Dalam Pengiriman' : $distribution->status) }}
+                    </td>
+                    <td class="lbl" style="padding-left:14px;">Tanggal Diterima</td>
+                    <td class="colon">:</td>
+                    <td class="val">{{ $distribution->received_at ? \Carbon\Carbon::parse($distribution->received_at)->format('d/m/Y H:i') : '-' }}</td>
                 </tr>
             </table>
         </div>
 
-        {{-- MASTER ITEMS TABLE --}}
-        @php($masterItems = $distribution->items->filter(fn($i) => $i->material_id !== null || $i->tool_id !== null))
-        @php($customItems = $distribution->items->filter(fn($i) => $i->material_id === null && $i->tool_id === null))
-        <h4 style="color:#2563eb;margin:16px 0 8px;font-size:14px;">
-            <i class="fas fa-boxes-stacked"></i> Daftar Barang/Alat (Master)
-        </h4>
-        <table class="item-table">
+        {{-- FILTER MASTER ITEMS & CUSTOM ITEMS --}}
+        @php
+            $masterItems = $distribution->items->filter(fn($i) => $i->material_id !== null || $i->tool_id !== null);
+            $customItems = $distribution->items->filter(fn($i) => $i->material_id === null && $i->tool_id === null);
+        @endphp
+
+        {{-- TABEL ITEM MASTER --}}
+        @if($masterItems->isNotEmpty())
+        <div class="section-label">
+            <i class="fas fa-boxes-stacked" style="color:#2563eb;font-size:11px;"></i>
+            Daftar Material & Alat Kerja (Master Inventori)
+        </div>
+        <table class="table-items">
             <thead>
                 <tr>
-                    <th class="no">No</th>
+                    <th style="width:28px;">No</th>
                     <th style="text-align:left;">Nama Barang / Alat</th>
-                    <th>Kode</th>
-                    <th>Jumlah Kirim</th>
-                    <th>Jumlah Terima</th>
-                    <th>Rusak / Hilang</th>
+                    <th style="width:110px;">Kode / SKU</th>
+                    <th style="width:65px;">Satuan</th>
+                    <th style="width:75px;">Dikirim</th>
+                    <th style="width:75px;">Diterima</th>
+                    <th style="width:65px;">Rusak</th>
+                    <th style="width:75px;">Hilang/Kurang</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($masterItems as $idx => $item)
+                @foreach($masterItems as $idx => $item)
                 <tr>
-                    <td class="no">{{ $idx + 1 }}</td>
+                    <td class="text-center">{{ $idx + 1 }}</td>
                     <td>
-                        {{ $item->name() }}
+                        <strong>{{ $item->name() }}</strong>
                         @if($item->isTool() && $item->toolAssignment)
-                        <div style="font-size:11px;color:#64748b;">{{ $item->toolAssignment->assignment_number }}</div>
+                            <div style="font-size:9.5px;color:#2563eb;">Pinjaman: {{ $item->toolAssignment->assignment_number }}</div>
                         @endif
                     </td>
-                    <td class="center">{{ $item->detail() }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_shipped, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_received, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_damaged_or_lost, 0, ',', '.') }} {{ $item->unitAbbr() }}</td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="center" style="color:#64748b;padding:16px;">Tidak ada item master.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-
-        {{-- CUSTOM/NEW ITEMS TABLE --}}
-        @if($customItems->count() > 0)
-        <h4 style="color:#c2410c;margin:20px 0 8px;font-size:14px;border-bottom:2px solid #c2410c;padding-bottom:4px;">
-            <i class="fas fa-pen-nib"></i> Daftar Barang/Alat Baru (Custom)
-        </h4>
-        <table class="item-table" style="border-top:3px double #c2410c;">
-            <thead>
-                <tr>
-                    <th class="no">No</th>
-                    <th style="text-align:left;">Nama Barang / Alat Baru</th>
-                    <th>Satuan</th>
-                    <th>Jumlah Kirim</th>
-                    <th>Jumlah Terima</th>
-                    <th>Rusak / Hilang</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($customItems as $idx => $item)
-                <tr style="background:#fff8f0;">
-                    <td class="no">{{ $idx + 1 }}</td>
-                    <td>
-                        <strong>{{ $item->custom_item_name ?? '(Item Custom)' }}</strong>
-                        <div style="font-size:11px;color:#c2410c;">Item Custom / Non-Master Stok</div>
+                    <td class="text-center">
+                        <span class="sku-code">{{ $item->detail() ?: '-' }}</span>
                     </td>
-                    <td class="center">{{ $item->custom_item_unit ?? 'unit' }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_shipped, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_received, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
-                    <td class="center">{{ number_format((float)$item->qty_damaged_or_lost, 0, ',', '.') }} {{ $item->custom_item_unit ?? 'unit' }}</td>
+                    <td class="text-center">{{ $item->unitAbbr() }}</td>
+                    <td class="text-center" style="font-weight:700;">{{ number_format((float)$item->qty_shipped, 0, ',', '.') }}</td>
+                    <td class="text-center" style="color:#059669;font-weight:700;">{{ number_format((float)$item->qty_received, 0, ',', '.') }}</td>
+                    <td class="text-center" style="{{ (float)$item->qty_damaged_or_lost > 0 ? 'color:#dc2626;font-weight:700;' : 'color:#64748b;' }}">
+                        {{ number_format((float)$item->qty_damaged_or_lost, 0, ',', '.') }}
+                    </td>
+                    <td class="text-center" style="{{ (float)$item->qty_lost > 0 ? 'color:#d97706;font-weight:700;' : 'color:#64748b;' }}">
+                        {{ number_format((float)$item->qty_lost, 0, ',', '.') }}
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
-        {{-- CATATAN --}}
+        {{-- TABEL ITEM CUSTOM / TAMBAHAN --}}
+        @if($customItems->isNotEmpty())
+        <div class="section-label" style="color:#c2410c;">
+            <i class="fas fa-pen-nib" style="font-size:11px;"></i>
+            Daftar Barang / Alat Tambahan (Custom Non-Master)
+        </div>
+        <table class="table-items">
+            <thead>
+                <tr>
+                    <th style="width:28px;">No</th>
+                    <th style="text-align:left;">Nama Barang / Alat Baru</th>
+                    <th style="width:110px;">Klasifikasi</th>
+                    <th style="width:65px;">Satuan</th>
+                    <th style="width:75px;">Dikirim</th>
+                    <th style="width:75px;">Diterima</th>
+                    <th style="width:65px;">Rusak</th>
+                    <th style="width:75px;">Hilang/Kurang</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($customItems as $idx => $item)
+                <tr>
+                    <td class="text-center">{{ $idx + 1 }}</td>
+                    <td>
+                        <strong>{{ $item->custom_item_name ?? '(Item Custom)' }}</strong>
+                    </td>
+                    <td class="text-center">
+                        <span style="font-size:10px;color:#c2410c;font-weight:600;">Item Tambahan</span>
+                    </td>
+                    <td class="text-center">{{ $item->custom_item_unit ?? 'unit' }}</td>
+                    <td class="text-center" style="font-weight:700;">{{ number_format((float)$item->qty_shipped, 0, ',', '.') }}</td>
+                    <td class="text-center" style="color:#059669;font-weight:700;">{{ number_format((float)$item->qty_received, 0, ',', '.') }}</td>
+                    <td class="text-center" style="{{ (float)$item->qty_damaged_or_lost > 0 ? 'color:#dc2626;font-weight:700;' : 'color:#64748b;' }}">
+                        {{ number_format((float)$item->qty_damaged_or_lost, 0, ',', '.') }}
+                    </td>
+                    <td class="text-center" style="{{ (float)$item->qty_lost > 0 ? 'color:#d97706;font-weight:700;' : 'color:#64748b;' }}">
+                        {{ number_format((float)$item->qty_lost, 0, ',', '.') }}
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        {{-- CATATAN PENGIRIMAN --}}
         @if($distribution->notes)
-        <div class="notes-block">
-            <strong>Catatan:</strong> {{ $distribution->notes }}
+        <div class="notes-card">
+            <strong>Catatan Pengiriman:</strong> {{ $distribution->notes }}
         </div>
         @endif
 
-        {{-- TANDA TANGAN --}}
-        <div class="sign-section">
-            <div class="sign-block">
-                <div class="role">Pengirim,</div>
-                <div class="space"></div>
-                @if($distribution->shippedBy)
-                <div class="name">{{ $distribution->shippedBy->name }}</div>
-                @elseif($distribution->creator)
-                <div class="name">{{ $distribution->creator->name }}</div>
-                @else
-                <div class="name empty"> ..................... </div>
-                @endif
-            </div>
-            <div class="sign-block">
-                <div class="role">Penerima,</div>
-                <div class="space"></div>
-                @if($distribution->receivedBy)
-                <div class="name">{{ $distribution->receivedBy->name }}</div>
-                @else
-                <div class="name empty"> ..................... </div>
-                @endif
-            </div>
-        </div>
+        {{-- AREA TANDA TANGAN (3 PIHAK: PENGIRIM, SUPIR, PENERIMA) --}}
+        <table class="signature-grid">
+            <tr>
+                <td class="signature-cell">
+                    <div class="sig-role">Diserahkan Oleh,</div>
+                    <div class="sig-sub">(Petugas Gudang Asal)</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-name">
+                        {{ $distribution->shippedBy?->name ?? ($distribution->creator?->name ?? '..................................') }}
+                    </div>
+                    <div class="sig-date">Tgl: {{ $distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '___/___/2026' }}</div>
+                </td>
+                <td class="signature-cell">
+                    <div class="sig-role">Membawa / Supir,</div>
+                    <div class="sig-sub">(Jasa Ekspedisi / Driver)</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-name">
+                        {{ $distribution->driver_name ?: '..................................' }}
+                    </div>
+                    <div class="sig-date">No. Pol: {{ $distribution->vehicle_number ?: '..................' }}</div>
+                </td>
+                <td class="signature-cell">
+                    <div class="sig-role">Diterima Oleh,</div>
+                    <div class="sig-sub">(Petugas Gudang Tujuan)</div>
+                    <div class="sig-space"></div>
+                    <div class="sig-name">
+                        {{ $distribution->receivedBy?->name ?? '..................................' }}
+                    </div>
+                    <div class="sig-date">Tgl: {{ $distribution->received_at ? \Carbon\Carbon::parse($distribution->received_at)->format('d/m/Y') : '___/___/2026' }}</div>
+                </td>
+            </tr>
+        </table>
 
         @if($distribution->status === 'in_transit' || $distribution->status === 'draft')
-        <div style="margin-top:16px;text-align:center;font-size:10px;color:#94a3b8;">
-            Catatan: Surat jalan ini perlu ditandatangani dan diverifikasi oleh penerima di gudang tujuan.
+        <div style="margin-top:14px;text-align:center;font-size:9.5px;color:#64748b;font-style:italic;">
+            * Lembar Surat Jalan ini wajib ditandatangani saat serah terima barang dan dikonfirmasi di sistem CWMS PT Arsikon Cipta Karya.
         </div>
         @endif
+
     </div>
 
     <script>
-        window.onload = function() {
-            // Do not auto-print; let user click
-        };
+        function toggleKopBackground(checkbox) {
+            const sheet = document.getElementById('printSheet');
+            if (!sheet) return;
+            if (checkbox.checked) {
+                sheet.classList.add('with-kop-bg');
+            } else {
+                sheet.classList.remove('with-kop-bg');
+            }
+        }
     </script>
 </body>
 </html>

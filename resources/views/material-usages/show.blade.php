@@ -182,7 +182,7 @@
                                     @if($item->isCustom())
                                         <div class="fw-600" style="color:#0f172a;font-size:12.5px;">
                                             {{ $item->displayName() }} 
-                                            <span class="badge" style="font-size:9.5px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;margin-left:3px;padding:1px 4px;">Custom</span>
+                                            <span class="badge" style="font-size:9.5px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;margin-left:3px;padding:1px 4px;">Item Custom</span>
                                         </div>
                                         <div class="text-muted" style="font-size:10.5px;">Non-Master</div>
                                     @else

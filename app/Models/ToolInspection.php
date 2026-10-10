@@ -13,6 +13,7 @@ class ToolInspection extends Model
     protected $fillable = [
         'tool_assignment_id',
         'tool_id',
+        'quantity',
         'inspected_by_user_id',
         'condition',
         'action_taken',

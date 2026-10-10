@@ -18,7 +18,7 @@ class DailyLogController extends Controller
     {
         $this->authorize('view reports');
 
-        if (auth()->user()->hasRole('Karyawan')) {
+        if (auth()->user()->hasRole('Karyawan') && !auth()->user()->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Owner'])) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -34,7 +34,7 @@ class DailyLogController extends Controller
     {
         $this->authorize('view reports');
 
-        if (auth()->user()->hasRole('Karyawan')) {
+        if (auth()->user()->hasRole('Karyawan') && !auth()->user()->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Owner'])) {
             abort(403, 'Akses ditolak.');
         }
 

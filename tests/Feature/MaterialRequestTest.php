@@ -42,6 +42,7 @@ class MaterialRequestTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 50],
@@ -60,6 +61,7 @@ class MaterialRequestTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 50],
@@ -79,6 +81,7 @@ class MaterialRequestTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 5000],
@@ -97,11 +100,12 @@ class MaterialRequestTest extends TestCase
 
     public function test_cannot_create_request_from_central_warehouse(): void
     {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage('hanya boleh dibuat oleh Gudang Proyek');
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('hanya dapat ditujukan ke Gudang Proyek');
 
         $this->requestService->createRequest(
-            $this->centralWarehouse, // Invalid source for request
+            $this->centralWarehouse, // Invalid destination for request
+            $this->projectWarehouse,
             $this->adminUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 10],
@@ -116,6 +120,7 @@ class MaterialRequestTest extends TestCase
         // 1. Submit Hybrid MR (Material inventori + Item manual yang tidak ada di inventori)
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 20],
@@ -151,6 +156,7 @@ class MaterialRequestTest extends TestCase
         // 4. MR yang hanya berisi barang inventori (tanpa item manual) tidak dapat dibuatkan PO
         $standardOnlyMr = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [
                 ['material_id' => $this->semenMaterial->id, 'qty_requested' => 10],

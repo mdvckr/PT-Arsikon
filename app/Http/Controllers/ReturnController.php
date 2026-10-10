@@ -153,8 +153,10 @@ class ReturnController extends Controller
 
     public function approve(MaterialReturn $return)
     {
+        $this->authorize('approve returns');
+
         $user = auth()->user();
-        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $hasAccess = $user->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
 
         if (!$hasAccess) {
@@ -186,8 +188,10 @@ class ReturnController extends Controller
 
     public function receive(MaterialReturn $return)
     {
+        $this->authorize('receive returns');
+
         $user = auth()->user();
-        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $hasAccess = $user->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
 
         if (!$hasAccess) {
@@ -260,8 +264,10 @@ class ReturnController extends Controller
 
     public function reject(Request $request, MaterialReturn $return)
     {
+        $this->authorize('approve returns');
+
         $user = auth()->user();
-        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $hasAccess = $user->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
 
         if (!$hasAccess) {

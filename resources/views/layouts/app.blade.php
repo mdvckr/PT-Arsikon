@@ -1501,6 +1501,9 @@
 </head>
 
 <body
+    data-user-id="{{ auth()->id() ?? '' }}"
+    data-is-admin-pusat="{{ auth()->user()?->hasRole('Admin Pusat') ? '1' : '0' }}"
+    data-is-owner="{{ auth()->user()?->hasRole('Owner') ? '1' : '0' }}"
     data-notif-count="{{ auth()->user()?->unreadNotifications()->count() ?? 0 }}"
     data-notif-last-id="{{ auth()->user()?->unreadNotifications()->latest()->first()?->id ?? '' }}"
     data-notif-url="{{ route('notifications.index') }}"
@@ -2126,6 +2129,23 @@
             return div.innerHTML;
         }
 
+        function updateNotifBadge(count) {
+            const bell = document.querySelector('.topbar-circle-btn[href*="notifications"]');
+            if (bell) {
+                let badge = bell.querySelector('.notif-badge');
+                if (count > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'notif-badge';
+                        bell.appendChild(badge);
+                    }
+                    badge.textContent = count > 99 ? '99+' : count;
+                } else if (badge) {
+                    badge.remove();
+                }
+            }
+        }
+
         function pollNotifications() {
             if (!document.body.dataset.notifFetchUrl) return;
             fetch(document.body.dataset.notifFetchUrl, {
@@ -2137,21 +2157,7 @@
             .then(res => res.json())
             .then(res => {
                 const count = res.count || 0;
-                const bell = document.querySelector('.topbar-circle-btn[href*="notifications"]');
-
-                if (bell) {
-                    let badge = bell.querySelector('.notif-badge');
-                    if (count > 0) {
-                        if (!badge) {
-                            badge = document.createElement('span');
-                            badge.className = 'notif-badge';
-                            bell.appendChild(badge);
-                        }
-                        badge.textContent = count > 99 ? '99+' : count;
-                    } else if (badge) {
-                        badge.remove();
-                    }
-                }
+                updateNotifBadge(count);
 
                 if (!isPollerInitialized) {
                     isPollerInitialized = true;
@@ -2177,9 +2183,89 @@
             .catch(() => {});
         }
 
+        // ===== LARAVEL REVERB WEBSOCKET REAL-TIME LISTENER =====
+        function setupRealtimeEcho() {
+            if (!window.Echo) {
+                // Retry if Vite bundle is still parsing
+                setTimeout(setupRealtimeEcho, 500);
+                return;
+            }
+
+            const userId = document.body.dataset.userId;
+            const isAdminPusat = document.body.dataset.isAdminPusat === '1';
+            const isOwner = document.body.dataset.isOwner === '1';
+
+            // 1. Channel notifikasi user individual
+            if (userId) {
+                try {
+                    window.Echo.private(`App.Models.User.${userId}`)
+                        .notification((notification) => {
+                            lastNotifCount = (lastNotifCount || 0) + 1;
+                            updateNotifBadge(lastNotifCount);
+                            playNotificationChime(notification.sound_type || notification.type || 'info');
+                            showNotificationToast({
+                                title: notification.title || 'Notifikasi Baru',
+                                message: notification.message || '',
+                                sound_type: notification.sound_type || notification.type,
+                                type: notification.type || 'info',
+                                url: notification.url || document.body.dataset.notifUrl,
+                                created_at_human: 'Baru saja'
+                            });
+                        });
+                } catch (e) {
+                    console.warn('[Echo] Error connecting to user channel:', e);
+                }
+            }
+
+            // Handler seragam untuk alur permohonan baru
+            function handleIncomingRequest(data) {
+                lastNotifCount = (lastNotifCount || 0) + 1;
+                updateNotifBadge(lastNotifCount);
+                playNotificationChime(data.sound_type || 'approval');
+                showNotificationToast({
+                    title: data.title || 'Pengajuan Baru',
+                    message: data.message || '',
+                    sound_type: data.sound_type || 'approval',
+                    type: data.type || 'approval_needed',
+                    url: data.url || document.body.dataset.notifUrl,
+                    created_at_human: 'Baru saja'
+                });
+            }
+
+            // 2. Private channel khusus Admin Pusat (Approval & Sistem)
+            if (isAdminPusat) {
+                try {
+                    window.Echo.private('admin-pusat')
+                        .listen('.RequestSubmitted', handleIncomingRequest)
+                        .listen('RequestSubmitted', handleIncomingRequest);
+                } catch (e) {
+                    console.warn('[Echo] Error connecting to admin-pusat channel:', e);
+                }
+            }
+
+            // 3. Private channel khusus Owner (Pemantauan Laporan Real-Time)
+            if (isOwner) {
+                try {
+                    window.Echo.private('owner-monitoring')
+                        .listen('.RequestSubmitted', handleIncomingRequest)
+                        .listen('RequestSubmitted', handleIncomingRequest);
+                } catch (e) {
+                    console.warn('[Echo] Error connecting to owner-monitoring channel:', e);
+                }
+            }
+        }
+
+        // Jalankan inisialisasi Echo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupRealtimeEcho);
+        } else {
+            setupRealtimeEcho();
+        }
+
         // Expose globally
         window.playNotificationChime = playNotificationChime;
         window.showNotificationToast = showNotificationToast;
+        window.updateNotifBadge = updateNotifBadge;
 
         // Auto-trigger Toast & Chime for Session Flash messages
         @if(session('success'))
@@ -2221,9 +2307,9 @@
             }, 300);
         @endif
 
-        // Initial check 1.5 seconds after load, then poll every 4 seconds
+        // Polling sebagai jaring pengaman (fallback) jika koneksi WebSocket terputus
         setTimeout(pollNotifications, 1500);
-        setInterval(pollNotifications, 4000);
+        setInterval(pollNotifications, 8000);
 
         // Preserve Sidebar Scroll Position
         (function() {

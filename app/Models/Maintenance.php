@@ -13,6 +13,7 @@ class Maintenance extends Model
     protected $fillable = [
         'maintenance_number',
         'tool_id',
+        'quantity',
         'reported_by_user_id',
         'maintenance_type',
         'cost',

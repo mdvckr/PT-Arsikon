@@ -23,28 +23,60 @@ class MaterialController extends Controller
         // Tentukan apakah user punya akses global (semua gudang)
         $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
 
-        // Untuk akses global, bisa filter per gudang tertentu via query param
-        if ($isGlobalAccess && $request->filled('warehouse_id')) {
-            $filterWarehouseIds = [(int) $request->warehouse_id];
-        } else {
-            $filterWarehouseIds = $accessibleIds;
-        }
-
         // Daftar gudang yang bisa diakses (untuk dropdown filter di view)
         $accessibleWarehouses = $user->accessibleWarehouses();
 
+        // Tentukan gudang yang dipilih (warehouse filter)
+        $requestedWh = $request->query('warehouse_id');
+
+        if ($isGlobalAccess) {
+            if ($requestedWh === 'all') {
+                $filterWarehouseIds = $accessibleIds;
+                $selectedWarehouseId = 'all';
+            } elseif (!empty($requestedWh) && is_numeric($requestedWh)) {
+                $whId = (int) $requestedWh;
+                $filterWarehouseIds = [$whId];
+                $selectedWarehouseId = $whId;
+            } elseif ($request->has('warehouse_id') && empty($requestedWh)) {
+                $filterWarehouseIds = $accessibleIds;
+                $selectedWarehouseId = 'all';
+            } else {
+                // Default: prioritaskan active warehouse user (Gudang Pusat untuk Admin Pusat)
+                $defaultWh = $user->activeWarehouse();
+                if ($defaultWh) {
+                    $filterWarehouseIds = [$defaultWh->id];
+                    $selectedWarehouseId = $defaultWh->id;
+                } else {
+                    $filterWarehouseIds = $accessibleIds;
+                    $selectedWarehouseId = 'all';
+                }
+            }
+        } else {
+            // User non-global: hanya gudang yang diizinkan
+            if (!empty($requestedWh) && in_array((int) $requestedWh, $accessibleIds)) {
+                $whId = (int) $requestedWh;
+                $filterWarehouseIds = [$whId];
+                $selectedWarehouseId = $whId;
+            } else {
+                $defaultWh = $user->activeWarehouse();
+                $whId = $defaultWh && in_array($defaultWh->id, $accessibleIds) ? $defaultWh->id : ($accessibleIds[0] ?? null);
+                $filterWarehouseIds = $whId ? [$whId] : $accessibleIds;
+                $selectedWarehouseId = $whId;
+            }
+        }
+
         $categoryQuery = Category::query()
             ->where('type', 'material')
-            ->with(['materials' => function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
-                $q->with(['unit', 'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse'), 'stockMutations', 'supplier']);
+            ->with(['materials' => function ($q) use ($request, $filterWarehouseIds, $selectedWarehouseId) {
+                $q->with([
+                    'unit',
+                    'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse'),
+                    'stockMutations' => fn($smq) => $smq->whereIn('warehouse_id', $filterWarehouseIds),
+                    'supplier'
+                ]);
 
-                // Untuk non-global: hanya tampilkan material yang punya stok di gudang yang diakses
-                if (!$isGlobalAccess) {
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                } elseif (!empty($filterWarehouseIds) && count($filterWarehouseIds) < count(Warehouse::pluck('id')->toArray())) {
-                    // Untuk global + filter gudang tertentu: filter material per gudang yang dipilih
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                }
+                // Filter material berdasarkan gudang yang aktif/dipilih
+                $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
 
                 if ($request->search) {
                     $q->where(function ($sub) use ($request) {
@@ -65,11 +97,8 @@ class MaterialController extends Controller
         }
 
         if ($request->search) {
-            $categoryQuery->whereHas('materials', function ($q) use ($request, $filterWarehouseIds, $isGlobalAccess) {
-                // Filter pencarian hanya pada material yang accessible
-                if (!$isGlobalAccess) {
-                    $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
-                }
+            $categoryQuery->whereHas('materials', function ($q) use ($request, $filterWarehouseIds) {
+                $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds));
                 $q->where(function ($sub) use ($request) {
                     $sub->where('name', 'like', "%{$request->search}%")
                       ->orWhere('sku', 'like', "%{$request->search}%")
@@ -82,12 +111,8 @@ class MaterialController extends Controller
             });
         }
 
-        // Untuk non-global: sembunyikan kategori yang tidak punya material di gudang user
-        if (!$isGlobalAccess) {
-            $categoryQuery->whereHas('materials', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
-        } elseif ($request->filled('warehouse_id')) {
-            $categoryQuery->whereHas('materials', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
-        }
+        // Sembunyikan kategori yang tidak punya material di gudang yang dipilih
+        $categoryQuery->whereHas('materials', fn($q) => $q->whereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)));
 
         $categoriesData = $categoryQuery->orderBy('name')->get();
         $filterCategories = Category::query()->where('type', 'material')->orderBy('name')->get();
@@ -97,7 +122,9 @@ class MaterialController extends Controller
             'filterCategories',
             'accessibleIds',
             'isGlobalAccess',
-            'accessibleWarehouses'
+            'accessibleWarehouses',
+            'selectedWarehouseId',
+            'filterWarehouseIds'
         ));
     }
 
@@ -241,25 +268,35 @@ class MaterialController extends Controller
         $validated['type'] = $typeVal;
         $validated['min_stock_central'] = $validated['min_stock'] ?? 0;
 
-        $material = Material::create($validated);
+        // Sanitasi field input form pembantu agar hanya kolom tabel materials yang disimpan
+        $materialData = collect($validated)->only([
+            'sku', 'name', 'brand', 'size', 'type', 'category_id',
+            'supplier_id', 'supplier_name', 'unit_id', 'description',
+            'incoming_stages', 'min_stock_central', 'is_active',
+        ])->all();
 
-        if (!empty($validated['warehouse_id']) && isset($validated['initial_stock']) && $validated['initial_stock'] > 0) {
+        $material = Material::create($materialData);
+
+        if (!empty($validated['warehouse_id'])) {
+            $invQty = isset($validated['initial_stock']) && $validated['initial_stock'] > 0 ? (float) $validated['initial_stock'] : 0.00;
             $inventory = Inventory::create([
                 'warehouse_id' => $validated['warehouse_id'],
                 'material_id'  => $material->id,
-                'quantity'      => $validated['initial_stock'],
+                'quantity'      => $invQty,
                 'min_stock'     => $validated['min_stock'] ?? 0,
             ]);
 
-            StockMutation::create([
-                'material_id'        => $material->id,
-                'warehouse_id'       => $validated['warehouse_id'],
-                'qty_change'         => $validated['initial_stock'],
-                'qty_balance_after'  => $validated['initial_stock'],
-                'reference_type'     => 'Initial Stock',
-                'created_by_user_id' => auth()->id(),
-                'notes'              => 'Stok awal saat pendaftaran material' . ($receivedStagesQty > 0 ? ' (dari akumulasi tahap T-masuk)' : ''),
-            ]);
+            if ($invQty > 0) {
+                StockMutation::create([
+                    'material_id'        => $material->id,
+                    'warehouse_id'       => $validated['warehouse_id'],
+                    'qty_change'         => $invQty,
+                    'qty_balance_after'  => $invQty,
+                    'reference_type'     => 'Initial Stock',
+                    'created_by_user_id' => auth()->id(),
+                    'notes'              => 'Stok awal saat pendaftaran material' . ($receivedStagesQty > 0 ? ' (dari akumulasi tahap T-masuk)' : ''),
+                ]);
+            }
         }
 
         // Handle manual items
@@ -288,14 +325,13 @@ class MaterialController extends Controller
                     'is_active'       => true,
                 ]);
 
-                if (!empty($manualItem['quantity']) && $manualItem['quantity'] > 0) {
-                    Inventory::create([
-                        'warehouse_id' => $manualItem['warehouse_id'],
-                        'material_id'  => $manualMaterial->id,
-                        'quantity'     => $manualItem['quantity'],
-                        'min_stock'    => $manualItem['min_stock'] ?? 0,
-                    ]);
-                }
+                $manQty = !empty($manualItem['quantity']) && $manualItem['quantity'] > 0 ? (float) $manualItem['quantity'] : 0.00;
+                Inventory::create([
+                    'warehouse_id' => $manualItem['warehouse_id'],
+                    'material_id'  => $manualMaterial->id,
+                    'quantity'     => $manQty,
+                    'min_stock'    => $manualItem['min_stock'] ?? 0,
+                ]);
                 $manualCreatedCount++;
             }
         }
@@ -312,7 +348,27 @@ class MaterialController extends Controller
     public function show(Material $material)
     {
         $this->authorize('view materials');
-        $material->load(['category', 'unit', 'supplier', 'inventories.warehouse', 'stockMutations' => fn($q) => $q->with('warehouse')->latest()->limit(20)]);
+        $user = Auth::user();
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $accessibleIds = $user->accessibleWarehouseIds();
+
+        $material->load([
+            'category',
+            'unit',
+            'supplier',
+            'inventories' => function ($q) use ($isGlobalAccess, $accessibleIds) {
+                if (!$isGlobalAccess) {
+                    $q->whereIn('warehouse_id', $accessibleIds);
+                }
+                $q->with('warehouse');
+            },
+            'stockMutations' => function ($q) use ($isGlobalAccess, $accessibleIds) {
+                if (!$isGlobalAccess) {
+                    $q->whereIn('warehouse_id', $accessibleIds);
+                }
+                $q->with('warehouse')->latest()->limit(20);
+            }
+        ]);
 
         return view('materials.show', compact('material'));
     }
@@ -394,6 +450,9 @@ class MaterialController extends Controller
             $typeVal = $category?->name ?? 'Lainnya';
         }
         $validated['type'] = $typeVal;
+
+        // Sanitasi field input form pembantu sebelum mass update ke database
+        unset($validated['supplier'], $validated['new_category'], $validated['new_unit']);
 
         $material->update($validated);
 

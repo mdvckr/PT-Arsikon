@@ -18,7 +18,7 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         // Cek hak akses admin/owner yang dapat melihat seluruh gudang
-        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
+        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
         $accessibleWarehouses = $this->accessibleWarehouses();
 
         // Ambil input warehouse_id dari request query
@@ -35,9 +35,15 @@ class InventoryController extends Controller
                 $warehouseId = null;
                 $selectedWarehouseId = 'all';
             } else {
-                // Default saat awal load: tampilkan 'all' (semua gudang) agar admin dapat melihat inventori secara konsolidasi
-                $selectedWarehouseId = 'all';
-                $warehouseId = null;
+                // Default saat awal load: prioritaskan active warehouse user (misal Gudang Pusat untuk Admin Pusat)
+                $defaultWh = $user->activeWarehouse();
+                if ($defaultWh) {
+                    $warehouseId = $defaultWh->id;
+                    $selectedWarehouseId = $defaultWh->id;
+                } else {
+                    $selectedWarehouseId = 'all';
+                    $warehouseId = null;
+                }
             }
         } else {
             // Untuk Admin Proyek / Karyawan: batasi pilihan hanya pada gudang yang ditugaskan kepadanya
@@ -46,10 +52,8 @@ class InventoryController extends Controller
                 $warehouseId = (int)$requestedWarehouseId;
                 $selectedWarehouseId = $warehouseId;
             } else {
-                $warehouseId = session('active_warehouse_id') ?? ($userWhIds[0] ?? null);
-                if ($warehouseId && !in_array($warehouseId, $userWhIds)) {
-                    $warehouseId = $userWhIds[0] ?? null;
-                }
+                $defaultWh = $user->activeWarehouse();
+                $warehouseId = $defaultWh && in_array($defaultWh->id, $userWhIds) ? $defaultWh->id : ($userWhIds[0] ?? null);
                 $selectedWarehouseId = $warehouseId;
             }
         }
@@ -314,10 +318,10 @@ class InventoryController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
-            return Warehouse::orderBy('name')->get();
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+            return Warehouse::where('is_active', true)->orderBy('name')->get();
         }
 
-        return $user->warehouses()->orderBy('name')->get();
+        return $user->warehouses()->where('is_active', true)->orderBy('name')->get();
     }
 }

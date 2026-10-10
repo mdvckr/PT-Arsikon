@@ -3,9 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class SystemNotification extends Notification
+class SystemNotification extends Notification implements ShouldBroadcastNow
 {
     use Queueable;
 
@@ -29,12 +31,20 @@ class SystemNotification extends Notification
 
     /**
      * Get the notification's delivery channels.
+     * Mengirim ke database sekaligus menyiarkan secara real-time via WebSocket (Reverb).
      *
      * @return array<int, string>
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        // Aktifkan channel broadcast jika Reverb / Pusher aktif dan bukan saat unit testing
+        if (config('broadcasting.default') !== 'null' && !app()->runningUnitTests()) {
+            $channels[] = 'broadcast';
+        }
+
+        return $channels;
     }
 
     /**
@@ -51,6 +61,21 @@ class SystemNotification extends Notification
             'url'        => $this->url,
             'sound_type' => $this->sound_type ?: $this->resolveSoundType(),
         ];
+    }
+
+    /**
+     * Payload data khusus untuk siaran real-time WebSocket Reverb.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'title'      => $this->title,
+            'message'    => $this->message,
+            'type'       => $this->type,
+            'url'        => $this->url,
+            'sound_type' => $this->sound_type ?: $this->resolveSoundType(),
+            'created_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**

@@ -383,7 +383,9 @@ class DistributionController extends Controller
             'items'                          => 'required|array',
             'items.*.distribution_item_id'   => 'required|exists:distribution_items,id',
             'items.*.received_quantity'      => 'required|numeric|min:0',
+            'items.*.qty_damaged'            => 'nullable|numeric|min:0',
             'items.*.qty_damaged_or_lost'    => 'nullable|numeric|min:0',
+            'items.*.qty_lost'               => 'nullable|numeric|min:0',
         ]);
 
         $this->service->receive($distribution, $request->items, auth()->id(), $request->filled('surat_jalan') ? $request->surat_jalan : null);

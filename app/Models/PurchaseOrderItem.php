@@ -19,6 +19,7 @@ class PurchaseOrderItem extends Model
         'received_qty',
         'unit_price',
         'subtotal',
+        'total_price',
         'unit',
         'notes',
     ];

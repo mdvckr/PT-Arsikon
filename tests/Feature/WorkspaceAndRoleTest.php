@@ -23,8 +23,11 @@ class WorkspaceAndRoleTest extends TestCase
     public function test_roles_and_permissions_are_seeded_correctly(): void
     {
         $this->assertTrue(Role::where('name', 'Owner')->exists());
-        $this->assertTrue(Role::where('name', 'Admin')->exists());
-        $this->assertTrue(Role::where('name', 'User')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Pusat')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Gudang Pusat')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Gudang Proyek')->exists());
+        $this->assertTrue(Role::where('name', 'Admin PO')->exists());
+        $this->assertTrue(Role::where('name', 'Karyawan')->exists());
 
         $owner = User::where('email', 'owner@arsikon.co.id')->first();
         $admin = User::where('email', 'admin.pusat@arsikon.co.id')->first();
@@ -34,10 +37,10 @@ class WorkspaceAndRoleTest extends TestCase
         $this->assertTrue($owner->hasRole('Owner'));
 
         $this->assertNotNull($admin);
-        $this->assertTrue($admin->hasRole('Admin'));
+        $this->assertTrue($admin->hasRole('Admin Pusat'));
 
         $this->assertNotNull($user);
-        $this->assertTrue($user->hasRole('User'));
+        $this->assertTrue($user->hasRole('Admin Gudang Proyek'));
     }
 
     public function test_user_can_switch_active_workspace(): void
@@ -80,9 +83,9 @@ class WorkspaceAndRoleTest extends TestCase
         $this->actingAs($adminPo)->get(route('purchase-orders.index'))->assertStatus(200);
         $this->actingAs($adminPo)->get(route('purchase-orders.create'))->assertStatus(200);
 
-        // Owner can access PO index and create
+        // Owner can access PO index (view only) but CANNOT access create (Forbidden 403)
         $this->actingAs($owner)->get(route('purchase-orders.index'))->assertStatus(200);
-        $this->actingAs($owner)->get(route('purchase-orders.create'))->assertStatus(200);
+        $this->actingAs($owner)->get(route('purchase-orders.create'))->assertStatus(403);
     }
 
     public function test_admin_gudang_proyek_and_karyawan_cannot_access_or_create_purchase_orders(): void

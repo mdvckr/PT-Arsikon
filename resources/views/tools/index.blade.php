@@ -69,16 +69,17 @@
         <div>
             <div class="flex items-center gap-2.5">
                 <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">Data Alat</h2>
-                @if(!$isGlobalAccess)
-                    @php
-                        $whNames = $accessibleWarehouses->pluck('name')->toArray();
-                        $whLabel = count($whNames) > 0 ? implode(', ', $whNames) : null;
-                    @endphp
-                    @if($whLabel)
-                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;" title="Gudang: {{ $whLabel }}">
-                        <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i> {{ $whLabel }}
+                @php
+                    $currentWhObj = is_numeric($selectedWarehouseId ?? null) ? $accessibleWarehouses->firstWhere('id', (int)$selectedWarehouseId) : null;
+                @endphp
+                @if($currentWhObj)
+                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;" title="Gudang: {{ $currentWhObj->name }}">
+                        <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i> {{ $currentWhObj->name }}{{ $currentWhObj->is_central ? ' (Pusat)' : ' (Proyek)' }}
                     </span>
-                    @endif
+                @elseif(($selectedWarehouseId ?? null) === 'all')
+                    <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;">
+                        <i class="fas fa-boxes-stacked text-primary" style="font-size:10px;"></i> Semua Gudang (Konsolidasi)
+                    </span>
                 @endif
             </div>
             <p class="text-muted" style="font-size:13px;margin:3px 0 0 0;">Kelola inventaris alat kerja dan stok pemakaian per kategori</p>
@@ -117,21 +118,26 @@
                         @endforeach
                     </select>
                 </div>
-                @if($isGlobalAccess)
-                <div style="min-width:190px;">
+                @if($isGlobalAccess || $accessibleWarehouses->count() > 1)
+                <div style="min-width:200px;">
                     <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Filter Gudang</label>
                     <select name="warehouse_id" id="tool-warehouse-filter" class="form-control" onchange="this.form.submit()"
                         style="height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
-                        <option value="">&#127981; Semua Gudang</option>
+                        @if($isGlobalAccess)
+                        <option value="all" {{ ($selectedWarehouseId === 'all') ? 'selected' : '' }}>&#127981; Semua Gudang (Konsolidasi)</option>
+                        @endif
                         @foreach($accessibleWarehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
-                            {{ $wh->name }}{{ $wh->is_central ? ' (Pusat)' : '' }}
+                        <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
+                            {{ $wh->name }}{{ $wh->is_central ? ' (Pusat)' : ' (Proyek)' }}
                         </option>
                         @endforeach
                     </select>
                 </div>
                 @endif
-                @if(request('search') || request('category_id') || request('warehouse_id'))
+                @php
+                    $isFiltered = request('search') || request('category_id') || (request()->has('warehouse_id') && request('warehouse_id') != (auth()->user()->activeWarehouse()?->id ?? ''));
+                @endphp
+                @if($isFiltered)
                 <div>
                     <a href="{{ route('tools.index') }}" class="btn btn-light border" style="height:38px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#64748b;background:#ffffff;" title="Reset Filter">
                         <i class="fas fa-times"></i> Reset

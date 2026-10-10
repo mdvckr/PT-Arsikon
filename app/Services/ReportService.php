@@ -110,7 +110,10 @@ class ReportService
     public function getDiscrepancyReport(User $user): Collection
     {
         $query = DistributionItem::with(['distribution.fromWarehouse', 'distribution.toWarehouse', 'material.unit'])
-            ->where('qty_damaged_or_lost', '>', 0);
+            ->where(function ($q) {
+                $q->where('qty_damaged_or_lost', '>', 0)
+                  ->orWhere('qty_lost', '>', 0);
+            });
 
         if (!$user->hasRole('Owner')) {
             $assignedIds = $user->warehouses()->pluck('warehouses.id');

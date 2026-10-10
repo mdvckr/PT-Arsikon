@@ -16,6 +16,7 @@ class ToolLoan extends Model
         'from_warehouse_id',
         'assigned_by_user_id',
         'approved_by_user_id',
+        'approved_at',
         'borrower_name',
         'borrower_phone',
         'location_name',
@@ -38,6 +39,7 @@ class ToolLoan extends Model
         'assigned_at'        => 'datetime',
         'expected_return_at' => 'date',
         'returned_at'        => 'datetime',
+        'approved_at'        => 'datetime',
         'cancelled_at'       => 'datetime',
     ];
 

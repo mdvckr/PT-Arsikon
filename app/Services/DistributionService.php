@@ -121,6 +121,7 @@ class DistributionService
                         'qty_shipped'         => $qty,
                         'qty_received'        => 0,
                         'qty_damaged_or_lost' => 0,
+                        'qty_lost'            => 0,
                         'notes'               => $item['notes'] ?? null,
                     ]);
                     continue;
@@ -140,6 +141,7 @@ class DistributionService
                         'qty_shipped'         => $qty,
                         'qty_received'        => 0,
                         'qty_damaged_or_lost' => 0,
+                        'qty_lost'            => 0,
                         'notes'               => $item['notes'] ?? null,
                     ]);
                     continue;
@@ -173,6 +175,7 @@ class DistributionService
                         'qty_shipped'         => $qty,
                         'qty_received'        => 0,
                         'qty_damaged_or_lost' => 0,
+                        'qty_lost'            => 0,
                         'notes'               => $item['notes'] ?? null,
                     ]);
                 }
@@ -316,7 +319,7 @@ class DistributionService
                 ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
                 ->get();
             if ($destUsers->isEmpty()) {
-                $destUsers = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
+                $destUsers = User::role(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])->get();
             }
             foreach ($destUsers as $destUser) {
                 NotificationHelper::notifyUser(
@@ -329,8 +332,8 @@ class DistributionService
                 );
             }
 
-            // Notify central admins (Owner, Admin, Admin Gudang Pusat) - always notify for visibility
-            $centralAdmins = User::role(['Owner', 'Admin', 'Admin Gudang Pusat'])->get();
+            // Notify central admins (Owner, Admin Pusat, Admin Gudang Pusat) - always notify for visibility
+            $centralAdmins = User::role(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])->get();
             foreach ($centralAdmins as $admin) {
                 // Avoid duplicate notification if already notified as destUser
                 if (!$destUsers->contains('id', $admin->id)) {
@@ -400,21 +403,25 @@ class DistributionService
                     throw new Exception("Item Surat Jalan tidak ditemukan.");
                 }
 
-                $qtyReceived = (float) ($itemData['received_quantity'] ?? 0);
-                $qtyDamaged  = isset($itemData['qty_damaged_or_lost']) ? (float) $itemData['qty_damaged_or_lost'] : 0;
+                $qtyReceived = (float) ($itemData['received_quantity'] ?? $itemData['qty_received'] ?? 0);
+                $qtyDamaged  = isset($itemData['qty_damaged'])
+                    ? (float) $itemData['qty_damaged']
+                    : (isset($itemData['qty_damaged_or_lost']) ? (float) $itemData['qty_damaged_or_lost'] : 0);
+                $qtyLost     = isset($itemData['qty_lost']) ? (float) $itemData['qty_lost'] : 0;
                 $qtyShipped  = (float) $distributionItem->qty_shipped;
 
-                if (($qtyReceived + $qtyDamaged) > $qtyShipped) {
-                    throw new Exception("Total diterima + rusak melebihi jumlah kirim ({$qtyShipped}).");
+                if ($qtyReceived < 0 || $qtyDamaged < 0 || $qtyLost < 0) {
+                    throw new Exception("Jumlah diterima, rusak, atau hilang tidak boleh bernilai negatif.");
                 }
 
-                if ($qtyReceived < 0 || $qtyDamaged < 0) {
-                    throw new Exception("Jumlah diterima/rusak tidak boleh negatif.");
+                if (($qtyReceived + $qtyDamaged + $qtyLost) > $qtyShipped) {
+                    throw new Exception("Total diterima ({$qtyReceived}) + rusak ({$qtyDamaged}) + hilang ({$qtyLost}) melebihi jumlah kirim ({$qtyShipped}).");
                 }
 
                 $distributionItem->update([
                     'qty_received'        => $qtyReceived,
                     'qty_damaged_or_lost' => $qtyDamaged,
+                    'qty_lost'            => $qtyLost,
                 ]);
 
                 if ($distributionItem->isTool()) {

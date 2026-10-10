@@ -76,6 +76,7 @@ class DistributionAndReceivingTest extends TestCase
         // 1. Project User creates request for 200 bags
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 200]]
         );
@@ -149,6 +150,7 @@ class DistributionAndReceivingTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
         );
@@ -182,6 +184,7 @@ class DistributionAndReceivingTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
         );
@@ -213,6 +216,7 @@ class DistributionAndReceivingTest extends TestCase
     {
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
         );
@@ -343,6 +347,7 @@ class DistributionAndReceivingTest extends TestCase
         // 1. Create MR with status submitted
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser,
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 200]]
         );
@@ -381,6 +386,7 @@ class DistributionAndReceivingTest extends TestCase
         // 1. Employee creates request MR
         $request = $this->requestService->createRequest(
             $this->projectWarehouse,
+            $this->centralWarehouse,
             $this->projectUser, // using projectUser as employee proxy
             [['material_id' => $this->semenMaterial->id, 'qty_requested' => 100]]
         );
@@ -725,6 +731,97 @@ class DistributionAndReceivingTest extends TestCase
         // 4. Assert notifications were dispatched to receiver and adminUser (shipper/central admin)
         \Illuminate\Support\Facades\Notification::assertSentTo($this->projectUser, \App\Notifications\SystemNotification::class);
         \Illuminate\Support\Facades\Notification::assertSentTo($this->adminUser, \App\Notifications\SystemNotification::class);
+    }
+
+    /**
+     * Test reception with lost in transit (qty_lost), damaged goods, and sum validation.
+     */
+    public function test_distribution_reception_tracks_qty_lost_and_validates_sum(): void
+    {
+        // 1. Create distribution shipping 100 bags
+        $distribution = $this->distributionService->create([
+            'from_warehouse_id' => $this->centralWarehouse->id,
+            'to_warehouse_id'   => $this->projectWarehouse->id,
+            'delivery_date'     => now()->toDateString(),
+            'driver_name'       => 'Pak Supir Ekspedisi',
+            'vehicle_number'    => 'B 1234 ARS',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 100],
+            ],
+        ], $this->adminUser->id);
+
+        // Ship
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        $distItem = $distribution->items->first();
+
+        // 2. Validate that exceeding qty_shipped throws an Exception (e.g. 90 received + 10 damaged + 5 lost = 105 > 100)
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('melebihi jumlah kirim');
+
+        $this->distributionService->receive($distribution, [
+            [
+                'distribution_item_id' => $distItem->id,
+                'received_quantity'    => 90,
+                'qty_damaged'          => 10,
+                'qty_lost'             => 5,
+            ]
+        ], $this->projectUser->id, 'SJ-LOST-FAIL');
+    }
+
+    /**
+     * Test successful reception storing qty_lost in database without adding to inventory stock.
+     */
+    public function test_distribution_reception_stores_qty_lost_without_adding_to_inventory(): void
+    {
+        $distribution = $this->distributionService->create([
+            'from_warehouse_id' => $this->centralWarehouse->id,
+            'to_warehouse_id'   => $this->projectWarehouse->id,
+            'delivery_date'     => now()->toDateString(),
+            'driver_name'       => 'Pak Supir Ekspedisi',
+            'vehicle_number'    => 'B 5678 ARS',
+            'items' => [
+                ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 100],
+            ],
+        ], $this->adminUser->id);
+
+        $this->distributionService->ship($distribution, $this->adminUser->id);
+
+        $distItem = $distribution->items->first();
+
+        // Receive: 85 good, 10 damaged, 5 lost in transit (Total = 100)
+        $completedDist = $this->distributionService->receive($distribution, [
+            [
+                'distribution_item_id' => $distItem->id,
+                'received_quantity'    => 85,
+                'qty_damaged'          => 10,
+                'qty_lost'             => 5,
+            ]
+        ], $this->projectUser->id, 'SJ-LOST-SUCCESS');
+
+        $this->assertEquals('completed', $completedDist->status);
+
+        $distItem->refresh();
+        $this->assertEquals(85, (float) $distItem->qty_received);
+        $this->assertEquals(10, (float) $distItem->qty_damaged_or_lost);
+        $this->assertEquals(5, (float) $distItem->qty_lost);
+
+        // Ensure ONLY received quantity (85) was added to project warehouse stock
+        $projectStock = Inventory::where('warehouse_id', $this->projectWarehouse->id)
+            ->where('material_id', $this->semenMaterial->id)
+            ->value('quantity');
+        $this->assertEquals(85, (float) $projectStock);
+
+        // Ensure in_transit is completely cleared
+        $inTransitStock = Inventory::where('warehouse_id', $this->projectWarehouse->id)
+            ->where('material_id', $this->semenMaterial->id)
+            ->value('qty_in_transit');
+        $this->assertEquals(0, (float) $inTransitStock);
+
+        // Ensure ReportService discrepancy report finds this item
+        $reportService = app(\App\Services\ReportService::class);
+        $discrepancies = $reportService->getDiscrepancyReport($this->adminUser);
+        $this->assertTrue($discrepancies->contains('id', $distItem->id));
     }
 }
 

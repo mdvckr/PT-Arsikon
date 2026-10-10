@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\SecureFilterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Material extends Model
 {
-    use HasFactory;
+    use HasFactory, SecureFilterable;
 
     protected $fillable = [
         'category_id',
@@ -25,6 +26,9 @@ class Material extends Model
         'is_active',
         'description',
         'incoming_stages',
+        'supplier',
+        'new_category',
+        'new_unit',
     ];
 
     protected $casts = [
@@ -32,6 +36,34 @@ class Material extends Model
         'is_active' => 'boolean',
         'incoming_stages' => 'array',
     ];
+
+    /**
+     * Virtual mutator: form helper for new category on-the-fly.
+     * Prevents persisting nonexistent column to materials table.
+     */
+    public function setNewCategoryAttribute($value): void
+    {
+        // Handled via controller relationship resolution
+    }
+
+    /**
+     * Virtual mutator: form helper for new unit on-the-fly.
+     * Prevents persisting nonexistent column to materials table.
+     */
+    public function setNewUnitAttribute($value): void
+    {
+        // Handled via controller relationship resolution
+    }
+
+    /**
+     * Virtual mutator: form helper for supplier text name.
+     */
+    public function setSupplierAttribute($value): void
+    {
+        if (!empty($value) && empty($this->attributes['supplier_name'])) {
+            $this->attributes['supplier_name'] = trim($value);
+        }
+    }
 
     public function category(): BelongsTo
     {

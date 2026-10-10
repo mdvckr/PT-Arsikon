@@ -17,6 +17,7 @@ class MaterialRequest extends Model
         'to_warehouse_id',
         'requested_by_user_id',
         'approved_by_user_id',
+        'approved_at',
         'status',
         'rejection_reason',
         'notes',

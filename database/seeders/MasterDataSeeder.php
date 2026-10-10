@@ -34,7 +34,7 @@ class MasterDataSeeder extends Seeder
         $unitSak = Unit::firstOrCreate(['code' => 'sak'], ['name' => 'Sak / Bag', 'is_decimal' => false]);
         $unitM3 = Unit::firstOrCreate(['code' => 'm3'], ['name' => 'Meter Kubik', 'is_decimal' => true]);
 
-        // 2. Seed Categories (Material)
+        // 2. Seed Categories (Material & Tool)
         $catArsitek = Category::firstOrCreate(
             ['code' => 'CAT-ARS'],
             ['name' => 'ARSITEK', 'type' => 'material', 'description' => 'Material kategori Arsitektur']
@@ -47,6 +47,13 @@ class MasterDataSeeder extends Seeder
             ['code' => 'CAT-STR'],
             ['name' => 'STRUKTUR', 'type' => 'material', 'description' => 'Material kategori Struktur']
         );
-
+        $catAlatBerat = Category::firstOrCreate(
+            ['code' => 'CAT-TOOL-01'],
+            ['name' => 'Alat Berat & Elektrik', 'type' => 'tool', 'description' => 'Genset, molen, bor listrik']
+        );
+        $catAlatTangan = Category::firstOrCreate(
+            ['code' => 'CAT-TOOL-02'],
+            ['name' => 'Alat Tangan', 'type' => 'tool', 'description' => 'Cangkul, sekop, gerobak dorong']
+        );
     }
 }
