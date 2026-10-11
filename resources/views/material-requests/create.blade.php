@@ -288,8 +288,8 @@
                             <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;">
                                 <thead>
                                     <tr style="background:#fef3c7;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:#92400e;">
-                                        <th style="min-width:180px;padding:6px 8px;">Nama Barang (Manual)</th>
-                                        <th style="min-width:140px;padding:6px 8px;">Kategori</th>
+                                        <th style="min-width:200px;padding:6px 8px;">Nama Barang (Manual)</th>
+                                        <th style="min-width:220px;padding:6px 8px;">Kategori</th>
                                         <th style="width:75px;text-align:center;padding:6px 8px;">Satuan</th>
                                         <th style="width:85px;text-align:center;padding:6px 8px;">Jumlah</th>
                                         <th style="width:36px;text-align:center;padding:6px 4px;"></th>
@@ -520,7 +520,7 @@
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #fef3c7';
 
-            let categoryOptions = `<option value="">Material Khusus Proyek (Otomatis)</option>`;
+            let categoryOptions = `<option value="">Material Khusus (Otomatis)</option>`;
             @foreach($materialCategories as $cat)
                 categoryOptions += `<option value="{{ $cat->id }}">{{ addslashes($cat->name) }}</option>`;
             @endforeach
@@ -528,7 +528,7 @@
             tr.innerHTML = `
                 <td style="padding:5px 8px;"><input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:30px;border-radius:4px;"></td>
                 <td style="padding:5px 6px;">
-                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11.5px;height:30px;border-radius:4px;">
+                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11.5px;height:30px;border-radius:4px;padding:0 24px 0 8px;">
                         ${categoryOptions}
                     </select>
                 </td>

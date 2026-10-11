@@ -1039,6 +1039,12 @@
                     });
                 });
             });
+
+            @if(!request('search') && !request('stock_level') && !request('item_type'))
+            // Default: collapse all categories if no search/filter is applied
+            toggleAllGroups('mat', false);
+            toggleAllGroups('tool', false);
+            @endif
         });
 
         // Global Expand / Collapse All Helper
