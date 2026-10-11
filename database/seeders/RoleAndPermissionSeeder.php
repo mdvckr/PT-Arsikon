@@ -254,7 +254,7 @@ class RoleAndPermissionSeeder extends Seeder
         $adminRole->syncPermissions(Permission::all());
 
         $adminPusatUser = User::firstOrCreate(
-            ['email' => '   '],
+            ['email' => 'admin.pusat@arsikon.co.id'],
             [
                 'name'     => 'Admin Pusat',
                 'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
