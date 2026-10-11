@@ -116,7 +116,7 @@
                                 <i class="fas fa-shield-halved text-purple"></i>
                                 <h3 class="section-title">Role / Jabatan Pengguna <span class="text-danger">*</span></h3>
                             </div>
-                            @if(auth()->user()->hasRole('Admin Pusat') || auth()->user()->hasRole('Owner') || auth()->user()->hasRole('Admin'))
+                            @if(auth()->user()->hasAnyRole(['Admin Pusat', 'Owner']))
                             <a href="{{ route('roles.index') }}" target="_blank" class="role-manage-link" title="Buka kelola jabatan di tab baru">
                                 <i class="fas fa-sliders"></i> Kelola Jabatan
                             </a>

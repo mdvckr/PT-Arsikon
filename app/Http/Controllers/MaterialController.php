@@ -21,7 +21,7 @@ class MaterialController extends Controller
         $accessibleIds = $user->accessibleWarehouseIds();
 
         // Tentukan apakah user punya akses global (semua gudang)
-        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat']);
 
         // Daftar gudang yang bisa diakses (untuk dropdown filter di view)
         $accessibleWarehouses = $user->accessibleWarehouses();
@@ -349,7 +349,7 @@ class MaterialController extends Controller
     {
         $this->authorize('view materials');
         $user = Auth::user();
-        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat']);
         $accessibleIds = $user->accessibleWarehouseIds();
 
         $material->load([
@@ -608,7 +608,7 @@ class MaterialController extends Controller
     public function deleteGroup(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('delete materials') && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        if (!$user->can('delete materials') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus kelompok material.');
         }
 

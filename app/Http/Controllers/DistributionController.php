@@ -26,7 +26,7 @@ class DistributionController extends Controller
         $query = Distribution::with(['fromWarehouse', 'toWarehouse', 'materialRequest', 'creator', 'items.tool']);
 
         // Non-admin: wajib scope ke warehouse yang dimiliki user
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $userWhIds = $user->accessibleWarehouseIds();
             $query->where(function ($q) use ($userWhIds) {
                 $q->whereIn('from_warehouse_id', $userWhIds)
@@ -62,8 +62,12 @@ class DistributionController extends Controller
         // Seluruh gudang aktif tersedia sebagai pilihan tujuan pengiriman
         $warehouses = Warehouse::where('is_active', true)->orderByRaw('is_central DESC')->orderBy('name')->get();
 
-        // 1. Permintaan Material (MR) dari user / proyek (submitted, approved, partially_fulfilled)
-        $materialRequests = \App\Models\MaterialRequest::with([
+        // 1. Permintaan Material (MR) yang valid untuk dikirim via Surat Jalan:
+        // MR harus diajukan oleh si peminta/penerima (to_warehouse_id) kepada gudang sumber penyedia (from_warehouse_id).
+        // Gudang pengirim tidak memproses MR yang diajukan oleh dirinya sendiri ke pihak lain.
+        $accessibleWarehouseIds = $user->accessibleWarehouseIds();
+
+        $mrQuery = \App\Models\MaterialRequest::with([
             'items.material.unit',
             'items.material.category',
             'fromWarehouse',
@@ -71,16 +75,24 @@ class DistributionController extends Controller
             'requestedBy',
             'approvedBy',
         ])
-        ->whereIn('status', ['submitted', 'approved', 'partially_fulfilled'])
-        ->orderBy('id', 'desc')
-        ->get()
-        ->filter(function ($mr) {
-            return $mr->items->contains(function ($it) {
-                $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
-                return $approved - (float) $it->qty_fulfilled > 0;
-            });
-        })
-        ->values();
+        ->whereIn('status', ['submitted', 'approved', 'partially_fulfilled']);
+
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+            // Non-admin pusat: hanya dapat memproses MR yang meminta barang ke gudang miliknya (from_warehouse_id)
+            // dan bukan MR yang diminta oleh gudang miliknya sendiri (to_warehouse_id)
+            $mrQuery->whereIn('from_warehouse_id', $accessibleWarehouseIds)
+                    ->whereNotIn('to_warehouse_id', $accessibleWarehouseIds);
+        }
+
+        $materialRequests = $mrQuery->orderBy('id', 'desc')
+            ->get()
+            ->filter(function ($mr) {
+                return $mr->items->contains(function ($it) {
+                    $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
+                    return $approved - (float) $it->qty_fulfilled > 0;
+                });
+            })
+            ->values();
 
         $mrsFormatted = $materialRequests->map(function ($mr) {
             $items = [];
@@ -399,7 +411,7 @@ class DistributionController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             return Warehouse::orderBy('name')->get();
         }
 

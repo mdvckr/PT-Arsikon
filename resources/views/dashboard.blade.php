@@ -343,7 +343,7 @@
             $userRoleText = 'Owner / Direksi';
         } elseif ($authUser->hasRole('Admin Pusat')) {
             $userRoleText = 'Admin Pusat';
-        } elseif ($authUser->hasRole('Admin Gudang Pusat') || ($authUser->hasRole('Admin') && !$authUser->hasRole('Admin Gudang Proyek'))) {
+        } elseif ($authUser->hasRole('Admin Gudang Pusat')) {
             $userRoleText = 'Admin Gudang Pusat';
         } elseif ($authUser->hasRole('Admin Gudang Proyek')) {
             $userRoleText = 'Admin Gudang Proyek';

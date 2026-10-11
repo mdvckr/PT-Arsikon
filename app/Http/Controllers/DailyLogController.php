@@ -54,7 +54,7 @@ class DailyLogController extends Controller
         $dateStr = $request->input('date', date('Y-m-d'));
         $date = Carbon::parse($dateStr)->toDateString();
 
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])
             ? Warehouse::orderBy('name')->get()
             : $user->warehouses;
 

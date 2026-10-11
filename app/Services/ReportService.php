@@ -30,12 +30,12 @@ class ReportService
             $query->where('warehouse_id', $selectedWarehouse->id);
         } else {
             // Apply user role scoping
-            if ($user->hasRole(['Admin', 'Admin Gudang Pusat'])) {
+            if ($user->hasRole('Admin Gudang Pusat')) {
                 $central = Warehouse::where('is_central', true)->first();
                 if ($central) {
                     $query->where('warehouse_id', $central->id);
                 }
-            } elseif (!$user->hasRole('Owner')) {
+            } elseif (!$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
                 $assignedIds = $user->warehouses()->pluck('warehouses.id');
                 $query->whereIn('warehouse_id', $assignedIds);
             }
@@ -83,12 +83,12 @@ class ReportService
             }
             $query->where('warehouse_id', $warehouse->id);
         } else {
-            if ($user->hasRole('Admin')) {
+            if ($user->hasRole('Admin Gudang Pusat')) {
                 $central = Warehouse::where('is_central', true)->first();
                 if ($central) {
                     $query->where('warehouse_id', $central->id);
                 }
-            } elseif (!$user->hasRole('Owner')) {
+            } elseif (!$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
                 $assignedIds = $user->warehouses()->pluck('warehouses.id');
                 $query->whereIn('warehouse_id', $assignedIds);
             }

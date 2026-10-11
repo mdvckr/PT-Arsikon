@@ -11,7 +11,7 @@
                 <p class="text-muted" style="font-size:13px;margin:2px 0 0 0;">Kelola data proyek konstruksi beserta site pergudangan terkait.</p>
             </div>
         </div>
-        @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+        @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
         <div class="flex items-center gap-2">
             <a href="{{ route('projects.create') }}" class="btn btn-primary" style="border-radius:9px;padding:9px 18px;font-weight:700;">
                 <i class="fas fa-plus-circle"></i> Tambah Proyek & Gudang
@@ -98,7 +98,7 @@
                         </td>
                         <td>
                             <div class="flex gap-1">
-                                @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                                @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('projects.edit', $proj) }}" class="btn btn-sm btn-warning btn-icon" title="Edit"><i class="fas fa-pen"></i></a>
                                 <form method="POST" action="{{ route('projects.destroy', $proj) }}" onsubmit="return confirm('Hapus proyek {{ addslashes($proj->name) }}?')">
                                     @csrf @method('DELETE')

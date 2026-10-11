@@ -123,25 +123,15 @@
                 $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
             @endphp
 
-            @if(in_array($materialRequest->status, ['submitted', 'approved', 'partially_fulfilled']))
-                @can('create distributions')
-                <a href="{{ route('distributions.create', ['material_request_id' => $materialRequest->id]) }}" class="btn btn-primary btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                    <i class="fas fa-truck-fast"></i> Buat Surat Jalan
-                </a>
-                @endcan
-
-                @if($hasCustomItems && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']))
+            @if($hasCustomItems && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
                 <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
                     <i class="fas fa-cart-shopping"></i> Buat PO (Item Manual)
                 </a>
-                @endif
-
-                @can('create material usages')
-                <a href="{{ route('material-usages.create', ['warehouse_id' => $materialRequest->from_warehouse_id]) }}" class="btn btn-sm btn-light border" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;color:#475569;">
-                    <i class="fas fa-boxes-packing"></i> Pengeluaran
-                </a>
-                @endcan
             @endif
+
+            <a href="{{ route('material-requests.show', $materialRequest) }}?print=1" target="_blank" class="btn btn-sm" style="background:#0f172a;border-color:#0f172a;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                <i class="fas fa-file-pdf"></i> Print PDF
+            </a>
 
             @if($materialRequest->status === 'submitted')
                 @can('approve material requests')
@@ -184,7 +174,7 @@
                             Permintaan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
                         </span>
                     </div>
-                    @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Gudang Pusat', 'Admin', 'Admin PO']))
+                    @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
                     <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
                         <i class="fas fa-cart-plus me-1"></i> Buat PO Item Manual
                     </a>
@@ -209,15 +199,14 @@
                         <thead>
                             <tr>
                                 <th style="width:36px;text-align:center;padding:7px 10px;">#</th>
-                                <th style="padding:7px 12px;">Material</th>
-                                <th style="text-align:right;padding:7px 10px;">Qty Diminta</th>
-                                @if(!in_array($materialRequest->status, ['draft', 'submitted']))
-                                <th style="text-align:right;padding:7px 10px;">Disetujui</th>
-                                <th style="text-align:right;padding:7px 10px;">Sudah Keluar</th>
-                                <th style="text-align:right;padding:7px 10px;">Sisa</th>
-                                @endif
-                                <th style="text-align:center;padding:7px 10px;">Satuan</th>
-                                <th style="text-align:center;padding:7px 10px;">Status</th>
+                                <th style="min-width:160px;padding:7px 12px;">Material</th>
+                                <th style="min-width:120px;padding:7px 10px;">Spesifikasi</th>
+                                <th style="text-align:right;padding:7px 10px;width:95px;">Qty Diminta</th>
+                                <th style="text-align:right;padding:7px 10px;width:85px;">Disetujui</th>
+                                <th style="text-align:center;padding:7px 10px;width:70px;">Satuan</th>
+                                <th style="text-align:center;padding:7px 10px;width:105px;">Tgl Pakai</th>
+                                <th style="min-width:130px;padding:7px 10px;">Alokasi / Zona</th>
+                                <th style="text-align:center;padding:7px 10px;width:90px;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -242,16 +231,21 @@
                                         @if($isCustom) Manual — tidak ada di Pusat @else Kode: {{ $item->material?->code ?? '-' }} @endif
                                     </div>
                                 </td>
-                                <td class="fw-600" style="text-align:right;">{{ format_quantity($item->qty_requested) }}</td>
-                                @if(!in_array($materialRequest->status, ['draft', 'submitted']))
-                                <td class="fw-700" style="text-align:right;color:#2563eb;">{{ format_quantity($approved) }}</td>
-                                <td class="fw-600 text-muted" style="text-align:right;">{{ format_quantity($fulfilled) }}</td>
-                                <td class="fw-700 {{ $remaining > 0 ? 'text-success' : 'text-muted' }}" style="text-align:right;">
-                                    {{ format_quantity($remaining) }}
+                                <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
+                                    {{ $item->specification ?: '-' }}
                                 </td>
-                                @endif
-                                <td style="text-align:center;">{{ $unit }}</td>
-                                <td style="text-align:center;">
+                                <td class="fw-600" style="text-align:right;padding:8px 10px;">{{ format_quantity($item->qty_requested) }}</td>
+                                <td class="fw-700" style="text-align:right;color:#2563eb;padding:8px 10px;">
+                                    {{ in_array($materialRequest->status, ['draft', 'submitted']) ? '-' : format_quantity($approved) }}
+                                </td>
+                                <td style="text-align:center;padding:8px 10px;">{{ $unit }}</td>
+                                <td style="text-align:center;font-size:11.5px;color:#334155;padding:8px 10px;">
+                                    {{ $item->usage_date ? \Carbon\Carbon::parse($item->usage_date)->format('d/m/Y') : '-' }}
+                                </td>
+                                <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
+                                    {{ $item->usage_location ?: '-' }}
+                                </td>
+                                <td style="text-align:center;padding:8px 10px;">
                                     @if(in_array($materialRequest->status, ['draft', 'submitted']))
                                         <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Menunggu</span>
                                     @elseif($fulfilled >= $approved && $approved > 0)

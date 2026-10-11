@@ -496,7 +496,7 @@
                     <div class="mb-2">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;">
                             <label class="form-label mb-0" style="font-size:11px; font-weight:600; color:#334155;">Gudang Sumber <span class="text-danger">*</span></label>
-                            @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
+                            @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
                             <button type="button" onclick="toggleWarehouseSwitch()" style="background:none; border:none; padding:0; font-size:10.5px; color:#2563eb; font-weight:600; cursor:pointer;" title="Ganti Gudang">
                                 <i class="fas fa-arrow-right-arrow-left" style="font-size:9.5px;"></i> Ganti
                             </button>
@@ -519,7 +519,7 @@
                             </span>
                         </div>
 
-                        @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']))
+                        @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
                         <div id="warehouseSwitchWrapper" style="display:none; margin-top:5px;">
                             <select id="warehousePickerDropdown" class="form-control" onchange="onWarehouseChanged(this.value)" style="height:34px; padding:5px 9px; font-size:12px; border-radius:6px; border-color:#93c5fd; box-sizing:border-box;">
                                 @foreach($warehouses as $wh)

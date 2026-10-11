@@ -26,6 +26,13 @@ class RoleAndPermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Bersihkan role non-kanonikal lama (Admin, User) jika masih tersisa
+        Role::whereIn('name', ['Admin', 'User'])->each(function ($legacyRole) {
+            $legacyRole->users()->detach();
+            $legacyRole->permissions()->detach();
+            $legacyRole->delete();
+        });
+
         // ==========================================================
         // 1. Define Canonical Permissions (format spasi, tanpa duplikat)
         // ==========================================================
@@ -250,9 +257,6 @@ class RoleAndPermissionSeeder extends Seeder
         ]);
 
         // 2. Admin Pusat (Full Akses & Kelola Akun/Gudang/Jabatan)
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        $adminRole->syncPermissions(Permission::all());
-
         $adminPusatUser = User::firstOrCreate(
             ['email' => 'admin.pusat@arsikon.co.id'],
             [
@@ -261,7 +265,7 @@ class RoleAndPermissionSeeder extends Seeder
             ]
         );
         $adminPusatUser->update(['name' => 'Admin Pusat']);
-        $adminPusatUser->syncRoles([$adminPusatRole, $adminRole]);
+        $adminPusatUser->syncRoles([$adminPusatRole]);
         $adminPusatUser->warehouses()->syncWithoutDetaching([
             $centralWarehouse->id,
             $projectWarehouseA->id,
@@ -281,9 +285,6 @@ class RoleAndPermissionSeeder extends Seeder
         $adminGudangPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
 
         // 4. Admin Gudang Proyek (Proyek A)
-        $userRole = Role::firstOrCreate(['name' => 'User']);
-        $userRole->syncPermissions($proyekPermissions);
-
         $adminProyek1 = User::firstOrCreate(
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
@@ -291,7 +292,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
-        $adminProyek1->syncRoles([$adminProyekRole, $userRole]);
+        $adminProyek1->syncRoles([$adminProyekRole]);
         $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
         // 5. User Proyek (Proyek A)
@@ -302,7 +303,7 @@ class RoleAndPermissionSeeder extends Seeder
                 'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
             ]
         );
-        $userProyek->syncRoles([$userRole, $adminProyekRole]);
+        $userProyek->syncRoles([$adminProyekRole]);
         $userProyek->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
         // 6. Admin PO (Pengadaan)

@@ -169,26 +169,26 @@
                     </div>
                     <div class="card-body" style="padding:18px;">
                         <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;color:#64748b;">
-                            Pilih dokumen permintaan yang telah disetujui untuk mengisi rute dan daftar barang secara otomatis:
+                            Pilih dokumen Permintaan Material (MR) dari gudang pemohon/penerima untuk mengisi rute dan daftar barang otomatis:
                         </p>
 
                         <div class="source-selection-grid">
                             {{-- Dropdown MR --}}
                             <div>
                                 <label class="form-label" style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">
-                                    Permintaan Material (MR)
+                                    Permintaan Material (MR dari Peminta/Penerima)
                                 </label>
                                 <select id="select-source-mr" class="form-control" style="font-size:12.5px;height:38px;border-radius:8px;font-weight:500;border-color:#cbd5e1;" onchange="onSourceMrSelected(this.value)">
                                     <option value="">— Pilih Permintaan Material —</option>
                                     @foreach($mrsJson as $mr)
                                     <option value="{{ $mr['id'] }}" {{ $initialMrId == $mr['id'] ? 'selected' : '' }}>
-                                        #{{ $mr['number'] }} &bull; {{ $mr['from_warehouse'] }} &rarr; {{ $mr['to_warehouse'] }} ({{ $mr['requester'] }}) [{{ $mr['status_label'] }}]
+                                        #{{ $mr['number'] }} &bull; Peminta: {{ $mr['to_warehouse'] }} ({{ $mr['requester'] }}) &bull; Sumber: {{ $mr['from_warehouse'] }} [{{ $mr['status_label'] }}]
                                     </option>
                                     @endforeach
                                 </select>
                                 @if(empty($mrsJson) || count($mrsJson) === 0)
                                 <div class="text-muted" style="font-size:11px;margin-top:4px;color:#94a3b8;">
-                                    Tidak ada antrean Permintaan Material yang menunggu pengiriman.
+                                    Tidak ada antrean Permintaan Material dari gudang peminta yang menunggu pengiriman.
                                 </div>
                                 @endif
                             </div>
@@ -601,7 +601,7 @@
             hiddenMrId.value = mr.id;
 
             const mrActiveName = document.getElementById('mr-active-name');
-            if (mrActiveName) mrActiveName.textContent = `#${mr.number}`;
+            if (mrActiveName) mrActiveName.textContent = `#${mr.number} (Peminta: ${mr.to_warehouse})`;
 
             // Auto-fill Gudang Rute Pengiriman (Asal = Sumber MR, Tujuan = Gudang yang minta MR)
             if (mr.from_warehouse_id) {
@@ -638,7 +638,7 @@
 
             // Auto-fill Catatan Pengiriman jika masih kosong atau tambahkan
             if (!notesInput.value) {
-                notesInput.value = `Pengiriman barang berdasarkan Permintaan Material #${mr.number}`;
+                notesInput.value = `Pengiriman barang pemenuhan Permintaan Material #${mr.number} (${mr.to_warehouse})`;
             } else if (!notesInput.value.includes(mr.number)) {
                 notesInput.value += ` & MR #${mr.number}`;
             }

@@ -54,7 +54,7 @@ class User extends Authenticatable
      */
     public function accessibleWarehouses(): Collection
     {
-        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin Pusat'])) {
             return Warehouse::where('is_active', true)->orderBy('name')->get();
         }
 
@@ -87,8 +87,8 @@ class User extends Authenticatable
             }
         }
 
-        // Default fallback for Owner/Admin vs User
-        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat'])) {
+        // Default fallback for Owner/Admin Pusat vs User
+        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
             return Warehouse::where('is_central', true)->first() ?? $this->warehouses()->first();
         }
 
@@ -97,7 +97,7 @@ class User extends Authenticatable
 
     public function hasAccessToWarehouse(Warehouse $warehouse): bool
     {
-        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin Pusat'])) {
             return true;
         }
 
@@ -110,7 +110,7 @@ class User extends Authenticatable
 
     /**
      * Mengembalikan array ID warehouse yang boleh diakses user.
-     * Owner/Admin/Admin Pusat: semua warehouse.
+     * Owner/Admin Pusat: semua warehouse.
      * Admin Gudang Pusat: hanya gudang central (is_central = true).
      * Admin Gudang Proyek: hanya gudang project yang ditugaskan.
      * Admin PO: hanya gudang central.
@@ -118,7 +118,7 @@ class User extends Authenticatable
      */
     public function accessibleWarehouseIds(): array
     {
-        if ($this->hasRole('Owner') || $this->hasRole('Admin Pusat') || $this->hasRole('Admin')) {
+        if ($this->hasRole('Owner') || $this->hasRole('Admin Pusat')) {
             return Warehouse::pluck('id')->toArray();
         }
 

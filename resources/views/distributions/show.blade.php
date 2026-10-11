@@ -392,9 +392,14 @@
                         <span class="info-label">Referensi MR</span>
                         <span class="info-val">
                             @if($distribution->materialRequest)
-                            <a href="{{ route('material-requests.show', $distribution->materialRequest) }}" class="text-primary" style="font-size:12px;text-decoration:none;">
-                                <i class="fas fa-link me-1" style="font-size:9px;"></i>{{ $distribution->materialRequest->request_number }}
-                            </a>
+                            <div>
+                                <a href="{{ route('material-requests.show', $distribution->materialRequest) }}" class="text-primary fw-600" style="font-size:12px;text-decoration:none;">
+                                    <i class="fas fa-link me-1" style="font-size:9px;"></i>{{ $distribution->materialRequest->request_number }}
+                                </a>
+                                <div class="text-muted" style="font-size:10.5px;margin-top:1px;">
+                                    Peminta: {{ $distribution->toWarehouse?->name }}
+                                </div>
+                            </div>
                             @else
                             -
                             @endif

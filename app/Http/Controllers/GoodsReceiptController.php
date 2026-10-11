@@ -27,7 +27,7 @@ class GoodsReceiptController extends Controller
             ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId));
 
         // Batasi ke gudang yang boleh diakses user (kecuali Owner/Admin)
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $allowedIds = $user->warehouses->pluck('id');
             $query->whereIn('warehouse_id', $allowedIds);
         }
@@ -360,7 +360,7 @@ class GoodsReceiptController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             return Warehouse::where('is_active', true)
                 ->orWhere('is_central', true)
                 ->orderBy('name')

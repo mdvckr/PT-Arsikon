@@ -6,7 +6,7 @@
             <h2 class="fw-700" style="font-size:20px;color:#0f172a;">Data Pengguna</h2>
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola akun pengguna, peran / jabatan, dan penugasan gudang aktif</p>
         </div>
-        @if(auth()->user()->can('create users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+        @if(auth()->user()->can('create users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
         <div class="flex items-center gap-2">
             <a href="{{ route('roles.index') }}" class="btn btn-secondary" style="font-weight:600;display:inline-flex;align-items:center;gap:6px;">
                 <i class="fas fa-id-badge"></i> Kelola Jabatan
@@ -133,12 +133,12 @@
                         </td>
                         <td style="text-align:center;vertical-align:middle;">
                             <div class="flex gap-1" style="justify-content:center;">
-                                @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                                @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Pengguna">
                                     <i class="fas fa-pen"></i>
                                 </a>
                                 @endif
-                                @if((auth()->user()->can('delete users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin'])) && $user->id !== auth()->id())
+                                @if((auth()->user()->can('delete users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])) && $user->id !== auth()->id())
                                 <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun pengguna {{ addslashes($user->name) }}?')">
                                     @csrf
                                     @method('DELETE')

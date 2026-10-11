@@ -14,7 +14,7 @@
                 </div>
             </div>
         </div>
-        @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+        @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
         <div class="warehouse-header-action flex items-center gap-2">
             <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-add-wh">
                 <i class="fas fa-plus-circle"></i> Tambah Gudang
@@ -171,7 +171,7 @@
                         </td>
                         <td>
                             <div class="flex items-center justify-center gap-1">
-                                @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                                @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('warehouses.edit', $wh) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Data Gudang">
                                     <i class="fas fa-pen-to-square"></i>
                                 </a>
@@ -205,7 +205,7 @@
                                     <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-rotate-left"></i> Bersihkan Filter
                                     </a>
-                                @elseif(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                                @elseif(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                     <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-plus"></i> Tambah Gudang Pertama
                                     </a>

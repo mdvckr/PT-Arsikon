@@ -41,7 +41,7 @@ class CategoryController extends Controller
     public function destroyCategory(Request $request, Category $category)
     {
         $user = auth()->user();
-        if (!$user->can('delete categories') && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        if (!$user->can('delete categories') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus kategori.');
         }
 
@@ -76,7 +76,7 @@ class CategoryController extends Controller
 
             // Opsi 2: Hapus kategori beserta isinya jika item tidak memiliki mutasi stok
             if ($request->boolean('force_delete_items')) {
-                if (!$user->hasAnyRole(['Owner', 'Admin'])) {
+                if (!$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
                     $errorMsg = 'Hanya Admin atau Owner yang dapat menghapus kategori beserta isinya.';
                     if ($request->expectsJson() || $request->ajax()) {
                         return response()->json(['success' => false, 'message' => $errorMsg], 403);

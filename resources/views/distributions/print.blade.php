@@ -379,7 +379,12 @@
                 <tr>
                     <td class="lbl">No. Permintaan (Ref)</td>
                     <td class="colon">:</td>
-                    <td class="val">{{ $distribution->materialRequest?->request_number ?? '-' }}</td>
+                    <td class="val">
+                        {{ $distribution->materialRequest?->request_number ?? '-' }}
+                        @if($distribution->materialRequest)
+                            <span style="font-size:10px;color:#475569;font-weight:normal;">(Peminta: {{ $distribution->toWarehouse?->name ?? '-' }})</span>
+                        @endif
+                    </td>
                     <td class="lbl" style="padding-left:14px;">No. Polisi Kendaraan</td>
                     <td class="colon">:</td>
                     <td class="val">{{ $distribution->vehicle_number ?? '-' }}</td>

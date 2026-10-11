@@ -187,7 +187,7 @@
                                         <i class="fas fa-plus" style="font-size:9.5px;"></i> Tambah
                                     </a>
                                     @endcan
-                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
                                     <button type="button" 
                                         onclick="event.stopPropagation(); openDeleteCategoryModal({{ $category->id }}, '{{ addslashes($category->name) }}', {{ $totalMaterials }})" 
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;box-shadow:0 1px 2px rgba(0,0,0,0.04);cursor:pointer;" 
@@ -216,7 +216,7 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center" style="gap:10px;">
-                                    @if(auth()->user()->can('delete materials') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+                                    @if(auth()->user()->can('delete materials') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
                                     <button type="button" 
                                         onclick="event.stopPropagation(); openDeleteGroupModal({{ $category->id }}, '{{ addslashes($category->name) }}', '{{ addslashes($typeName) }}', {{ $materialsInType->count() }})" 
                                         style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;cursor:pointer;" 

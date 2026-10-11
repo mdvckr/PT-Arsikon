@@ -12,7 +12,7 @@
         <div class="card">
             <div class="card-header">
                 <i class="fas fa-user-circle text-primary"></i> <span class="card-title">Profil Pengguna</span>
-                @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                 <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning"><i class="fas fa-pen"></i> Edit</a>
                 @endif
             </div>

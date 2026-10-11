@@ -161,7 +161,7 @@ class ProjectController extends Controller
     protected function authorizeProjectAccess(): void
     {
         $user = auth()->user();
-        if (!$user || (!$user->can('projects.manage') && !$user->can('view users') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))) {
+        if (!$user || (!$user->can('projects.manage') && !$user->can('view users') && !$user->hasAnyRole(['Owner', 'Admin Pusat']))) {
             abort(403, 'Akses terbatas untuk Administrator Proyek.');
         }
     }

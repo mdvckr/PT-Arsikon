@@ -537,12 +537,12 @@
                             <span>Wewenang Gudang</span>
                         </div>
                         <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;font-weight:700;border-radius:10px;padding:2px 7px;">
-                            {{ $user->hasAnyRole(['Owner', 'Super Admin']) ? 'Full' : $user->warehouses->count() }} Lokasi
+                            {{ $user->hasAnyRole(['Owner', 'Admin Pusat']) ? 'Full' : $user->warehouses->count() }} Lokasi
                         </span>
                     </div>
 
                     <div class="profile-card-body" style="padding:14px 16px;">
-                        @if($user->hasAnyRole(['Owner', 'Super Admin']))
+                        @if($user->hasAnyRole(['Owner', 'Admin Pusat']))
                             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:11.5px;color:#1e40af;line-height:1.45;">
                                 <div class="flex items-center gap-2 mb-1" style="font-weight:700;">
                                     <i class="fas fa-crown text-warning"></i>

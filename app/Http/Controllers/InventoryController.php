@@ -18,7 +18,7 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         // Cek hak akses admin/owner yang dapat melihat seluruh gudang
-        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO']);
+        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']);
         $accessibleWarehouses = $this->accessibleWarehouses();
 
         // Ambil input warehouse_id dari request query
@@ -318,7 +318,7 @@ class InventoryController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             return Warehouse::where('is_active', true)->orderBy('name')->get();
         }
 

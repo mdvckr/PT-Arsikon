@@ -27,7 +27,7 @@ class ReturnController extends Controller
         $query = MaterialReturn::with(['fromWarehouse','toWarehouse','requester']);
 
         // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $userWarehouseIds = $user->accessibleWarehouseIds();
             $query->where(function ($q) use ($userWarehouseIds) {
                 $q->whereIn('from_warehouse_id', $userWarehouseIds)
@@ -47,7 +47,7 @@ class ReturnController extends Controller
         $this->authorize('create returns');
 
         $user = auth()->user();
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             ? Warehouse::orderBy('name')->get()
             : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
@@ -84,7 +84,7 @@ class ReturnController extends Controller
         $user = auth()->user();
         $fromWarehouse = Warehouse::findOrFail($validated['from_warehouse_id']);
 
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($fromWarehouse)) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($fromWarehouse)) {
             return back()->withInput()->withErrors(['from_warehouse_id' => 'Anda tidak memiliki akses ke gudang asal ini.']);
         }
 
@@ -139,7 +139,7 @@ class ReturnController extends Controller
         $this->authorize('view returns');
 
         $user = auth()->user();
-        $hasAccess = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $hasAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             || ($return->fromWarehouse && $user->hasAccessToWarehouse($return->fromWarehouse))
             || ($return->toWarehouse && $user->hasAccessToWarehouse($return->toWarehouse));
 

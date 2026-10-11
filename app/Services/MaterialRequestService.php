@@ -69,6 +69,9 @@ class MaterialRequestService
                         'qty_requested'       => $qtyRequested,
                         'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
                         'notes'               => $item['notes'] ?? null,
+                        'specification'       => $item['specification'] ?? null,
+                        'usage_location'      => $item['usage_location'] ?? null,
+                        'usage_date'          => $item['usage_date'] ?? null,
                     ]);
                     continue;
                 }
@@ -81,6 +84,9 @@ class MaterialRequestService
                     'qty_requested'       => $qtyRequested,
                     'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
                     'notes'               => $item['notes'] ?? null,
+                    'specification'       => $item['specification'] ?? null,
+                    'usage_location'      => $item['usage_location'] ?? null,
+                    'usage_date'          => $item['usage_date'] ?? null,
                 ]);
             }
 
@@ -97,7 +103,7 @@ class MaterialRequestService
                 // Jika sumber adalah Gudang Proyek lain, beritahu juga admin gudang proyek sumber tersebut
                 if (!$sourceWarehouse->is_central) {
                     $sourceAdmins = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $sourceWarehouse->id))
-                        ->whereHas('roles', fn($r) => $r->whereIn('name', ['Admin Gudang Proyek', 'User']))
+                        ->whereHas('roles', fn($r) => $r->where('name', 'Admin Gudang Proyek'))
                         ->get();
                     foreach ($sourceAdmins as $sAdmin) {
                         if ($sAdmin->id !== $requestedBy->id) {
@@ -171,7 +177,7 @@ class MaterialRequestService
                     route('material-requests.show', $request)
                 );
             }
-            $projectAdmins = User::whereHas('roles', fn($r) => $r->whereIn('name', ['Admin Gudang Proyek', 'User']))
+            $projectAdmins = User::whereHas('roles', fn($r) => $r->where('name', 'Admin Gudang Proyek'))
                 ->whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))
                 ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
                 ->get();
@@ -248,7 +254,7 @@ class MaterialRequestService
         $query = MaterialRequest::query()->with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy', 'items.material.unit']);
 
         // Owner & Admin can view everything, optionally filtered by active warehouse
-        if ($user->hasAnyRole(['Owner', 'Admin'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat'])) {
             if ($activeWarehouseId) {
                 $query->where(function ($q) use ($activeWarehouseId) {
                     $q->where('from_warehouse_id', $activeWarehouseId)

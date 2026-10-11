@@ -28,7 +28,7 @@ class ToolController extends Controller
         $accessibleIds = $user->accessibleWarehouseIds();
 
         // Tentukan apakah user punya akses global (semua gudang)
-        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat']);
 
         // Daftar gudang yang bisa diakses (untuk dropdown filter di view)
         $accessibleWarehouses = $user->accessibleWarehouses();
@@ -342,7 +342,7 @@ class ToolController extends Controller
     {
         $this->authorize('view tools');
         $user = Auth::user();
-        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']);
+        $isGlobalAccess = $user->hasAnyRole(['Owner', 'Admin Pusat']);
         $accessibleIds = $user->accessibleWarehouseIds();
 
         $tool->load([
@@ -601,7 +601,7 @@ class ToolController extends Controller
     public function deleteGroup(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('delete tools') && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat'])) {
+        if (!$user->can('delete tools') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus kelompok alat.');
         }
 

@@ -20,7 +20,7 @@ class MaterialRequestController extends Controller
 
         $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy']);
 
-        if (auth()->user()->hasRole(['User', 'Admin Gudang Proyek', 'Karyawan'])) {
+        if (auth()->user()->hasRole(['Admin Gudang Proyek', 'Karyawan'])) {
             $query->where('requested_by_user_id', auth()->id());
         }
 
@@ -119,11 +119,17 @@ class MaterialRequestController extends Controller
             'needed_at'                  => 'nullable|date|after_or_equal:today',
             'notes'                      => 'nullable|string',
             'quantities'                 => 'nullable|array',
+            'specs'                      => 'nullable|array',
+            'usage_locations'            => 'nullable|array',
+            'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
             'custom_items.*.unit'        => 'nullable|string|max:50',
             'custom_items.*.qty'         => 'required_with:custom_items|numeric|min:0.01',
+            'custom_items.*.spec'        => 'nullable|string|max:255',
+            'custom_items.*.location'    => 'nullable|string|max:255',
+            'custom_items.*.date'        => 'nullable|date',
         ]);
 
         // Validasi: gudang sumber tidak boleh sama dengan gudang tujuan (pemohon)
@@ -141,9 +147,12 @@ class MaterialRequestController extends Controller
                 $qty = (float) $qty;
                 if ($qty <= 0) continue;
                 $itemsData[] = [
-                    'material_id'   => $materialId,
-                    'qty_requested' => $qty,
-                    'notes'         => null,
+                    'material_id'    => $materialId,
+                    'qty_requested'  => $qty,
+                    'notes'          => null,
+                    'specification'  => trim($request->input("specs.{$materialId}") ?? ''),
+                    'usage_location' => trim($request->input("usage_locations.{$materialId}") ?? ''),
+                    'usage_date'     => $request->input("usage_dates.{$materialId}") ?: null,
                 ];
             }
         }
@@ -160,6 +169,9 @@ class MaterialRequestController extends Controller
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
                     'notes'            => 'Manual - tidak ada di gudang sumber',
+                    'specification'    => trim($cItem['spec'] ?? ''),
+                    'usage_location'   => trim($cItem['location'] ?? ''),
+                    'usage_date'       => $cItem['date'] ?? null,
                 ];
             }
         }
@@ -210,15 +222,15 @@ class MaterialRequestController extends Controller
         return response()->json($stocks);
     }
 
-    public function show(MaterialRequest $materialRequest)
+    public function show(Request $request, MaterialRequest $materialRequest)
     {
         $this->authorize('view material requests');
         $materialRequest->load([
-            'requestedBy', 
-            'fromWarehouse', 
-            'toWarehouse', 
-            'approvedBy', 
-            'items.material.unit', 
+            'requestedBy',
+            'fromWarehouse',
+            'toWarehouse.project',
+            'approvedBy',
+            'items.material.unit',
             'items.material.category',
             'materialUsages.issuedBy',
             'materialUsages.warehouse',
@@ -226,6 +238,10 @@ class MaterialRequestController extends Controller
             'distributions.toWarehouse',
             'distributions.creator',
         ]);
+
+        if ($request->boolean('print')) {
+            return view('material-requests.print', compact('materialRequest'));
+        }
 
         return view('material-requests.show', compact('materialRequest'));
     }

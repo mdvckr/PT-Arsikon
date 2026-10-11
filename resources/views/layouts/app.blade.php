@@ -1587,7 +1587,7 @@
                 $roleIcon = 'fa-user-shield';
                 $subHeadline = 'Kantor Pusat (Full Akses)';
                 $subDesc = 'Manajemen pengguna, gudang & sistem';
-            } elseif ($authUser->hasRole('Admin Gudang Pusat') || ($authUser->hasRole('Admin') && !$authUser->hasRole('Admin Gudang Proyek'))) {
+            } elseif ($authUser->hasRole('Admin Gudang Pusat')) {
                 $roleLabel = 'Admin Gudang Pusat';
                 $roleBadge = 'Pusat';
                 $roleIcon = 'fa-building';
@@ -1736,7 +1736,7 @@
             </div>
 
             <!-- PENGADAAN (Admin PO, Admin Pusat & Owner) -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin PO']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Pengadaan</div>
                 <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
@@ -1767,7 +1767,7 @@
             @endcan
 
             <!-- LAPORAN -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Laporan</div>
                 <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
@@ -1782,7 +1782,7 @@
             @endif
 
             <!-- ADMIN (Pengguna, Jabatan, Gudang, Proyek) -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
             <div class="nav-section">
                 <div class="nav-section-label" style="padding: 8px 20px 4px;">Admin</div>
                 <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">

@@ -19,6 +19,9 @@ class MaterialRequestItem extends Model
         'qty_approved',
         'qty_fulfilled',
         'notes',
+        'specification',
+        'usage_location',
+        'usage_date',
     ];
 
     protected $casts = [

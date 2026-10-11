@@ -29,7 +29,7 @@ class ToolAssignmentController extends Controller
         $query = ToolLoan::with(['items.tool.category', 'fromWarehouse', 'assignedBy']);
 
         // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
-        if (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $userWarehouseIds = $user->accessibleWarehouseIds();
             $query->whereIn('from_warehouse_id', $userWarehouseIds);
         }
@@ -62,14 +62,14 @@ class ToolAssignmentController extends Controller
         $this->authorize('create tool assignments');
 
         $user = auth()->user();
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             ? Warehouse::orderBy('name')->get()
             : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
         $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
         $selectedWarehouse = Warehouse::find($activeWarehouseId);
 
-        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
+        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
             $selectedWarehouse = $warehouses->first();
         }
 
@@ -141,7 +141,7 @@ class ToolAssignmentController extends Controller
         $assignedBy  = auth()->user();
 
         // Validasi hak akses user ke gudang ini
-        if ($warehouse && !$assignedBy->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$assignedBy->hasAccessToWarehouse($warehouse)) {
+        if ($warehouse && !$assignedBy->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$assignedBy->hasAccessToWarehouse($warehouse)) {
             return back()->withInput()->withErrors(['warehouse_id' => 'Anda tidak memiliki akses ke gudang ini.']);
         }
 
@@ -246,7 +246,7 @@ class ToolAssignmentController extends Controller
         }
 
         $user = auth()->user();
-        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 
@@ -260,7 +260,7 @@ class ToolAssignmentController extends Controller
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse', 'assignedBy'])->findOrFail($id);
 
         $user = auth()->user();
-        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 
@@ -321,7 +321,7 @@ class ToolAssignmentController extends Controller
         $toolLoan = ToolLoan::with(['items', 'fromWarehouse', 'assignedBy'])->findOrFail($id);
 
         $user = auth()->user();
-        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 
@@ -365,7 +365,7 @@ class ToolAssignmentController extends Controller
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
 
         $user = auth()->user();
-        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 
@@ -522,7 +522,7 @@ class ToolAssignmentController extends Controller
         $toolLoan = ToolLoan::with(['items.tool', 'fromWarehouse'])->findOrFail($id);
 
         $user = auth()->user();
-        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
+        if ($toolLoan->fromWarehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($toolLoan->fromWarehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 

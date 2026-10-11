@@ -153,17 +153,20 @@
                         <table class="data-table mr-item-table mb-0" id="materialsTable">
                             <thead>
                                 <tr>
-                                    <th style="min-width:200px;padding:7px 10px;">Nama Material & Model</th>
-                                    <th style="text-align:center;width:110px;padding:7px 8px;">Ukuran</th>
-                                    <th style="text-align:center;width:105px;padding:7px 8px;">Stok Pusat</th>
-                                    <th style="text-align:center;width:115px;padding:7px 8px;">Jumlah Diminta</th>
+                                    <th style="min-width:185px;padding:7px 10px;">Nama Material &amp; Model</th>
+                                    <th style="text-align:center;width:85px;padding:7px 8px;">Ukuran</th>
+                                    <th style="text-align:center;width:80px;padding:7px 8px;">Stok Pusat</th>
+                                    <th style="text-align:center;width:88px;padding:7px 8px;">Jml Diminta</th>
+                                    <th style="width:128px;padding:7px 8px;">Spesifikasi</th>
+                                    <th style="text-align:center;width:108px;padding:7px 8px;">Tgl Pakai</th>
+                                    <th style="width:122px;padding:7px 8px;">Alokasi / Zona</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($materialCategories as $category)
                                 @php $groupKey = 'mcat-' . $category->id; @endphp
                                 <tr class="cat-toggle" data-group="{{ $groupKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                                    <td colspan="4" style="padding:6px 10px !important;">
+                                    <td colspan="7" style="padding:6px 10px !important;">
                                         <div class="flex items-center justify-between" style="width:100%;">
                                             <div class="flex items-center" style="gap:6px;">
                                                 <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
@@ -206,6 +209,29 @@
                                                value="{{ old('quantities.'.$mat->id, 0) }}"
                                                oninput="validateQtyRow(this); calculateTotal()">
                                     </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="text"
+                                               name="specs[{{ $mat->id }}]"
+                                               class="form-control"
+                                               placeholder="mis. fc'=25 MPa"
+                                               value="{{ old('specs.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="date"
+                                               name="usage_dates[{{ $mat->id }}]"
+                                               class="form-control"
+                                               value="{{ old('usage_dates.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="text"
+                                               name="usage_locations[{{ $mat->id }}]"
+                                               class="form-control"
+                                               placeholder="mis. Cor Pile Cap TC"
+                                               value="{{ old('usage_locations.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
                                 </tr>
                                 @endforeach
                                 @empty
@@ -213,7 +239,7 @@
 
                                 @if($uncategorizedMaterials->isNotEmpty())
                                 <tr class="cat-toggle" data-group="mcat-uncategorized" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                                    <td colspan="4" style="padding:6px 10px !important;">
+                                    <td colspan="7" style="padding:6px 10px !important;">
                                         <div class="flex items-center" style="gap:6px;">
                                             <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
                                             <span class="fw-700" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;color:#1e293b;">Lainnya</span>
@@ -254,13 +280,36 @@
                                                value="{{ old('quantities.'.$mat->id, 0) }}"
                                                oninput="validateQtyRow(this); calculateTotal()">
                                     </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="text"
+                                               name="specs[{{ $mat->id }}]"
+                                               class="form-control"
+                                               placeholder="mis. fc'=25 MPa"
+                                               value="{{ old('specs.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="date"
+                                               name="usage_dates[{{ $mat->id }}]"
+                                               class="form-control"
+                                               value="{{ old('usage_dates.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
+                                    <td style="padding:4px 6px;">
+                                        <input type="text"
+                                               name="usage_locations[{{ $mat->id }}]"
+                                               class="form-control"
+                                               placeholder="mis. Cor Pile Cap TC"
+                                               value="{{ old('usage_locations.'.$mat->id) }}"
+                                               style="height:28px;font-size:11px;padding:2px 6px;">
+                                    </td>
                                 </tr>
                                 @endforeach
                                 @endif
 
                                 @if($materialCategories->isEmpty() && $uncategorizedMaterials->isEmpty())
                                 <tr>
-                                    <td colspan="4" style="text-align:center;padding:28px 16px;color:#94a3b8;">
+                                    <td colspan="7" style="text-align:center;padding:28px 16px;color:#94a3b8;">
                                         <i class="fas fa-inbox" style="font-size:24px;margin-bottom:6px;display:block;color:#cbd5e1;"></i>
                                         <div style="font-weight:600;font-size:12.5px;color:#64748b;">Tidak ada material yang tersedia</div>
                                     </td>
@@ -288,17 +337,55 @@
                             <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;">
                                 <thead>
                                     <tr style="background:#fef3c7;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:#92400e;">
-                                        <th style="min-width:200px;padding:6px 8px;">Nama Barang (Manual)</th>
-                                        <th style="min-width:220px;padding:6px 8px;">Kategori</th>
-                                        <th style="width:75px;text-align:center;padding:6px 8px;">Satuan</th>
-                                        <th style="width:85px;text-align:center;padding:6px 8px;">Jumlah</th>
+                                        <th style="min-width:160px;padding:6px 8px;">Nama Barang (Manual)</th>
+                                        <th style="min-width:100px;padding:6px 8px;">Spesifikasi</th>
+                                        <th style="min-width:160px;padding:6px 8px;">Kategori</th>
+                                        <th style="width:65px;text-align:center;padding:6px 8px;">Satuan</th>
+                                        <th style="width:75px;text-align:center;padding:6px 8px;">Jumlah</th>
+                                        <th style="width:100px;text-align:center;padding:6px 8px;">Tgl Pakai</th>
+                                        <th style="min-width:120px;padding:6px 8px;">Alokasi / Zona</th>
                                         <th style="width:36px;text-align:center;padding:6px 4px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="customRequestBody">
-                                    <tr id="customRequestEmpty">
-                                        <td colspan="5" class="text-center text-muted" style="padding:10px;font-size:11px;">Belum ada barang manual. Klik "Tambah Baris".</td>
+                                    <tr id="customRequestEmpty" style="{{ old('custom_items') && count(old('custom_items')) > 0 ? 'display:none;' : '' }}">
+                                        <td colspan="8" class="text-center text-muted" style="padding:10px;font-size:11px;">Belum ada barang manual. Klik "Tambah Baris".</td>
                                     </tr>
+                                    @if(old('custom_items'))
+                                        @foreach(old('custom_items') as $cIdx => $cItem)
+                                        <tr style="border-bottom: 1px solid #fef3c7;">
+                                            <td style="padding:5px 6px;">
+                                                <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ $cItem['name'] ?? '' }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:11.5px;height:30px;border-radius:4px;">
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:0 20px 0 6px;">
+                                                    <option value="">Material Khusus (Otomatis)</option>
+                                                    @foreach($materialCategories as $cat)
+                                                        <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ $cItem['unit'] ?? 'pcs' }}" placeholder="pcs" style="text-align:center;font-size:11.5px;height:30px;border-radius:4px;">
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <input type="number" name="custom_items[{{ $cIdx }}][qty]" class="form-control qty-input" min="0.01" step="0.01" value="{{ $cItem['qty'] ?? 0 }}" placeholder="0" required style="text-align:center;height:30px;font-size:11.5px;" oninput="calculateTotal()">
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <input type="date" name="custom_items[{{ $cIdx }}][date]" class="form-control" value="{{ $cItem['date'] ?? '' }}" style="font-size:11px;height:30px;border-radius:4px;padding:2px 6px;">
+                                            </td>
+                                            <td style="padding:5px 6px;">
+                                                <input type="text" name="custom_items[{{ $cIdx }}][location]" class="form-control" value="{{ $cItem['location'] ?? '' }}" placeholder="mis. Lantai 2 / Cor TC" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                                            </td>
+                                            <td style="text-align:center;padding:5px 4px;">
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:9px;"></i></button>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -512,7 +599,7 @@
             });
         }
 
-        let customReqIndex = 0;
+        let customReqIndex = {{ count(old('custom_items', [])) }};
         function addCustomRequestRow() {
             const tbody = document.getElementById('customRequestBody');
             const empty = document.getElementById('customRequestEmpty');
@@ -526,15 +613,34 @@
             @endforeach
 
             tr.innerHTML = `
-                <td style="padding:5px 8px;"><input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:30px;border-radius:4px;"></td>
                 <td style="padding:5px 6px;">
-                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11.5px;height:30px;border-radius:4px;padding:0 24px 0 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:11.5px;height:30px;border-radius:4px;">
+                </td>
+                <td style="padding:5px 6px;">
+                    <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                </td>
+                <td style="padding:5px 6px;">
+                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:0 20px 0 6px;">
                         ${categoryOptions}
                     </select>
                 </td>
-                <td style="padding:5px 6px;"><input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:30px;border-radius:4px;"></td>
-                <td style="padding:5px 6px;"><input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="height:30px;" oninput="calculateTotal()"></td>
-                <td style="text-align:center;padding:5px 4px;"><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:9px;"></i></button></td>
+                <td style="padding:5px 6px;">
+                    <input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:11.5px;height:30px;border-radius:4px;">
+                </td>
+                <td style="padding:5px 6px;">
+                    <input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;height:30px;font-size:11.5px;" oninput="calculateTotal()">
+                </td>
+                <td style="padding:5px 6px;">
+                    <input type="date" name="custom_items[${customReqIndex}][date]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:2px 6px;">
+                </td>
+                <td style="padding:5px 6px;">
+                    <input type="text" name="custom_items[${customReqIndex}][location]" class="form-control" placeholder="mis. Lantai 2 / Cor TC" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                </td>
+                <td style="text-align:center;padding:5px 4px;">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-trash" style="font-size:9px;"></i>
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
             customReqIndex++;

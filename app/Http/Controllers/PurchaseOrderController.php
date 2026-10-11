@@ -16,7 +16,7 @@ class PurchaseOrderController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
-            if (!$user || (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin', 'Admin PO']) && !$user->can('view purchase orders'))) {
+            if (!$user || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->can('view purchase orders'))) {
                 abort(403, 'Akses ditolak: Hanya Admin Pusat, Admin Gudang Pusat, dan Admin PO yang berhak mengakses Purchase Order.');
             }
             return $next($request);

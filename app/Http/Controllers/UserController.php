@@ -28,7 +28,7 @@ class UserController extends Controller
         }
 
         $users = $query->latest()->paginate(15)->withQueryString();
-        $roles = Role::all();
+        $roles = $this->getOrderedRoles();
 
         return view('users.index', compact('users', 'roles'));
     }
@@ -36,7 +36,7 @@ class UserController extends Controller
     public function create()
     {
         $this->authorize('create users');
-        $roles      = Role::all();
+        $roles      = $this->getOrderedRoles();
         $warehouses = Warehouse::orderBy('name')->get();
 
         return view('users.create', compact('roles', 'warehouses'));
@@ -98,7 +98,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $this->authorize('edit users');
-        $roles      = Role::all();
+        $roles      = $this->getOrderedRoles();
         $warehouses = Warehouse::orderBy('name')->get();
 
         return view('users.edit', compact('user', 'roles', 'warehouses'));
@@ -165,5 +165,17 @@ class UserController extends Controller
 
         return redirect()->route('users.index')
             ->with('success', "Pengguna '{$name}' berhasil dihapus.");
+    }
+
+    /**
+     * Mengambil seluruh role terurut sesuai urutan kanonikal sistem.
+     */
+    protected function getOrderedRoles()
+    {
+        $order = ['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Karyawan'];
+        return Role::all()->sortBy(function ($r) use ($order) {
+            $pos = array_search($r->name, $order, true);
+            return $pos === false ? 999 : $pos;
+        })->values();
     }
 }

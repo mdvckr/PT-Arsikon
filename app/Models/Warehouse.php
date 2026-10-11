@@ -50,8 +50,8 @@ class Warehouse extends Model
             return $query->where('is_active', true);
         }
 
-        if ($user->hasRole('Admin')) {
-            return $query->where('is_active', true); // backward compat
+        if ($user->hasRole('Admin Pusat')) {
+            return $query->where('is_active', true);
         }
 
         if ($user->hasRole('Admin Gudang Pusat')) {
