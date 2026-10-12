@@ -139,10 +139,20 @@
                 </div>
 
                 <div class="card-body" style="padding:12px 14px;">
-                    {{-- Search Box --}}
-                    <div style="position:relative;margin-bottom:10px;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;"></i>
-                        <input type="text" id="materialSearch" class="form-control" placeholder="Cari nama material, model, atau kategori..." oninput="filterMaterials()" style="padding-left:30px;height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
+                    {{-- Search Box & Category Filter --}}
+                    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                        <div style="flex:2;min-width:180px;position:relative;">
+                            <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;"></i>
+                            <input type="text" id="materialSearch" class="form-control" placeholder="Cari nama material, model..." oninput="filterMaterials()" style="padding-left:30px;height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
+                        </div>
+                        <div style="flex:1;min-width:140px;">
+                            <select id="categoryFilter" class="form-control" onchange="filterMaterials()" style="height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
+                                <option value="">Semua Kategori</option>
+                                @foreach($materialCategories as $cat)
+                                <option value="mcat-{{ $cat->id }}">{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="alert alert-info mb-2" style="font-size:11.5px;padding:8px 12px;border-radius:6px;line-height:1.35;">
@@ -666,24 +676,29 @@
 
         function filterMaterials() {
             var keyword = document.getElementById('materialSearch').value.toLowerCase();
+            var selectedCat = document.getElementById('categoryFilter') ? document.getElementById('categoryFilter').value : '';
             var toggleRows = document.querySelectorAll('.cat-toggle');
             var matRows    = document.querySelectorAll('#materialsTable tbody tr.mat-row');
 
-            if (!keyword) {
-                matRows.forEach(function(r)    { r.style.display = ''; });
-                toggleRows.forEach(function(r) { r.style.display = ''; });
-                return;
-            }
-
-            toggleRows.forEach(function(r) { r.style.display = 'none'; });
+            toggleRows.forEach(function(header) {
+                var group = header.getAttribute('data-group');
+                if (selectedCat && group !== selectedCat) {
+                    header.style.display = 'none';
+                } else {
+                    header.style.display = '';
+                }
+            });
 
             matRows.forEach(function (row) {
                 var text = row.innerText.toLowerCase();
-                if (text.indexOf(keyword) !== -1) {
+                var matchesSearch = !keyword || text.indexOf(keyword) !== -1;
+                var group = Array.from(row.classList).find(function(c) {
+                    return c.startsWith('mcat-') && c !== 'cat-rows';
+                });
+                var matchesCat = !selectedCat || group === selectedCat;
+
+                if (matchesSearch && matchesCat) {
                     row.style.display = '';
-                    var group = Array.from(row.classList).find(function(c) {
-                        return c.startsWith('mcat-') && c !== 'cat-rows';
-                    });
                     if (group) {
                         var header = document.querySelector('.cat-toggle[data-group="' + group + '"]');
                         if (header) header.style.display = '';

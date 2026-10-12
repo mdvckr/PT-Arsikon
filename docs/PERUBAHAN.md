@@ -117,6 +117,26 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganLabelTest.php`: Test merah awal (bukti gagal: assertSee 'PO Lapangan' & assertDontSee 'Permintaan Material') lalu hijau setelah refactor selesai.
 - **Hasil Pengujian**: Seluruh 177 test (588 assertions) berstatus HIJAU (PASS).
 
+### T19. Kategori pada PO Lapangan
+- **Tujuan**:
+  - Menambahkan kolom `category_id` (nullable FK ke `categories` ber-index) pada tabel `material_request_items`.
+  - Mengisi `category_id` pada item master secara otomatis dari kategori material/alat di server dan mengabaikan nilai input klien.
+  - Memvalidasi `category_id` pada item custom (harus valid di database).
+  - Melakukan backfill aman pada migrasi untuk data lama: item master material dan tool diisi dari kategori master datanya; item custom lama dibiarkan NULL.
+  - Menambahkan dropdown filter Kategori di halaman index PO Lapangan menggunakan `whereHas('items', ...)` dengan eager loading `items.category` tanpa N+1 query.
+  - Menampilkan kolom Kategori pada tabel item di halaman detail (`show.blade.php`).
+  - Menambahkan penyaringan pilihan material berbasis kategori di form pembuatan (`create.blade.php`) menggunakan client-side filtering instan tanpa request berulang ke server.
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000004_add_category_id_to_material_request_items_table.php`: Migrasi penambahan kolom `category_id`, foreign key, index, serta script backfill otomatis untuk item master lama.
+  - `app/Models/MaterialRequestItem.php`: Penambahan `category_id` pada `$fillable`, relasi `category(): BelongsTo`, dan method helper `displayCategoryName()`.
+  - `app/Services/MaterialRequestService.php`: Pengisian otomatis `category_id` dari master material untuk item master (mengabaikan input klien) dan validasi `category_id` untuk item custom.
+  - `app/Http/Controllers/MaterialRequestController.php`: Eager load `items.category`, penanganan query filter `category_id`, pengiriman data kategori ke view index, serta eager loading pada method `show`.
+  - `resources/views/material-requests/index.blade.php`: Dropdown filter Kategori pada toolbar pencarian.
+  - `resources/views/material-requests/show.blade.php`: Penambahan kolom Kategori pada rincian tabel Item PO Lapangan.
+  - `resources/views/material-requests/create.blade.php`: Dropdown filter Kategori di atas tabel material dan pembaruan fungsi `filterMaterials()` untuk menyaring material instan.
+  - `tests/Feature/PoLapanganCategoryTest.php`: Pengujian komprehensif (test merah lalu hijau) yang memverifikasi penyimpanan kategori dari master material, penolakan kategori tidak valid pada custom item, penerimaan kategori valid pada custom item, tampilan fallback `-` untuk data lama dengan category NULL, dan filter kategori di index.
+- **Hasil Pengujian**: Seluruh 182 test (603 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

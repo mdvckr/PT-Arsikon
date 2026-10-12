@@ -14,6 +14,7 @@ class MaterialRequestItem extends Model
         'material_request_id',
         'item_type',
         'material_id',
+        'category_id',
         'tool_id',
         'custom_item_name',
         'custom_item_unit',
@@ -51,6 +52,11 @@ class MaterialRequestItem extends Model
         return $this->belongsTo(Material::class);
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function tool(): BelongsTo
     {
         return $this->belongsTo(Tool::class);
@@ -75,5 +81,19 @@ class MaterialRequestItem extends Model
             return $this->custom_item_unit ?? 'unit';
         }
         return $this->material?->unit?->abbreviation ?? 'unit';
+    }
+
+    public function displayCategoryName(): string
+    {
+        if ($this->category) {
+            return $this->category->name;
+        }
+        if ($this->material && $this->material->category) {
+            return $this->material->category->name;
+        }
+        if ($this->tool && $this->tool->category) {
+            return $this->tool->category->name;
+        }
+        return '-';
     }
 }

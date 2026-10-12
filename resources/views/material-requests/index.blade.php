@@ -128,11 +128,20 @@
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
                 </div>
+                <div class="filter-col" style="max-width:180px;">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Kategori</label>
+                    <select name="category_id" class="form-control" onchange="this.form.submit()">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories ?? [] as $cat)
+                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
-                    @if(request()->anyFilled(['search', 'status']))
+                    @if(request()->anyFilled(['search', 'status', 'category_id']))
                     <a href="{{ route('material-requests.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
                         <i class="fas fa-rotate-left" style="font-size:11px;"></i>
                     </a>

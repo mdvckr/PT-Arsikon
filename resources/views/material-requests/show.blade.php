@@ -200,6 +200,7 @@
                             <tr>
                                 <th style="width:36px;text-align:center;padding:7px 10px;">#</th>
                                 <th style="min-width:160px;padding:7px 12px;">Material</th>
+                                <th style="min-width:110px;padding:7px 10px;">Kategori</th>
                                 <th style="min-width:120px;padding:7px 10px;">Spesifikasi</th>
                                 <th style="text-align:right;padding:7px 10px;width:95px;">Qty Diminta</th>
                                 <th style="text-align:right;padding:7px 10px;width:85px;">Disetujui</th>
@@ -230,6 +231,11 @@
                                     <div class="text-muted" style="font-size:10.5px;">
                                         @if($isCustom) Manual — tidak ada di Pusat @else Kode: {{ $item->material?->code ?? '-' }} @endif
                                     </div>
+                                </td>
+                                <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
+                                    <span class="badge" style="background:#f1f5f9;color:#475569;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">
+                                        {{ $item->displayCategoryName() }}
+                                    </span>
                                 </td>
                                 <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
                                     {{ $item->specification ?: '-' }}

@@ -61,9 +61,20 @@ class MaterialRequestService
                     if ($customName === '') {
                         throw new Exception("Nama barang custom tidak boleh kosong.");
                     }
+
+                    $customCategoryId = null;
+                    if (!empty($item['category_id'])) {
+                        $cat = \App\Models\Category::find($item['category_id']);
+                        if (!$cat) {
+                            throw new Exception("Kategori custom tidak valid.");
+                        }
+                        $customCategoryId = $cat->id;
+                    }
+
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
                         'material_id'         => null,
+                        'category_id'         => $customCategoryId,
                         'custom_item_name'    => $customName,
                         'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
                         'qty_requested'       => $qtyRequested,
@@ -81,6 +92,7 @@ class MaterialRequestService
                 MaterialRequestItem::create([
                     'material_request_id' => $request->id,
                     'material_id'         => $material->id,
+                    'category_id'         => $material->category_id, // Server mengisi dari kategori materialnya dan mengabaikan nilai klien
                     'qty_requested'       => $qtyRequested,
                     'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
                     'notes'               => $item['notes'] ?? null,

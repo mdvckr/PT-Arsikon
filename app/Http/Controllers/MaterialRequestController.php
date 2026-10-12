@@ -18,7 +18,7 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('view material requests');
 
-        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy']);
+        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse.project', 'approvedBy', 'items.category']);
 
         if (auth()->user()->hasRole(['Admin Gudang Proyek', 'Karyawan'])) {
             $query->where('requested_by_user_id', auth()->id());
@@ -32,9 +32,16 @@ class MaterialRequestController extends Controller
             $query->where('request_number', 'like', "%{$request->search}%");
         }
 
-        $requests = $query->latest()->paginate(15)->withQueryString();
+        if ($request->filled('category_id')) {
+            $query->whereHas('items', function ($iq) use ($request) {
+                $iq->where('category_id', $request->category_id);
+            });
+        }
 
-        return view('material-requests.index', compact('requests'));
+        $requests = $query->latest()->paginate(15)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+
+        return view('material-requests.index', compact('requests', 'categories'));
     }
 
     public function create()
@@ -230,6 +237,7 @@ class MaterialRequestController extends Controller
             'fromWarehouse',
             'toWarehouse.project',
             'approvedBy',
+            'items.category',
             'items.material.unit',
             'items.material.category',
             'materialUsages.issuedBy',
