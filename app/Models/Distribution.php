@@ -70,6 +70,11 @@ class Distribution extends Model
         return $this->hasMany(DistributionItem::class);
     }
 
+    public function transitLosses(): HasMany
+    {
+        return $this->hasMany(TransitLoss::class);
+    }
+
     public static function generateDistributionNumber(): string
     {
         return \App\Services\DocumentNumberService::generate('DST', (int) date('Y'));

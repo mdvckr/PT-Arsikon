@@ -56,6 +56,11 @@ class DistributionItem extends Model
         return $this->belongsTo(ToolAssignment::class);
     }
 
+    public function transitLosses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TransitLoss::class);
+    }
+
     public function isTool(): bool
     {
         return $this->tool_id !== null;

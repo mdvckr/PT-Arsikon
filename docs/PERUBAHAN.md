@@ -55,6 +55,23 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PurchaseOrderGuardTest.php`: Test merah awal (bukti bug: send dari draft lolos tanpa error, cancel dengan GR confirmed lolos, kuota PR/MR tidak berkurang) lalu hijau setelah guard diimplementasikan.
 - **Hasil Pengujian**: Seluruh 164 test (561 assertions) berstatus HIJAU (PASS).
 
+### T4. Perbaikan Jalur Surat Jalan / Pemindahan Stok (Distributions & Transit Losses)
+- **Tujuan**:
+  - Pengetatan syarat penerbitan Surat Jalan: MR harus berstatus `approved` atau `partially_fulfilled` (menghapus celah auto-approval shortcut saat `submitted`).
+  - Menolak item custom/manual (hanya material terdaftar di master).
+  - Menolak item yang dialokasikan untuk pembelian (`fulfillment == 'purchase'`).
+  - Kuota kirim ketat: `quantity <= (qty_approved - qty_in_transit - qty_received)`.
+  - Saat `ship()`: memotong stok gudang asal dengan mutasi `'distribution_out'` dan menaikkan `qty_in_transit` pada item MR (status MR tidak diubah menjadi fulfilled saat shipped).
+  - Saat `receive()`: menambah stok gudang tujuan dengan mutasi `'distribution_in'`, mengupdate `qty_in_transit` dan `qty_received` pada item MR, mencatat selisih ke tabel baru `transit_losses`, me-zero-out sisa transit selisih, dan menghitung status MR dari `qty_received` (`fulfilled` jika semua diterima penuh, `partially_fulfilled` jika sebagian).
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000003_create_transit_losses_table.php`: Migrasi pembuatan tabel `transit_losses` lengkap dengan relasi ke distributions, goods_receipts, purchase_orders, materials, tools, status claim/recorded, dan tracking approval.
+  - `app/Models/TransitLoss.php`: Model Eloquent untuk pencatatan kerugian/selisih transit.
+  - `app/Models/Distribution.php` & `DistributionItem.php`: Penambahan relasi `transitLosses()`.
+  - `app/Services/DistributionService.php`: Pengetatan validasi status MR, penolakan item custom & purchase, validasi kuota kirim, mutasi stok `'distribution_out'` dan `'distribution_in'`, update `qty_in_transit` & `qty_received` MR, pencatatan `TransitLoss`, dan kalkulasi status MR dari penerimaan riil.
+  - `tests/Feature/DistributionStockTransferTest.php`: Test merah awal (bukti 6 bug/celah) lalu hijau setelah perbaikan.
+  - `tests/Feature/DistributionAndReceivingTest.php`: Penyesuaian test lama agar selaras dengan pengetatan T4.
+- **Hasil Pengujian**: Seluruh 170 test (547 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
