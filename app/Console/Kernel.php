@@ -14,6 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // T13: Notifikasi harian untuk jadwal kedatangan PO terlambat
         $schedule->command('procurement:check-late-schedules')->daily();
+
+        // T17: Pemeriksaan harian peminjaman alat overdue dan notifikasi satu kali
+        $schedule->command('tools:check-overdue-loans')->daily();
     }
 
     /**

@@ -406,6 +406,26 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/CentralToolInProjectTest.php`: Feature test suite 6 skenario mencakup kepemilikan alat pusat saat GR, tidak adanya loan/assignment fiktif, data laporan alat pusat di proyek, dan validasi bilangan bulat di PO, GR, serta MR.
 - **Hasil Pengujian**: Seluruh 249 test (835 assertions) berstatus HIJAU (PASS).
 
+### T17. Peminjaman Alat Internal (Status Overdue & Pemisahan Peran)
+- **Tujuan**:
+  - Menegakkan pemisahan peran persetujuan (Separation of Duties) pada peminjaman alat internal (`ToolAssignmentController`): pengguna yang mengajukan peminjaman (`assigned_by_user_id === auth()->id()`) dilarang keras menyetujui (`approve`) atau menolak (`reject`) permohonannya sendiri, meskipun pengguna tersebut memiliki hak akses/permission approval. Permintaan ditolak dengan pesan error.
+  - Memastikan otorisasi persetujuan peminjaman hanya dapat dieksekusi oleh pengguna berwenang yang berbeda dari pengaju.
+  - Menangani status `overdue` (keterlambatan pengembalian) secara menyeluruh:
+    - Artisan scheduled command harian `tools:check-overdue-loans` (didaftarkan di `app/Console/Kernel.php`): mendeteksi peminjaman aktif (`status == 'active'`) yang melewati batas rencana tanggal pengembalian (`expected_return_at < today`), mengubah status `tool_loans` beserta itemnya menjadi `overdue`.
+    - Mengirimkan notifikasi peringatan keterlambatan tepat satu kali kepada peminjam (bila berakun), pengaju peminjaman, dan penanggung jawab gudang dengan pencatatan timestamp `overdue_notified_at`.
+    - Peminjaman berstatus `overdue` tetap dapat dikembalikan (`return`) melalui form pengembalian dan transisi status secara valid menjadi `returned` (keluar dari status overdue).
+    - Peminjaman berstatus `overdue` dapat dibatalkan (`cancel`) dengan alasan pembatalan valid, dan memulihkan stok inventaris alat kembali ke gudang asal (sama seperti pembatalan peminjaman `active`).
+    - Metrik harian log proyek (`DailyLogService@compile`): KPI alat aktif (`totalToolsActive`) mencakup peminjaman berstatus `active` dan `overdue` agar operasional tetap memantau alat yang masih berada di lapangan.
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000010_add_overdue_notified_at_to_tool_loans_table.php`: Migrasi penambahan kolom timestamp nullable `overdue_notified_at` pada tabel `tool_loans`.
+  - `app/Models/ToolLoan.php`: Penambahan `overdue_notified_at` ke `$fillable` dan `$casts`.
+  - `app/Http/Controllers/ToolAssignmentController.php`: Guard pemisahan peran pada `approve()` dan `reject()`, penerimaan status `overdue` pada `return()` dan `cancel()`, serta pemulihan stok saat cancel dari status overdue.
+  - `app/Console/Commands/CheckOverdueToolLoans.php`: Command harian `tools:check-overdue-loans` untuk deteksi peminjaman overdue dan notifikasi satu kali.
+  - `app/Console/Kernel.php`: Pendaftaran `$schedule->command('tools:check-overdue-loans')->daily();`.
+  - `app/Services/DailyLogService.php`: Penyesuaian hitungan KPI alat aktif mencakup status `active` dan `overdue`.
+  - `tests/Feature/InternalToolLoanOverdueTest.php`: Feature test suite 7 skenario (pemisahan peran approve/reject, approval oleh user berbeda, scheduled command overdue & notifikasi 1x, return dari overdue, cancel dari overdue dengan restorasi stok, dan KPI daily log).
+- **Hasil Pengujian**: Seluruh 256 test (860 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
