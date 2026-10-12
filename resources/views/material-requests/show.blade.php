@@ -207,6 +207,7 @@
                                 <th style="text-align:center;padding:7px 10px;width:70px;">Satuan</th>
                                 <th style="text-align:center;padding:7px 10px;width:105px;">Tgl Pakai</th>
                                 <th style="min-width:130px;padding:7px 10px;">Alokasi / Zona</th>
+                                <th style="min-width:140px;padding:7px 10px;text-align:center;">Stok Tersedia</th>
                                 <th style="text-align:center;padding:7px 10px;width:90px;">Status</th>
                             </tr>
                         </thead>
@@ -250,6 +251,53 @@
                                 </td>
                                 <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
                                     {{ $item->usage_location ?: '-' }}
+                                </td>
+                                <td style="text-align:center;padding:8px 10px;">
+                                    @if($item->fulfillment === 'purchase')
+                                        @php
+                                            $approvedQty = (float) $item->qty_approved;
+                                            $orderedQty  = (float) $item->qty_ordered;
+                                            $remainingOrder = max(0, $approvedQty - $orderedQty);
+                                            $relatedPos = $item->purchaseOrderItems ? $item->purchaseOrderItems->map->purchaseOrder->filter()->unique('id') : collect();
+                                        @endphp
+                                        <div style="font-weight:600;color:#d97706;font-size:11.5px;">
+                                            Sisa dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
+                                        </div>
+                                        @if($relatedPos->isNotEmpty())
+                                            <div style="font-size:10.5px;margin-top:2px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                                                @foreach($relatedPos as $po)
+                                                    <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;text-decoration:none;" title="Lihat PO">
+                                                        <i class="fas fa-file-invoice me-1" style="font-size:9px;"></i>{{ $po->po_number }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    @elseif($item->material_id)
+                                        @php
+                                            $inv = isset($sourceInventories) ? $sourceInventories->get($item->material_id) : null;
+                                            $qtyOnHand = $inv ? (float) $inv->quantity : 0;
+                                            $qtyAllocated = $inv ? (float) ($inv->qty_allocated ?? 0) : 0;
+                                            $availableStock = max(0, $qtyOnHand - $qtyAllocated);
+                                            $targetQty = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+                                            $isSufficient = $availableStock >= $targetQty && $targetQty > 0;
+                                        @endphp
+                                        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                                            <span style="font-weight:700;color:#0f172a;font-size:12px;">
+                                                {{ format_quantity($availableStock) }} {{ $unit }}
+                                            </span>
+                                            @if($isSufficient)
+                                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
+                                                    <i class="fas fa-check me-1" style="font-size:8.5px;"></i>Cukup
+                                                </span>
+                                            @else
+                                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
+                                                    <i class="fas fa-triangle-exclamation me-1" style="font-size:8.5px;"></i>Kurang
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-muted" style="font-size:11px;">-</span>
+                                    @endif
                                 </td>
                                 <td style="text-align:center;padding:8px 10px;">
                                     @if(in_array($materialRequest->status, ['draft', 'submitted']))

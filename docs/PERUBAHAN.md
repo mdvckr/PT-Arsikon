@@ -159,6 +159,25 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganHeaderFieldTest.php`: Test komprehensif memverifikasi penolakan gudang di luar akses (403), penolakan sumber sama dengan target, penolakan tanggal dibutuhkan sebelum hari ini, penyimpanan terpisah tanggal order & dibutuhkan, dan indikator overdue dinamis.
 - **Hasil Pengujian**: Seluruh 187 test (617 assertions) berstatus HIJAU (PASS).
 
+### T21. Fitur di Sebelah Kolom Alokasi ("Stok Tersedia")
+- **Tujuan**:
+  - Menemukan letak kolom "Alokasi" di antarmuka dan menerapkan fitur kolom baru di sebelahnya.
+  - **Temuan Kolom "Alokasi"**: Kolom bertuliskan "Alokasi / Zona" ditemukan pada:
+    1. `resources/views/material-requests/show.blade.php` (tabel rincian item pada halaman detail & persetujuan PO Lapangan) -> Diterapkan di sini.
+    2. `resources/views/material-requests/create.blade.php` (form isian alokasi pemakaian zona kerja saat pengajuan) -> Dicatat sebagai temuan; kolom form input zona tidak memerlukan indikator stok tersedia karena gudang sumber belum tentu dipilih/diverifikasi saat pengetikan item custom.
+  - Menambahkan kolom baru "Stok Tersedia" tepat di sebelah kolom "Alokasi / Zona" pada tabel item halaman detail PO Lapangan (`show.blade.php`):
+    - Untuk item master material: menghitung stok gudang sumber dikurangi alokasi lain yang aktif di inventori (`available_stock = quantity - qty_allocated`).
+    - Menampilkan badge "Cukup" (hijau) jika stok tersedia >= target kuantitas (disetujui/diminta), dan badge "Kurang" (merah) jika stok tersedia < target kuantitas.
+    - Untuk item pemenuhan 'purchase': menampilkan "Sisa dipesan: (qty_approved - qty_ordered)" dilengkapi badge/tautan ke nomor Purchase Order terkait.
+  - Sifat fitur: **hanya baca (read-only)** dihitung di sisi server tanpa mengubah stok fisik/alokasi database dan tidak memblokir tombol persetujuan (murni indikator visual dan peringatan keputusan bagi penyetuju).
+  - Menggunakan query batch agregat (`whereIn('material_id', ...)`) dan eager loading relasi tanpa N+1 query.
+- **Perubahan File**:
+  - `app/Models/MaterialRequestItem.php`: Menambahkan relasi `purchaseOrderItems(): HasMany` ke model `PurchaseOrderItem`.
+  - `app/Http/Controllers/MaterialRequestController.php`: Eager load `items.purchaseOrderItems.purchaseOrder` dan perhitungan agregat batch `$sourceInventories` pada method `show`.
+  - `resources/views/material-requests/show.blade.php`: Penambahan kolom header `Stok Tersedia` dan data baris dengan badge Cukup/Kurang serta info sisa dipesan & tautan PO.
+  - `tests/Feature/PoLapanganAvailableStockTest.php`: Test suite memverifikasi keakuratan perhitungan stok tersedia dengan alokasi aktif, badge Cukup/Kurang, sisa dipesan pada item purchase dengan tautan PO, integritas read-only (stok tidak berubah setelah halaman dilihat), dan bebas N+1 query (query inventori tidak bertambah seiring jumlah item).
+- **Hasil Pengujian**: Seluruh 191 test (631 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

@@ -257,6 +257,7 @@ class MaterialRequestController extends Controller
             'items.category',
             'items.material.unit',
             'items.material.category',
+            'items.purchaseOrderItems.purchaseOrder',
             'materialUsages.issuedBy',
             'materialUsages.warehouse',
             'distributions.fromWarehouse',
@@ -264,11 +265,22 @@ class MaterialRequestController extends Controller
             'distributions.creator',
         ]);
 
+        $sourceWarehouseId = $materialRequest->from_warehouse_id;
+        $materialIds = $materialRequest->items->pluck('material_id')->filter()->unique()->values();
+
+        $sourceInventories = collect();
+        if ($sourceWarehouseId && $materialIds->isNotEmpty()) {
+            $sourceInventories = Inventory::where('warehouse_id', $sourceWarehouseId)
+                ->whereIn('material_id', $materialIds)
+                ->get()
+                ->keyBy('material_id');
+        }
+
         if ($request->boolean('print')) {
             return view('material-requests.print', compact('materialRequest'));
         }
 
-        return view('material-requests.show', compact('materialRequest'));
+        return view('material-requests.show', compact('materialRequest', 'sourceInventories'));
     }
 
     public function approve(MaterialRequest $materialRequest)
