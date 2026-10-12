@@ -59,6 +59,19 @@ class PurchaseOrderItem extends Model
         return $this->hasMany(PoDeliverySchedule::class);
     }
 
+    public function goodsReceiptItems()
+    {
+        return $this->hasMany(GoodsReceiptItem::class);
+    }
+
+    public function getNilaiSahAttribute(): float
+    {
+        $riskBearer = $this->purchaseOrder?->risk_bearer ?? 'vendor';
+        $received = (float) $this->received_qty;
+        $lost = ($riskBearer === 'buyer') ? (float) $this->lost_qty : 0.0;
+        return round(($received + $lost) * (float) $this->unit_price, 2);
+    }
+
     public function material()
     {
         return $this->belongsTo(Material::class);

@@ -426,6 +426,32 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/InternalToolLoanOverdueTest.php`: Feature test suite 7 skenario (pemisahan peran approve/reject, approval oleh user berbeda, scheduled command overdue & notifikasi 1x, return dari overdue, cancel dari overdue dengan restorasi stok, dan KPI daily log).
 - **Hasil Pengujian**: Seluruh 256 test (860 assertions) berstatus HIJAU (PASS).
 
+### T15. Aturan Nilai yang Boleh Dibayar (Payable Rules & Financial Breakdown)
+- **Tujuan**:
+  - Menegakkan aturan nominal pembayaran sah untuk Purchase Order:
+    `nilai_sah = sum((received_qty + (risk_bearer == 'buyer' ? lost_qty : 0)) * unit_price_PO)`
+  - Pembayaran hanya dapat diajukan untuk Purchase Order yang memiliki minimal satu Penerimaan Barang (Goods Receipt / GR) berstatus `confirmed` (bukan sekadar PO berstatus `sent` tanpa kedatangan barang). PO tanpa GR confirmed ditolak di form input dan endpoint penyimpanan.
+  - Jumlah komitmen pembayaran (`pending` + `verified`) divalidasi tidak boleh melebihi total `nilai_sah` seluruh item PO.
+  - Penanganan penanggung risiko pengiriman:
+    - `risk_bearer = 'vendor'`: barang hilang (`lost_qty`) TIDAK menambah nilai sah; selisih ditahan dan tidak ditagihkan ke pembeli.
+    - `risk_bearer = 'buyer'`: barang hilang yang sudah berstatus `confirmed_lost` (disetujui klaim kehilangan) menambah nilai sah dan dapat dibayarkan.
+  - Selama status kehilangan masih `unresolved` (belum ada GR susulan atau persetujuan kehilangan), nominal tersebut ditahan dan belum dapat dibayar.
+  - PO yang berstatus `closed` (short close) tetap dapat dibayarkan hingga batas nilai sah barang yang telah diterima baik sebelum ditutup.
+  - Penyajian ringkasan finansial transparan di antarmuka pengguna:
+    - Halaman Detail PO (`purchase-orders/show.blade.php`): kartu KPI finansial memuat Total Nilai PO, Nilai Sah Saat Ini, Sudah Dibayar, Pending Verifikasi, Sisa Bisa Dibayar, dan Nilai Tertahan, dilengkapi rincian item tertahan (rusak / missing unresolved / tanggungan vendor / belum tiba) beserta alasannya, serta tabel riwayat transaksi pembayaran PO.
+    - Halaman Pengajuan Pembayaran (`payments/create.blade.php`): dropdown PO hanya menampilkan PO yang memiliki minimal satu GR confirmed dan sisa nilai sah > 0; preview finansial komprehensif; input nominal otomatis dibatasi maksimal sebesar sisa nilai sah (`payable_remaining_amount`).
+    - Halaman Detail Pembayaran (`payments/show.blade.php`): kartu informasi PO menampilkan progress pembayaran terhadap nilai sah, nilai sah saat ini, sisa bisa dibayar, dan rincian nilai tertahan.
+  - Transaksi pesimistik dengan `lockForUpdate()` pada model `PurchaseOrder` saat pengajuan pembayaran untuk mencegah double submit / race condition.
+- **Perubahan File**:
+  - `app/Models/PurchaseOrderItem.php`: Penambahan relasi `goodsReceiptItems()` dan accessor helper `getNilaiSahAttribute()`.
+  - `app/Models/PurchaseOrder.php`: Penambahan method `hasConfirmedGoodsReceipt()`, accessors `getNilaiSahAttribute()`, `getCommittedPaymentAmountAttribute()`, `getPendingPaymentAmountAttribute()`, `getVerifiedPaymentAmountAttribute()`, `getPayableRemainingAmountAttribute()`, dan `getWithheldSummaryAttribute()`.
+  - `app/Http/Controllers/PaymentController.php`: Filter PO di `create()` wajib memiliki GR confirmed dan sisa nilai sah > 0; validasi DB transaction pesimistik di `store()` dengan penolakan jika melebihi sisa nilai sah atau tanpa GR confirmed; eager loading relasi di `show()`.
+  - `resources/views/purchase-orders/show.blade.php`: Penambahan section kartu ringkasan finansial, nilai sah, nilai tertahan, dan riwayat pembayaran PO.
+  - `resources/views/payments/create.blade.php`: Pembaruan filter dropdown, preview status finansial PO berbasis nilai sah, batas input nominal, dan rincian nilai tertahan.
+  - `resources/views/payments/show.blade.php`: Pembaruan kartu info PO terkait menampilkan progress terhadap nilai sah, nilai sah, dan rincian nilai tertahan.
+  - `tests/Feature/PurchaseOrderPayableRuleTest.php`: Feature test suite 7 skenario komprehensif membuktikan aturan nilai sah dan penahanan nominal.
+- **Hasil Pengujian**: Seluruh 263 test (896 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
