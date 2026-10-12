@@ -48,10 +48,10 @@ class MaterialUsageService
             if (!empty($data['material_request_id'])) {
                 $materialRequest = MaterialRequest::with('items.material')->find($data['material_request_id']);
                 if (!$materialRequest) {
-                    throw new Exception("Nomor Permintaan Material (MR) tidak ditemukan.");
+                    throw new Exception("Nomor PO Lapangan (MR) tidak ditemukan.");
                 }
                 if (!in_array($materialRequest->status, ['approved', 'partially_fulfilled'])) {
-                    throw new Exception("Hanya Permintaan Material (MR) dengan status 'Disetujui' atau 'Terkirim Sebagian' yang dapat ditarik.");
+                    throw new Exception("Hanya PO Lapangan (MR) dengan status 'Disetujui' atau 'Terkirim Sebagian' yang dapat ditarik.");
                 }
                 $mrItemsMap = $materialRequest->items->keyBy('material_id');
             }
@@ -91,7 +91,7 @@ class MaterialUsageService
                     $mrItem = $mrItemsMap->get($materialId);
                     if (!$mrItem) {
                         throw new Exception(sprintf(
-                            "Material '%s' tidak terdaftar dalam rincian Permintaan Material #%s.",
+                            "Material '%s' tidak terdaftar dalam rincian PO Lapangan #%s.",
                             $material->name,
                             $materialRequest->request_number
                         ));

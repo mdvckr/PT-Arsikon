@@ -109,7 +109,7 @@
             <div class="flex justify-between items-center mb-3">
                 <div>
                     <h3 style="font-size:16px;font-weight:600;color:#1e293b;margin-bottom:2px;">Daftar Barang yang Dipesan</h3>
-                    <p class="text-muted text-xs">Pilih dari Master Material terdaftar atau dari Permintaan Material (barang baru/manual proyek).</p>
+                    <p class="text-muted text-xs">Pilih dari Master Material terdaftar atau dari PO Lapangan (barang baru/manual proyek).</p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" onclick="addPoRow()">
                     <i class="fas fa-plus me-1"></i> Tambah Item
@@ -146,7 +146,7 @@
                                             @endforeach
                                         </optgroup>
                                         @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
-                                        <optgroup label="Permintaan Material Proyek (Item Baru)">
+                                        <optgroup label="PO Lapangan Proyek (Item Baru)">
                                             @foreach($mrCustomItems as $mrItem)
                                                 <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                                                     [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }}
@@ -192,7 +192,7 @@
                                     <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" class="po-custom-unit" value="{{ $mrItem->custom_item_unit ?? 'unit' }}">
 
                                     <select class="form-control po-item-select" onchange="handleItemSelect(this)" required>
-                                        <optgroup label="Permintaan Material Proyek (Item Manual)">
+                                        <optgroup label="PO Lapangan Proyek (Item Manual)">
                                             <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $selectedMR->request_number }}" data-warehouse="{{ $selectedMR->fromWarehouse?->name }}" selected>
                                                 [MR #{{ $selectedMR->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $selectedMR->fromWarehouse?->name }}
                                             </option>
@@ -251,7 +251,7 @@
                                             @endforeach
                                         </optgroup>
                                         @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
-                                        <optgroup label="Permintaan Material Proyek (Item Baru / Perlu Beli)">
+                                        <optgroup label="PO Lapangan Proyek (Item Baru / Perlu Beli)">
                                             @foreach($mrCustomItems as $mrItem)
                                                 <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                                                     [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
@@ -310,7 +310,7 @@
                 @endforeach
             </optgroup>
             @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
-            <optgroup label="Permintaan Material Proyek (Item Baru / Perlu Beli)">
+            <optgroup label="PO Lapangan Proyek (Item Baru / Perlu Beli)">
                 @foreach($mrCustomItems as $mrItem)
                     <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                         [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
@@ -380,7 +380,7 @@
                 extraContainer.innerHTML = `
                     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 10px;font-size:12px;color:#1e40af;">
                         <i class="fas fa-info-circle me-1"></i>
-                        <strong>Item Permintaan Material (MR #${mrNum}):</strong> "${customName}" dari <em>${warehouse}</em>.
+                        <strong>Item PO Lapangan (MR #${mrNum}):</strong> "${customName}" dari <em>${warehouse}</em>.
                         <div class="mt-1 flex items-center gap-2">
                             <span>Koreksi Satuan jika perlu:</span>
                             <input type="text" class="form-control form-control-sm" style="width:110px;padding:2px 6px;height:24px;font-size:12px;" value="${customUnit}" oninput="syncRowCustomUnit(this, '${row.getAttribute('data-row-id') || ''}')">

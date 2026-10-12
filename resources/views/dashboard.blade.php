@@ -392,9 +392,9 @@
         </a>
 
         {{-- Permintaan Pending --}}
-        <a href="{{ route('material-requests.index') }}" class="metric-card" title="Buka Permintaan Material">
+        <a href="{{ route('material-requests.index') }}" class="metric-card" title="Buka PO Lapangan">
             <div class="metric-header">
-                <span class="metric-label">Permintaan Pending</span>
+                <span class="metric-label">PO Lapangan Pending</span>
                 <i class="fas fa-clock-rotate-left metric-icon"></i>
             </div>
             <div class="metric-body">
@@ -407,7 +407,7 @@
                 <span class="badge badge-gray" style="font-size:10px;">Terkendali</span>
                 @endif
             </div>
-            <div class="metric-sub">Bon permintaan belum diproses</div>
+            <div class="metric-sub">PO Lapangan belum diproses</div>
         </a>
 
         {{-- Stok Kritis --}}
@@ -437,7 +437,7 @@
             @can('create material requests')
             <a href="{{ route('material-requests.create') }}" class="dash-btn dash-btn-primary">
                 <i class="fas fa-plus"></i>
-                <span>Permintaan Baru</span>
+                <span>PO Lapangan Baru</span>
             </a>
             @endcan
 
@@ -481,7 +481,7 @@
             <div class="dash-panel-header">
                 <h3 class="dash-panel-title">
                     <i class="fas fa-file-lines text-primary" style="font-size:11.5px;"></i>
-                    Permintaan Material Terbaru
+                    PO Lapangan Terbaru
                 </h3>
                 <a href="{{ route('material-requests.index') }}" class="btn btn-sm btn-light border" style="height:26px;padding:0 8px;font-size:11px;font-weight:600;">
                     Lihat Semua &rarr;
@@ -491,7 +491,7 @@
                 <table class="data-table panel-table mb-0">
                     <thead>
                         <tr>
-                            <th style="width:130px;">No. Permintaan</th>
+                            <th style="width:130px;">No. PO Lapangan</th>
                             <th>Pemohon / Proyek</th>
                             <th style="width:100px;text-align:center;">Status</th>
                         </tr>
@@ -506,7 +506,7 @@
                             </td>
                             <td>
                                 <div class="fw-600" style="color:#0f172a;">{{ $req->requestedBy?->name ?? '-' }}</div>
-                                <div class="text-muted" style="font-size:10.5px;">{{ $req->toWarehouse?->name ?? 'Gudang Tujuan' }}</div>
+                                <div class="text-muted" style="font-size:10.5px;">{{ $req->toWarehouse?->display_name ?? 'Gudang Tujuan' }}</div>
                             </td>
                             <td style="text-align:center;">
                                 @php
@@ -524,7 +524,7 @@
                         @empty
                         <tr>
                             <td colspan="3" class="text-muted text-center" style="padding:22px 14px;font-size:12px;">
-                                Belum ada data permintaan material aktif.
+                                Belum ada data PO Lapangan aktif.
                             </td>
                         </tr>
                         @endforelse

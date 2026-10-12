@@ -1598,7 +1598,7 @@
                 $roleBadge = 'Proyek';
                 $roleIcon = 'fa-helmet-safety';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
-                $subDesc = 'Permintaan material & alat proyek';
+                $subDesc = 'PO Lapangan & alat proyek';
             } elseif ($authUser->hasRole('Admin PO')) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
@@ -1708,7 +1708,7 @@
                 
                 @can('view material requests')
                 <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-circle-plus"></i> Permintaan Material
+                    <i class="fas fa-file-circle-plus"></i> PO Lapangan
                 </a>
                 @endcan
                 

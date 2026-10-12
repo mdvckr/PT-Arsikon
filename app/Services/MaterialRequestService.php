@@ -24,7 +24,7 @@ class MaterialRequestService
         ?string $notes = null
     ): MaterialRequest {
         if ($toWarehouse->is_central) {
-            throw new Exception("Permintaan material hanya dapat ditujukan ke Gudang Proyek.");
+            throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
         }
 
         if ($toWarehouse->id === $sourceWarehouse->id) {
@@ -94,8 +94,8 @@ class MaterialRequestService
 
             if ($submitImmediately) {
                 NotificationHelper::notifyCentralWarehouseAdmins(
-                    "Permintaan Material: #{$request->request_number}",
-                    "Permintaan material diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
+                    "PO Lapangan: #{$request->request_number}",
+                    "PO Lapangan diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
                     "approval_needed",
                     route('material-requests.show', $request)
                 );
@@ -109,8 +109,8 @@ class MaterialRequestService
                         if ($sAdmin->id !== $requestedBy->id) {
                             NotificationHelper::notifyUser(
                                 $sAdmin,
-                                "Permintaan Material Keluar: #{$request->request_number}",
-                                "Gudang {$toWarehouse->name} mengajukan permintaan material dari {$sourceWarehouse->name}.",
+                                "PO Lapangan Keluar: #{$request->request_number}",
+                                "Gudang {$toWarehouse->name} mengajukan PO Lapangan dari {$sourceWarehouse->name}.",
                                 "info",
                                 route('material-requests.show', $request)
                             );
@@ -175,8 +175,8 @@ class MaterialRequestService
             if ($request->requestedBy) {
                 NotificationHelper::notifyUser(
                     $request->requestedBy,
-                    "Permintaan Material Disetujui: #{$request->request_number}",
-                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
+                    "PO Lapangan Disetujui: #{$request->request_number}",
+                    "PO Lapangan #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
                     "success",
                     route('material-requests.show', $request)
                 );
@@ -192,8 +192,8 @@ class MaterialRequestService
                 }
                 NotificationHelper::notifyUser(
                     $targetUser,
-                    "Permintaan Material Disetujui: #{$request->request_number}",
-                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
+                    "PO Lapangan Disetujui: #{$request->request_number}",
+                    "PO Lapangan #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
                     "info",
                     route('material-requests.show', $request)
                 );
@@ -224,8 +224,8 @@ class MaterialRequestService
         if ($request->requestedBy) {
             NotificationHelper::notifyUser(
                 $request->requestedBy,
-                "Permintaan Material Ditolak: #{$request->request_number}",
-                "Permintaan material Anda ditolak oleh {$rejectedBy->name}. Alasan: {$rejectionReason}",
+                "PO Lapangan Ditolak: #{$request->request_number}",
+                "PO Lapangan Anda ditolak oleh {$rejectedBy->name}. Alasan: {$rejectionReason}",
                 "danger",
                 route('material-requests.show', $request)
             );

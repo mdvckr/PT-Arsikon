@@ -96,6 +96,27 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/MaterialRequestMultiPoTest.php`: Test merah awal (bukti gagal: penolakan kuota & status fulfillment stock belum ada) lalu hijau setelah perbaikan.
 - **Hasil Pengujian**: Seluruh 173 test (574 assertions) berstatus HIJAU (PASS).
 
+### T18. Penamaan Tampilan "PO Lapangan" dan Istilah Proyek (Label Saja)
+- **Tujuan**:
+  - Mengganti teks label antarmuka pengguna dari "Permintaan Material" / "Material Request" menjadi "PO Lapangan" pada seluruh menu sidebar, judul halaman, breadcrumb, tombol aksi, modal, flash message, dan notifikasi.
+  - Mempertahankan integritas teknis tanpa mengubah nama class, nama tabel, kolom database, nama route, route URL, dan permission spatie (`view material requests`, `create material requests`, `approve material requests`).
+  - Memformat tampilan gudang tujuan MR menjadi "Nama Gudang - Nama Proyek" bila terhubung ke proyek via accessor `getDisplayNameAttribute()` pada model `Warehouse`.
+  - Mengubah label field menjadi "Nama Proyek" untuk gudang bertipe proyek pada halaman detail info card dan formulir.
+  - Asumsi & Batas: Permintaan yang menyebut contoh "pembangunan gedung, proyek, dll." diperlakukan murni sebagai penamaan/label display; tidak ada penambahan tabel atau jenis proyek baru di luar lingkup.
+- **Perubahan File**:
+  - `app/Models/Warehouse.php`: Penambahan accessor `display_name` yang memformat `Nama Gudang - Nama Proyek` jika memiliki relasi ke project aktif.
+  - `resources/views/layouts/app.blade.php`: Penggantian menu sidebar Transaksi menjadi "PO Lapangan" dan sub-deskripsi headline.
+  - `resources/views/material-requests/index.blade.php`: Penggantian judul, breadcrumb, tombol "Buat PO Lapangan", placeholder pencarian, header tabel "No. PO Lapangan", "Proyek / Gudang", format `display_name`, dan empty state.
+  - `resources/views/material-requests/create.blade.php`: Penggantian judul, breadcrumb, label field "Nama Proyek (Gudang Pemohon)", pemakaian `display_name` pada opsi pilihan gudang, dan tombol "Ajukan PO Lapangan".
+  - `resources/views/material-requests/show.blade.php`: Penggantian breadcrumb, info alert item manual, label "Item PO Lapangan", modal penolakan "Tolak PO Lapangan", serta info row dinamis "Nama Proyek" dengan format `display_name`.
+  - `resources/views/dashboard.blade.php`: Penggantian widget metriks "PO Lapangan Pending", aksi cepat "PO Lapangan Baru", dan tabel "PO Lapangan Terbaru".
+  - `resources/views/distributions/create.blade.php`, `material-usages/create.blade.php`, `material-usages/show.blade.php`, `purchase-orders/create.blade.php`, `users/create.blade.php`, `users/edit.blade.php`: Penggantian seluruh label referensi MR ke "PO Lapangan".
+  - `app/Http/Controllers/MaterialRequestController.php`: Update flash success dan error message ke "PO Lapangan".
+  - `app/Http/Controllers/RoleController.php`: Update deskripsi peran Karyawan ke "PO Lapangan".
+  - `app/Services/MaterialRequestService.php`, `DistributionService.php`, `MaterialUsageService.php`: Update exception dan pesan notifikasi ke "PO Lapangan".
+  - `tests/Feature/PoLapanganLabelTest.php`: Test merah awal (bukti gagal: assertSee 'PO Lapangan' & assertDontSee 'Permintaan Material') lalu hijau setelah refactor selesai.
+- **Hasil Pengujian**: Seluruh 177 test (588 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

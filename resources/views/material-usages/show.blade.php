@@ -141,7 +141,7 @@
     <div class="alert alert-info mb-3" style="display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;">
         <i class="fas fa-file-circle-check text-primary" style="font-size:14px;"></i>
         <div style="font-size:12px;color:#334155;">
-            Pengeluaran ini terikat dengan Permintaan Material 
+            Pengeluaran ini terikat dengan PO Lapangan 
             <a href="{{ route('material-requests.show', $materialUsage->materialRequest) }}" class="fw-700 text-primary" style="text-decoration:underline;">
                 #{{ $materialUsage->materialRequest->request_number }}
             </a> 

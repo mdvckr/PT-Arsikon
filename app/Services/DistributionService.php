@@ -35,7 +35,7 @@ class DistributionService
         if (!empty($data['material_request_id'])) {
             $mr = MaterialRequest::with(['items.material.unit'])->findOrFail($data['material_request_id']);
             if (!in_array($mr->status, ['approved', 'partially_fulfilled'])) {
-                throw new Exception("Permintaan material {$mr->request_number} berstatus '{$mr->status}', tidak dapat dibuatkan Surat Jalan. Status harus 'approved' atau 'partially_fulfilled'.");
+                throw new Exception("PO Lapangan {$mr->request_number} berstatus '{$mr->status}', tidak dapat dibuatkan Surat Jalan. Status harus 'approved' atau 'partially_fulfilled'.");
             }
         }
 
@@ -59,7 +59,7 @@ class DistributionService
 
         $items = (array) ($data['items'] ?? []);
         if (empty($items)) {
-            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong. Pilih permintaan material, peminjaman alat, atau tambahkan item.");
+            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong. Pilih PO Lapangan, peminjaman alat, atau tambahkan item.");
         }
 
         $fromWarehouse = Warehouse::findOrFail($data['from_warehouse_id']);

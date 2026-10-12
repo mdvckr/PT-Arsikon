@@ -81,7 +81,7 @@ class RoleController extends Controller
             'badge_color' => '#374151',
             'badge_bg'    => '#f3f4f6',
             'icon'        => 'fa-id-badge',
-            'description' => 'Peminjaman alat kerja mandiri dan pembuatan permintaan material.',
+            'description' => 'Peminjaman alat kerja mandiri dan pembuatan PO Lapangan.',
         ],
     ];
 

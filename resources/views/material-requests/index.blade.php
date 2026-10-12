@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Permintaan Material</x-slot>
+    <x-slot name="title">PO Lapangan</x-slot>
 
     @push('styles')
     <style>
@@ -85,12 +85,12 @@
 
     <div class="flex items-center justify-between mb-3 page-header-flex">
         <div>
-            <h2 class="fw-700" style="font-size:16px;color:#0f172a;margin:0;">Permintaan Material</h2>
-            <p class="text-muted" style="font-size:12px;margin-top:2px;">Pengajuan dan approval permintaan material dari proyek ke gudang pusat</p>
+            <h2 class="fw-700" style="font-size:16px;color:#0f172a;margin:0;">PO Lapangan</h2>
+            <p class="text-muted" style="font-size:12px;margin-top:2px;">Pengajuan dan approval PO Lapangan dari proyek ke gudang pusat</p>
         </div>
         @can('create material requests')
         <a href="{{ route('material-requests.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Buat Permintaan
+            <i class="fas fa-plus me-1"></i> Buat PO Lapangan
         </a>
         @endcan
     </div>
@@ -114,7 +114,7 @@
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
                         <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. permintaan, pemohon..." style="padding-left:28px !important;">
+                        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. PO Lapangan, pemohon..." style="padding-left:28px !important;">
                     </div>
                 </div>
                 <div class="filter-col" style="max-width:180px;">
@@ -147,9 +147,9 @@
             <table class="data-table mr-table mb-0">
                 <thead>
                     <tr>
-                        <th class="nowrap" style="width:160px;">No. Permintaan</th>
+                        <th class="nowrap" style="width:160px;">No. PO Lapangan</th>
                         <th style="min-width:120px;">Pemohon</th>
-                        <th style="min-width:130px;">Gudang</th>
+                        <th style="min-width:130px;">Proyek / Gudang</th>
                         <th class="nowrap" style="width:95px;">Dibutuhkan</th>
                         <th class="nowrap text-center" style="width:135px;">Status</th>
                         <th style="min-width:100px;">Diproses Oleh</th>
@@ -171,7 +171,7 @@
                         <td style="padding:8px 12px;">
                             <div style="font-size:12px;">{{ $req->fromWarehouse?->name ?? '-' }}</div>
                             @if($req->toWarehouse)
-                            <div class="text-muted" style="font-size:10.5px;">→ {{ $req->toWarehouse->name }}</div>
+                            <div class="text-muted" style="font-size:10.5px;">→ {{ $req->toWarehouse->display_name }}</div>
                             @endif
                         </td>
                         <td class="nowrap" style="font-size:12px;color:#334155;">
@@ -207,8 +207,8 @@
                     <tr>
                         <td colspan="7" style="text-align:center;padding:32px 16px;color:#94a3b8;">
                             <i class="fas fa-file-circle-plus" style="font-size:26px;color:#cbd5e1;margin-bottom:6px;display:block;"></i>
-                            <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada permintaan material</div>
-                            <div class="text-muted" style="font-size:11.5px;margin-top:2px;">Buat permintaan material pertama.</div>
+                            <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada PO Lapangan</div>
+                            <div class="text-muted" style="font-size:11.5px;margin-top:2px;">Buat PO Lapangan pertama.</div>
                         </td>
                     </tr>
                     @endforelse

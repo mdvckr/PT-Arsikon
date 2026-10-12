@@ -91,6 +91,17 @@ class Warehouse extends Model
         return $this->belongsTo(Project::class);
     }
 
+    /**
+     * Get display name formatted as 'Nama Gudang - Nama Proyek' if connected to a project.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->project && !empty($this->project->name)) {
+            return "{$this->name} - {$this->project->name}";
+        }
+        return $this->name;
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_warehouses')

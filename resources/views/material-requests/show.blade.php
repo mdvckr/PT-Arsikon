@@ -87,7 +87,7 @@
     @endpush
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('material-requests.index') }}">Permintaan Material</a>
+        <a href="{{ route('material-requests.index') }}">PO Lapangan</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
         <span>{{ $materialRequest->request_number }}</span>
     </div>
@@ -137,7 +137,7 @@
                 @can('approve material requests')
                 <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;">
                     @csrf
-                    <button type="submit" class="btn btn-success btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;font-weight:600;" onclick="return confirm('Setujui permintaan ini?')">
+                    <button type="submit" class="btn btn-success btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;font-weight:600;" onclick="return confirm('Setujui PO Lapangan ini?')">
                         <i class="fas fa-check me-1"></i> Setujui
                     </button>
                 </form>
@@ -171,7 +171,7 @@
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-circle-info" style="color:#d97706;font-size:14px;"></i>
                         <span style="font-size:12px;color:#92400e;">
-                            Permintaan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
+                            PO Lapangan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
                         </span>
                     </div>
                     @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
@@ -188,7 +188,7 @@
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                     <div style="display:flex;align-items:center;gap:6px;">
                         <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
-                        <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Item Permintaan</span>
+                        <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Item PO Lapangan</span>
                     </div>
                     <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:10.5px;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe;">
                         {{ $materialRequest->items->count() }} Item
@@ -391,11 +391,11 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-file-lines text-primary" style="font-size:13px;"></i>
-                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Permintaan</span>
+                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi PO Lapangan</span>
                 </div>
                 <div class="card-body" style="padding:12px 14px;">
                     <div class="info-row">
-                        <span class="info-label">No. Permintaan</span>
+                        <span class="info-label">No. PO Lapangan</span>
                         <span class="info-val">{{ $materialRequest->request_number }}</span>
                     </div>
                     <div class="info-row">
@@ -407,8 +407,8 @@
                         <span class="info-val">{{ $materialRequest->fromWarehouse?->name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Gudang Tujuan</span>
-                        <span class="info-val">{{ $materialRequest->toWarehouse?->name ?? '-' }}</span>
+                        <span class="info-label">{{ $materialRequest->toWarehouse?->isProject() ? 'Nama Proyek' : 'Gudang Tujuan' }}</span>
+                        <span class="info-val">{{ $materialRequest->toWarehouse?->display_name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Tgl Diajukan</span>
@@ -438,7 +438,7 @@
         <div class="modal-box">
             <div class="modal-header">
                 <i class="fas fa-xmark-circle text-danger"></i>
-                <span class="modal-title">Tolak Permintaan</span>
+                <span class="modal-title">Tolak PO Lapangan</span>
                 <button class="btn-close-modal" onclick="document.getElementById('rejectModal').classList.remove('show')">
                     <i class="fas fa-times"></i>
                 </button>
@@ -453,7 +453,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary"
                         onclick="document.getElementById('rejectModal').classList.remove('show')">Batal</button>
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-xmark"></i> Tolak Permintaan</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-xmark"></i> Tolak PO Lapangan</button>
                 </div>
             </form>
         </div>

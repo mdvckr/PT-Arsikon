@@ -184,7 +184,7 @@ class MaterialRequestController extends Controller
         $sourceWarehouse = Warehouse::findOrFail($validated['source_warehouse_id']);
 
         if ($toWarehouse->is_central) {
-            return back()->withInput()->withErrors(['warehouse_id' => 'Permintaan material hanya dapat ditujukan ke Gudang Proyek.']);
+            return back()->withInput()->withErrors(['warehouse_id' => 'PO Lapangan hanya dapat ditujukan ke Gudang Proyek.']);
         }
 
         try {
@@ -204,7 +204,7 @@ class MaterialRequestController extends Controller
         }
 
         return redirect()->route('material-requests.show', $mr)
-            ->with('success', "Permintaan material #{$mr->request_number} berhasil diajukan.");
+            ->with('success', "PO Lapangan #{$mr->request_number} berhasil diajukan.");
     }
 
     /**

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Buat Permintaan Material</x-slot>
+    <x-slot name="title">Buat PO Lapangan</x-slot>
 
     @push('styles')
     <style>
@@ -102,15 +102,15 @@
     @endpush
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('material-requests.index') }}">Permintaan Material</a>
+        <a href="{{ route('material-requests.index') }}">PO Lapangan</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-        <span>Buat Permintaan Baru</span>
+        <span>Buat PO Lapangan Baru</span>
     </div>
 
     @if ($errors->any())
     <div class="alert alert-danger mb-3" style="border-radius:8px;padding:10px 14px;font-size:12px;">
         <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada formulir permintaan:
+            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada formulir PO Lapangan:
         </div>
         <ul class="mb-0" style="padding-left:18px;">
             @foreach ($errors->all() as $error)
@@ -397,17 +397,17 @@
             <div class="card sticky-sidebar" style="position:sticky;top:20px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-file-lines text-primary" style="font-size:13px;"></i>
-                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Permintaan</span>
+                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi PO Lapangan</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Gudang Pemohon <span class="text-danger">*</span>
+                            Nama Proyek (Gudang Pemohon) <span class="text-danger">*</span>
                         </label>
                         <select name="warehouse_id" id="warehouse_id" class="form-control" required style="font-weight:500;" onchange="syncWarehouseOptions()">
-                            <option value="">Pilih Gudang</option>
+                            <option value="">Pilih Gudang / Proyek</option>
                             @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                            <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>{{ $wh->display_name }}</option>
                             @endforeach
                         </select>
                         @error('warehouse_id')
@@ -461,7 +461,7 @@
                     </div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <button type="submit" class="btn btn-primary w-full" style="justify-content:center;padding:9px;font-size:13px;font-weight:600;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                            <i class="fas fa-paper-plane me-1"></i> Ajukan Permintaan
+                            <i class="fas fa-paper-plane me-1"></i> Ajukan PO Lapangan
                         </button>
                         <a href="{{ route('material-requests.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center;padding:7px;font-size:12px;font-weight:500;border-radius:6px;color:#64748b;">
                             Batal
