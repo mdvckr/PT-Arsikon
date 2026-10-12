@@ -86,7 +86,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/material-requests/stock', [MaterialRequestController::class, 'getStock'])->name('material-requests.stock');
     Route::post('/material-requests/{materialRequest}/approve', [MaterialRequestController::class, 'approve'])->name('material-requests.approve');
     Route::post('/material-requests/{materialRequest}/reject', [MaterialRequestController::class, 'reject'])->name('material-requests.reject');
-    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
     // Distributions
     Route::get('/distributions/{distribution}/print', [DistributionController::class, 'print'])->name('distributions.print');

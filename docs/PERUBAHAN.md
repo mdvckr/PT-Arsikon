@@ -196,6 +196,24 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganRequestedAsTest.php`: Test suite memverifikasi penyimpanan `requested_as`, fallback default ke 'Admin Proyek', tampilan di `show` dan `print`, serta kepastian tidak ada role Spatie baru yang dibuat di database.
 - **Hasil Pengujian**: Seluruh 194 test (643 assertions) berstatus HIJAU (PASS).
 
+### T23. Fitur Edit PO Lapangan (Status Draft & Submitted)
+- **Tujuan**:
+  - Menyediakan fitur edit untuk PO Lapangan (Material Request) yang masih dalam status `draft` atau `submitted`.
+  - Memblokir pengeditan jika status dokumen sudah `approved`, `rejected`, `partially_fulfilled`, atau `fulfilled` dengan status HTTP 403 / abort.
+  - Membatasi hak edit hanya kepada pembuat dokumen (`requested_by_user_id == auth()->id()`) atau Admin Pusat / Owner yang memiliki izin pengelolaan. Pengguna dari gudang/proyek lain ditolak dengan HTTP 403.
+  - Validasi ketat saat update: `source_warehouse_id != target_warehouse_id`, `needed_at` divalidasi `after_or_equal:today` hanya jika tanggal diubah (agar PO historis dengan tanggal masa lampau tetap dapat diedit catatannya).
+  - Sinkronisasi item cerdas (smart update): mempertahankan item lama yang dipertahankan tanpa delete-all & recreate, memperbarui kuantitas/catatan, membuat baris item baru, dan menghapus item yang dihapus dari form, serta mencegah injeksi `qty_approved`.
+  - Antarmuka edit yang ramah pengguna dengan JavaScript dinamis untuk menambah/menghapus baris item, serta tombol edit di halaman `show.blade.php` dan `index.blade.php` yang hanya muncul bila status dan hak akses valid.
+- **Perubahan File**:
+  - `routes/web.php`: Menambahkan route actions `edit` dan `update` untuk `material-requests`.
+  - `app/Http/Controllers/MaterialRequestController.php`: Method `edit` dan `update` dengan otorisasi, validasi, DB transaction, dan logging.
+  - `app/Services/MaterialRequestService.php`: Method `updateRequest` dengan `lockForUpdate()`, sinkronisasi item aman, dan kalkulasi ulang.
+  - `resources/views/material-requests/edit.blade.php`: Halaman form edit PO Lapangan lengkap dengan dynamic item rows.
+  - `resources/views/material-requests/show.blade.php`: Tombol navigasi "Edit PO Lapangan".
+  - `resources/views/material-requests/index.blade.php`: Icon aksi edit kondisional per baris.
+  - `tests/Feature/PoLapanganEditTest.php`: Test suite pengujian 7 skenario komprehensif.
+- **Hasil Pengujian**: Seluruh 201 test (668 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

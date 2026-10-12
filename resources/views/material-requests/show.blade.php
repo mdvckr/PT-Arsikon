@@ -129,6 +129,17 @@
                 </a>
             @endif
 
+            @php
+                $canEdit = in_array($materialRequest->status, ['submitted', 'draft']) &&
+                    ($materialRequest->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']));
+            @endphp
+
+            @if($canEdit)
+                <a href="{{ route('material-requests.edit', $materialRequest) }}" class="btn btn-sm btn-outline-primary" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                    <i class="fas fa-edit"></i> Edit PO Lapangan
+                </a>
+            @endif
+
             <a href="{{ route('material-requests.show', $materialRequest) }}?print=1" target="_blank" class="btn btn-sm" style="background:#0f172a;border-color:#0f172a;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
                 <i class="fas fa-file-pdf"></i> Print PDF
             </a>

@@ -154,6 +154,156 @@ class MaterialRequestService
     }
 
     /**
+     * Update Material Request (PO Lapangan) header and items.
+     */
+    public function updateRequest(
+        MaterialRequest $request,
+        Warehouse $toWarehouse,
+        ?Warehouse $sourceWarehouse,
+        User $user,
+        array $itemsData,
+        ?string $notes = null,
+        ?string $neededAt = null,
+        ?string $requestedAs = null
+    ): MaterialRequest {
+        if (!in_array($request->status, ['submitted', 'draft'])) {
+            throw new Exception("Hanya pengajuan dengan status draft atau menunggu persetujuan yang dapat diubah.");
+        }
+
+        if ($request->requested_by_user_id !== $user->id && !$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
+            throw new Exception("Anda tidak memiliki izin untuk mengubah pengajuan ini.");
+        }
+
+        if ($toWarehouse->is_central) {
+            throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
+        }
+
+        if ($sourceWarehouse && $toWarehouse->id === $sourceWarehouse->id) {
+            throw new Exception("Sumber material tidak boleh sama dengan gudang pemohon.");
+        }
+
+        if (!$user->hasAccessToWarehouse($toWarehouse)) {
+            throw new Exception("User tidak memiliki akses ke Gudang Proyek ini.");
+        }
+
+        if (empty($itemsData)) {
+            throw new Exception("Daftar material yang diminta tidak boleh kosong.");
+        }
+
+        $finalRequestedAs = trim($requestedAs ?? '') ?: ($request->requested_as ?: 'Admin Proyek');
+
+        return DB::transaction(function () use ($request, $toWarehouse, $sourceWarehouse, $itemsData, $notes, $neededAt, $finalRequestedAs) {
+            $request->update([
+                'to_warehouse_id'   => $toWarehouse->id,
+                'from_warehouse_id' => $sourceWarehouse ? $sourceWarehouse->id : null,
+                'needed_at'         => $neededAt,
+                'requested_as'      => $finalRequestedAs,
+                'notes'             => $notes,
+            ]);
+
+            // Sinkronisasi item: update item yang ada tanpa mengubah qty_approved, buat item baru, dan hapus yang dihilangkan
+            $existingItems = $request->items()->get();
+            $handledItemIds = [];
+
+            foreach ($itemsData as $item) {
+                $qtyRequested = (float) $item['qty_requested'];
+                if ($qtyRequested <= 0) continue;
+
+                if (empty($item['material_id'])) {
+                    $customName = trim($item['custom_item_name'] ?? '');
+                    if ($customName === '') continue;
+
+                    $customCategoryId = null;
+                    if (!empty($item['category_id'])) {
+                        $cat = \App\Models\Category::find($item['category_id']);
+                        if (!$cat) {
+                            throw new Exception("Kategori custom tidak valid.");
+                        }
+                        $customCategoryId = $cat->id;
+                    }
+
+                    $matchCustom = $existingItems->first(function ($it) use ($customName, $handledItemIds) {
+                        return empty($it->material_id) &&
+                               !in_array($it->id, $handledItemIds) &&
+                               strtolower(trim((string)$it->custom_item_name)) === strtolower($customName);
+                    });
+
+                    if ($matchCustom) {
+                        $matchCustom->update([
+                            'category_id'      => $customCategoryId,
+                            'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                            'qty_requested'    => $qtyRequested,
+                            'notes'            => $item['notes'] ?? null,
+                            'specification'    => $item['specification'] ?? null,
+                            'usage_location'   => $item['usage_location'] ?? null,
+                            'usage_date'       => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $matchCustom->id;
+                    } else {
+                        $newItem = MaterialRequestItem::create([
+                            'material_request_id' => $request->id,
+                            'item_type'           => 'material',
+                            'material_id'         => null,
+                            'category_id'         => $customCategoryId,
+                            'custom_item_name'    => $customName,
+                            'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                            'qty_requested'       => $qtyRequested,
+                            'qty_approved'        => 0,
+                            'notes'               => $item['notes'] ?? null,
+                            'specification'       => $item['specification'] ?? null,
+                            'usage_location'      => $item['usage_location'] ?? null,
+                            'usage_date'          => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $newItem->id;
+                    }
+                } else {
+                    $material = Material::findOrFail($item['material_id']);
+
+                    $matchMat = $existingItems->first(function ($it) use ($material, $handledItemIds) {
+                        return (int)$it->material_id === (int)$material->id && !in_array($it->id, $handledItemIds);
+                    });
+
+                    if ($matchMat) {
+                        $matchMat->update([
+                            'category_id'    => $material->category_id,
+                            'qty_requested'  => $qtyRequested,
+                            'notes'          => $item['notes'] ?? null,
+                            'specification'  => $item['specification'] ?? null,
+                            'usage_location' => $item['usage_location'] ?? null,
+                            'usage_date'     => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $matchMat->id;
+                    } else {
+                        $newItem = MaterialRequestItem::create([
+                            'material_request_id' => $request->id,
+                            'item_type'           => 'material',
+                            'material_id'         => $material->id,
+                            'category_id'         => $material->category_id,
+                            'custom_item_name'    => null,
+                            'custom_item_unit'    => null,
+                            'qty_requested'       => $qtyRequested,
+                            'qty_approved'        => 0,
+                            'notes'               => $item['notes'] ?? null,
+                            'specification'       => $item['specification'] ?? null,
+                            'usage_location'      => $item['usage_location'] ?? null,
+                            'usage_date'          => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $newItem->id;
+                    }
+                }
+            }
+
+            // Hapus item lama yang tidak ada di data yang diupdate
+            $itemsToDelete = $existingItems->whereNotIn('id', $handledItemIds);
+            foreach ($itemsToDelete as $delItem) {
+                $delItem->delete();
+            }
+
+            return $request->fresh(['items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy']);
+        });
+    }
+
+    /**
      * Approve Material Request by Central Warehouse Admin.
      */
     public function approveRequest(

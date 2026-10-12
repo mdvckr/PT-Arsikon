@@ -229,9 +229,16 @@
                         </td>
                         <td style="padding:8px 12px;font-size:12px;color:#475569;">{{ $req->approvedBy?->name ?? '-' }}</td>
                         <td class="nowrap text-center">
-                            <a href="{{ route('material-requests.show', $req) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
-                                <i class="fas fa-eye" style="font-size:11px;"></i>
-                            </a>
+                            <div style="display:inline-flex;gap:4px;align-items:center;">
+                                <a href="{{ route('material-requests.show', $req) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
+                                    <i class="fas fa-eye" style="font-size:11px;"></i>
+                                </a>
+                                @if(in_array($req->status, ['submitted', 'draft']) && ($req->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])))
+                                <a href="{{ route('material-requests.edit', $req) }}" class="btn btn-sm btn-light border" title="Edit PO Lapangan" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#d97706;background:#f8fafc;">
+                                    <i class="fas fa-pen-to-square" style="font-size:11px;"></i>
+                                </a>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
