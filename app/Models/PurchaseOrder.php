@@ -36,9 +36,10 @@ class PurchaseOrder extends Model
     {
         parent::boot();
         static::creating(function ($m) {
-            $m->po_number = 'PO-' . date('Y') . '-' . str_pad(
-                (static::whereYear('created_at', date('Y'))->count() + 1), 4, '0', STR_PAD_LEFT
-            );
+            if (empty($m->po_number)) {
+                $year = $m->order_date ? (int) date('Y', strtotime($m->order_date)) : (int) date('Y');
+                $m->po_number = \App\Services\DocumentNumberService::generate('PO', $year);
+            }
         });
     }
 

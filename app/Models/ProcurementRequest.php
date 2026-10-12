@@ -20,9 +20,9 @@ class ProcurementRequest extends Model
     {
         parent::boot();
         static::creating(function ($m) {
-            $m->pr_number = 'PR-' . date('Y') . '-' . str_pad(
-                (static::whereYear('created_at', date('Y'))->count() + 1), 4, '0', STR_PAD_LEFT
-            );
+            if (empty($m->pr_number)) {
+                $m->pr_number = \App\Services\DocumentNumberService::generate('PR', (int) date('Y'));
+            }
         });
     }
 

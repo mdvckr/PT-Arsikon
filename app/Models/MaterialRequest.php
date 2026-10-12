@@ -60,18 +60,6 @@ class MaterialRequest extends Model
 
     public static function generateRequestNumber(): string
     {
-        $prefix = 'REQ-' . date('Ymd') . '-';
-        $latest = self::where('request_number', 'like', $prefix . '%')
-                      ->orderBy('id', 'desc')
-                      ->first();
-
-        if ($latest) {
-            $lastNumber = (int) substr($latest->request_number, -4);
-            $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $nextNumber = '0001';
-        }
-
-        return $prefix . $nextNumber;
+        return \App\Services\DocumentNumberService::generate('MR', (int) date('Y'));
     }
 }
