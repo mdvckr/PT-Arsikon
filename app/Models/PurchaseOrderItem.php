@@ -37,6 +37,18 @@ class PurchaseOrderItem extends Model
         'subtotal'         => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function ($item) {
+            if ($item->isDirty('unit_price')) {
+                $po = $item->purchaseOrder ?? PurchaseOrder::find($item->purchase_order_id);
+                if ($po && $po->status !== 'draft') {
+                    throw new \DomainException("Harga satuan item PO tidak dapat diubah setelah PO melewati status draft (status PO saat ini: {$po->status}).");
+                }
+            }
+        });
+    }
+
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);

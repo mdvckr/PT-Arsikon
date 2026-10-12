@@ -95,16 +95,21 @@ class GoodsReceiptService
 
             foreach ($validated['items'] as $item) {
                 $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
+                $poItemId = $item['purchase_order_item_id'] ?? null;
+                $poItem = $poItemId ? \App\Models\PurchaseOrderItem::find($poItemId) : null;
+                // T9: GR tidak menerima unit_price dari request untuk item ber-PO. Selalu salin dari PO item.
+                $unitPrice = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
+
                 GoodsReceiptItem::create([
                     'goods_receipt_id'       => $receipt->id,
                     'item_type'              => $isTool ? 'tool' : 'material',
-                    'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
+                    'purchase_order_item_id' => $poItemId,
                     'stage_reference'        => $item['stage_reference'] ?? null,
                     'material_id'            => $isTool ? null : ($item['material_id'] ?? null),
                     'tool_id'                => $isTool ? ($item['tool_id'] ?? null) : null,
                     'qty_received'           => $item['quantity'] ?? $item['qty_received'] ?? 0,
                     'condition'              => $item['condition'] ?? 'good',
-                    'unit_price'             => $item['unit_price'] ?? 0,
+                    'unit_price'             => $unitPrice,
                     'notes'                  => $item['notes'] ?? null,
                 ]);
             }

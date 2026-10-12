@@ -257,6 +257,23 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PurchaseOrderApprovalAndRiskTest.php`: Test suite pengujian 5 skenario (creator tolak approve sendiri, non-draft tolak, unauthorized 403, approver sah berhasil approve, persistensi dan tampilan risk_bearer buyer/vendor).
 - **Hasil Pengujian**: Seluruh 214 test (713 assertions) berstatus HIJAU (PASS).
 
+### T9. Kunci Harga PO
+- **Tujuan**:
+  - Mengunci harga satuan (`unit_price`) pada item PO agar tidak dapat diubah setelah PO melewati status `draft`.
+  - Guard di level model Eloquent `PurchaseOrderItem` melalui model event `booted()` -> `static::updating()`:
+    - Jika atribut `unit_price` mengalami perubahan (`$item->isDirty('unit_price')`) dan status dokumen PO terkait bukan `draft`, sistem langsung melempar `DomainException`.
+    - Perubahan field lain (seperti `received_qty`, `lost_qty`, `short_closed_qty`) pada tahap operasional berikutnya tetap diizinkan dan tidak terhalang.
+  - Memastikan tidak ada route atau antarmuka yang mengizinkan modifikasi harga satuan PO. Revisi harga wajib dilakukan dengan pembatalan PO dan pembuatan PO baru (approval ulang).
+  - Mengamankan alur Goods Receipt (GR):
+    - Pada `GoodsReceiptService::create()` dan `receiveFromSupplier()`, untuk item yang bersumber dari PO (`purchase_order_item_id` terisi), `unit_price` SELALU disalin dari `$poItem->unit_price` dan mengabaikan nilai `unit_price` yang dikirim dari klien.
+    - Penerimaan langsung tanpa PO tetap diizinkan mengisi harga satuan secara manual.
+  - Modul Pembayaran (Payment) tidak mengubah atau menimpa `unit_price` item PO.
+- **Perubahan File**:
+  - `app/Models/PurchaseOrderItem.php`: Penambahan method `booted()` dengan event listener `updating` untuk mencegah manipulasi `unit_price` di luar status `draft`.
+  - `app/Services/GoodsReceiptService.php`: Penyalinan `unit_price` otomatis dari baris PO item terkait pada metode pembuatan GR draft dan penolakan manipulasi nilai harga dari request klien.
+  - `tests/Feature/PurchaseOrderPriceLockTest.php`: Test suite pengujian 5 skenario (update harga draft diizinkan, update harga non-draft melempar DomainException, update field non-harga tetap aman, GR menyalin harga PO item dan mengabaikan request klien, GR tanpa PO tetap dapat memakai harga manual).
+- **Hasil Pengujian**: Seluruh 219 test (720 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
