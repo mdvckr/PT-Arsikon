@@ -72,20 +72,32 @@ class PurchaseOrderController extends Controller
         $this->authorize('create purchase orders');
         $suppliers    = Supplier::orderBy('name')->get();
         $materials    = Material::with('unit')->orderBy('name')->get();
-        $approvedPRs  = ProcurementRequest::where('status','approved')->with('items.material')->get();
+        $approvedPRs  = ProcurementRequest::whereIn('status', ['approved', 'partially_ordered'])->with('items.material')->get();
         $selectedPR   = $request->pr_id ? ProcurementRequest::with('items.material.unit')->find($request->pr_id) : null;
+        $warehouses   = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
         
         $selectedMR = null;
+        $mrPurchaseItems = collect();
         if ($request->from_mr_id) {
-            $mr = \App\Models\MaterialRequest::with(['items.material.unit', 'fromWarehouse'])->find($request->from_mr_id);
+            $mr = \App\Models\MaterialRequest::with(['items.material.unit', 'items.tool', 'fromWarehouse', 'toWarehouse'])->find($request->from_mr_id);
             if ($mr) {
-                // Hanya boleh membuat PO jika terdapat item manual yang tidak ada di inventori
-                $customItemsCount = $mr->items->whereNull('material_id')->count();
-                if ($customItemsCount === 0) {
+                // T7: Dukung seluruh item master & custom dengan fulfillment purchase dan sisa kuota > 0
+                $purchaseCandidates = $mr->items->filter(function ($it) use ($mr) {
+                    if (in_array($mr->status, ['approved', 'partially_fulfilled'])) {
+                        $sisa = (float) $it->qty_approved - (float) $it->qty_ordered;
+                        return $it->fulfillment === 'purchase' && $sisa > 0;
+                    }
+                    // Jika submitted, dukung item custom atau purchase untuk preview/notifikasi
+                    return empty($it->material_id) || $it->fulfillment === 'purchase';
+                })->values();
+
+                if ($purchaseCandidates->isEmpty()) {
                     return redirect()->route('material-requests.show', $mr)
-                        ->with('error', "Permintaan #{$mr->request_number} tidak memiliki barang manual. Seluruh barang tersedia di master inventori dan langsung diproses melalui Surat Jalan.");
+                        ->with('error', "PO Lapangan #{$mr->request_number} tidak memiliki item dengan jalur pembelian vendor atau seluruh kuota pengadaan telah habis.");
                 }
+
                 $selectedMR = $mr;
+                $mrPurchaseItems = $purchaseCandidates;
             }
         }
 
@@ -94,11 +106,11 @@ class PurchaseOrderController extends Controller
             ->whereHas('materialRequest', function ($q) {
                 $q->whereIn('status', ['submitted', 'approved', 'partially_fulfilled']);
             })
-            ->with(['materialRequest.fromWarehouse'])
+            ->with(['materialRequest.fromWarehouse', 'materialRequest.toWarehouse'])
             ->latest()
             ->get();
 
-        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'selectedMR', 'mrCustomItems'));
+        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'selectedMR', 'mrPurchaseItems', 'mrCustomItems', 'warehouses'));
     }
 
     public function store(Request $request)
@@ -108,12 +120,14 @@ class PurchaseOrderController extends Controller
             'supplier_id'                      => 'nullable|exists:suppliers,id',
             'supplier_name'                    => 'nullable|string|max:255',
             'procurement_request_id'           => 'nullable|exists:procurement_requests,id',
+            'delivery_warehouse_id'            => 'nullable|exists:warehouses,id',
             'order_date'                       => 'required|date',
             'expected_delivery'                => 'nullable|date|after_or_equal:order_date',
             'terms'                            => 'nullable|string',
             'notes'                            => 'nullable|string',
             'items'                            => 'required|array|min:1',
             'items.*.material_id'              => 'nullable|exists:materials,id',
+            'items.*.tool_id'                  => 'nullable|exists:tools,id',
             'items.*.custom_item_name'         => 'nullable|string|max:255',
             'items.*.custom_item_unit'         => 'nullable|string|max:50',
             'items.*.material_request_item_id' => 'nullable|exists:material_request_items,id',
@@ -136,27 +150,86 @@ class PurchaseOrderController extends Controller
             $supplierName = $regSupplier?->name;
         }
 
-        // Validasi: tiap baris wajib memilih material master ATAU mengisi nama barang baru/custom
-        // serta validasi kuota tersisa jika item berasal dari Procurement Request
+        $deliveryWarehouseId = !empty($validated['delivery_warehouse_id']) ? $validated['delivery_warehouse_id'] : null;
+
+        // Validasi tiap baris: sumber pengadaan wajib sah (item MR approved ATAU PR approved)
         foreach ($request->input('items', []) as $idx => $item) {
             $hasMaterial = !empty($item['material_id']);
+            $hasTool = !empty($item['tool_id']);
             $hasCustomName = !empty(trim($item['custom_item_name'] ?? ''));
-            if (!$hasMaterial && !$hasCustomName) {
+            if (!$hasMaterial && !$hasTool && !$hasCustomName) {
                 return back()->withInput()->withErrors([
                     "items.{$idx}.material_id" => "Baris ke-" . ($idx + 1) . ": Silakan pilih material dari master atau tentukan barang baru/custom."
                 ]);
             }
 
+            $mrItemId = $item['material_request_item_id'] ?? null;
             $prItemId = $item['procurement_request_item_id'] ?? null;
-            if (!$prItemId && !empty($validated['procurement_request_id']) && $hasMaterial) {
-                $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
-                    ->where('material_id', $item['material_id'])
-                    ->value('id');
+            $hasPrId  = !empty($validated['procurement_request_id']);
+
+            // T7: PO wajib punya sumber: item MR approved ATAU PR approved. PO tanpa sumber ditolak.
+            if (!$mrItemId && !$prItemId && !$hasPrId) {
+                return back()->withInput()->withErrors([
+                    "items.{$idx}" => "Baris ke-" . ($idx + 1) . ": Purchase Order wajib memiliki sumber pengadaan yang sah (item PO Lapangan yang telah disetujui atau Permintaan Pengadaan PR yang telah disetujui)."
+                ]);
             }
 
-            if ($prItemId) {
-                $prItem = ProcurementRequestItem::find($prItemId);
-                if ($prItem) {
+            if ($mrItemId) {
+                $mrItem = MaterialRequestItem::with('materialRequest')->find($mrItemId);
+                if (!$mrItem) {
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.material_request_item_id" => "Item PO Lapangan tidak ditemukan."
+                    ]);
+                }
+
+                if (!in_array($mrItem->materialRequest?->status, ['approved', 'partially_fulfilled'])) {
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.material_request_item_id" => "PO Lapangan #{$mrItem->materialRequest?->request_number} belum disetujui (status: {$mrItem->materialRequest?->status})."
+                    ]);
+                }
+
+                if ($mrItem->fulfillment === 'stock') {
+                    $matName = $mrItem->displayName();
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.material_request_item_id" => "Item {$matName} dialokasikan untuk pemenuhan stok gudang (Surat Jalan), tidak dapat dibuatkan PO."
+                    ]);
+                }
+
+                $approvedQty = (float) $mrItem->qty_approved > 0 ? (float) $mrItem->qty_approved : (float) $mrItem->qty_requested;
+                $sisaKuotaMR = max(0, $approvedQty - (float) $mrItem->qty_ordered);
+                if ((float) $item['quantity'] > $sisaKuotaMR) {
+                    $matName = $mrItem->displayName();
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota MR ({$sisaKuotaMR})."
+                    ]);
+                }
+
+                if (!$deliveryWarehouseId && $mrItem->materialRequest?->to_warehouse_id) {
+                    $deliveryWarehouseId = $mrItem->materialRequest->to_warehouse_id;
+                }
+            }
+
+            if ($prItemId || $hasPrId) {
+                if (!$prItemId && $hasPrId && $hasMaterial) {
+                    $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
+                        ->where('material_id', $item['material_id'])
+                        ->value('id');
+                }
+
+                if ($prItemId) {
+                    $prItem = ProcurementRequestItem::with('procurementRequest')->find($prItemId);
+                    if (!$prItem) {
+                        return back()->withInput()->withErrors([
+                            "items.{$idx}.procurement_request_item_id" => "Item Permintaan Pengadaan (PR) tidak ditemukan."
+                        ]);
+                    }
+
+                    if (!in_array($prItem->procurementRequest?->status, ['approved', 'partially_ordered'])) {
+                        return back()->withInput()->withErrors([
+                            "items.{$idx}.procurement_request_item_id" => "Permintaan Pengadaan (PR) belum disetujui (status: {$prItem->procurementRequest?->status})."
+                        ]);
+                    }
+
                     $sisaKuota = (float) $prItem->quantity - (float) $prItem->qty_ordered;
                     if ((float) $item['quantity'] > $sisaKuota) {
                         $matName = $prItem->material?->name ?? 'Material';
@@ -166,35 +239,14 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
-
-            $mrItemId = $item['material_request_item_id'] ?? null;
-            if ($mrItemId) {
-                $mrItem = MaterialRequestItem::find($mrItemId);
-                if ($mrItem) {
-                    if ($mrItem->fulfillment === 'stock') {
-                        $matName = $mrItem->displayName();
-                        return back()->withInput()->withErrors([
-                            "items.{$idx}.material_request_item_id" => "Item {$matName} dialokasikan untuk pemenuhan stok gudang (Surat Jalan), tidak dapat dibuatkan PO."
-                        ]);
-                    }
-
-                    $approvedQty = (float) $mrItem->qty_approved > 0 ? (float) $mrItem->qty_approved : (float) $mrItem->qty_requested;
-                    $sisaKuotaMR = max(0, $approvedQty - (float) $mrItem->qty_ordered);
-                    if ((float) $item['quantity'] > $sisaKuotaMR) {
-                        $matName = $mrItem->displayName();
-                        return back()->withInput()->withErrors([
-                            "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota MR ({$sisaKuotaMR})."
-                        ]);
-                    }
-                }
-            }
         }
 
-        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName) {
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId) {
             $po = PurchaseOrder::create([
                 'supplier_id'           => $supplierId,
                 'supplier_name'         => $supplierName,
                 'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
+                'delivery_warehouse_id' => $deliveryWarehouseId,
                 'created_by'            => auth()->id(),
                 'status'                => 'draft',
                 'order_date'            => $validated['order_date'],
@@ -211,6 +263,7 @@ class PurchaseOrderController extends Controller
                 $customName = !empty($item['custom_item_name']) ? trim($item['custom_item_name']) : null;
                 $customUnit = !empty($item['custom_item_unit']) ? trim($item['custom_item_unit']) : null;
                 $materialId = !empty($item['material_id']) ? $item['material_id'] : null;
+                $toolId     = !empty($item['tool_id']) ? $item['tool_id'] : null;
                 $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
                 $prItemId   = !empty($item['procurement_request_item_id']) ? $item['procurement_request_item_id'] : null;
 
@@ -220,8 +273,31 @@ class PurchaseOrderController extends Controller
                         ->value('id');
                 }
 
+                if ($mrItemId) {
+                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->firstOrFail();
+                    $approvedQty = (float) $mrItem->qty_approved > 0 ? (float) $mrItem->qty_approved : (float) $mrItem->qty_requested;
+                    $sisaKuota = max(0, $approvedQty - (float) $mrItem->qty_ordered);
+                    if ((float) $item['quantity'] > $sisaKuota) {
+                        throw new \Exception("Jumlah pemesanan ({$item['quantity']}) melebihi sisa kuota PO Lapangan ({$sisaKuota}).");
+                    }
+                    $mrItem->increment('qty_ordered', (float) $item['quantity']);
+                    if (!$toolId && $mrItem->tool_id) {
+                        $toolId = $mrItem->tool_id;
+                    }
+                }
+
+                if ($prItemId) {
+                    $prItem = ProcurementRequestItem::where('id', $prItemId)->lockForUpdate()->firstOrFail();
+                    $sisaKuota = max(0, (float) $prItem->quantity - (float) $prItem->qty_ordered);
+                    if ((float) $item['quantity'] > $sisaKuota) {
+                        throw new \Exception("Jumlah pemesanan ({$item['quantity']}) melebihi sisa kuota PR ({$sisaKuota}).");
+                    }
+                    $prItem->increment('qty_ordered', (float) $item['quantity']);
+                }
+
                 $po->items()->create([
                     'material_id'                 => $materialId,
+                    'tool_id'                     => $toolId,
                     'custom_item_name'            => $customName,
                     'custom_item_unit'            => $customUnit,
                     'material_request_item_id'    => $mrItemId,
@@ -231,20 +307,6 @@ class PurchaseOrderController extends Controller
                     'subtotal'                    => $subtotal,
                     'unit'                        => $customUnit,
                 ]);
-
-                if ($mrItemId) {
-                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->first();
-                    if ($mrItem) {
-                        $mrItem->increment('qty_ordered', (float) $item['quantity']);
-                    }
-                }
-
-                if ($prItemId) {
-                    $prItem = ProcurementRequestItem::where('id', $prItemId)->lockForUpdate()->first();
-                    if ($prItem) {
-                        $prItem->increment('qty_ordered', (float) $item['quantity']);
-                    }
-                }
             }
             $po->update(['total_amount' => $total]);
 

@@ -19,17 +19,20 @@
         </div>
     @endif
 
-    @if(isset($selectedMR) && $selectedMR && $selectedMR->items->whereNull('material_id')->isNotEmpty())
-    <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:gap:8px;">
+    @if(isset($selectedMR) && $selectedMR)
+    <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
             <div>
-                <strong style="font-size:13px;display:block;">Pengadaan Barang Manual untuk MR #{{ $selectedMR->request_number }}</strong>
-                <span style="font-size:11.5px;color:#b45309;">Hanya <strong>item barang manual/khusus</strong> yang dimasukkan ke PO ini karena memerlukan proses pengadaan/pembelian supplier. Barang inventori gudang pusat tetap diproses melalui Surat Jalan Distribusi.</span>
+                <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #{{ $selectedMR->request_number }}</strong>
+                <span style="font-size:11.5px;color:#b45309;">
+                    Gudang Tujuan Pengiriman: <strong>{{ $selectedMR->toWarehouse?->name }}</strong>.
+                    Item dengan jalur pembelian vendor dimuat otomatis ke daftar pesanan di bawah.
+                </span>
             </div>
         </div>
         <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:5px 10px;font-size:11px;font-weight:600;">
-            MR: {{ $selectedMR->request_number }} ({{ $selectedMR->items->whereNull('material_id')->count() }} Item Manual)
+            PO Lapangan: {{ $selectedMR->request_number }}
         </span>
     </div>
     @endif
@@ -86,6 +89,26 @@
                 <div>
                     <label class="form-label font-semibold">Tanggal Order <span class="text-danger">*</span></label>
                     <input type="date" name="order_date" value="{{ old('order_date', date('Y-m-d')) }}" class="form-control" required>
+                </div>
+
+                <div>
+                    <label class="form-label font-semibold">Gudang Tujuan Pengiriman <span class="text-danger">*</span></label>
+                    <select name="delivery_warehouse_id" class="form-control" required>
+                        <option value="">-- Pilih Gudang Tujuan --</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ (old('delivery_warehouse_id', $selectedMR?->to_warehouse_id ?? '') == $wh->id) ? 'selected' : '' }}>
+                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label font-semibold">Penanggung Risiko Pengiriman</label>
+                    <select name="risk_bearer" class="form-control">
+                        <option value="vendor" {{ old('risk_bearer', 'vendor') === 'vendor' ? 'selected' : '' }}>Vendor / Supplier</option>
+                        <option value="buyer" {{ old('risk_bearer') === 'buyer' ? 'selected' : '' }}>Pembeli (PT Arsikon)</option>
+                    </select>
                 </div>
 
                 <div>
@@ -178,49 +201,38 @@
                                 </td>
                             </tr>
                             @endforeach
-                        @elseif(isset($selectedMR) && $selectedMR && $selectedMR->items->whereNull('material_id')->isNotEmpty())
+                        @elseif(isset($selectedMR) && $selectedMR && isset($mrPurchaseItems) && $mrPurchaseItems->isNotEmpty())
+                            @foreach($mrPurchaseItems as $idx => $mrItem)
                             @php
-                                // HANYA barang yang diinput manual (tidak ada di inventori pusat) yang masuk ke PO
-                                $mrItemsToBuy = $selectedMR->items->whereNull('material_id')->values();
+                                $sisaKuota = in_array($selectedMR->status, ['approved', 'partially_fulfilled'])
+                                    ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
+                                    : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled);
+                                $unitName = $mrItem->displayUnit();
                             @endphp
-                            @foreach($mrItemsToBuy as $idx => $mrItem)
                             <tr class="po-item-row">
                                 <td>
-                                    <input type="hidden" name="items[{{ $idx }}][material_id]" class="po-material-id" value="">
+                                    <input type="hidden" name="items[{{ $idx }}][material_id]" class="po-material-id" value="{{ $mrItem->material_id }}">
+                                    <input type="hidden" name="items[{{ $idx }}][tool_id]" class="po-tool-id" value="{{ $mrItem->tool_id }}">
                                     <input type="hidden" name="items[{{ $idx }}][material_request_item_id]" class="po-mr-item-id" value="{{ $mrItem->id }}">
                                     <input type="hidden" name="items[{{ $idx }}][custom_item_name]" class="po-custom-name" value="{{ $mrItem->custom_item_name }}">
-                                    <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" class="po-custom-unit" value="{{ $mrItem->custom_item_unit ?? 'unit' }}">
+                                    <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" class="po-custom-unit" value="{{ $unitName }}">
 
-                                    <select class="form-control po-item-select" onchange="handleItemSelect(this)" required>
-                                        <optgroup label="PO Lapangan Proyek (Item Manual)">
-                                            <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $selectedMR->request_number }}" data-warehouse="{{ $selectedMR->fromWarehouse?->name }}" selected>
-                                                [MR #{{ $selectedMR->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $selectedMR->fromWarehouse?->name }}
-                                            </option>
-                                        </optgroup>
-                                        <optgroup label="Input Bebas">
-                                            <option value="manual:new" data-type="manual">+ Input Barang Baru Manual (Ketik Sendiri)</option>
-                                        </optgroup>
-                                        <optgroup label="Master Data Material">
-                                            @foreach($materials as $mat)
-                                                <option value="mat:{{ $mat->id }}" data-type="material" data-id="{{ $mat->id }}" data-price="{{ $mat->unit_price ?? 0 }}" data-unit="{{ $mat->unit?->symbol ?? 'unit' }}">
-                                                    {{ $mat->name }} ({{ $mat->unit?->symbol ?? 'unit' }})
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                    </select>
-
-                                    <div class="po-extra-container mt-2" style="display:block;">
-                                        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:5px 8px;font-size:11px;color:#92400e;">
-                                            <i class="fas fa-link me-1"></i> Item manual dari MR <strong>#{{ $selectedMR->request_number }}</strong> ({{ $selectedMR->fromWarehouse?->name }}).
-                                        </div>
+                                    <div style="font-weight:600;font-size:13px;color:#0f172a;">
+                                        {{ $mrItem->displayName() }}
+                                        @if($mrItem->isCustom())
+                                            <span class="badge" style="background:#fef3c7;color:#92400e;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:600;">Custom</span>
+                                        @endif
+                                    </div>
+                                    <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                                        <i class="fas fa-link me-1"></i> Dari PO Lapangan <strong>#{{ $selectedMR->request_number }}</strong> (Gudang: {{ $selectedMR->toWarehouse?->name }})
                                     </div>
                                 </td>
                                 <td>
-                                    @php $neededQty = max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled); @endphp
                                     <div class="flex items-center gap-1">
-                                        <input type="number" step="0.01" min="0.01" name="items[{{ $idx }}][quantity]" value="{{ $neededQty }}" class="form-control po-qty" oninput="calcPoRow(this)" required>
-                                        <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">{{ $mrItem->custom_item_unit ?? 'unit' }}</span>
+                                        <input type="number" step="0.01" min="0.01" max="{{ $sisaKuota }}" name="items[{{ $idx }}][quantity]" value="{{ $sisaKuota }}" class="form-control po-qty" oninput="calcPoRow(this)" required>
+                                        <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">{{ $unitName }}</span>
                                     </div>
+                                    <div style="font-size:10px;color:#64748b;margin-top:2px;">Sisa kuota: {{ format_quantity($sisaKuota) }}</div>
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" min="0" name="items[{{ $idx }}][unit_price]" value="0" class="form-control po-price" oninput="calcPoRow(this)" required>

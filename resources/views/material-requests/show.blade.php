@@ -120,10 +120,16 @@
 
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             @php
+                $hasPurchaseItems = $materialRequest->items->contains(fn($it) => $it->fulfillment === 'purchase' && ((float)$it->qty_approved - (float)$it->qty_ordered) > 0);
                 $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
+                $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) || auth()->user()->can('create purchase orders');
             @endphp
 
-            @if($hasCustomItems && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
+            @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems && $canCreatePo)
+                <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                    <i class="fas fa-cart-shopping"></i> Buat PO ke Vendor
+                </a>
+            @elseif($hasCustomItems && $canCreatePo)
                 <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
                     <i class="fas fa-cart-shopping"></i> Buat PO (Item Manual)
                 </a>
@@ -176,7 +182,23 @@
         {{-- Left: Items --}}
         <div style="display:flex;flex-direction:column;gap:16px;">
 
-            @if($hasCustomItems)
+            @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
+            <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;overflow:hidden;">
+                <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-cart-shopping" style="color:#d97706;font-size:14px;"></i>
+                        <span style="font-size:12px;color:#92400e;">
+                            PO Lapangan ini memiliki <strong>item dengan jalur pembelian vendor</strong> (fulfillment: purchase) yang belum dipesan. Anda dapat langsung menerbitkan Purchase Order ke supplier dengan alamat kirim Gudang Proyek <strong>{{ $materialRequest->toWarehouse?->name }}</strong>.
+                        </span>
+                    </div>
+                    @if($canCreatePo)
+                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
+                        <i class="fas fa-cart-plus me-1"></i> Buat PO ke Vendor
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @elseif($hasCustomItems)
             <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;overflow:hidden;">
                 <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -185,7 +207,7 @@
                             PO Lapangan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
                         </span>
                     </div>
-                    @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
+                    @if($canCreatePo)
                     <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
                         <i class="fas fa-cart-plus me-1"></i> Buat PO Item Manual
                     </a>

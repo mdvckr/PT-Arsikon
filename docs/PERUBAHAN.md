@@ -214,6 +214,26 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganEditTest.php`: Test suite pengujian 7 skenario komprehensif.
 - **Hasil Pengujian**: Seluruh 201 test (668 assertions) berstatus HIJAU (PASS).
 
+### T7. PO Langsung dari PO Lapangan / MR (Tanpa PR)
+- **Tujuan**:
+  - Mengizinkan penerbitan Purchase Order (PO) langsung dari PO Lapangan (Material Request) yang telah disetujui (`approved` / `partially_fulfilled`) tanpa harus melalui Procurement Request (PR).
+  - Menghapus pembatasan lama di mana PO dari MR hanya boleh untuk item manual/custom (`whereNull('material_id')`). Sekarang seluruh item material terdaftar, item custom, maupun item alat yang memiliki jalur pemenuhan pembelian (`fulfillment == 'purchase'`) dan masih memiliki sisa kuota (`qty_approved - qty_ordered > 0`) dapat diterbitkan menjadi PO langsung ke vendor.
+  - Menampilkan tombol aksi "Buat PO ke Vendor" dan info banner pengadaan pada halaman detail MR (`material-requests.show`) hanya bila status dokumen memenuhi syarat (`approved` / `partially_fulfilled` dan memiliki item purchase dengan sisa kuota).
+  - Membawa `material_request_item_id` ke form pembuatan PO (`purchase-orders.create`), memuat otomatis sisa kuota pesanan, dan menetapkan `delivery_warehouse_id` secara otomatis ke gudang proyek pemohon (`to_warehouse_id`).
+  - Menegakkan integritas sumber pengadaan:
+    - **PO wajib memiliki sumber pengadaan yang sah**: Setiap item dalam PO wajib bersumber dari item MR yang telah disetujui atau item PR yang telah disetujui. Pembuatan PO tanpa sumber yang valid ditolak dengan validasi error.
+    - Menolak pembuatan PO untuk MR atau PR yang belum disetujui (misalnya status `submitted` atau `draft`).
+    - Menolak pemesanan item MR yang dialokasikan untuk pemindahan stok gudang (`fulfillment == 'stock'`).
+    - Validasi kuota sisa dihitung ulang dengan penguncian pesimistik `lockForUpdate()` di dalam transaksi DB untuk mencegah race condition.
+    - Satu PO tetap terikat ke satu vendor (`supplier_id` / `supplier_name`).
+    - Jalur PR tetap dipertahankan untuk kebutuhan restock gudang pusat tanpa MR, dengan pembaruan kuota `qty_ordered` dan kalkulasi status `partially_ordered` / `fully_ordered`.
+- **Perubahan File**:
+  - `app/Http/Controllers/PurchaseOrderController.php`: Refaktor method `create` (dukung multi-item MR purchase master/alat/custom, redirect jika kuota habis, dropdown gudang tujuan) dan `store` (guard sumber pengadaan sah, guard status approved MR/PR, penetapan otomatis `delivery_warehouse_id`, sinkronisasi `qty_ordered` dengan DB transaction dan lock).
+  - `resources/views/material-requests/show.blade.php`: Penambahan tombol "Buat PO ke Vendor" di action header dan banner informasi pengadaan vendor langsung ke proyek.
+  - `resources/views/purchase-orders/create.blade.php`: Header gudang tujuan pengiriman (`delivery_warehouse_id`), penanggung risiko (`risk_bearer`), banner informasi pengadaan MR, dan tabel item otomatis dari `mrPurchaseItems`.
+  - `tests/Feature/PoDirectFromMrTest.php`: Test suite TDD memverifikasi alur PO langsung dari MR, pembuktian bug awal (merah) dan hasil hijau (8 passed, 25 assertions).
+- **Hasil Pengujian**: Seluruh 209 test (693 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
