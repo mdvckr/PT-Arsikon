@@ -171,6 +171,26 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
+            // Validasi T14: qty alat selalu bilangan bulat di PO
+            if ($hasTool) {
+                $qty = $item['quantity'] ?? null;
+                if (!is_null($qty) && fmod((float)$qty, 1) != 0) {
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.quantity" => "Kuantitas alat harus berupa bilangan bulat."
+                    ]);
+                }
+                if (!empty($item['schedules']) && is_array($item['schedules'])) {
+                    foreach ($item['schedules'] as $sIdx => $sch) {
+                        $planQty = $sch['planned_qty'] ?? null;
+                        if (!is_null($planQty) && fmod((float)$planQty, 1) != 0) {
+                            return back()->withInput()->withErrors([
+                                "items.{$idx}.schedules.{$sIdx}.planned_qty" => "Kuantitas jadwal alat harus berupa bilangan bulat."
+                            ]);
+                        }
+                    }
+                }
+            }
+
             if (!empty($item['schedules']) && is_array($item['schedules'])) {
                 $totalPlanned = collect($item['schedules'])->sum(fn($s) => (float)($s['planned_qty'] ?? 0));
                 if ($totalPlanned > (float)($item['quantity'] ?? 0)) {

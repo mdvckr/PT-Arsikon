@@ -105,10 +105,19 @@ class GoodsReceiptService
                 $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
                 $poItemId = $item['purchase_order_item_id'] ?? null;
                 $poItem = $poItemId ? PurchaseOrderItem::where('id', $poItemId)->lockForUpdate()->first() : null;
+                if (!$isTool && $poItem && $poItem->isTool()) {
+                    $isTool = true;
+                }
 
                 $qtyReceived = (float) ($item['qty_received'] ?? $item['quantity'] ?? 0);
                 $qtyDamaged  = (float) ($item['qty_damaged'] ?? 0);
                 $qtyShipped  = (float) ($item['qty_shipped'] ?? ($qtyReceived + $qtyDamaged));
+
+                if ($isTool) {
+                    if (fmod($qtyReceived, 1) != 0 || fmod($qtyDamaged, 1) != 0 || fmod($qtyShipped, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada penerimaan barang harus berupa bilangan bulat.");
+                    }
+                }
 
                 if ($qtyReceived + $qtyDamaged > $qtyShipped) {
                     throw new Exception("Jumlah diterima ({$qtyReceived}) + rusak ({$qtyDamaged}) tidak boleh melebihi jumlah yang dikirim vendor ({$qtyShipped}).");
@@ -199,6 +208,14 @@ class GoodsReceiptService
                             (int) round($item->qty_received),
                             "Penerimaan Supplier #{$receipt->receipt_number} — {$receipt->supplier?->name}"
                         );
+
+                        // T14: GR item alat di gudang proyek: isi tools.owner_warehouse_id = gudang pusat bila masih NULL
+                        if (is_null($tool->owner_warehouse_id)) {
+                            $centralWarehouse = Warehouse::where('is_central', true)->first();
+                            if ($centralWarehouse) {
+                                $tool->update(['owner_warehouse_id' => $centralWarehouse->id]);
+                            }
+                        }
                     }
 
                     // T11 BUGFIX: cabang ALAT menaikkan received_qty PO item persis seperti cabang material

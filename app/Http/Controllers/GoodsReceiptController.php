@@ -333,6 +333,32 @@ class GoodsReceiptController extends Controller
             return back()->withInput()->with('error', 'Anda tidak memiliki hak akses untuk mencatat penerimaan di gudang ini.');
         }
 
+        // Validasi T14: qty alat selalu bilangan bulat di GR
+        foreach ($request->input('items', []) as $idx => $item) {
+            $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
+            if (!$isTool && !empty($item['purchase_order_item_id'])) {
+                $poi = \App\Models\PurchaseOrderItem::find($item['purchase_order_item_id']);
+                if ($poi && $poi->isTool()) {
+                    $isTool = true;
+                }
+            }
+
+            if ($isTool) {
+                $qty = $item['quantity'] ?? null;
+                $shipped = $item['qty_shipped'] ?? null;
+                $damaged = $item['qty_damaged'] ?? null;
+                if (!is_null($qty) && fmod((float)$qty, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.quantity" => "Kuantitas alat harus berupa bilangan bulat."]);
+                }
+                if (!is_null($shipped) && fmod((float)$shipped, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.qty_shipped" => "Kuantitas alat yang dikirim harus berupa bilangan bulat."]);
+                }
+                if (!is_null($damaged) && fmod((float)$damaged, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.qty_damaged" => "Kuantitas alat rusak harus berupa bilangan bulat."]);
+                }
+            }
+        }
+
         // Simpan nama supplier dan penerima ke validated
         $validated['supplier_name'] = $cleanedSupplierName ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
         $validated['received_by_name'] = trim($request->input('received_by_name', '')) ?: null;

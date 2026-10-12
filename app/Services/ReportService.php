@@ -9,10 +9,13 @@ use App\Models\Maintenance;
 use App\Models\MaterialRequest;
 use App\Models\StockMutation;
 use App\Models\Tool;
+use App\Models\ToolInventory;
 use App\Models\User;
 use App\Models\Warehouse;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ReportService
 {
@@ -257,5 +260,82 @@ class ReportService
                     'status'            => $tool->status,
                 ];
             });
+    }
+
+    /**
+     * Laporan Alat Milik Pusat yang sedang berada di tiap proyek (T14).
+     * Mengembalikan daftar alat milik pusat dengan stok > 0 di gudang-gudang proyek.
+     * Field: alat (nama & kode), qty, gudang proyek, tanggal diterima.
+     */
+    public function centralToolsInProjectsReport(?int $warehouseId = null): Collection
+    {
+        $centralWarehouse = Warehouse::where('is_central', true)->first();
+        $centralId = $centralWarehouse?->id;
+
+        $query = ToolInventory::with(['tool.category', 'warehouse.project'])
+            ->whereHas('warehouse', function ($q) {
+                $q->where('is_central', false);
+            })
+            ->where('stock_total', '>', 0)
+            ->whereHas('tool', function ($q) use ($centralId) {
+                $q->where(function ($sub) use ($centralId) {
+                    if ($centralId) {
+                        $sub->where('owner_warehouse_id', $centralId)
+                            ->orWhereNull('owner_warehouse_id');
+                    } else {
+                        $sub->whereNull('owner_warehouse_id');
+                    }
+                });
+            });
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        return $query->get()->map(function ($inv) {
+            $tool = $inv->tool;
+            $warehouse = $inv->warehouse;
+
+            // Cari tanggal penerimaan terbaru di gudang proyek ini via Goods Receipt
+            $latestGrDate = DB::table('goods_receipt_items')
+                ->join('goods_receipts', 'goods_receipts.id', '=', 'goods_receipt_items.goods_receipt_id')
+                ->where('goods_receipts.warehouse_id', $inv->warehouse_id)
+                ->where('goods_receipt_items.tool_id', $inv->tool_id)
+                ->where('goods_receipts.status', 'confirmed')
+                ->max('goods_receipts.receipt_date');
+
+            if (!$latestGrDate) {
+                // Alternatif: cek penerimaan dari Surat Jalan / Distribusi
+                $latestDistDate = DB::table('distribution_items')
+                    ->join('distributions', 'distributions.id', '=', 'distribution_items.distribution_id')
+                    ->where('distributions.to_warehouse_id', $inv->warehouse_id)
+                    ->where('distribution_items.tool_id', $inv->tool_id)
+                    ->where('distributions.status', 'completed')
+                    ->max('distributions.updated_at');
+
+                $receivedDate = $latestDistDate
+                    ? Carbon::parse($latestDistDate)->toDateString()
+                    : ($inv->created_at ? $inv->created_at->toDateString() : now()->toDateString());
+            } else {
+                $receivedDate = Carbon::parse($latestGrDate)->toDateString();
+            }
+
+            return (object) [
+                'tool_id'           => $tool?->id,
+                'tool_code'         => $tool?->code ?? '-',
+                'tool_name'         => $tool?->name ?? '-',
+                'brand'             => $tool?->brand ?? '-',
+                'category_name'     => $tool?->category?->name ?? '-',
+                'quantity'          => (int) $inv->stock_total,
+                'stock_available'   => (int) $inv->stock_available,
+                'stock_borrowed'    => (int) $inv->stock_borrowed,
+                'stock_maintenance' => (int) $inv->stock_maintenance,
+                'stock_damaged'     => (int) $inv->stock_damaged,
+                'warehouse_id'      => $warehouse?->id,
+                'warehouse_name'    => $warehouse?->name ?? '-',
+                'project_name'      => $warehouse?->project?->name ?? '-',
+                'received_date'     => $receivedDate,
+            ];
+        });
     }
 }

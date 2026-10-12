@@ -61,6 +61,28 @@ class MaterialRequestService
                     throw new Exception("Jumlah pengajuan harus > 0.");
                 }
 
+                // T14: Item alat (tool)
+                if (!empty($item['tool_id']) || ($item['item_type'] ?? '') === 'tool') {
+                    if (fmod($qtyRequested, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                    }
+                    $tool = !empty($item['tool_id']) ? \App\Models\Tool::findOrFail($item['tool_id']) : null;
+                    MaterialRequestItem::create([
+                        'material_request_id' => $request->id,
+                        'item_type'           => 'tool',
+                        'tool_id'             => $tool?->id,
+                        'material_id'         => null,
+                        'category_id'         => $tool?->category_id,
+                        'qty_requested'       => (int) $qtyRequested,
+                        'qty_approved'        => $submitImmediately ? (int) $qtyRequested : 0,
+                        'notes'               => $item['notes'] ?? null,
+                        'specification'       => $item['specification'] ?? null,
+                        'usage_location'      => $item['usage_location'] ?? null,
+                        'usage_date'          => $item['usage_date'] ?? null,
+                    ]);
+                    continue;
+                }
+
                 // Custom manual item (tidak ada di gudang sumber)
                 if (empty($item['material_id'])) {
                     $customName = trim($item['custom_item_name'] ?? '');
@@ -73,6 +95,9 @@ class MaterialRequestService
                         $cat = \App\Models\Category::find($item['category_id']);
                         if (!$cat) {
                             throw new Exception("Kategori custom tidak valid.");
+                        }
+                        if ($cat->type === 'tool' && fmod($qtyRequested, 1) != 0) {
+                            throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
                         }
                         $customCategoryId = $cat->id;
                     }

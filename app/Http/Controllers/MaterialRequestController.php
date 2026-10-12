@@ -207,6 +207,19 @@ class MaterialRequestController extends Controller
             }
         }
 
+        if (!empty($validated['custom_items'])) {
+            foreach ($validated['custom_items'] as $cIdx => $cItem) {
+                if (!empty($cItem['category_id'])) {
+                    $cat = \App\Models\Category::find($cItem['category_id']);
+                    if ($cat && $cat->type === 'tool' && fmod((float)($cItem['qty'] ?? 0), 1) != 0) {
+                        return back()->withInput()->withErrors([
+                            "custom_items.{$cIdx}.qty" => "Kuantitas alat harus berupa bilangan bulat."
+                        ]);
+                    }
+                }
+            }
+        }
+
         if (empty($itemsData)) {
             return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta (master atau manual).']);
         }

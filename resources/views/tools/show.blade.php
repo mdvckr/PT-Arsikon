@@ -26,6 +26,11 @@
                     {{ $tool->type }}
                 </span>
                 @endif
+                @if($tool->isOwnedByCentral())
+                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;">
+                    <i class="fas fa-building me-1"></i> Milik Pusat
+                </span>
+                @endif
             </div>
             <p class="text-muted" style="font-size:12.5px;margin:3px 0 0;">
                 Terdaftar sejak {{ $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-' }}
@@ -89,6 +94,8 @@
                                     {{ $inv->warehouse?->name ?? 'Gudang Default' }}
                                     @if($inv->warehouse?->is_central)
                                     <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:10px;margin-left:4px;">Pusat</span>
+                                    @elseif($tool->isOwnedByCentral())
+                                    <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:10px;margin-left:4px;">Milik Pusat</span>
                                     @endif
                                 </td>
                                 <td style="padding:10px 16px;text-align:right;font-weight:600;color:#0f172a;">
@@ -329,6 +336,7 @@
                             ['Spesifikasi / Ukuran', $tool->size ? '<span class="badge bg-light text-dark border"><i class="fas fa-ruler-combined me-1"></i>'.$tool->size.'</span>' : '-'],
                             ['Kategori', $tool->category?->name ?? '-'],
                             ['Merk / Brand', $tool->brand ?: '-'],
+                            ['Kepemilikan', $tool->isOwnedByCentral() ? '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;"><i class="fas fa-building me-1"></i>Milik Pusat</span>' : ($tool->ownerWarehouse?->name ?? '-')],
                             ['Gudang Utama', $tool->currentWarehouse?->name ?? 'Gudang Pusat / Default'],
                             ['Status', $statusBadge],
                             ['Tgl Terdaftar', $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-'],

@@ -383,6 +383,29 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoDeliveryScheduleTest.php`: Feature test suite komprehensif mencakup 7 skenario (default schedule, validasi kuota jadwal bertahap, pembatasan edit hanya saat draft, AJAX scheduled incoming, auto-alokasi GR, notifikasi keterlambatan satu kali, dan pembekuan incoming_stages).
 - **Hasil Pengujian**: Seluruh 243 test (811 assertions) berstatus HIJAU (PASS).
 
+### T14. Alat Dibeli dan Milik Pusat
+- **Tujuan**:
+  - Memastikan seluruh alat/mesin yang dibeli dan diterima lewat Goods Receipt (GR) di gudang proyek tercatat kepemilikannya sebagai aset kantor pusat: `tools.owner_warehouse_id = gudang pusat` bila masih NULL.
+  - Alat yang diterima lewat GR di gudang proyek TIDAK membuat `tool_loans` atau `tool_assignments` (penerimaan pengadaan bukan peminjaman internal). Stok langsung bertambah ke inventaris gudang proyek via `ToolInventoryService::addStock` dan berstatus siap pakai (`stock_available`) dengan label kepemilikan "Milik Pusat".
+  - Laporan baru di Laporan Status Alat (`reports/tools.blade.php`): menyajikan tabel khusus "Alat Milik Pusat yang Sedang Berada di Tiap Proyek" dengan kolom: Kode & Nama Alat, Qty, Gudang Proyek, Tanggal Diterima, Kepemilikan (Milik Pusat), dan Rincian Kondisi Stok, lengkap dengan kartu KPI dan filter per gudang proyek.
+  - Pemindahan alat kembali ke pusat tetap memakai mekanisme yang sudah ada (Surat Jalan / Distribusi).
+  - Validasi ketat kuantitas alat: kuantitas alat (termasuk kuantitas jadwal dan barang rusak/dikirim) WAJIB berupa bilangan bulat (integer) di seluruh modul Permintaan Material (MR), Purchase Order (PO), dan Goods Receipt (GR).
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000009_add_owner_warehouse_id_to_tools_table.php`: Migrasi penambahan foreign key `owner_warehouse_id` nullable ke tabel `warehouses`.
+  - `app/Models/Tool.php`: Penambahan fillable, cast integer, relasi `ownerWarehouse()`, dan helper method `isOwnedByCentral()`.
+  - `app/Services/GoodsReceiptService.php`: Pada saat konfirmasi GR item alat, isi `tools.owner_warehouse_id = gudang pusat` jika masih NULL, dan validasi kuantitas alat (terima, rusak, kirim) wajib bilangan bulat.
+  - `app/Http/Controllers/GoodsReceiptController.php`: Validasi bilangan bulat untuk kuantitas alat pada form store GR.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Validasi bilangan bulat untuk kuantitas alat dan kuantitas jadwal alat pada form store PO.
+  - `app/Services/MaterialRequestService.php`: Penanganan item alat pada MR dengan validasi kuantitas wajib bilangan bulat.
+  - `app/Http/Controllers/MaterialRequestController.php`: Validasi bilangan bulat untuk item alat manual/kategori alat.
+  - `app/Services/ReportService.php`: Method baru `centralToolsInProjectsReport(?int $warehouseId = null)` menghitung alat milik pusat di gudang proyek beserta tanggal diterima (dari GR/Distribusi).
+  - `app/Http/Controllers/ReportController.php`: Method `toolReport` memuat data `centralToolsInProjects` dan filter gudang proyek.
+  - `resources/views/reports/tools.blade.php`: Tampilan baru tabel dan metrik "Alat Milik Pusat yang Sedang Berada di Tiap Proyek".
+  - `resources/views/tools/index.blade.php`: Tampilan badge "Milik Pusat" pada baris alat milik pusat.
+  - `resources/views/tools/show.blade.php`: Tampilan badge "Milik Pusat" pada header detail alat, tabel inventaris per gudang, dan sidebar informasi kepemilikan.
+  - `tests/Feature/CentralToolInProjectTest.php`: Feature test suite 6 skenario mencakup kepemilikan alat pusat saat GR, tidak adanya loan/assignment fiktif, data laporan alat pusat di proyek, dan validasi bilangan bulat di PO, GR, serta MR.
+- **Hasil Pengujian**: Seluruh 249 test (835 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
