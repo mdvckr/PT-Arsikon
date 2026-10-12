@@ -77,6 +77,10 @@ class ProcurementController extends Controller
     {
         $this->authorize('approve procurement');
 
+        if ($procurement->requested_by === auth()->id()) {
+            return back()->with('error', 'Pembuat PR tidak dapat menyetujui pengajuannya sendiri.');
+        }
+
         if ($procurement->status !== 'submitted') {
             return back()->with('error', 'Status tidak valid untuk disetujui.');
         }
@@ -91,6 +95,10 @@ class ProcurementController extends Controller
     public function reject(Request $request, ProcurementRequest $procurement)
     {
         $this->authorize('approve procurement');
+
+        if ($procurement->requested_by === auth()->id()) {
+            return back()->with('error', 'Pembuat PR tidak dapat menolak pengajuannya sendiri.');
+        }
 
         $request->validate(['rejection_reason' => 'required|string']);
         $procurement->update([

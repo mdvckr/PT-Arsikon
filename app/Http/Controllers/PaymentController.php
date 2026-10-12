@@ -106,6 +106,10 @@ class PaymentController extends Controller
     {
         $this->authorize('verify payments');
 
+        if ($payment->created_by === auth()->id()) {
+            return back()->with('error', 'Pembuat pembayaran tidak dapat memverifikasi pembayarannya sendiri.');
+        }
+
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Status tidak valid untuk diverifikasi.');
         }
@@ -125,6 +129,10 @@ class PaymentController extends Controller
     public function reject(Request $request, Payment $payment)
     {
         $this->authorize('verify payments');
+
+        if ($payment->created_by === auth()->id()) {
+            return back()->with('error', 'Pembuat pembayaran tidak dapat menolak pembayarannya sendiri.');
+        }
 
         $request->validate(['rejection_reason' => 'required|string']);
         $payment->update([

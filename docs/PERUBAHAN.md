@@ -24,6 +24,18 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/DocumentCounterTest.php`: Test merah awal (sebelum service dibuat) lalu hijau membuktikan nomor sekuensial, inisialisasi dari nilai tertinggi eksisting, dan integrasi dengan model create.
 - **Hasil Pengujian**: Test suite lulus 153 passed (535 assertions).
 
+### T2. Pemisahan Peran Persetujuan (Separation of Duties)
+- **Tujuan**: Menghilangkan celah self-approval / self-rejection di mana pengguna menyetujui atau menolak dokumen buatannya sendiri pada Material Request, Procurement Request, Purchase Order, dan Payment verification. Selain itu, Exception pada approval/rejection dibungkus try/catch di controller agar menghasilkan flash message error, bukan error 500.
+- **Perubahan File**:
+  - `app/Services/MaterialRequestService.php`: Validasi penolakan approval jika `approver == requested_by_user_id`.
+  - `app/Http/Controllers/MaterialRequestController.php`: Pembungkusan `approve` dan `reject` dalam `try/catch` dengan flash error `back()->with('error', ...)`.
+  - `app/Http/Controllers/ProcurementController.php`: Validasi penolakan `approve` dan `reject` jika `auth()->id() == requested_by`.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Penambahan method `approve` dengan otorisasi role/permission dan validasi penolakan jika `auth()->id() == created_by`.
+  - `routes/web.php`: Pendaftaran route `POST /purchase-orders/{purchaseOrder}/approve`.
+  - `app/Http/Controllers/PaymentController.php`: Validasi penolakan `verify` dan `reject` jika `auth()->id() == created_by`.
+  - `tests/Feature/SeparationOfDutiesTest.php`: Test merah awal membuktikan 5 celah self-approval/self-verification dan ketiadaan route PO approve, lalu seluruhnya hijau setelah guard diterapkan.
+- **Hasil Pengujian**: Seluruh 158 test (546 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

@@ -140,6 +140,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
     Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO']], function () {
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
+        Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
     });

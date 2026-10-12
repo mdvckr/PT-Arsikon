@@ -203,6 +203,29 @@ class PurchaseOrderController extends Controller
         return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates'));
     }
 
+    public function approve(PurchaseOrder $purchaseOrder)
+    {
+        if (! (auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin']))) {
+            abort(403);
+        }
+
+        if ($purchaseOrder->created_by === auth()->id()) {
+            return back()->with('error', 'Pembuat PO tidak dapat menyetujui PO buatannya sendiri.');
+        }
+
+        if ($purchaseOrder->status !== 'draft') {
+            return back()->with('error', 'Hanya PO berstatus draft yang dapat disetujui.');
+        }
+
+        $purchaseOrder->update([
+            'status'      => 'approved',
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('success', "PO #{$purchaseOrder->po_number} disetujui.");
+    }
+
     public function send(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->update(['status' => 'sent']);

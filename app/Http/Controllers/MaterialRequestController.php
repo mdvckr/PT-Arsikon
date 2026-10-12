@@ -250,9 +250,12 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('approve material requests');
 
-        $this->service->approveRequest($materialRequest, auth()->user());
-
-        return back()->with('success', "Permintaan #{$materialRequest->request_number} disetujui.");
+        try {
+            $this->service->approveRequest($materialRequest, auth()->user());
+            return back()->with('success', "Permintaan #{$materialRequest->request_number} disetujui.");
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function reject(Request $request, MaterialRequest $materialRequest)
@@ -260,8 +263,12 @@ class MaterialRequestController extends Controller
         $this->authorize('approve material requests');
 
         $request->validate(['rejection_reason' => 'required|string']);
-        $this->service->rejectRequest($materialRequest, auth()->user(), $request->rejection_reason);
 
-        return back()->with('success', "Permintaan #{$materialRequest->request_number} ditolak.");
+        try {
+            $this->service->rejectRequest($materialRequest, auth()->user(), $request->rejection_reason);
+            return back()->with('success', "Permintaan #{$materialRequest->request_number} ditolak.");
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

@@ -147,6 +147,10 @@ class MaterialRequestService
             throw new Exception("Hanya pengajuan berstatus 'submitted' yang dapat disetujui.");
         }
 
+        if ($request->requested_by_user_id === $approvedBy->id) {
+            throw new Exception("Pembuat permintaan tidak dapat menyetujui pengajuannya sendiri.");
+        }
+
         return DB::transaction(function () use ($request, $approvedBy, $approvedItemsQty) {
             foreach ($request->items as $item) {
                 $qtyApproved = isset($approvedItemsQty[$item->id])
