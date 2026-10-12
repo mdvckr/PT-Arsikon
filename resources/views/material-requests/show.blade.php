@@ -248,8 +248,9 @@
                             @foreach($materialRequest->items as $idx => $item)
                             @php
                                 $approved = (float) $item->qty_approved;
-                                $fulfilled = (float) $item->qty_fulfilled;
-                                $remaining = max(0, $approved - $fulfilled);
+                                $received = (float) $item->qty_received;
+                                $issued = (float) $item->qty_issued;
+                                $remaining = max(0, $approved - $received);
                                 $unit = $item->displayUnit();
                                 $isCustom = $item->isCustom();
                             @endphp
@@ -335,12 +336,12 @@
                                 <td style="text-align:center;padding:8px 10px;">
                                     @if(in_array($materialRequest->status, ['draft', 'submitted']))
                                         <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Menunggu</span>
-                                    @elseif($fulfilled >= $approved && $approved > 0)
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;"><i class="fas fa-check" style="font-size:8px;"></i> Terpenuhi</span>
-                                    @elseif($fulfilled > 0)
-                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Sebagian</span>
+                                    @elseif($received >= $approved && $approved > 0)
+                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;"><i class="fas fa-check" style="font-size:8px;"></i> Tiba Lengkap</span>
+                                    @elseif($received > 0)
+                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Tiba Sebagian ({{ format_quantity($received) }})</span>
                                     @else
-                                        <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Belum</span>
+                                        <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Belum Tiba</span>
                                     @endif
                                 </td>
                             </tr>

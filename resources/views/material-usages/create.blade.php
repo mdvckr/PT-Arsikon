@@ -447,7 +447,7 @@
                             <thead>
                                 <tr style="background:#fafafa; border-bottom:1px solid #e2e8f0; font-size:10.5px; text-transform:uppercase; letter-spacing:0.3px; color:#64748b;">
                                     <th style="text-align: left; padding:7px 12px;">Nama Material</th>
-                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">MR Disetujui</th>
+                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">Tiba / Pakai</th>
                                     <th style="text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
                                     <th style="text-align: center; width: 100px; padding:7px 8px;">Stok Gudang</th>
                                     <th style="text-align: center; width: 140px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
@@ -779,8 +779,8 @@
                             ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><i class="fas fa-check"></i> Terpenuhi</span>' : ''}
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
-                            <div class="fw-700" style="font-size: 12px; color:#1e293b;">${item.qty_approved} ${item.unit}</div>
-                            <div class="text-muted" style="font-size: 10.5px;">Sudah: ${item.qty_fulfilled}</div>
+                            <div class="fw-700" style="font-size: 12px; color:#1e293b;">Tiba: ${item.qty_received} ${item.unit}</div>
+                            <div class="text-muted" style="font-size: 10.5px;">Pakai: ${item.qty_issued}</div>
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
                             <span class="badge" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; ${remaining > 0 ? 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#64748b;'}">

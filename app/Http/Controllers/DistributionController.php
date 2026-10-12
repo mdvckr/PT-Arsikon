@@ -89,7 +89,9 @@ class DistributionController extends Controller
             ->filter(function ($mr) {
                 return $mr->items->contains(function ($it) {
                     $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
-                    return $approved - (float) $it->qty_fulfilled > 0;
+                    $inTransit = (float) $it->qty_in_transit;
+                    $received = (float) $it->qty_received;
+                    return max(0, $approved - $inTransit - $received) > 0;
                 });
             })
             ->values();
@@ -98,8 +100,9 @@ class DistributionController extends Controller
             $items = [];
             foreach ($mr->items as $it) {
                 $approved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
-                $fulfilled = (float) $it->qty_fulfilled;
-                $remaining = max(0, $approved - $fulfilled);
+                $inTransit = (float) $it->qty_in_transit;
+                $received = (float) $it->qty_received;
+                $remaining = max(0, $approved - $inTransit - $received);
                 if ($remaining <= 0) continue;
 
                 $items[] = [
@@ -109,7 +112,9 @@ class DistributionController extends Controller
                     'unit'             => $it->displayUnit(),
                     'category'         => $it->material?->category?->name ?? 'Material Umum',
                     'qty_approved'     => $approved,
-                    'qty_fulfilled'    => $fulfilled,
+                    'qty_received'     => $received,
+                    'qty_in_transit'   => $inTransit,
+                    'qty_fulfilled'    => $received, // backfill
                     'remaining'        => $remaining,
                     'is_custom'        => $it->isCustom(),
                     'custom_item_name' => $it->custom_item_name,

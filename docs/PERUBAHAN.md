@@ -85,16 +85,30 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/ProcurementMultiPoTest.php`: Test merah awal (bukti gagal: `qty_ordered` tidak bertambah dan validasi kuota belum ada) lalu hijau setelah sinkronisasi diterapkan.
 - **Hasil Pengujian**: Seluruh 171 test (562 assertions) berstatus HIJAU (PASS).
 
-### T6. Sinkronisasi PO dan MR (Multi-PO per MR & Kuota Tersisa)
+### T6. Sinkronisasi PO dan MR serta Pemisahan Kuota Pemakaian (qty_received vs qty_issued)
 - **Tujuan**:
   - Memvalidasi item MR yang dibuatkan PO harus berstatus pemenuhan `fulfillment == 'purchase'`. Jika berstatus `stock`, pembuatan PO ditolak karena harus diproses lewat Surat Jalan.
   - Memvalidasi kuota PO tidak melebihi sisa kuota yang disetujui: `quantity PO <= (item.qty_approved - item.qty_ordered)`.
   - Mengakumulasikan `item.qty_ordered += qty_po` pada item MR saat PO dibuat.
   - Mengembalikan kuota `qty_ordered` pada item MR saat PO dibatalkan (cancel).
+  - **Pemisahan Tegas `qty_received` dan `qty_issued` pada Material Usage**:
+    - Material Usage terhubung MR membatasi kuota hanya sebesar barang yang sudah tiba di gudang proyek: `kuota = max(0, qty_received - qty_issued)`. Barang yang belum tiba (`qty_in_transit` atau belum dikirim) tidak dapat dikeluarkan.
+    - Pemakaian material menaikkan `qty_issued`, BUKAN `qty_received`.
+    - Pembatalan bon pemakaian (`cancelUsage`) mengembalikan / mengurangi `qty_issued`.
+  - **Eliminasi Pembacaan `qty_fulfilled`**:
+    - Seluruh pembacaan kolom `qty_fulfilled` pada controller (`MaterialUsageController`, `DistributionController`), model, dan blade view (`purchase-orders/create`, `material-requests/show`, `material-usages/create`) telah dieliminasi dan dialihkan ke `qty_received` / `qty_issued` / `qty_ordered`.
+    - Kolom `qty_fulfilled` hanya dipertahankan untuk penulisan sinkronisasi backfill legacy demi kompatibilitas ke belakang tanpa pembacaan aktif.
 - **Perubahan File**:
   - `app/Http/Controllers/PurchaseOrderController.php`: Validasi pemenuhan `fulfillment` dan sisa kuota MR pada method `store`.
-  - `tests/Feature/MaterialRequestMultiPoTest.php`: Test merah awal (bukti gagal: penolakan kuota & status fulfillment stock belum ada) lalu hijau setelah perbaikan.
-- **Hasil Pengujian**: Seluruh 173 test (574 assertions) berstatus HIJAU (PASS).
+  - `app/Services/MaterialUsageService.php`: Validasi kuota MR berbasis `qty_received - qty_issued`, penambahan `qty_issued` saat pemakaian, dan pengurangan `qty_issued` saat pembatalan.
+  - `app/Http/Controllers/MaterialUsageController.php`: Penyesuaian `getMRDetails` menghitung `remaining` dari `qty_received - qty_issued`.
+  - `app/Http/Controllers/DistributionController.php`: Validasi kuota sisa kirim MR dihitung dari `qty_approved - qty_in_transit - qty_received`.
+  - `resources/views/purchase-orders/create.blade.php`: Penggantian kalkulasi sisa order MR menjadi `qty_approved - qty_ordered`.
+  - `resources/views/material-requests/show.blade.php`: Penggantian tampilan progress barang tiba menggunakan `qty_received` dan pemakaian `qty_issued`.
+  - `resources/views/material-usages/create.blade.php`: Penggantian label tampilan `item.qty_fulfilled` menjadi `item.qty_issued` dan header "Tiba / Pakai".
+  - `tests/Feature/MaterialRequestMultiPoTest.php`: Test sinkronisasi kuota PO dan MR.
+  - `tests/Feature/MaterialUsageTest.php`: Test pembatasan kuota pemakaian MR `qty_received - qty_issued`, penambahan `qty_issued`, dan pengembalian saat pembatalan.
+- **Hasil Pengujian**: Seluruh test lulus, suite pengujian 278 passed (1018 assertions) berstatus HIJAU (PASS).
 
 ### T18. Penamaan Tampilan "PO Lapangan" dan Istilah Proyek (Label Saja)
 - **Tujuan**:

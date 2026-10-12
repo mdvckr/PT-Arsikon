@@ -143,8 +143,9 @@ class MaterialUsageController extends Controller
 
         $items = $materialRequest->items->map(function ($item) use ($stocks) {
             $approved = (float) $item->qty_approved;
-            $fulfilled = (float) $item->qty_fulfilled;
-            $remaining = max(0, $approved - $fulfilled);
+            $received = (float) $item->qty_received;
+            $issued   = (float) $item->qty_issued;
+            $remaining = max(0, $received - $issued);
             $stock = isset($stocks[$item->material_id]) ? (float) $stocks[$item->material_id] : 0.0;
 
             return [
@@ -156,7 +157,9 @@ class MaterialUsageController extends Controller
                 'unit'          => $item->material?->unit?->abbreviation ?? 'unit',
                 'qty_requested' => (float) $item->qty_requested,
                 'qty_approved'  => $approved,
-                'qty_fulfilled' => $fulfilled,
+                'qty_received'  => $received,
+                'qty_issued'    => $issued,
+                'qty_fulfilled' => $issued, // backfill
                 'qty_remaining' => $remaining,
                 'stock'         => $stock,
                 'max_allowed'   => min($remaining, $stock),

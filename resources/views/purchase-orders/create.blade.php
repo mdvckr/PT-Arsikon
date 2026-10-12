@@ -171,7 +171,12 @@
                                         @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
                                         <optgroup label="PO Lapangan Proyek (Item Baru)">
                                             @foreach($mrCustomItems as $mrItem)
-                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
+                                                @php
+                                                    $mrItemQuota = (float)$mrItem->qty_approved > 0
+                                                        ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
+                                                        : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
+                                                @endphp
+                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                                                     [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }}
                                                 </option>
                                             @endforeach
@@ -206,7 +211,7 @@
                             @php
                                 $sisaKuota = in_array($selectedMR->status, ['approved', 'partially_fulfilled'])
                                     ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
-                                    : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled);
+                                    : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
                                 $unitName = $mrItem->displayUnit();
                             @endphp
                             <tr class="po-item-row">
@@ -265,7 +270,12 @@
                                         @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
                                         <optgroup label="PO Lapangan Proyek (Item Baru / Perlu Beli)">
                                             @foreach($mrCustomItems as $mrItem)
-                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
+                                                @php
+                                                    $mrItemQuota = (float)$mrItem->qty_approved > 0
+                                                        ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
+                                                        : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
+                                                @endphp
+                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                                                     [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
                                                 </option>
                                             @endforeach
@@ -324,7 +334,12 @@
             @if(isset($mrCustomItems) && $mrCustomItems->isNotEmpty())
             <optgroup label="PO Lapangan Proyek (Item Baru / Perlu Beli)">
                 @foreach($mrCustomItems as $mrItem)
-                    <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_fulfilled) }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
+                    @php
+                        $mrItemQuota = (float)$mrItem->qty_approved > 0
+                            ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
+                            : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
+                    @endphp
+                    <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
                         [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
                     </option>
                 @endforeach
