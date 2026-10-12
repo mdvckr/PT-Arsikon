@@ -274,6 +274,40 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PurchaseOrderPriceLockTest.php`: Test suite pengujian 5 skenario (update harga draft diizinkan, update harga non-draft melempar DomainException, update field non-harga tetap aman, GR menyalin harga PO item dan mengabaikan request klien, GR tanpa PO tetap dapat memakai harga manual).
 - **Hasil Pengujian**: Seluruh 219 test (720 assertions) berstatus HIJAU (PASS).
 
+### T10. Short Close PO
+- **Tujuan**:
+  - Menyediakan fitur Short Close untuk Purchase Order (PO) yang berstatus `sent` atau `partial_received` dan masih memiliki sisa kuota (`outstanding > 0`).
+  - Menambahkan permission kanonikal Spatie baru `'close purchase orders'`.
+  - Mendaftarkan permission ke `database/seeders/RoleAndPermissionSeeder.php` pada array `$permissions` dan role `Admin PO`, serta grup 'Pengadaan & Pembayaran' di `app/Http/Controllers/RoleController.php`. Role `Admin Pusat` otomatis mendapatkan permission ini.
+  - Menambahkan route `POST /purchase-orders/{purchaseOrder}/close` dengan name `purchase-orders.close`.
+  - Otorisasi dan guard ketat di server:
+    - Hanya user dengan permission `'close purchase orders'` atau role `Admin Pusat`/`Admin` yang berhak melakukan penutupan (status HTTP 403 bila tidak berhak).
+    - Penegakan pemisahan peran (T2): Pembuat PO (`created_by === auth()->id()`) dilarang keras melakukan short close pada PO buatannya sendiri, ditolak dengan pesan error.
+    - Hanya PO berstatus `sent` atau `partial_received` yang dapat di-short close; status lain ditolak.
+    - PO tanpa outstanding ditolak.
+    - Input `reason` wajib diisi (alasan penutupan).
+  - Mekanisme transaksi dan integritas kuota (`lockForUpdate()`):
+    - Untuk setiap item PO yang masih memiliki outstanding (`quantity - received_qty - lost_qty - short_closed_qty > 0`), atribut `short_closed_qty` ditambahkan sebesar sisa outstanding saat itu.
+    - Mengurangi `qty_ordered` pada item PO Lapangan / MR terkait (`material_request_items`) sebesar kuota yang ditutup, sehingga sisa kuota yang tidak dapat dipenuhi vendor tersebut kembali tersedia untuk dipesan ke vendor lain.
+    - Mengurangi `qty_ordered` pada item PR terkait jika PO bersumber dari restock PR.
+    - Membatalkan sisa jadwal kedatangan terencana (`po_delivery_schedules`) jika ada.
+    - Mencatat jejak riwayat alasan short close beserta identitas dan waktu penutupan pada atribut `notes` PO.
+    - Mengubah status PO menjadi `closed`.
+  - Tampilan dan antarmuka (`purchase-orders.show`):
+    - Tombol aksi "Short Close" interaktif (dengan input dialog alasan) hanya muncul untuk PO yang memenuhi syarat (status `sent`/`partial_received`, memiliki outstanding, user berwenang, dan bukan pembuat PO).
+    - Menampilkan riwayat catatan short close pada header card detail PO.
+    - Menampilkan kolom realisasi "Diterima / Ditutup" pada tabel barang PO dengan rincian qty diterima dan badge sisa yang ditutup.
+- **Perubahan File**:
+  - `database/seeders/RoleAndPermissionSeeder.php`: Pendaftaran permission `'close purchase orders'` dan assign ke `Admin PO`.
+  - `app/Http/Controllers/RoleController.php`: Penambahan permission `'close purchase orders'` pada modul Pengadaan & Pembayaran.
+  - `routes/web.php`: Route action `close` untuk `purchase-orders`.
+  - `app/Models/PurchaseOrderItem.php`: Penambahan accessor `getOutstandingAttribute()`.
+  - `app/Models/PurchaseOrder.php`: Penambahan accessor `getOutstandingAttribute()`.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Method `close()` dengan validasi, otorisasi, guard pemisahan peran, DB transaction, dan rollback kuota pesanan.
+  - `resources/views/purchase-orders/show.blade.php`: Tombol aksi Short Close, tampilan catatan riwayat penutupan, dan kolom realisasi item Diterima / Ditutup.
+  - `tests/Feature/PurchaseOrderShortCloseTest.php`: Test suite komprehensif menguji 6 skenario (creator tolak close sendiri, unauthorized 403, status tidak valid ditolak, tanpa outstanding ditolak, validasi wajib alasan, dan proses short close berhasil beserta rollback kuota MR).
+- **Hasil Pengujian**: Seluruh 225 test (737 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

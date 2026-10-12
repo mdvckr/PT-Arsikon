@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\Material;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PurchaseOrderController extends Controller
 {
@@ -466,6 +467,91 @@ class PurchaseOrderController extends Controller
             $po->update(['status' => 'cancelled']);
 
             return back()->with('success', "PO #{$po->po_number} dibatalkan.");
+        });
+    }
+
+    public function close(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        if (! (auth()->user()->can('close purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin']))) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menutup purchase order.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        if ($purchaseOrder->created_by === auth()->id()) {
+            return back()->with('error', 'Pembuat PO tidak dapat melakukan short close pada PO buatannya sendiri.');
+        }
+
+        if (!in_array($purchaseOrder->status, ['sent', 'partial_received'])) {
+            return back()->with('error', "Short close hanya dapat dilakukan pada PO berstatus sent atau partial_received (status saat ini: {$purchaseOrder->status}).");
+        }
+
+        return DB::transaction(function () use ($purchaseOrder, $validated) {
+            $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($po->created_by === auth()->id()) {
+                return back()->with('error', 'Pembuat PO tidak dapat melakukan short close pada PO buatannya sendiri.');
+            }
+
+            if (!in_array($po->status, ['sent', 'partial_received'])) {
+                return back()->with('error', "Short close hanya dapat dilakukan pada PO berstatus sent atau partial_received (status saat ini: {$po->status}).");
+            }
+
+            $po->load('items');
+            $totalOutstanding = $po->items->sum(fn($item) => $item->outstanding);
+
+            if ($totalOutstanding <= 0) {
+                return back()->with('error', 'PO tidak memiliki sisa kuota (outstanding) untuk ditutup.');
+            }
+
+            foreach ($po->items as $item) {
+                $poItem = PurchaseOrderItem::where('id', $item->id)->lockForUpdate()->firstOrFail();
+                $outstanding = max(0, (float)$poItem->quantity - (float)$poItem->received_qty - (float)$poItem->lost_qty - (float)$poItem->short_closed_qty);
+
+                if ($outstanding > 0) {
+                    $poItem->increment('short_closed_qty', $outstanding);
+
+                    // Kurangi qty_ordered pada MR item sebesar sisa yang ditutup
+                    if ($poItem->material_request_item_id) {
+                        $mrItem = MaterialRequestItem::where('id', $poItem->material_request_item_id)->lockForUpdate()->first();
+                        if ($mrItem) {
+                            $newOrdered = max(0, (float) $mrItem->qty_ordered - $outstanding);
+                            $mrItem->update(['qty_ordered' => $newOrdered]);
+                        }
+                    }
+
+                    // Kurangi qty_ordered pada PR item jika bersumber dari PR
+                    if ($poItem->procurement_request_item_id) {
+                        $prItem = ProcurementRequestItem::where('id', $poItem->procurement_request_item_id)->lockForUpdate()->first();
+                        if ($prItem) {
+                            $newOrdered = max(0, (float) $prItem->qty_ordered - $outstanding);
+                            $prItem->update(['qty_ordered' => $newOrdered]);
+                        }
+                    }
+                }
+            }
+
+            // Batalkan sisa jadwal kedatangan (bila ada tabel po_delivery_schedules)
+            if (Schema::hasTable('po_delivery_schedules')) {
+                DB::table('po_delivery_schedules')
+                    ->whereIn('purchase_order_item_id', $po->items->pluck('id'))
+                    ->where('status', 'planned')
+                    ->update(['status' => 'cancelled', 'updated_at' => now()]);
+            }
+
+            // Tambahkan catatan short close
+            $userName = auth()->user()->name ?? 'User';
+            $reasonNote = "[SHORT CLOSE " . now()->format('d/m/Y H:i') . " oleh {$userName}]: " . $validated['reason'];
+            $newNotes = trim(($po->notes ? $po->notes . "\n" : '') . $reasonNote);
+
+            $po->update([
+                'status' => 'closed',
+                'notes'  => $newNotes,
+            ]);
+
+            return back()->with('success', "PO #{$po->po_number} berhasil di-short-close (ditutup).");
         });
     }
 }

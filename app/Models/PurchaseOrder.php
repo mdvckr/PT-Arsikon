@@ -104,4 +104,9 @@ class PurchaseOrder extends Model
             default  => 'Vendor / Supplier',
         };
     }
+
+    public function getOutstandingAttribute(): float
+    {
+        return (float) $this->items->sum(fn($item) => $item->outstanding);
+    }
 }

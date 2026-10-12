@@ -94,4 +94,9 @@ class PurchaseOrderItem extends Model
         }
         return $this->material?->unit?->symbol ?? ($this->unit ?? 'unit');
     }
+
+    public function getOutstandingAttribute(): float
+    {
+        return max(0, (float)$this->quantity - (float)$this->received_qty - (float)$this->lost_qty - (float)$this->short_closed_qty);
+    }
 }

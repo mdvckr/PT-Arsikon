@@ -49,6 +49,27 @@
                     </button>
                 </form>
             @endif
+
+            @if(in_array($purchaseOrder->status, ['sent', 'partial_received']) && $purchaseOrder->outstanding > 0)
+                @if((auth()->user()->can('close purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
+                    <button type="button" class="btn btn-outline-warning" onclick="promptShortClose()">
+                        <i class="fas fa-ban me-1"></i> Short Close
+                    </button>
+                    <form id="shortCloseForm" action="{{ route('purchase-orders.close', $purchaseOrder) }}" method="POST" style="display:none;">
+                        @csrf
+                        <input type="hidden" name="reason" id="shortCloseReason">
+                    </form>
+                    <script>
+                        function promptShortClose() {
+                            let reason = prompt('Masukkan alasan penutupan (Short Close) PO:');
+                            if (reason && reason.trim().length > 0) {
+                                document.getElementById('shortCloseReason').value = reason.trim();
+                                document.getElementById('shortCloseForm').submit();
+                            }
+                        }
+                    </script>
+                @endif
+            @endif
         </div>
     </div>
 
@@ -116,6 +137,12 @@
     <!-- Section Barang yang Dipesan -->
     <div class="card mb-6" style="padding:20px;">
         <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;color:#1e293b;">Barang yang Dipesan (Item PO)</h3>
+        @if($purchaseOrder->notes)
+            <div class="mb-4" style="background:#f8fafc;border-left:4px solid #64748b;padding:10px 14px;border-radius:4px;font-size:13px;white-space:pre-line;">
+                <span class="text-muted block font-semibold text-xs mb-1">Catatan Dokumen / Riwayat Short Close:</span>
+                {{ $purchaseOrder->notes }}
+            </div>
+        @endif
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
@@ -123,6 +150,9 @@
                         <th>#</th>
                         <th>Material</th>
                         <th class="text-center">Jumlah Dipesan</th>
+                        @if($purchaseOrder->status !== 'draft')
+                            <th class="text-center">Diterima / Ditutup</th>
+                        @endif
                         <th class="text-end">Harga Satuan</th>
                         <th class="text-end">Subtotal</th>
                     </tr>
@@ -153,6 +183,16 @@
                         <td class="text-center">
                             {{ number_format($item->quantity, 2, ',', '.') }} {{ $item->displayUnit() }}
                         </td>
+                        @if($purchaseOrder->status !== 'draft')
+                            <td class="text-center">
+                                <span class="text-success font-semibold">{{ number_format($item->received_qty, 2, ',', '.') }} diterima</span>
+                                @if((float)$item->short_closed_qty > 0)
+                                    <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10.5px;">
+                                        Ditutup: {{ number_format($item->short_closed_qty, 2, ',', '.') }}
+                                    </span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
                         <td class="text-end"><strong class="text-primary">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
                     </tr>
