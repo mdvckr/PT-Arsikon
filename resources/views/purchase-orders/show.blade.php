@@ -22,15 +22,26 @@
             </a>
 
             @if($purchaseOrder->status === 'draft')
+                @if((auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
+                    <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Setujui PO ini?')">
+                            <i class="fas fa-check me-1"></i> Setujui PO
+                        </button>
+                    </form>
+                @endif
+            @endif
+
+            @if($purchaseOrder->status === 'approved')
                 <form action="{{ route('purchase-orders.send', $purchaseOrder) }}" method="POST">
                     @csrf
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Kirim PO ini ke Supplier?')">
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim PO ini ke Supplier?')">
                         <i class="fas fa-paper-plane me-1"></i> Kirim ke Supplier
                     </button>
                 </form>
             @endif
 
-            @if($purchaseOrder->status !== 'cancelled')
+            @if(in_array($purchaseOrder->status, ['draft', 'approved', 'sent']))
                 <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Batalkan PO ini?')">
@@ -40,6 +51,12 @@
             @endif
         </div>
     </div>
+
+    @if(session('error'))
+        <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="alert alert-success mb-4" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">

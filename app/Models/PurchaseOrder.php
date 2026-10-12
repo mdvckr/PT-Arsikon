@@ -14,6 +14,8 @@ class PurchaseOrder extends Model
         'procurement_request_id',
         'supplier_id',
         'supplier_name',
+        'delivery_warehouse_id',
+        'risk_bearer',
         'created_by',
         'approved_by',
         'status',
@@ -46,10 +48,12 @@ class PurchaseOrder extends Model
     public function supplier()           { return $this->belongsTo(Supplier::class); }
     public function creator()            { return $this->belongsTo(User::class, 'created_by'); }
     public function approver()           { return $this->belongsTo(User::class, 'approved_by'); }
+    public function deliveryWarehouse()  { return $this->belongsTo(Warehouse::class, 'delivery_warehouse_id'); }
     public function procurementRequest() { return $this->belongsTo(ProcurementRequest::class); }
     public function items()              { return $this->hasMany(PurchaseOrderItem::class); }
     public function payments()           { return $this->hasMany(Payment::class); }
     public function receipts()           { return $this->hasMany(PurchaseReceipt::class); }
+    public function goodsReceipts()      { return $this->hasMany(GoodsReceipt::class); }
 
     public function getRemainingAmountAttribute(): float
     {
@@ -60,10 +64,12 @@ class PurchaseOrder extends Model
     {
         return match($this->status) {
             'draft'            => 'Draft',
+            'approved'         => 'Disetujui',
             'sent'             => 'Dikirim ke Supplier',
             'partial_received' => 'Sebagian Diterima',
             'received'         => 'Diterima',
             'cancelled'        => 'Dibatalkan',
+            'closed'           => 'Ditutup (Short Close)',
             default            => $this->status,
         };
     }
@@ -71,10 +77,12 @@ class PurchaseOrder extends Model
     {
         return match($this->status) {
             'draft'            => 'gray',
+            'approved'         => 'info',
             'sent'             => 'primary',
             'partial_received' => 'warning',
             'received'         => 'success',
             'cancelled'        => 'danger',
+            'closed'           => 'secondary',
             default            => 'gray',
         };
     }

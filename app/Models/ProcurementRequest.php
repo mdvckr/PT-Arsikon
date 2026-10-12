@@ -35,23 +35,27 @@ class ProcurementRequest extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'draft'      => 'Draft',
-            'submitted'  => 'Diajukan',
-            'approved'   => 'Disetujui',
-            'rejected'   => 'Ditolak',
-            'po_created' => 'PO Dibuat',
-            default      => $this->status,
+            'draft'             => 'Draft',
+            'submitted'         => 'Diajukan',
+            'approved'          => 'Disetujui',
+            'rejected'          => 'Ditolak',
+            'po_created'        => 'PO Dibuat',
+            'partially_ordered' => 'Dipesan Sebagian',
+            'fully_ordered'     => 'Dipesan Penuh',
+            default             => $this->status,
         };
     }
     public function getStatusColorAttribute(): string
     {
         return match($this->status) {
-            'draft'      => 'gray',
-            'submitted'  => 'warning',
-            'approved'   => 'success',
-            'rejected'   => 'danger',
-            'po_created' => 'primary',
-            default      => 'gray',
+            'draft'             => 'gray',
+            'submitted'         => 'warning',
+            'approved'          => 'success',
+            'rejected'          => 'danger',
+            'po_created'        => 'primary',
+            'partially_ordered' => 'warning',
+            'fully_ordered'     => 'primary',
+            default             => 'gray',
         };
     }
 }

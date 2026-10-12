@@ -12,11 +12,15 @@ class PurchaseOrderItem extends Model
     protected $fillable = [
         'purchase_order_id',
         'material_id',
+        'tool_id',
         'custom_item_name',
         'custom_item_unit',
         'material_request_item_id',
+        'procurement_request_item_id',
         'quantity',
         'received_qty',
+        'lost_qty',
+        'short_closed_qty',
         'unit_price',
         'subtotal',
         'total_price',
@@ -25,10 +29,12 @@ class PurchaseOrderItem extends Model
     ];
 
     protected $casts = [
-        'quantity'     => 'decimal:2',
-        'received_qty' => 'decimal:2',
-        'unit_price'   => 'decimal:2',
-        'subtotal'     => 'decimal:2',
+        'quantity'         => 'decimal:2',
+        'received_qty'     => 'decimal:2',
+        'lost_qty'         => 'decimal:2',
+        'short_closed_qty' => 'decimal:2',
+        'unit_price'       => 'decimal:2',
+        'subtotal'         => 'decimal:2',
     ];
 
     public function purchaseOrder()
@@ -41,9 +47,19 @@ class PurchaseOrderItem extends Model
         return $this->belongsTo(Material::class);
     }
 
+    public function tool()
+    {
+        return $this->belongsTo(Tool::class);
+    }
+
     public function materialRequestItem()
     {
         return $this->belongsTo(MaterialRequestItem::class);
+    }
+
+    public function procurementRequestItem()
+    {
+        return $this->belongsTo(ProcurementRequestItem::class);
     }
 
     public function isCustom(): bool

@@ -10,10 +10,10 @@ class ProcurementRequestItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'procurement_request_id','material_id','quantity','estimated_price','unit','notes',
+        'procurement_request_id','material_id','quantity','qty_ordered','estimated_price','unit','notes',
     ];
 
-    protected $casts = ['quantity' => 'decimal:2', 'estimated_price' => 'decimal:2'];
+    protected $casts = ['quantity' => 'decimal:2', 'qty_ordered' => 'decimal:2', 'estimated_price' => 'decimal:2'];
 
     public function procurementRequest() { return $this->belongsTo(ProcurementRequest::class); }
     public function material() { return $this->belongsTo(Material::class); }

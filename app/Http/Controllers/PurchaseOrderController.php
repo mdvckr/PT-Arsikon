@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\ProcurementRequest;
+use App\Models\ProcurementRequestItem;
 use App\Models\MaterialRequestItem;
+use App\Models\GoodsReceipt;
 use App\Models\Supplier;
 use App\Models\Material;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderController extends Controller
 {
@@ -228,13 +231,92 @@ class PurchaseOrderController extends Controller
 
     public function send(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->update(['status' => 'sent']);
-        return back()->with('success', "PO #{$purchaseOrder->po_number} dikirim ke supplier.");
+        if (! (auth()->user()->can('send purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO', 'Direktur', 'Manajer Operasional']))) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengirim purchase order.');
+        }
+
+        return DB::transaction(function () use ($purchaseOrder) {
+            $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($po->status !== 'approved') {
+                return back()->with('error', "PO hanya dapat dikirim ke supplier jika berstatus 'approved' (status saat ini: {$po->status}).");
+            }
+
+            $po->update(['status' => 'sent']);
+
+            return back()->with('success', "PO #{$po->po_number} dikirim ke supplier.");
+        });
     }
 
     public function cancel(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->update(['status' => 'cancelled']);
-        return back()->with('success', "PO #{$purchaseOrder->po_number} dibatalkan.");
+        if (! (auth()->user()->can('cancel purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO', 'Direktur', 'Manajer Operasional']))) {
+            abort(403, 'Anda tidak memiliki hak akses untuk membatalkan purchase order.');
+        }
+
+        return DB::transaction(function () use ($purchaseOrder) {
+            $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($po->status, ['draft', 'approved', 'sent'])) {
+                return back()->with('error', "PO berstatus '{$po->status}' tidak dapat dibatalkan.");
+            }
+
+            $hasConfirmedGR = GoodsReceipt::where('purchase_order_id', $po->id)
+                ->where('status', 'confirmed')
+                ->exists();
+
+            if ($hasConfirmedGR) {
+                return back()->with('error', 'PO tidak dapat dibatalkan karena sudah memiliki Goods Receipt yang terkonfirmasi.');
+            }
+
+            // Kurangi qty_ordered pada MR / PR item terkait
+            foreach ($po->items()->lockForUpdate()->get() as $poItem) {
+                if ($poItem->material_request_item_id) {
+                    $mrItem = MaterialRequestItem::where('id', $poItem->material_request_item_id)->lockForUpdate()->first();
+                    if ($mrItem) {
+                        $newOrdered = max(0, (float) $mrItem->qty_ordered - (float) $poItem->quantity);
+                        $mrItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                }
+
+                if ($poItem->procurement_request_item_id) {
+                    $prItem = ProcurementRequestItem::where('id', $poItem->procurement_request_item_id)->lockForUpdate()->first();
+                    if ($prItem) {
+                        $newOrdered = max(0, (float) $prItem->qty_ordered - (float) $poItem->quantity);
+                        $prItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                } elseif ($po->procurement_request_id && $poItem->material_id) {
+                    $prItem = ProcurementRequestItem::where('procurement_request_id', $po->procurement_request_id)
+                        ->where('material_id', $poItem->material_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if ($prItem) {
+                        $newOrdered = max(0, (float) $prItem->qty_ordered - (float) $poItem->quantity);
+                        $prItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                }
+            }
+
+            // Hitung ulang status PR jika terkait
+            if ($po->procurement_request_id) {
+                $pr = ProcurementRequest::where('id', $po->procurement_request_id)->lockForUpdate()->first();
+                if ($pr) {
+                    $totalRequested = (float) $pr->items()->sum('quantity');
+                    $totalOrdered = (float) $pr->items()->sum('qty_ordered');
+
+                    if ($totalOrdered <= 0) {
+                        $pr->update(['status' => 'approved']);
+                    } elseif ($totalOrdered < $totalRequested) {
+                        $pr->update(['status' => 'partially_ordered']);
+                    } else {
+                        $pr->update(['status' => 'fully_ordered']);
+                    }
+                }
+            }
+
+            $po->update(['status' => 'cancelled']);
+
+            return back()->with('success', "PO #{$po->po_number} dibatalkan.");
+        });
     }
 }

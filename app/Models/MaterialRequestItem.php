@@ -12,12 +12,19 @@ class MaterialRequestItem extends Model
 
     protected $fillable = [
         'material_request_id',
+        'item_type',
         'material_id',
+        'tool_id',
         'custom_item_name',
         'custom_item_unit',
+        'fulfillment',
         'qty_requested',
         'qty_approved',
         'qty_fulfilled',
+        'qty_ordered',
+        'qty_in_transit',
+        'qty_received',
+        'qty_issued',
         'notes',
         'specification',
         'usage_location',
@@ -25,9 +32,13 @@ class MaterialRequestItem extends Model
     ];
 
     protected $casts = [
-        'qty_requested' => 'decimal:2',
-        'qty_approved' => 'decimal:2',
-        'qty_fulfilled' => 'decimal:2',
+        'qty_requested'  => 'decimal:2',
+        'qty_approved'   => 'decimal:2',
+        'qty_fulfilled'  => 'decimal:2',
+        'qty_ordered'    => 'decimal:2',
+        'qty_in_transit' => 'decimal:2',
+        'qty_received'   => 'decimal:2',
+        'qty_issued'     => 'decimal:2',
     ];
 
     public function materialRequest(): BelongsTo
@@ -38,6 +49,11 @@ class MaterialRequestItem extends Model
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
+    }
+
+    public function tool(): BelongsTo
+    {
+        return $this->belongsTo(Tool::class);
     }
 
     public function isCustom(): bool

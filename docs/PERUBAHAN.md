@@ -36,6 +36,25 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/SeparationOfDutiesTest.php`: Test merah awal membuktikan 5 celah self-approval/self-verification dan ketiadaan route PO approve, lalu seluruhnya hijau setelah guard diterapkan.
 - **Hasil Pengujian**: Seluruh 158 test (546 assertions) berstatus HIJAU (PASS).
 
+### T3. Guard Status PO & Pengembalian Kuota (PO Guard & Status Flow)
+- **Tujuan**:
+  - Menambah enum status PO `approved` dan `closed` (short close).
+  - Melindungi action `send()` agar hanya dapat dikirim ke supplier bila berstatus `approved`.
+  - Melindungi action `cancel()` agar ditolak jika terdapat Goods Receipt (GR) yang telah berstatus `confirmed`.
+  - Mengembalikan / mengurangi `qty_ordered` pada item MR dan PR terkait saat PO dibatalkan, serta menghitung ulang status PR (kembali ke `approved` atau `partially_ordered`).
+  - Membungkus action `send()` dan `cancel()` dalam transaksi DB dengan `lockForUpdate()`.
+  - Menerapkan otorisasi ketat pada `send()` dan `cancel()` PO.
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000002_update_procurement_and_material_request_schema.php`: Migrasi perluasan enum status PO & PR, penambahan kolom `risk_bearer`, `delivery_warehouse_id`, `tool_id`, `lost_qty`, `short_closed_qty`, `procurement_request_item_id`, `qty_ordered` pada item PR dan item MR.
+  - `app/Models/PurchaseOrder.php`: Menambahkan enum status label & color untuk `approved` dan `closed`, fillable baru, relasi `deliveryWarehouse()` dan `goodsReceipts()`.
+  - `app/Models/PurchaseOrderItem.php`: Menambahkan fillable baru `tool_id`, `lost_qty`, `short_closed_qty`, `procurement_request_item_id` dan relasi terkait.
+  - `app/Models/ProcurementRequest.php` & `ProcurementRequestItem.php`: Update fillable, cast, dan status label/color untuk `partially_ordered` dan `fully_ordered`.
+  - `app/Models/MaterialRequestItem.php`: Update fillable dan casts untuk kolom logistik & pengadaan baru.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Guard method `send()` (hanya approved, transaksi DB + lock), guard `cancel()` (hanya draft/approved/sent, tolak jika ada GR confirmed, rollback kuota `qty_ordered` MR & PR, hitung ulang status PR, transaksi DB + lock).
+  - `resources/views/purchase-orders/show.blade.php`: Update tombol UI (Setujui PO saat draft, Kirim ke Supplier hanya saat approved, Batalkan PO saat draft/approved/sent, alert error).
+  - `tests/Feature/PurchaseOrderGuardTest.php`: Test merah awal (bukti bug: send dari draft lolos tanpa error, cancel dengan GR confirmed lolos, kuota PR/MR tidak berkurang) lalu hijau setelah guard diimplementasikan.
+- **Hasil Pengujian**: Seluruh 164 test (561 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
