@@ -54,6 +54,11 @@ class PurchaseOrderItem extends Model
         return $this->belongsTo(PurchaseOrder::class);
     }
 
+    public function deliverySchedules()
+    {
+        return $this->hasMany(PoDeliverySchedule::class);
+    }
+
     public function material()
     {
         return $this->belongsTo(Material::class);
@@ -72,6 +77,11 @@ class PurchaseOrderItem extends Model
     public function procurementRequestItem()
     {
         return $this->belongsTo(ProcurementRequestItem::class);
+    }
+
+    public function isTool(): bool
+    {
+        return !empty($this->tool_id);
     }
 
     public function isCustom(): bool

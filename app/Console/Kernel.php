@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // T13: Notifikasi harian untuk jadwal kedatangan PO terlambat
+        $schedule->command('procurement:check-late-schedules')->daily();
     }
 
     /**

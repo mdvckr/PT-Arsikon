@@ -151,6 +151,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
         Route::post('/purchase-orders/{purchaseOrder}/close',  [PurchaseOrderController::class, 'close'])->name('purchase-orders.close');
+        Route::put('/purchase-orders/{purchaseOrder}/schedules', [PurchaseOrderController::class, 'updateSchedules'])->name('purchase-orders.update-schedules');
     });
 
     // Nota Pembelian Harian / Purchase Receipts

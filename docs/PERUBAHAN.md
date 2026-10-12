@@ -354,6 +354,35 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/TransitLossVendorTest.php`: Feature test suite mencakup 5 skenario komprehensif (otorisasi, bukti & catatan wajib, pembatasan grace period, pemisahan peran approver, dan integrasi flow approval & pembaruan status PO).
 - **Hasil Pengujian**: Seluruh 236 test (773 assertions) berstatus HIJAU (PASS).
 
+### T13. Jadwal Kedatangan Pengadaan (po_delivery_schedules Menggantikan incoming_stages)
+- **Tujuan**:
+  - Menggantikan mekanisme tahapan kedatangan statis `incoming_stages` pada Material dan Alat dengan tabel dinamis relasional `po_delivery_schedules` per item Purchase Order.
+  - Per item PO dapat memuat beberapa jadwal kedatangan bertahap (`stage_label`, `planned_date`, `planned_qty`, `warehouse_id`). Total kuantitas jadwal divalidasi tidak boleh melebihi kuantitas yang dipesan. Jika jadwal dikosongkan, sistem secara otomatis menerbitkan satu jadwal penuh sesuai estimasi tiba PO (`expected_delivery`). Jadwal hanya boleh diubah saat status PO adalah `draft`.
+  - Endpoint AJAX `getScheduledIncoming` dialihkan sepenuhnya untuk membaca jadwal terbuka (`(planned_qty - received_qty) > 0`) dari `po_delivery_schedules` milik PO berstatus `approved`, `sent`, atau `partial_received`, bukan lagi dari field JSON `incoming_stages`.
+  - Konfirmasi penerimaan barang (`GoodsReceiptService@confirm`): meningkatkan `received_qty` pada jadwal dan mengubah status menjadi `partial` atau `received`. Jika pengguna tidak memilih jadwal tertentu saat input, sistem mengalokasikan penerimaan secara otomatis ke jadwal terbuka terdekat berdasarkan urutan tanggal rencana kedatangan.
+  - Stok fisik gudang SELALU bertambah murni dari kuantitas diterima baik (`qty_received`) melalui `StockService` / `ToolInventoryService`, tidak pernah dari entri jadwal.
+  - Penutupan celah penambahan stok tanpa GR: tahap berstatus `received` pada form master material/alat tidak lagi menambah stok awal. Field `incoming_stages` dibekukan sebagai data historis read-only dan dilindungi agar tidak ditimpa saat update.
+  - Scheduled command harian `procurement:check-late-schedules` (didaftarkan pada `app/Console/Kernel.php`): mendeteksi jadwal yang melewati tanggal rencana dan masih memiliki sisa barang belum tiba, lalu mengirim notifikasi peringatan ke Admin PO tepat 1 kali per jadwal menggunakan timestamp `late_notified_at`.
+  - Integrasi Dashboard: widget pemantauan kartu metrik "Kedatangan Hari Ini" dan "Jadwal Terlambat" pada dashboard operasional.
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000008_add_late_notified_at_to_po_delivery_schedules_table.php`: Migrasi kolom timestamp notifikasi keterlambatan.
+  - `app/Models/PoDeliverySchedule.php`: Penambahan accessors (`remaining_qty`, `is_late`), scopes (`open`, `late`, `today`), dan relasi.
+  - `app/Models/PurchaseOrderItem.php`: Penambahan relasi `deliverySchedules()` dan method helper `isTool()`.
+  - `app/Models/GoodsReceiptItem.php`: Penambahan relasi `deliverySchedule()`.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Validasi jadwal bertahap, auto-generate jadwal default, eager load jadwal di show, dan endpoint `updateSchedules` terlindung guard draft.
+  - `app/Services/GoodsReceiptService.php`: Penghapusan mutasi `incoming_stages`, penambahan alokasi otomatis dan pembaruan `received_qty` / `status` pada `po_delivery_schedules`.
+  - `app/Http/Controllers/GoodsReceiptController.php`: Refaktor `getScheduledIncoming` membaca dari `po_delivery_schedules`.
+  - `app/Http/Controllers/MaterialController.php`: Penghapusan auto initial stock dari stages dan perlindungan freeze `incoming_stages` saat update.
+  - `app/Http/Controllers/ToolController.php`: Perlindungan freeze `incoming_stages` saat update alat.
+  - `app/Console/Commands/CheckLateDeliverySchedules.php`: Artisan command harian pendeteksi jadwal terlambat dan pengirim notifikasi Admin PO satu kali per jadwal.
+  - `app/Console/Kernel.php`: Pendaftaran scheduled daily task command `procurement:check-late-schedules`.
+  - `app/Http/Controllers/DashboardController.php`: Perhitungan metrik `incomingTodayCount` dan `incomingLateCount`.
+  - `resources/views/dashboard.blade.php`: Tampilan kartu KPI "Kedatangan Hari Ini" dan "Jadwal Terlambat".
+  - `resources/views/purchase-orders/show.blade.php`: Tampilan rincian jadwal kedatangan per item PO dengan status tuntas/menunggu/terlambat.
+  - `routes/web.php`: Pendaftaran rute PUT `purchase-orders.update-schedules`.
+  - `tests/Feature/PoDeliveryScheduleTest.php`: Feature test suite komprehensif mencakup 7 skenario (default schedule, validasi kuota jadwal bertahap, pembatasan edit hanya saat draft, AJAX scheduled incoming, auto-alokasi GR, notifikasi keterlambatan satu kali, dan pembekuan incoming_stages).
+- **Hasil Pengujian**: Seluruh 243 test (811 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

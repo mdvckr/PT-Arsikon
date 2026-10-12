@@ -136,6 +136,12 @@ class PurchaseOrderController extends Controller
             'items.*.procurement_request_item_id' => 'nullable|exists:procurement_request_items,id',
             'items.*.quantity'                 => 'required|numeric|min:0.01',
             'items.*.unit_price'               => 'required|numeric|min:0',
+            'items.*.schedules'                => 'nullable|array',
+            'items.*.schedules.*.stage_label'  => 'nullable|string|max:100',
+            'items.*.schedules.*.planned_date' => 'nullable|date',
+            'items.*.schedules.*.planned_qty'  => 'required|numeric|min:0.01',
+            'items.*.schedules.*.warehouse_id' => 'nullable|exists:warehouses,id',
+            'items.*.schedules.*.notes'        => 'nullable|string',
         ]);
 
         $supplierId = !empty($validated['supplier_id']) ? $validated['supplier_id'] : null;
@@ -163,6 +169,15 @@ class PurchaseOrderController extends Controller
                 return back()->withInput()->withErrors([
                     "items.{$idx}.material_id" => "Baris ke-" . ($idx + 1) . ": Silakan pilih material dari master atau tentukan barang baru/custom."
                 ]);
+            }
+
+            if (!empty($item['schedules']) && is_array($item['schedules'])) {
+                $totalPlanned = collect($item['schedules'])->sum(fn($s) => (float)($s['planned_qty'] ?? 0));
+                if ($totalPlanned > (float)($item['quantity'] ?? 0)) {
+                    return back()->withInput()->withErrors([
+                        "items.{$idx}.schedules" => "Baris ke-" . ($idx + 1) . ": Total kuantitas jadwal ({$totalPlanned}) melebihi kuantitas pemesanan ({$item['quantity']})."
+                    ]);
+                }
             }
 
             $mrItemId = $item['material_request_item_id'] ?? null;
@@ -298,7 +313,7 @@ class PurchaseOrderController extends Controller
                     $prItem->increment('qty_ordered', (float) $item['quantity']);
                 }
 
-                $po->items()->create([
+                $poItem = $po->items()->create([
                     'material_id'                 => $materialId,
                     'tool_id'                     => $toolId,
                     'custom_item_name'            => $customName,
@@ -310,6 +325,28 @@ class PurchaseOrderController extends Controller
                     'subtotal'                    => $subtotal,
                     'unit'                        => $customUnit,
                 ]);
+
+                $schedules = $item['schedules'] ?? [];
+                if (!empty($schedules)) {
+                    foreach ($schedules as $sIdx => $sch) {
+                        $poItem->deliverySchedules()->create([
+                            'stage_label'  => !empty($sch['stage_label']) ? trim($sch['stage_label']) : ('Tahap ' . ($sIdx + 1)),
+                            'planned_date' => $sch['planned_date'] ?? $po->expected_delivery,
+                            'planned_qty'  => $sch['planned_qty'],
+                            'warehouse_id' => $sch['warehouse_id'] ?? $deliveryWarehouseId,
+                            'status'       => 'planned',
+                            'notes'        => $sch['notes'] ?? null,
+                        ]);
+                    }
+                } else {
+                    $poItem->deliverySchedules()->create([
+                        'stage_label'  => 'Pengiriman Penuh',
+                        'planned_date' => $po->expected_delivery ?? now()->toDateString(),
+                        'planned_qty'  => $item['quantity'],
+                        'warehouse_id' => $deliveryWarehouseId,
+                        'status'       => 'planned',
+                    ]);
+                }
             }
             $po->update(['total_amount' => $total]);
 
@@ -342,6 +379,7 @@ class PurchaseOrderController extends Controller
             'creator',
             'approver',
             'items.material.unit',
+            'items.deliverySchedules',
             'items.materialRequestItem.materialRequest.fromWarehouse',
             'payments.creator',
             'procurementRequest',
@@ -553,5 +591,71 @@ class PurchaseOrderController extends Controller
 
             return back()->with('success', "PO #{$po->po_number} berhasil di-short-close (ditutup).");
         });
+    }
+
+    /**
+     * T13: Perbarui jadwal kedatangan item PO.
+     * Jadwal hanya bisa diubah saat PO berstatus 'draft'.
+     */
+    public function updateSchedules(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        $this->authorize('create purchase orders');
+
+        if ($purchaseOrder->status !== 'draft') {
+            return back()->with('error', 'Jadwal kedatangan hanya dapat diubah saat status PO adalah Draft.');
+        }
+
+        $validated = $request->validate([
+            'items'                               => 'required|array|min:1',
+            'items.*.purchase_order_item_id'      => 'required|exists:purchase_order_items,id',
+            'items.*.schedules'                   => 'nullable|array',
+            'items.*.schedules.*.stage_label'     => 'nullable|string|max:100',
+            'items.*.schedules.*.planned_date'    => 'nullable|date',
+            'items.*.schedules.*.planned_qty'     => 'required|numeric|min:0.01',
+            'items.*.schedules.*.warehouse_id'    => 'nullable|exists:warehouses,id',
+            'items.*.schedules.*.notes'           => 'nullable|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($validated, $purchaseOrder) {
+                foreach ($validated['items'] as $itemData) {
+                    $poItem = $purchaseOrder->items()->where('id', $itemData['purchase_order_item_id'])->firstOrFail();
+                    $schedules = $itemData['schedules'] ?? [];
+
+                    $totalPlanned = collect($schedules)->sum(fn($s) => (float)($s['planned_qty'] ?? 0));
+                    if ($totalPlanned > (float) $poItem->quantity) {
+                        throw new \DomainException("Total kuantitas jadwal untuk {$poItem->displayName()} ({$totalPlanned}) melebihi kuantitas PO ({$poItem->quantity}).");
+                    }
+
+                    // Hapus jadwal eksisting dan buat ulang
+                    $poItem->deliverySchedules()->delete();
+
+                    if (!empty($schedules)) {
+                        foreach ($schedules as $sIdx => $sch) {
+                            $poItem->deliverySchedules()->create([
+                                'stage_label'  => !empty($sch['stage_label']) ? trim($sch['stage_label']) : ('Tahap ' . ($sIdx + 1)),
+                                'planned_date' => $sch['planned_date'] ?? $purchaseOrder->expected_delivery,
+                                'planned_qty'  => $sch['planned_qty'],
+                                'warehouse_id' => $sch['warehouse_id'] ?? $purchaseOrder->delivery_warehouse_id,
+                                'status'       => 'planned',
+                                'notes'        => $sch['notes'] ?? null,
+                            ]);
+                        }
+                    } else {
+                        $poItem->deliverySchedules()->create([
+                            'stage_label'  => 'Pengiriman Penuh',
+                            'planned_date' => $purchaseOrder->expected_delivery ?? now()->toDateString(),
+                            'planned_qty'  => $poItem->quantity,
+                            'warehouse_id' => $purchaseOrder->delivery_warehouse_id,
+                            'status'       => 'planned',
+                        ]);
+                    }
+                }
+            });
+
+            return back()->with('success', 'Jadwal kedatangan PO berhasil diperbarui.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

@@ -56,6 +56,11 @@ class GoodsReceiptItem extends Model
         return $this->belongsTo(PurchaseOrderItem::class);
     }
 
+    public function deliverySchedule(): BelongsTo
+    {
+        return $this->belongsTo(PoDeliverySchedule::class, 'po_delivery_schedule_id');
+    }
+
     public function isTool(): bool
     {
         return $this->item_type === 'tool' || !empty($this->tool_id);

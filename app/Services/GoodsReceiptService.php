@@ -8,6 +8,7 @@ use App\Models\Material;
 use App\Models\Tool;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\PoDeliverySchedule;
 use App\Models\MaterialRequest;
 use App\Models\MaterialRequestItem;
 use App\Models\Supplier;
@@ -204,42 +205,6 @@ class GoodsReceiptService
                     if ($poItem && (float) $item->qty_received > 0) {
                         $poItem->increment('received_qty', (float) $item->qty_received);
                     }
-
-                    // Sinkronisasi status incoming_stages di Tool
-                    if ($tool && !empty($tool->incoming_stages)) {
-                        $stages = $tool->incoming_stages;
-                        $stageUpdated = false;
-
-                        if (!empty($item->stage_reference)) {
-                            foreach ($stages as $idx => $stg) {
-                                if (strcasecmp($stg['stage'] ?? '', $item->stage_reference) === 0 || (string)$idx === (string)$item->stage_reference) {
-                                    if (($stg['status'] ?? '') === 'planned') {
-                                        $stages[$idx]['status'] = 'received';
-                                        $stages[$idx]['received_date'] = $receiptDateStr;
-                                        $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                        $stageUpdated = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!$stageUpdated) {
-                            foreach ($stages as $idx => $stg) {
-                                if (($stg['status'] ?? '') === 'planned') {
-                                    $stages[$idx]['status'] = 'received';
-                                    $stages[$idx]['received_date'] = $receiptDateStr;
-                                    $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                    $stageUpdated = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if ($stageUpdated) {
-                            $tool->update(['incoming_stages' => $stages]);
-                        }
-                    }
                 } else {
                     // Penanganan Material
                     $material = $item->material;
@@ -279,42 +244,39 @@ class GoodsReceiptService
                         if ($poItem && (float) $item->qty_received > 0) {
                             $poItem->increment('received_qty', (float) $item->qty_received);
                         }
+                    }
+                }
 
-                        // Sinkronisasi status incoming_stages di Material
-                        if (!empty($material->incoming_stages)) {
-                            $stages = $material->incoming_stages;
-                            $stageUpdated = false;
+                // T13: Sinkronisasi ke PoDeliverySchedule (menggantikan incoming_stages)
+                if ($poItem && (float) $item->qty_received > 0) {
+                    $schedule = null;
+                    if ($item->po_delivery_schedule_id) {
+                        $schedule = PoDeliverySchedule::where('id', $item->po_delivery_schedule_id)
+                            ->lockForUpdate()
+                            ->first();
+                    }
 
-                            if (!empty($item->stage_reference)) {
-                                foreach ($stages as $idx => $stg) {
-                                    if (strcasecmp($stg['stage'] ?? '', $item->stage_reference) === 0 || (string)$idx === (string)$item->stage_reference) {
-                                        if (($stg['status'] ?? '') === 'planned') {
-                                            $stages[$idx]['status'] = 'received';
-                                            $stages[$idx]['received_date'] = $receiptDateStr;
-                                            $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                            $stageUpdated = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
+                    // Jika tidak memilih jadwal, alokasikan ke jadwal terdekat yang terbuka (urut tanggal & id)
+                    if (!$schedule) {
+                        $schedule = PoDeliverySchedule::where('purchase_order_item_id', $poItem->id)
+                            ->whereIn('status', ['planned', 'partial'])
+                            ->whereRaw('(planned_qty - received_qty) > 0')
+                            ->orderByRaw('planned_date IS NULL, planned_date ASC, id ASC')
+                            ->lockForUpdate()
+                            ->first();
 
-                            if (!$stageUpdated) {
-                                foreach ($stages as $idx => $stg) {
-                                    if (($stg['status'] ?? '') === 'planned') {
-                                        $stages[$idx]['status'] = 'received';
-                                        $stages[$idx]['received_date'] = $receiptDateStr;
-                                        $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                        $stageUpdated = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if ($stageUpdated) {
-                                $material->update(['incoming_stages' => $stages]);
-                            }
+                        if ($schedule) {
+                            $item->update(['po_delivery_schedule_id' => $schedule->id]);
+                            $autoNote = "[Alokasi Otomatis Jadwal: {$schedule->stage_label}]";
+                            $item->update(['notes' => trim(($item->notes ? $item->notes . ' ' : '') . $autoNote)]);
                         }
+                    }
+
+                    if ($schedule) {
+                        $newReceived = (float) $schedule->received_qty + (float) $item->qty_received;
+                        $schedule->received_qty = $newReceived;
+                        $schedule->status = $newReceived >= (float) $schedule->planned_qty ? 'received' : 'partial';
+                        $schedule->save();
                     }
                 }
 

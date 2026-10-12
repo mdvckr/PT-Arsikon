@@ -179,6 +179,33 @@
                                     </span>
                                 </div>
                             @endif
+
+                            @if($item->deliverySchedules && $item->deliverySchedules->count() > 0)
+                                <div class="mt-2" style="font-size:11px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <span style="color:#475569; font-weight:600;"><i class="fas fa-calendar-days me-1"></i> Jadwal Kedatangan:</span>
+                                    <div class="mt-1" style="display:flex; flex-direction:column; gap:3px;">
+                                        @foreach($item->deliverySchedules as $sch)
+                                            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                                                <span>
+                                                    <strong>{{ $sch->stage_label }}:</strong>
+                                                    {{ number_format($sch->planned_qty, 2, ',', '.') }} {{ $item->displayUnit() }}
+                                                    (Rencana: {{ $sch->planned_date ? $sch->planned_date->format('d/m/Y') : '-' }})
+                                                </span>
+                                                <span>
+                                                    <span class="text-success fw-semibold">{{ number_format($sch->received_qty, 2, ',', '.') }} tiba</span>
+                                                    @if($sch->status === 'received')
+                                                        <span class="badge" style="background:#dcfce7;color:#166534;font-size:9.5px;">Tuntas</span>
+                                                    @elseif($sch->is_late)
+                                                        <span class="badge" style="background:#fee2e2;color:#991b1b;font-size:9.5px;">Terlambat</span>
+                                                    @else
+                                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:9.5px;">Menunggu</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </td>
                         <td class="text-center">
                             {{ number_format($item->quantity, 2, ',', '.') }} {{ $item->displayUnit() }}

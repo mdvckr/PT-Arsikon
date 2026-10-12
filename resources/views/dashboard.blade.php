@@ -430,6 +430,39 @@
         </a>
     </div>
 
+    {{-- T13: Monitoring Jadwal Pengiriman Barang --}}
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+        <a href="{{ route('goods-receipts.create') }}" class="metric-card" title="Buka Form Penerimaan Barang">
+            <div class="metric-header">
+                <span class="metric-label">Kedatangan Hari Ini</span>
+                <i class="fas fa-truck-ramp-box metric-icon" style="color: #2563eb;"></i>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value" style="color: #2563eb;">{{ number_format($incomingTodayCount ?? 0) }}</div>
+                <span class="badge" style="background: #eff6ff; color: #1d4ed8; font-size:10px; font-weight:600;">Rencana Tiba</span>
+            </div>
+            <div class="metric-sub">Jadwal pengiriman PO diagendakan hari ini</div>
+        </a>
+
+        <a href="{{ route('goods-receipts.create') }}" class="metric-card" title="Buka Form Penerimaan Barang">
+            <div class="metric-header">
+                <span class="metric-label">Jadwal Terlambat</span>
+                <i class="fas fa-triangle-exclamation metric-icon" style="{{ ($incomingLateCount ?? 0) > 0 ? 'color:#dc2626;' : 'color:#94a3b8;' }}"></i>
+            </div>
+            <div class="metric-body">
+                <div class="metric-value" style="{{ ($incomingLateCount ?? 0) > 0 ? 'color:#dc2626;' : 'color:#059669;' }}">
+                    {{ number_format($incomingLateCount ?? 0) }}
+                </div>
+                @if(($incomingLateCount ?? 0) > 0)
+                    <span class="badge" style="background: #fef2f2; color: #b91c1c; font-size:10px; font-weight:600;">Perlu Tindakan Segera</span>
+                @else
+                    <span class="badge" style="background: #f0fdf4; color: #15803d; font-size:10px; font-weight:600;">Tepat Waktu</span>
+                @endif
+            </div>
+            <div class="metric-sub">Jadwal melewati batas waktu & belum diterima</div>
+        </a>
+    </div>
+
     {{-- Quick Action Toolbar --}}
     <div class="dash-actions-bar">
         <div class="dash-actions-title">Aksi Operasional Cepat</div>

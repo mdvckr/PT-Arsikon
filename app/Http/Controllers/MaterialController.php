@@ -249,12 +249,6 @@ class MaterialController extends Controller
         $incomingStages = $this->parseIncomingStages($request);
         $validated['incoming_stages'] = $incomingStages;
 
-        // Jika initial_stock belum diisi manual tapi ada tahap berstatus 'received', otomatis sinkronkan
-        $receivedStagesQty = $incomingStages ? collect($incomingStages)->where('status', 'received')->sum('qty') : 0;
-        if ((empty($validated['initial_stock']) || $validated['initial_stock'] == 0) && $receivedStagesQty > 0) {
-            $validated['initial_stock'] = $receivedStagesQty;
-        }
-
         // Pastikan kelompok barang (type) tidak kosong
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
         if (empty($typeVal) && !empty($validated['name'])) {
@@ -434,7 +428,8 @@ class MaterialController extends Controller
         $supplier = $this->resolveSupplier($request->supplier ?? null);
         $validated['supplier_id'] = $supplier?->id;
         $validated['supplier_name'] = !empty($request->supplier) ? trim($request->supplier) : null;
-        $validated['incoming_stages'] = $this->parseIncomingStages($request);
+        // T13: incoming_stages dibekukan (read-only, tidak ditimpa saat edit)
+        $validated['incoming_stages'] = $material->incoming_stages;
 
         // Pertahankan kelompok barang (type) jika tidak sengaja terkirim kosong saat edit
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
