@@ -26,7 +26,10 @@ class InventoryAndStockTest extends TestCase
 
         $this->stockService = new StockService();
         $this->centralWarehouse = Warehouse::where('is_central', true)->firstOrFail();
-        $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+        $this->semenMaterial = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
 
         // Reset inventory for test isolation
         Inventory::where('warehouse_id', $this->centralWarehouse->id)

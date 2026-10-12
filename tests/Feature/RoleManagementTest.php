@@ -3,14 +3,18 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class RoleManagementTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RoleAndPermissionSeeder::class);
     }
 
     public function test_only_canonical_roles_exist_in_database(): void

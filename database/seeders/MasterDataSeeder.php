@@ -55,5 +55,37 @@ class MasterDataSeeder extends Seeder
             ['code' => 'CAT-TOOL-02'],
             ['name' => 'Alat Tangan', 'type' => 'tool', 'description' => 'Cangkul, sekop, gerobak dorong']
         );
+
+        // 3. Seed Suppliers
+        Supplier::firstOrCreate(
+            ['code' => 'SUP-TCL'],
+            [
+                'name' => 'Toko Cat Lancar',
+                'email' => 'sales@catlancar.com',
+                'phone' => '081234567001',
+                'address' => 'Jl. Magelang No. 12, Yogyakarta',
+                'is_active' => true,
+            ]
+        );
+        Supplier::firstOrCreate(
+            ['code' => 'SUP-JR'],
+            [
+                'name' => 'Jaya Raya',
+                'email' => 'contact@jayaraya.com',
+                'phone' => '081234567002',
+                'address' => 'Jl. Industri No. 45, Jakarta',
+                'is_active' => true,
+            ]
+        );
+        Supplier::firstOrCreate(
+            ['code' => 'SUP-IJ'],
+            [
+                'name' => 'Indo Jaya',
+                'email' => 'info@indojaya.com',
+                'phone' => '081234567003',
+                'address' => 'Jl. Listrik Mandiri No. 8, Tangerang',
+                'is_active' => true,
+            ]
+        );
     }
 }

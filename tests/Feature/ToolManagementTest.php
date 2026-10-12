@@ -31,7 +31,20 @@ class ToolManagementTest extends TestCase
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->projectUser = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
-        $this->gensetTool = Tool::where('code', 'TOOL-GEN-01')->firstOrFail();
+        $catTool = \App\Models\Category::firstOrCreate(['code' => 'CAT-TOOL-01'], ['name' => 'Alat Berat & Elektrik', 'type' => 'tool']);
+        $this->gensetTool = Tool::firstOrCreate(
+            ['code' => 'TOOL-GEN-01'],
+            [
+                'category_id' => $catTool->id,
+                'current_warehouse_id' => $this->centralWarehouse->id,
+                'name' => 'Genset Silent 5000W',
+                'brand' => 'Honda Silent',
+                'type' => 'Alat Berat',
+                'stock_total' => 1,
+                'stock_available' => 1,
+                'is_active' => true,
+            ]
+        );
 
         // Reset all inventories and assignments for this tool and isolate 1 unit at central warehouse
         \App\Models\ToolInventory::where('tool_id', $this->gensetTool->id)->delete();

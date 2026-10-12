@@ -35,7 +35,10 @@ class MaterialUsageTest extends TestCase
         $this->usageService = new MaterialUsageService($this->stockService);
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->material = Material::firstOrFail();
+        $this->material = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
     }
 
     public function test_can_record_material_usage_and_deducts_stock(): void
@@ -163,10 +166,11 @@ class MaterialUsageTest extends TestCase
     {
         $tool = Tool::first();
         if (!$tool) {
+            $catTool = \App\Models\Category::firstOrCreate(['code' => 'CAT-TOOL-01'], ['name' => 'Alat Berat & Elektrik', 'type' => 'tool']);
             $tool = Tool::create([
                 'name' => 'Bor Listrik Makita',
                 'code' => 'TL-MAK-01',
-                'category_id' => null,
+                'category_id' => $catTool->id,
                 'is_active' => true,
             ]);
         }

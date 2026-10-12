@@ -48,7 +48,10 @@ class DailyLogTest extends TestCase
     public function test_admin_proyek_can_print_daily_log(): void
     {
         // Seed a sample usage on today
-        $material = Material::firstOrFail();
+        $material = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
         $usage = MaterialUsage::create([
             'usage_number'      => 'USG-TODAY-01',
             'warehouse_id'      => $this->projectWarehouse->id,
