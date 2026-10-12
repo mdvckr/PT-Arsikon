@@ -85,6 +85,17 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/ProcurementMultiPoTest.php`: Test merah awal (bukti gagal: `qty_ordered` tidak bertambah dan validasi kuota belum ada) lalu hijau setelah sinkronisasi diterapkan.
 - **Hasil Pengujian**: Seluruh 171 test (562 assertions) berstatus HIJAU (PASS).
 
+### T6. Sinkronisasi PO dan MR (Multi-PO per MR & Kuota Tersisa)
+- **Tujuan**:
+  - Memvalidasi item MR yang dibuatkan PO harus berstatus pemenuhan `fulfillment == 'purchase'`. Jika berstatus `stock`, pembuatan PO ditolak karena harus diproses lewat Surat Jalan.
+  - Memvalidasi kuota PO tidak melebihi sisa kuota yang disetujui: `quantity PO <= (item.qty_approved - item.qty_ordered)`.
+  - Mengakumulasikan `item.qty_ordered += qty_po` pada item MR saat PO dibuat.
+  - Mengembalikan kuota `qty_ordered` pada item MR saat PO dibatalkan (cancel).
+- **Perubahan File**:
+  - `app/Http/Controllers/PurchaseOrderController.php`: Validasi pemenuhan `fulfillment` dan sisa kuota MR pada method `store`.
+  - `tests/Feature/MaterialRequestMultiPoTest.php`: Test merah awal (bukti gagal: penolakan kuota & status fulfillment stock belum ada) lalu hijau setelah perbaikan.
+- **Hasil Pengujian**: Seluruh 173 test (574 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

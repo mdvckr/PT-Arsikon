@@ -166,6 +166,28 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
+
+            $mrItemId = $item['material_request_item_id'] ?? null;
+            if ($mrItemId) {
+                $mrItem = MaterialRequestItem::find($mrItemId);
+                if ($mrItem) {
+                    if ($mrItem->fulfillment === 'stock') {
+                        $matName = $mrItem->displayName();
+                        return back()->withInput()->withErrors([
+                            "items.{$idx}.material_request_item_id" => "Item {$matName} dialokasikan untuk pemenuhan stok gudang (Surat Jalan), tidak dapat dibuatkan PO."
+                        ]);
+                    }
+
+                    $approvedQty = (float) $mrItem->qty_approved > 0 ? (float) $mrItem->qty_approved : (float) $mrItem->qty_requested;
+                    $sisaKuotaMR = max(0, $approvedQty - (float) $mrItem->qty_ordered);
+                    if ((float) $item['quantity'] > $sisaKuotaMR) {
+                        $matName = $mrItem->displayName();
+                        return back()->withInput()->withErrors([
+                            "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota MR ({$sisaKuotaMR})."
+                        ]);
+                    }
+                }
+            }
         }
 
         $po = DB::transaction(function () use ($validated, $supplierId, $supplierName) {
