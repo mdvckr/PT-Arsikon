@@ -475,47 +475,122 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/ProcurementRolePermissionSyncTest.php`: Test suite pengujian artisan command dan kepatuhan Spatie role-permission alur pengadaan.
 - **Hasil Pengujian**: Seluruh 269 test (955 assertions) berstatus HIJAU (PASS).
 
+### T24. Susunan Menu Navigasi Sidebar (Grup Teknis, Pengadaan, Logistik)
+- **Tujuan**:
+  - Menyusun ulang navigasi sidebar utama di bawah Dashboard menjadi 3 grup terstruktur berurutan:
+    1. **Teknis**: Pemakaian Material (`material-usages.*`), Retur Material (`returns.*`), Master Alat (`tools.*`), Peminjaman Alat (`tool-assignments.*`), dan Log Harian Proyek (`daily-log.*`).
+    2. **Pengadaan**: PO Lapangan (`material-requests.*`), Permintaan Pengadaan (`procurement.*`), Purchase Order (`purchase-orders.*`), Nota Pembelian Harian (`purchase-receipts.*`), Pembayaran (`payments.*`), dan Template Kop Surat (`print-templates.*`).
+    3. **Logistik**: Penerimaan Barang (`goods-receipts.*`), Surat Jalan (`distributions.*`), Penerimaan Surat Jalan (`distributions.index?status=shipped`), Inventori (`inventory.*`), Mutasi Stok (`reports.mutation`), Stock Opname (`stock-opnames.*`), dan Master & Stok Minimum (`materials.*`).
+    4. **Grup Lanjutan**: Laporan & Audit (`reports.*`, `audit-logs.*`) serta Admin Sistem (`users.*`, `roles.*`, `warehouses.*`, `projects.*`, `supabase-sync.*`) tetap berada di bagian bawah sesuai otorisasi.
+  - Menerapkan perlindungan visibilitas ketat:
+    - Sembunyikan grup sepenuhnya (`@if`) jika pengguna tidak memiliki izin ke satupun item di dalamnya.
+    - Sembunyikan item individual memakai `@can` / rule otorisasi tanpa memperluas hak akses.
+  - Menerapkan collapsible interaktif berbasis Alpine.js:
+    - Grup yang memuat route aktif terbuka secara otomatis (`open: true`).
+    - Dapat di-expand dan di-collapse secara halus dengan klik header section.
+- **Perubahan File**:
+  - `resources/views/layouts/app.blade.php`: Restrukturisasi navigasi sidebar ke grup Teknis -> Pengadaan -> Logistik dengan Alpine.js state `open`.
+  - `tests/Feature/SidebarNavigationTest.php`: Test suite 7 skenario (urutan grup Teknis->Pengadaan->Logistik, link PO Lapangan ke `material-requests.index`, visibilitas per role Admin PO/Admin Proyek/Karyawan/Owner, penyembunyian grup kosong untuk pengguna tanpa izin, serta auto-open grup route aktif).
+- **Hasil Pengujian**: Seluruh 276 test (1011 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
-1. **Database Test Terpisah**: Dibuat database MySQL `pt_arsikon_test` dan file `.env.testing` agar pengujian otomatis tidak menyentuh database operasional/lokal utama (`pt_pbag`).
-2. **Kategori dan Master Data**: Master data awal di-seed secara idempotent menggunakan `firstOrCreate`.
+1. **Database Test Terpisah**: Dibuat database MySQL `pt_arsikon_test` dan file `.env.testing` agar seluruh pengujian otomatis berjalan independen tanpa menyentuh database operasional/lokal utama (`pt_pbag`).
+2. **Kategori dan Master Data**: Master data awal di-seed secara idempotent menggunakan `firstOrCreate` guna mencegah integritas constraint violation saat test suite dijalankan ulang.
+3. **Pemisahan Dokumen Counter**: Generator nomor dokumen (`DocumentNumberService`) menggunakan tabel khusus `document_counters` dengan pessimistic locking (`lockForUpdate()`), menginisialisasi nomor awal dari record dokumen tertinggi eksisting jika baris counter belum ada.
+4. **Alur Status PO**: Penambahan enum status PO `approved` dan `closed` (short close). Pengiriman ke supplier hanya sah jika PO berstatus `approved`.
+5. **Short Close PO**: Penutupan parsial PO (short close) hanya dapat dilakukan pada PO berstatus `sent` atau `partial_received` oleh pengguna selain pembuat dokumen (separation of duties), mengurangi kuota `qty_ordered` pada MR/PR terkait secara proporsional.
+6. **Nilai Sah Pembayaran (T15)**: Nilai yang dapat dibayar dihitung berdasarkan kuantitas yang telah diterima secara fisik (GR confirmed) ditambah barang hilang yang disepakati menjadi tanggungan pembeli (`risk_bearer == 'buyer'` dan `status == 'confirmed_lost'`). Seluruh selisih unresolved atau rusak ditahan dari nilai sah.
+7. **Penyelarasan Role Spatie (T16)**: Admin PO berhak membuat PO, PR, dan pembayaran serta menyetujui PO Lapangan (MR), namun persetujuan PO/PR dan verifikasi pembayaran dibatasi ketat untuk Admin Pusat / Admin. Karyawan tidak berhak membuat surat jalan distribusi antar gudang.
+8. **Struktur Navigasi Sidebar (T24)**: Dashboard tetap menjadi menu tunggal di puncak sidebar. Tiga grup utama di bawahnya berurutan: Teknis -> Pengadaan -> Logistik. Menu Laporan dan Admin Sistem tetap berada di bagian bawah dan hanya dapat diakses oleh role yang berwenang.
 
 ---
 
 ## 3. Penyimpangan dari Dokumen Rencana & Alasan
-- *Belum ada penyimpangan hingga tahap baseline.*
+1. **Test Karyawan Lama (`test_karyawan_has_create_distributions_permission`)**:
+   - Diubah menjadi `test_karyawan_does_not_have_create_distributions_permission` dan akses Karyawan ke route `/distributions/create` diblokir (403). Hal ini merupakan instruksi langsung spesifikasi T16 di mana surat jalan merupakan kewenangan unit logistik/gudang.
+2. **Setup Role pada Approval dan Short Close Test**:
+   - Pada `PurchaseOrderApprovalAndRiskTest` dan `PurchaseOrderShortCloseTest`, approver dan closer PO diselaraskan dari role `Admin PO` ke `Admin Pusat` / user berizin eksplisit `approve purchase orders` & `close purchase orders`, karena wewenang approval dan short close PO telah dicabut dari role Admin PO sesuai instruksi T16.
 
 ---
 
 ## 4. Risiko untuk Data Lama & Mitigasi
-- Data lama yang ada di database harus aman: migrasi baru selalu menggunakan kolom nullable atau default aman, dan memiliki metode `down()` yang benar.
+1. **Risiko Kolom Baru pada Tabel Transaksi Eksisting**:
+   - Kolom migrasi baru (`risk_bearer`, `delivery_warehouse_id`, `lost_qty`, `short_closed_qty`, `procurement_request_item_id`, dll.) dibuat dengan nilai default aman atau nullable sehingga record PO, MR, dan PR lama tetap valid dan terbaca normal.
+2. **Risiko Backfill Status Dokumen**:
+   - PO lama berstatus `sent` tetap dapat diproses GR dan pembayarannya. Perhitungan `payable_remaining_amount` secara dinamis menghitung `nilai_sah` dari GR confirmed yang ada.
+3. **Risiko Sinkronisasi Hak Akses (Role/Permission)**:
+   - Disediakan artisan command `php artisan permissions:sync-procurement` yang bersifat idempotent (memakai `firstOrCreate` dan `syncPermissions`) sehingga tidak memerlukan `migrate:fresh` atau pembersihan tabel produksi.
 
 ---
 
 ## 5. Langkah Deploy & Rollback
 ### Deploy
-1. `php artisan down`
-2. `php artisan migrate --force`
-3. `php artisan permissions:sync-procurement` (setelah T16)
-4. `php artisan optimize:clear`
-5. `php artisan config:cache && php artisan route:cache && php artisan view:cache`
-6. `php artisan up`
+1. Aktifkan maintenance mode:
+   ```bash
+   php artisan down
+   ```
+2. Jalankan migrasi database produksi:
+   ```bash
+   php artisan migrate --force
+   ```
+3. Sinkronkan permission dan role alur pengadaan & logistik:
+   ```bash
+   php artisan permissions:sync-procurement
+   ```
+4. Bersihkan dan segarkan cache framework:
+   ```bash
+   php artisan optimize:clear
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:cache
+   ```
+5. Matikan maintenance mode:
+   ```bash
+   php artisan up
+   ```
 
 ### Rollback
-1. `php artisan migrate:rollback --step=...`
-2. `php artisan optimize:clear`
+1. Jika terjadi anomali kritis, aktifkan maintenance mode:
+   ```bash
+   php artisan down
+   ```
+2. Rollback batch migrasi terakhir jika diperlukan:
+   ```bash
+   php artisan migrate:rollback --step=3
+   ```
+3. Segarkan cache:
+   ```bash
+   php artisan optimize:clear
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:cache
+   ```
+4. Matikan maintenance mode:
+   ```bash
+   php artisan up
+   ```
 
 ---
 
 ## 6. Hal yang Sengaja Tidak Dikerjakan (Di Luar Lingkup)
-- Modul di luar lingkup yang ditegaskan dokumen panduan: RAB/BoQ, approval berjenjang berbasis nilai nominal, RFQ/perbandingan supplier, PPN, sewa alat berbayar, retensi/opname subkontraktor, jalur urgent, master vendor/verifikasi vendor, tabel invoice baru.
+- Modul di luar lingkup yang ditegaskan dokumen panduan:
+  - Anggaran Biaya / RAB / BoQ.
+  - Approval berjenjang dinamis berbasis batasan nominal rupiah tertentu.
+  - Perbandingan penawaran vendor / RFQ.
+  - PPN dan faktur pajak.
+  - Sewa alat berbayar dan perhitungan depresiasi alat berat.
+  - Retensi dan opname subkontraktor lapangan.
+  - Modul pembuatan tabel invoice terpisah (nomor invoice tetap disimpan sebagai string pada GR).
+  - Skrip deployment di folder `deploy/` dan service sinkronisasi cloud `SupabaseSyncService`.
 
 ---
 
 ## 7. Keputusan Otonom yang Perlu Dikonfirmasi Manusia (T18 - T24)
-- (a) **T21**: Arti fitur di sebelah Alokasi diimplementasikan sebagai kolom "Stok Tersedia" (stok gudang sumber dikurangi alokasi lain + badge Cukup/Kurang, serta sisa dipesan untuk purchase).
-- (b) **T22**: Site Manager / Site Engineering sebagai label metadata `requested_as` pada `material_requests`, bukan permission/role Spatie baru.
-- (c) **T18**: Penamaan tampilan "PO Lapangan" untuk Material Request di UI, sementara Purchase Order ke vendor tetap Purchase Order.
-- (d) **T24**: Urutan grup sidebar Teknis -> Pengadaan -> Logistik di bawah Dashboard.
-- (e) **T20**: "Dibutuhkan Tgl" (`needed_at`) dan "Tanggal Order" (`created_at`) sebagai dua field terpisah di antarmuka.
+- (a) **T21**: Arti fitur di sebelah Alokasi diimplementasikan sebagai kolom "Stok Tersedia" (stok gudang sumber dikurangi alokasi aktif + badge Cukup/Kurang, serta sisa dipesan untuk purchase).
+- (b) **T22**: Site Manager / Site Engineering diimplementasikan sebagai metadata pemohon (`requested_as`) pada form dan entitas `material_requests`, bukan sebagai permission Spatie baru.
+- (c) **T18**: Penamaan tampilan "PO Lapangan" dikhususkan untuk antarmuka Material Request di UI, sementara Purchase Order ke vendor tetap menggunakan label "Purchase Order".
+- (d) **T24**: Susunan grup sidebar: Dashboard di puncak, diikuti tiga grup utama: **Teknis** -> **Pengadaan** -> **Logistik**, lalu **Laporan & Audit** dan **Admin Sistem** di posisi bawah.
+- (e) **T20**: "Dibutuhkan Tgl" (`needed_at`) dan "Tanggal Order" (`created_at`) diimplementasikan sebagai dua atribut tanggal terpisah di antarmuka.
+
