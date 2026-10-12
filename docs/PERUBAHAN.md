@@ -137,6 +137,28 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganCategoryTest.php`: Pengujian komprehensif (test merah lalu hijau) yang memverifikasi penyimpanan kategori dari master material, penolakan kategori tidak valid pada custom item, penerimaan kategori valid pada custom item, tampilan fallback `-` untuk data lama dengan category NULL, dan filter kategori di index.
 - **Hasil Pengujian**: Seluruh 182 test (603 assertions) berstatus HIJAU (PASS).
 
+### T20. Field Header: Sumber Material, Gudang Pemohon, dan Dibutuhkan Tgl
+- **Tujuan**:
+  - Menyesuaikan label `from_warehouse_id` menjadi "Sumber Material (Kepada)". Pada saat pengajuan ini merupakan usulan pemohon dan penyetuju dapat mengubahnya saat approve. Nilai kosong/null berarti "Pengadaan / Beli ke Vendor". Sumber material divalidasi tidak boleh sama dengan gudang pemohon.
+  - Dropdown Gudang Pemohon (`to_warehouse_id`): hanya memuat gudang proyek yang boleh diakses pengguna (menggunakan `accessibleWarehouseIds()` dan validasi server dengan `hasAccessToWarehouse()`). Menampilkan format `display_name` ("Nama Gudang - Nama Proyek").
+  - Menangani field "Dibutuhkan Tgl" (`needed_at`): validasi `after_or_equal:today` saat pembuatan.
+  - Memisahkan tampilan "Tanggal Order" (otomatis dari `created_at`, tidak dapat diedit) dan "Dibutuhkan Tgl" (`needed_at`) sebagai dua field/kolom terpisah di daftar (`index.blade.php`), detail (`show.blade.php`), dan cetakan dokumen (`print.blade.php`).
+  - Menambahkan penanda "Terlambat" (overdue) yang dihitung secara dinamis saat tampil di view (`needed_at < today` dan status belum selesai), tanpa disimpan di database.
+  - Menambahkan dukungan pengurutan (`created_at` vs `needed_at`) dan filter status waktu (terlambat) pada index.
+- **Perubahan File**:
+  - `app/Models/MaterialRequest.php`: Menambahkan `needed_at` ke `$fillable` dan `$casts` (date), serta accessor helper `is_overdue`.
+  - `app/Services/MaterialRequestService.php`: Penyesuaian `createRequest` dengan `$sourceWarehouse` nullable (`?Warehouse`), parameter `$neededAt`, dan validasi sumber material tidak boleh sama dengan gudang pemohon.
+  - `app/Http/Controllers/MaterialRequestController.php`:
+    - Method `create`: Hanya mengambil gudang yang boleh diakses pengguna via `accessibleWarehouseIds()`.
+    - Method `store`: Validasi `source_warehouse_id` nullable, validasi server `hasAccessToWarehouse` (abort 403 jika tidak berhak), validasi kesamaan gudang sumber dan pemohon, penyimpanan `needed_at` ke service.
+    - Method `index`: Dukungan sorting (`created_at` / `needed_at`) dan filter `overdue`.
+  - `resources/views/material-requests/create.blade.php`: Update label "Sumber Material (Kepada)" dengan opsi default "— Pengadaan / Beli ke Vendor —" (nullable), label "Dibutuhkan Tgl".
+  - `resources/views/material-requests/show.blade.php`: Pemisahan "Tanggal Order" dan "Dibutuhkan Tgl", tampilan badge "Terlambat" jika tanggal dibutuhkan lewat, dan label "Sumber Material (Kepada)".
+  - `resources/views/material-requests/index.blade.php`: Pemisahan kolom tabel "Tgl Order" dan "Dibutuhkan Tgl" dengan penanda "Terlambat", serta filter pengurutan dan status waktu.
+  - `resources/views/material-requests/print.blade.php`: Pemisahan baris "Tanggal Order" dan "Dibutuhkan Tgl", serta fallback "Pengadaan / Beli ke Vendor" jika sumber null.
+  - `tests/Feature/PoLapanganHeaderFieldTest.php`: Test komprehensif memverifikasi penolakan gudang di luar akses (403), penolakan sumber sama dengan target, penolakan tanggal dibutuhkan sebelum hari ini, penyimpanan terpisah tanggal order & dibutuhkan, dan indikator overdue dinamis.
+- **Hasil Pengujian**: Seluruh 187 test (617 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

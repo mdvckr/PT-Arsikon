@@ -409,20 +409,27 @@
                         <span class="info-val">{{ $materialRequest->requestedBy?->name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Gudang Asal</span>
-                        <span class="info-val">{{ $materialRequest->fromWarehouse?->name ?? '-' }}</span>
+                        <span class="info-label">Sumber Material (Kepada)</span>
+                        <span class="info-val">{{ $materialRequest->fromWarehouse ? $materialRequest->fromWarehouse->name : 'Pengadaan / Beli ke Vendor' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">{{ $materialRequest->toWarehouse?->isProject() ? 'Nama Proyek' : 'Gudang Tujuan' }}</span>
+                        <span class="info-label">{{ $materialRequest->toWarehouse?->isProject() ? 'Nama Proyek' : 'Gudang Pemohon' }}</span>
                         <span class="info-val">{{ $materialRequest->toWarehouse?->display_name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Tgl Diajukan</span>
+                        <span class="info-label">Tanggal Order</span>
                         <span class="info-val">{{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y') : '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Dibutuhkan Pada</span>
-                        <span class="info-val">{{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-' }}</span>
+                        <span class="info-label">Dibutuhkan Tgl</span>
+                        <span class="info-val">
+                            {{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-' }}
+                            @if($materialRequest->is_overdue)
+                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:4px;font-weight:600;">
+                                    <i class="fas fa-triangle-exclamation me-1"></i>Terlambat
+                                </span>
+                            @endif
+                        </span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Diproses Oleh</span>

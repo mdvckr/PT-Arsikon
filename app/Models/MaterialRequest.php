@@ -20,8 +20,24 @@ class MaterialRequest extends Model
         'approved_at',
         'status',
         'rejection_reason',
+        'needed_at',
         'notes',
     ];
+
+    protected $casts = [
+        'needed_at'   => 'date',
+        'approved_at' => 'datetime',
+    ];
+
+    public function getIsOverdueAttribute(): bool
+    {
+        if (!$this->needed_at) {
+            return false;
+        }
+
+        return \Carbon\Carbon::parse($this->needed_at)->startOfDay()->lt(now()->startOfDay())
+            && !in_array($this->status, ['fulfilled', 'rejected', 'cancelled']);
+    }
 
     public function fromWarehouse(): BelongsTo
     {

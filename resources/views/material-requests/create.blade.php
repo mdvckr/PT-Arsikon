@@ -426,10 +426,10 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Sumber Gudang Material <span class="text-danger">*</span>
+                            Sumber Material (Kepada) <span class="text-muted" style="font-weight:400;">(Usulan Pemohon)</span>
                         </label>
-                        <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" required style="font-weight:500;" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
-                            <option value="">Pilih Sumber Gudang</option>
+                        <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" style="font-weight:500;" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
+                            <option value="">— Pengadaan / Beli ke Vendor —</option>
                             @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
                             @foreach($sourceWarehouses as $swh)
                                 @if($swh->is_central && !$isCentralGroupStarted)
@@ -447,7 +447,7 @@
                             @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
                         </select>
                         <div id="warehouse-conflict-warning" style="display:none;font-size:10.5px;color:#dc2626;margin-top:4px;font-weight:600;">
-                            <i class="fas fa-triangle-exclamation"></i> Sumber gudang tidak boleh sama dengan gudang pemohon!
+                            <i class="fas fa-triangle-exclamation"></i> Sumber material tidak boleh sama dengan gudang pemohon!
                         </div>
                         @error('source_warehouse_id')
                         <div class="text-danger" style="font-size:10.5px;margin-top:3px;">{{ $message }}</div>
@@ -458,7 +458,7 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Dibutuhkan Pada <span class="text-danger">*</span>
+                            Dibutuhkan Tgl <span class="text-danger">*</span>
                         </label>
                         <input type="date" name="needed_at" class="form-control"
                             value="{{ old('needed_at') }}" min="{{ date('Y-m-d') }}" required>

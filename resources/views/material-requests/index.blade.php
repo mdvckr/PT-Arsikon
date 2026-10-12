@@ -128,7 +128,7 @@
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
                 </div>
-                <div class="filter-col" style="max-width:180px;">
+                <div class="filter-col" style="max-width:160px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Kategori</label>
                     <select name="category_id" class="form-control" onchange="this.form.submit()">
                         <option value="">Semua Kategori</option>
@@ -137,11 +137,25 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="filter-col" style="max-width:150px;">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Urutan</label>
+                    <select name="sort" class="form-control" onchange="this.form.submit()">
+                        <option value="created_at" {{ request('sort', 'created_at') === 'created_at' ? 'selected' : '' }}>Tgl Order</option>
+                        <option value="needed_at" {{ request('sort') === 'needed_at' ? 'selected' : '' }}>Dibutuhkan Tgl</option>
+                    </select>
+                </div>
+                <div class="filter-col" style="max-width:130px;">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Status Waktu</label>
+                    <select name="overdue" class="form-control" onchange="this.form.submit()">
+                        <option value="">Semua</option>
+                        <option value="1" {{ request('overdue') === '1' ? 'selected' : '' }}>Terlambat</option>
+                    </select>
+                </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
-                    @if(request()->anyFilled(['search', 'status', 'category_id']))
+                    @if(request()->anyFilled(['search', 'status', 'category_id', 'sort', 'overdue']))
                     <a href="{{ route('material-requests.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
                         <i class="fas fa-rotate-left" style="font-size:11px;"></i>
                     </a>
@@ -156,11 +170,12 @@
             <table class="data-table mr-table mb-0">
                 <thead>
                     <tr>
-                        <th class="nowrap" style="width:160px;">No. PO Lapangan</th>
-                        <th style="min-width:120px;">Pemohon</th>
-                        <th style="min-width:130px;">Proyek / Gudang</th>
-                        <th class="nowrap" style="width:95px;">Dibutuhkan</th>
-                        <th class="nowrap text-center" style="width:135px;">Status</th>
+                        <th class="nowrap" style="width:150px;">No. PO Lapangan</th>
+                        <th class="nowrap" style="width:95px;">Tgl Order</th>
+                        <th style="min-width:110px;">Pemohon</th>
+                        <th style="min-width:130px;">Sumber → Proyek</th>
+                        <th class="nowrap" style="width:110px;">Dibutuhkan Tgl</th>
+                        <th class="nowrap text-center" style="width:125px;">Status</th>
                         <th style="min-width:100px;">Diproses Oleh</th>
                         <th class="nowrap text-center" style="width:75px;">Aksi</th>
                     </tr>
@@ -172,19 +187,26 @@
                             <a href="{{ route('material-requests.show', $req) }}" class="text-primary fw-600" style="font-size:12px;">
                                 {{ $req->request_number }}
                             </a>
-                            <div class="text-muted" style="font-size:10.5px;">{{ $req->created_at ? $req->created_at->format('d/m/Y') : '-' }}</div>
+                        </td>
+                        <td class="nowrap" style="font-size:11.5px;color:#475569;">
+                            {{ $req->created_at ? $req->created_at->format('d/m/Y') : '-' }}
                         </td>
                         <td style="padding:8px 12px;">
                             <div class="fw-600" style="color:#0f172a;font-size:12px;">{{ $req->requestedBy?->name ?? '-' }}</div>
                         </td>
                         <td style="padding:8px 12px;">
-                            <div style="font-size:12px;">{{ $req->fromWarehouse?->name ?? '-' }}</div>
+                            <div style="font-size:11.5px;color:#334155;">{{ $req->fromWarehouse?->name ?? 'Pengadaan' }}</div>
                             @if($req->toWarehouse)
                             <div class="text-muted" style="font-size:10.5px;">→ {{ $req->toWarehouse->display_name }}</div>
                             @endif
                         </td>
                         <td class="nowrap" style="font-size:12px;color:#334155;">
-                            {{ $req->needed_at ? \Carbon\Carbon::parse($req->needed_at)->format('d/m/Y') : ($req->created_at ? $req->created_at->format('d/m/Y') : '-') }}
+                            <div>{{ $req->needed_at ? \Carbon\Carbon::parse($req->needed_at)->format('d/m/Y') : '-' }}</div>
+                            @if($req->is_overdue)
+                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:9.5px;padding:1px 5px;border-radius:4px;display:inline-block;margin-top:2px;font-weight:600;">
+                                    <i class="fas fa-triangle-exclamation me-1"></i>Terlambat
+                                </span>
+                            @endif
                         </td>
                         <td class="nowrap text-center">
                             @if($req->status === 'draft')

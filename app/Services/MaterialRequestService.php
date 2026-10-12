@@ -17,18 +17,19 @@ class MaterialRequestService
      */
     public function createRequest(
         Warehouse $toWarehouse,
-        Warehouse $sourceWarehouse,
+        ?Warehouse $sourceWarehouse,
         User $requestedBy,
         array $itemsData,
         bool $submitImmediately = true,
-        ?string $notes = null
+        ?string $notes = null,
+        ?string $neededAt = null
     ): MaterialRequest {
         if ($toWarehouse->is_central) {
             throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
         }
 
-        if ($toWarehouse->id === $sourceWarehouse->id) {
-            throw new Exception("Gudang sumber tidak boleh sama dengan gudang tujuan.");
+        if ($sourceWarehouse && $toWarehouse->id === $sourceWarehouse->id) {
+            throw new Exception("Sumber material tidak boleh sama dengan gudang pemohon.");
         }
 
         if (!$requestedBy->hasAccessToWarehouse($toWarehouse)) {
@@ -39,13 +40,14 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes) {
+        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes, $neededAt) {
             $request = MaterialRequest::create([
                 'request_number'        => MaterialRequest::generateRequestNumber(),
-                'from_warehouse_id'     => $sourceWarehouse->id,  // gudang asal/sumber material
-                'to_warehouse_id'       => $toWarehouse->id,      // gudang tujuan (pemohon)
+                'from_warehouse_id'     => $sourceWarehouse ? $sourceWarehouse->id : null,  // gudang asal/sumber material (null = pengadaan vendor)
+                'to_warehouse_id'       => $toWarehouse->id,                                 // gudang tujuan (pemohon)
                 'requested_by_user_id'  => $requestedBy->id,
                 'status'                => $submitImmediately ? 'submitted' : 'draft',
+                'needed_at'             => $neededAt,
                 'notes'                 => $notes,
             ]);
 
