@@ -117,6 +117,7 @@ class PurchaseOrderController extends Controller
             'items.*.custom_item_name'         => 'nullable|string|max:255',
             'items.*.custom_item_unit'         => 'nullable|string|max:50',
             'items.*.material_request_item_id' => 'nullable|exists:material_request_items,id',
+            'items.*.procurement_request_item_id' => 'nullable|exists:procurement_request_items,id',
             'items.*.quantity'                 => 'required|numeric|min:0.01',
             'items.*.unit_price'               => 'required|numeric|min:0',
         ]);
@@ -136,6 +137,7 @@ class PurchaseOrderController extends Controller
         }
 
         // Validasi: tiap baris wajib memilih material master ATAU mengisi nama barang baru/custom
+        // serta validasi kuota tersisa jika item berasal dari Procurement Request
         foreach ($request->input('items', []) as $idx => $item) {
             $hasMaterial = !empty($item['material_id']);
             $hasCustomName = !empty(trim($item['custom_item_name'] ?? ''));
@@ -144,46 +146,103 @@ class PurchaseOrderController extends Controller
                     "items.{$idx}.material_id" => "Baris ke-" . ($idx + 1) . ": Silakan pilih material dari master atau tentukan barang baru/custom."
                 ]);
             }
+
+            $prItemId = $item['procurement_request_item_id'] ?? null;
+            if (!$prItemId && !empty($validated['procurement_request_id']) && $hasMaterial) {
+                $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
+                    ->where('material_id', $item['material_id'])
+                    ->value('id');
+            }
+
+            if ($prItemId) {
+                $prItem = ProcurementRequestItem::find($prItemId);
+                if ($prItem) {
+                    $sisaKuota = (float) $prItem->quantity - (float) $prItem->qty_ordered;
+                    if ((float) $item['quantity'] > $sisaKuota) {
+                        $matName = $prItem->material?->name ?? 'Material';
+                        return back()->withInput()->withErrors([
+                            "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota PR ({$sisaKuota})."
+                        ]);
+                    }
+                }
+            }
         }
 
-        $po = PurchaseOrder::create([
-            'supplier_id'           => $supplierId,
-            'supplier_name'         => $supplierName,
-            'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
-            'created_by'            => auth()->id(),
-            'status'                => 'draft',
-            'order_date'            => $validated['order_date'],
-            'expected_delivery'     => $validated['expected_delivery'] ?? null,
-            'terms'                 => $validated['terms'] ?? null,
-            'notes'                 => $validated['notes'] ?? null,
-        ]);
-
-        $total = 0;
-        foreach ($validated['items'] as $item) {
-            $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
-            $total += $subtotal;
-
-            $customName = !empty($item['custom_item_name']) ? trim($item['custom_item_name']) : null;
-            $customUnit = !empty($item['custom_item_unit']) ? trim($item['custom_item_unit']) : null;
-            $materialId = !empty($item['material_id']) ? $item['material_id'] : null;
-            $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
-
-            $po->items()->create([
-                'material_id'              => $materialId,
-                'custom_item_name'         => $customName,
-                'custom_item_unit'         => $customUnit,
-                'material_request_item_id' => $mrItemId,
-                'quantity'                 => $item['quantity'],
-                'unit_price'               => $item['unit_price'],
-                'subtotal'                 => $subtotal,
-                'unit'                     => $customUnit,
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName) {
+            $po = PurchaseOrder::create([
+                'supplier_id'           => $supplierId,
+                'supplier_name'         => $supplierName,
+                'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
+                'created_by'            => auth()->id(),
+                'status'                => 'draft',
+                'order_date'            => $validated['order_date'],
+                'expected_delivery'     => $validated['expected_delivery'] ?? null,
+                'terms'                 => $validated['terms'] ?? null,
+                'notes'                 => $validated['notes'] ?? null,
             ]);
-        }
-        $po->update(['total_amount' => $total]);
 
-        if ($po->procurement_request_id) {
-            ProcurementRequest::find($po->procurement_request_id)->update(['status' => 'po_created']);
-        }
+            $total = 0;
+            foreach ($validated['items'] as $item) {
+                $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
+                $total += $subtotal;
+
+                $customName = !empty($item['custom_item_name']) ? trim($item['custom_item_name']) : null;
+                $customUnit = !empty($item['custom_item_unit']) ? trim($item['custom_item_unit']) : null;
+                $materialId = !empty($item['material_id']) ? $item['material_id'] : null;
+                $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
+                $prItemId   = !empty($item['procurement_request_item_id']) ? $item['procurement_request_item_id'] : null;
+
+                if (!$prItemId && !empty($validated['procurement_request_id']) && $materialId) {
+                    $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
+                        ->where('material_id', $materialId)
+                        ->value('id');
+                }
+
+                $po->items()->create([
+                    'material_id'                 => $materialId,
+                    'custom_item_name'            => $customName,
+                    'custom_item_unit'            => $customUnit,
+                    'material_request_item_id'    => $mrItemId,
+                    'procurement_request_item_id' => $prItemId,
+                    'quantity'                    => $item['quantity'],
+                    'unit_price'                  => $item['unit_price'],
+                    'subtotal'                    => $subtotal,
+                    'unit'                        => $customUnit,
+                ]);
+
+                if ($mrItemId) {
+                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->first();
+                    if ($mrItem) {
+                        $mrItem->increment('qty_ordered', (float) $item['quantity']);
+                    }
+                }
+
+                if ($prItemId) {
+                    $prItem = ProcurementRequestItem::where('id', $prItemId)->lockForUpdate()->first();
+                    if ($prItem) {
+                        $prItem->increment('qty_ordered', (float) $item['quantity']);
+                    }
+                }
+            }
+            $po->update(['total_amount' => $total]);
+
+            if ($po->procurement_request_id) {
+                $pr = ProcurementRequest::where('id', $po->procurement_request_id)->lockForUpdate()->first();
+                if ($pr) {
+                    $totalRequested = (float) $pr->items()->sum('quantity');
+                    $totalOrdered = (float) $pr->items()->sum('qty_ordered');
+                    if ($totalOrdered >= $totalRequested && $totalRequested > 0) {
+                        $pr->update(['status' => 'fully_ordered']);
+                    } elseif ($totalOrdered > 0) {
+                        $pr->update(['status' => 'partially_ordered']);
+                    } else {
+                        $pr->update(['status' => 'approved']);
+                    }
+                }
+            }
+
+            return $po;
+        });
 
         return redirect()->route('purchase-orders.show', $po)
             ->with('success', "PO #{$po->po_number} berhasil dibuat.");

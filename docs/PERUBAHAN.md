@@ -72,6 +72,19 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/DistributionAndReceivingTest.php`: Penyesuaian test lama agar selaras dengan pengetatan T4.
 - **Hasil Pengujian**: Seluruh 170 test (547 assertions) berstatus HIJAU (PASS).
 
+### T5. Sinkronisasi PO dan PR (Multi-PO per PR & Kuota Tersisa)
+- **Tujuan**:
+  - Mendukung penerbitan multi-PO dari 1 Procurement Request (PR) dengan validasi kuota ketat: `quantity PO <= (item.quantity - item.qty_ordered)`.
+  - Pembuatan PO menolak input yang melebihi sisa kuota PR dan menampilkan pesan validasi informatif.
+  - Menyimpan `procurement_request_item_id` pada setiap item PO.
+  - Mengupdate akumulasi `item.qty_ordered += qty_po` pada item PR dan MR.
+  - Menghitung ulang status PR secara dinamis: `partially_ordered` jika sebagian dipesan, dan `fully_ordered` jika seluruh kuota kuantitas telah terpesan.
+  - Mengembalikan kuota saat PO dibatalkan (cancel) dan mengembalikan status PR ke `partially_ordered` atau `approved`.
+- **Perubahan File**:
+  - `app/Http/Controllers/PurchaseOrderController.php`: Validasi sisa kuota PR per baris item, pembungkusan store dalam DB transaction, pencatatan `procurement_request_item_id`, inkremen `qty_ordered` pada item PR dan MR, serta update otomatis status PR (`partially_ordered` vs `fully_ordered`).
+  - `tests/Feature/ProcurementMultiPoTest.php`: Test merah awal (bukti gagal: `qty_ordered` tidak bertambah dan validasi kuota belum ada) lalu hijau setelah sinkronisasi diterapkan.
+- **Hasil Pengujian**: Seluruh 171 test (562 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
