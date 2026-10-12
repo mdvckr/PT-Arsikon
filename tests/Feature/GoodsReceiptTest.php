@@ -194,7 +194,6 @@ class GoodsReceiptTest extends TestCase
                 ],
             ],
         ]);
-
         $receipt = \App\Models\GoodsReceipt::where('invoice_number', 'SJ-PARTIAL-01')->firstOrFail();
         $this->assertEquals('draft', $receipt->status);
 

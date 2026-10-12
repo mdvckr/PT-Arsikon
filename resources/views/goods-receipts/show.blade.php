@@ -171,11 +171,14 @@
                     <table class="data-table receipt-detail-table mb-0">
                         <thead>
                             <tr>
-                                <th style="width:110px;">Tipe</th>
+                                <th style="width:100px;">Tipe</th>
                                 <th>Nama Barang / Item</th>
-                                <th style="width:150px;">Kategori</th>
-                                <th style="text-align:center;width:130px;">Qty Diterima</th>
-                                <th style="width:90px;text-align:center;">Satuan</th>
+                                <th style="width:120px;">Kategori</th>
+                                <th style="text-align:center;width:90px;">Qty Kirim</th>
+                                <th style="text-align:center;width:105px;">Diterima (Baik)</th>
+                                <th style="text-align:center;width:90px;">Rusak</th>
+                                <th style="text-align:center;width:115px;">Selisih/Hilang</th>
+                                <th style="width:80px;text-align:center;">Satuan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -223,8 +226,26 @@
                                         {{ $categoryName }}
                                     </span>
                                 </td>
-                                <td style="text-align:center;font-weight:700;color:#0f172a;font-size:13.5px;">
+                                <td style="text-align:center;font-size:12.5px;color:#475569;">
+                                    {{ $item->qty_shipped > 0 ? format_quantity($item->qty_shipped) : '-' }}
+                                </td>
+                                <td style="text-align:center;font-weight:700;color:#15803d;font-size:13px;">
                                     {{ format_quantity($qty) }}
+                                </td>
+                                <td style="text-align:center;font-size:12.5px;color:{{ $item->qty_damaged > 0 ? '#b91c1c;font-weight:700;' : '#64748b;' }}">
+                                    {{ $item->qty_damaged > 0 ? format_quantity($item->qty_damaged) : '-' }}
+                                </td>
+                                <td style="text-align:center;">
+                                    @if($item->qty_missing > 0)
+                                        <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-weight:700;">
+                                            {{ format_quantity($item->qty_missing) }}
+                                        </span>
+                                        <div style="font-size:10px;color:#991b1b;margin-top:2px;font-weight:600;">
+                                            {{ $item->missing_status === 'resolved' ? 'Terselesaikan' : ($item->missing_status === 'confirmed_lost' ? 'Dinyatakan Hilang' : 'Belum Selesai') }}
+                                        </div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
                                 </td>
                                 <td style="text-align:center;">
                                     <span class="text-muted" style="font-size:11.5px;font-weight:600;">
@@ -234,7 +255,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">
+                                <td colspan="8" style="text-align:center;color:#94a3b8;padding:20px;">
                                     Tidak ada rincian item barang pada penerimaan ini.
                                 </td>
                             </tr>
@@ -242,7 +263,7 @@
                         </tbody>
                         <tfoot>
                             <tr style="background:#f8fafc;border-top:1.5px solid #e2e8f0;">
-                                <td colspan="5" style="text-align:left;font-weight:600;color:#64748b;padding:10px 14px;font-size:12px;">
+                                <td colspan="8" style="text-align:left;font-weight:600;color:#64748b;padding:10px 14px;font-size:12px;">
                                     Total: <strong style="color:#0f172a;">{{ $goodsReceipt->items->count() }}</strong> jenis barang/alat diterima
                                 </td>
                             </tr>

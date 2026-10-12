@@ -308,6 +308,32 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PurchaseOrderShortCloseTest.php`: Test suite komprehensif menguji 6 skenario (creator tolak close sendiri, unauthorized 403, status tidak valid ditolak, tanpa outstanding ditolak, validasi wajib alasan, dan proses short close berhasil beserta rollback kuota MR).
 - **Hasil Pengujian**: Seluruh 225 test (737 assertions) berstatus HIJAU (PASS).
 
+### Tugas 11: Penerimaan Barang di Gudang Proyek, Penerimaan Sebagian, dan Kondisi Barang
+- **Deskripsi**:
+  - Implementasi migrasi penambahan tabel `po_delivery_schedules` dan kolom tracking kondisi fisik barang pada `goods_receipt_items` (`qty_shipped`, `qty_damaged`, `qty_missing`, `missing_status`, `po_delivery_schedule_id`).
+  - Pembuatan Model `PoDeliverySchedule` dan pembaruan fillable/relasi pada `GoodsReceiptItem`.
+  - Service `GoodsReceiptService`:
+    - Validasi kuota pesanan PO secara pesimistik (`lockForUpdate`), menolak penerimaan melebihi sisa outstanding PO (`DomainException`).
+    - Otomatisasi perhitungan kuantitas fisik: `qty_missing = max(0, qty_shipped - qty_received - qty_damaged)`, dan otomatisasi status `missing_status` ('unresolved').
+    - Pengondisian stok gudang: stok gudang bertambah HANYA dari barang berkondisi baik (`qty_received`), sedangkan barang rusak (`qty_damaged`) dicatat tanpa menambah stok gudang maupun `received_qty` PO.
+    - Resolusi bertahap selisih barang: penerimaan susulan untuk item PO yang sama secara proporsional menyelesaikan status `unresolved` menjadi `resolved`.
+    - Sinkronisasi penerimaan alat (`tool`) ke `purchase_order_items.received_qty` dan isolasi inventaris proyek.
+    - Sinkronisasi realisasi penerimaan ke `material_request_items.qty_received`, pembaruan status MR (`partially_fulfilled` atau `fulfilled`), serta notifikasi ke pemohon MR (`NotificationHelper::notifyUser`).
+    - Status PO otomatis menjadi `received` hanya jika seluruh item outstanding = 0, atau `partial_received` jika masih ada sisa outstanding.
+  - Sanitasi nama supplier di `GoodsReceiptController@store` (`preg_replace('/\s+/', ' ', trim($name))` dan pencarian case-insensitive) serta fallback gudang tujuan otomatis dari PO.
+  - Tampilan visual antarmuka rincian item dokumen penerimaan (`goods-receipts/show.blade.php`) menampilkan kolom Qty Kirim, Diterima (Baik), Rusak, dan Selisih/Hilang beserta status resolusinya.
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000006_update_goods_receipt_items_and_schedules_schema.php`: Migrasi tabel `po_delivery_schedules` dan kolom kondisi barang pada `goods_receipt_items`.
+  - `app/Models/PoDeliverySchedule.php`: Model jadwal pengiriman PO.
+  - `app/Models/GoodsReceiptItem.php`: Relasi & fillable baru `qty_shipped`, `qty_damaged`, `qty_missing`, `missing_status`, `po_delivery_schedule_id`.
+  - `app/Services/GoodsReceiptService.php`: Logika guard outstanding, tracking kondisi fisik, bugfix alat received_qty, resolusi missing, update status PO/MR.
+  - `app/Http/Controllers/GoodsReceiptController.php`: Sanitasi supplier, validasi form, auto-fill gudang tujuan PO.
+  - `public/js/goods-receipt-create.js`: Auto-fill gudang saat PO dipilih.
+  - `resources/views/goods-receipts/show.blade.php`: Tampilan detail kolom fisik & kondisi barang masuk.
+  - `tests/Feature/GoodsReceiptProjectAndConditionTest.php`: Feature test suite mencakup 6 skenario komprehensif.
+  - `tests/Feature/GoodsReceiptTest.php`: Penyesuaian assertions test eksisting.
+- **Hasil Pengujian**: Seluruh 231 test (754 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

@@ -474,6 +474,12 @@ function loadPoItems(poId) {
                 const sup = grSuppliers.find(function(s) { return s.id == data.supplier_id; });
                 if (sup) setSupplierByName(sup.name, sup.id);
             }
+            if (data.warehouse_id) {
+                const whSelect = document.getElementById('warehouseSelect');
+                if (whSelect) {
+                    whSelect.value = data.warehouse_id;
+                }
+            }
             document.getElementById('itemsBody').innerHTML = '';
             rowCount = 0;
             if (data.items && data.items.length > 0) {

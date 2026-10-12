@@ -240,6 +240,7 @@ class GoodsReceiptController extends Controller
         return response()->json([
             'supplier_id'   => $purchaseOrder->supplier_id,
             'supplier_name' => $purchaseOrder->supplier?->name,
+            'warehouse_id'  => $purchaseOrder->delivery_warehouse_id,
             'items'         => $items,
         ]);
     }
@@ -269,18 +270,30 @@ class GoodsReceiptController extends Controller
             $request->merge(['items' => $items]);
         }
 
+        // Fallback warehouse_id jika dari PO
+        if (!$request->filled('warehouse_id') && $request->filled('purchase_order_id')) {
+            $po = PurchaseOrder::find($request->purchase_order_id);
+            if ($po?->delivery_warehouse_id) {
+                $request->merge(['warehouse_id' => $po->delivery_warehouse_id]);
+            }
+        }
+
         // Tentukan apakah supplier dari list atau ketik bebas
         $supplierIdRaw = $request->input('supplier_id');
-        $supplierNameRaw = trim($request->input('supplier_name', ''));
+        $cleanedSupplierName = preg_replace('/\s+/', ' ', trim($request->input('supplier_name', '')));
         $isSupplierFromList = !empty($supplierIdRaw) && is_numeric($supplierIdRaw);
 
         // Jika tidak pilih dari list tapi ada nama ketik
-        if (!$isSupplierFromList && !empty($supplierNameRaw)) {
-            // Cari atau buat supplier baru
-            $supplier = \App\Models\Supplier::firstOrCreate(
-                ['name' => $supplierNameRaw],
-                ['name' => $supplierNameRaw, 'phone' => null, 'address' => null]
-            );
+        if (!$isSupplierFromList && !empty($cleanedSupplierName)) {
+            // Cari atau buat supplier baru secara case-insensitive
+            $supplier = \App\Models\Supplier::whereRaw('LOWER(name) = ?', [mb_strtolower($cleanedSupplierName)])->first();
+            if (!$supplier) {
+                $supplier = \App\Models\Supplier::create([
+                    'name'    => $cleanedSupplierName,
+                    'phone'   => null,
+                    'address' => null,
+                ]);
+            }
             $request->merge(['supplier_id' => $supplier->id]);
         }
 
@@ -300,7 +313,10 @@ class GoodsReceiptController extends Controller
             'items.*.stage_reference'        => 'nullable|string|max:100',
             'items.*.condition'              => 'nullable|in:good,damaged,reject',
             'items.*.purchase_order_item_id' => 'nullable|exists:purchase_order_items,id',
+            'items.*.po_delivery_schedule_id'=> 'nullable|exists:po_delivery_schedules,id',
             'items.*.quantity'               => 'required|numeric|min:0.01',
+            'items.*.qty_shipped'            => 'nullable|numeric|min:0',
+            'items.*.qty_damaged'            => 'nullable|numeric|min:0',
             'items.*.unit_price'             => 'nullable|numeric|min:0',
             'items.*.notes'                  => 'nullable|string|max:500',
         ]);
@@ -311,7 +327,7 @@ class GoodsReceiptController extends Controller
         }
 
         // Simpan nama supplier dan penerima ke validated
-        $validated['supplier_name'] = $supplierNameRaw ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
+        $validated['supplier_name'] = $cleanedSupplierName ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
         $validated['received_by_name'] = trim($request->input('received_by_name', '')) ?: null;
 
         $receipt = $this->service->create($validated, auth()->id());

@@ -14,17 +14,25 @@ class GoodsReceiptItem extends Model
         'goods_receipt_id',
         'item_type',
         'purchase_order_item_id',
+        'po_delivery_schedule_id',
         'stage_reference',
         'material_id',
         'tool_id',
+        'qty_shipped',
         'qty_received',
+        'qty_damaged',
+        'qty_missing',
+        'missing_status',
         'condition',
         'unit_price',
         'notes',
     ];
 
     protected $casts = [
+        'qty_shipped'  => 'decimal:2',
         'qty_received' => 'decimal:2',
+        'qty_damaged'  => 'decimal:2',
+        'qty_missing'  => 'decimal:2',
         'unit_price'   => 'decimal:2',
     ];
 
