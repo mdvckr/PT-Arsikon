@@ -78,10 +78,37 @@
             <div>
                 <span class="text-muted block text-xs">Status PO:</span>
                 <span class="badge badge-{{ $purchaseOrder->status_color }}">{{ $purchaseOrder->status_label }}</span>
+                @if(in_array($purchaseOrder->status, ['approved', 'sent', 'partial_received', 'received']) && $purchaseOrder->approver)
+                    <span class="block text-xs text-muted mt-1">Disetujui: <strong>{{ $purchaseOrder->approver->name }}</strong> ({{ $purchaseOrder->approved_at?->format('d/m/Y H:i') }})</span>
+                @endif
             </div>
             <div>
                 <span class="text-muted block text-xs">Total Nilai PO:</span>
                 <strong class="text-primary" style="font-size:16px;">Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}</strong>
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Gudang Tujuan Pengiriman:</span>
+                <strong>{{ $purchaseOrder->deliveryWarehouse ? $purchaseOrder->deliveryWarehouse->name . ($purchaseOrder->deliveryWarehouse->project ? ' - ' . $purchaseOrder->deliveryWarehouse->project->name : '') : 'Gudang Pusat' }}</strong>
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Penanggung Risiko Pengiriman:</span>
+                @if($purchaseOrder->risk_bearer === 'buyer')
+                    <span class="badge" style="background:#fee2e2;color:#991b1b;font-weight:600;font-size:11.5px;">
+                        <i class="fas fa-shield-alt me-1"></i> Pembeli (PT Arsikon)
+                    </span>
+                @else
+                    <span class="badge" style="background:#ecfdf5;color:#065f46;font-weight:600;font-size:11.5px;">
+                        <i class="fas fa-truck me-1"></i> Vendor / Supplier
+                    </span>
+                @endif
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Estimasi Tiba:</span>
+                <span>{{ $purchaseOrder->expected_delivery ? $purchaseOrder->expected_delivery->format('d M Y') : '-' }}</span>
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Dibuat Oleh:</span>
+                <span>{{ $purchaseOrder->creator?->name ?? '-' }}</span>
             </div>
         </div>
     </div>

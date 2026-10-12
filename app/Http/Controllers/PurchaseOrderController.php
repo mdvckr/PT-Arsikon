@@ -121,6 +121,7 @@ class PurchaseOrderController extends Controller
             'supplier_name'                    => 'nullable|string|max:255',
             'procurement_request_id'           => 'nullable|exists:procurement_requests,id',
             'delivery_warehouse_id'            => 'nullable|exists:warehouses,id',
+            'risk_bearer'                      => 'nullable|in:vendor,buyer',
             'order_date'                       => 'required|date',
             'expected_delivery'                => 'nullable|date|after_or_equal:order_date',
             'terms'                            => 'nullable|string',
@@ -247,6 +248,7 @@ class PurchaseOrderController extends Controller
                 'supplier_name'         => $supplierName,
                 'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
                 'delivery_warehouse_id' => $deliveryWarehouseId,
+                'risk_bearer'           => $validated['risk_bearer'] ?? 'vendor',
                 'created_by'            => auth()->id(),
                 'status'                => 'draft',
                 'order_date'            => $validated['order_date'],
@@ -355,21 +357,25 @@ class PurchaseOrderController extends Controller
             abort(403);
         }
 
-        if ($purchaseOrder->created_by === auth()->id()) {
-            return back()->with('error', 'Pembuat PO tidak dapat menyetujui PO buatannya sendiri.');
-        }
+        return DB::transaction(function () use ($purchaseOrder) {
+            $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
 
-        if ($purchaseOrder->status !== 'draft') {
-            return back()->with('error', 'Hanya PO berstatus draft yang dapat disetujui.');
-        }
+            if ($po->created_by === auth()->id()) {
+                return back()->with('error', 'Pembuat PO tidak dapat menyetujui PO buatannya sendiri.');
+            }
 
-        $purchaseOrder->update([
-            'status'      => 'approved',
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
+            if ($po->status !== 'draft') {
+                return back()->with('error', 'Hanya PO berstatus draft yang dapat disetujui.');
+            }
 
-        return back()->with('success', "PO #{$purchaseOrder->po_number} disetujui.");
+            $po->update([
+                'status'      => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            return back()->with('success', "PO #{$po->po_number} disetujui.");
+        });
     }
 
     public function send(PurchaseOrder $purchaseOrder)

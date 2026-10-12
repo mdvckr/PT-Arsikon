@@ -232,7 +232,30 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `resources/views/material-requests/show.blade.php`: Penambahan tombol "Buat PO ke Vendor" di action header dan banner informasi pengadaan vendor langsung ke proyek.
   - `resources/views/purchase-orders/create.blade.php`: Header gudang tujuan pengiriman (`delivery_warehouse_id`), penanggung risiko (`risk_bearer`), banner informasi pengadaan MR, dan tabel item otomatis dari `mrPurchaseItems`.
   - `tests/Feature/PoDirectFromMrTest.php`: Test suite TDD memverifikasi alur PO langsung dari MR, pembuktian bug awal (merah) dan hasil hijau (8 passed, 25 assertions).
-- **Hasil Pengujian**: Seluruh 209 test (693 assertions) berstatus HIJAU (PASS).
+### T8. Approval PO dan Syarat Pengiriman
+- **Tujuan**:
+  - Menambahkan permission kanonikal Spatie baru `'approve purchase orders'`.
+  - Mendaftarkan permission ke `database/seeders/RoleAndPermissionSeeder.php` pada array `$permissions` dan role `Admin PO`, serta grup 'Pengadaan & Pembayaran' di `app/Http/Controllers/RoleController.php`. Role `Admin Pusat` otomatis mendapatkan permission ini.
+  - Memperkuat pengamanan action `approve()` pada `PurchaseOrderController`:
+    - Otorisasi ketat di server: hanya user dengan permission `'approve purchase orders'` atau role `Admin Pusat`/`Admin` yang dapat menyetujui PO. Pengguna tanpa izin ditolak dengan HTTP 403.
+    - Penegakan pemisahan peran (T2): pembuat PO (`created_by === auth()->id()`) dilarang keras menyetujui PO buatannya sendiri, ditolak dengan flash pesan error.
+    - Guard status: hanya PO berstatus `draft` yang dapat disetujui; status lain ditolak.
+    - Proteksi konkurensi: eksekusi di dalam `DB::transaction` dengan `lockForUpdate()` pada baris PO.
+    - Mengisi `approved_by = auth()->id()`, `approved_at = now()`, dan memperbarui status menjadi `approved`.
+  - Syarat pengiriman & penanggung risiko (`risk_bearer`):
+    - Validasi `risk_bearer` (`vendor` atau `buyer`) di `PurchaseOrderController@store`.
+    - Menyimpan nilai `risk_bearer` pada saat pembuatan PO (default: `vendor`).
+    - Menambahkan accessor `risk_bearer_label` pada model `PurchaseOrder`.
+    - Menampilkan informasi penanggung risiko pengiriman (badge Vendor / Supplier vs Pembeli PT Arsikon), informasi gudang tujuan, estimasi tiba, serta detail pengesahan (nama approver dan tanggal approval) pada halaman detail `purchase-orders.show`.
+    - Tombol "Setujui PO" pada antarmuka hanya muncul untuk PO berstatus `draft`, bagi user yang berhak, dan bukan pembuat PO tersebut.
+- **Perubahan File**:
+  - `database/seeders/RoleAndPermissionSeeder.php`: Penambahan permission `'approve purchase orders'` dan assign ke `Admin PO`.
+  - `app/Http/Controllers/RoleController.php`: Pendaftaran permission `'approve purchase orders'` pada modul Pengadaan & Pembayaran.
+  - `app/Http/Controllers/PurchaseOrderController.php`: Validasi dan persistensi `risk_bearer` di `store()`, transaksi pesimistik dan guard pada `approve()`.
+  - `app/Models/PurchaseOrder.php`: Penambahan accessor `getRiskBearerLabelAttribute()`.
+  - `resources/views/purchase-orders/show.blade.php`: Header detail PO menampilkan Gudang Tujuan, Penanggung Risiko Pengiriman, pembuat, dan approver.
+  - `tests/Feature/PurchaseOrderApprovalAndRiskTest.php`: Test suite pengujian 5 skenario (creator tolak approve sendiri, non-draft tolak, unauthorized 403, approver sah berhasil approve, persistensi dan tampilan risk_bearer buyer/vendor).
+- **Hasil Pengujian**: Seluruh 214 test (713 assertions) berstatus HIJAU (PASS).
 
 ---
 

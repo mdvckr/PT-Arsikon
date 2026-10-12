@@ -96,4 +96,12 @@ class PurchaseOrder extends Model
     {
         return empty($this->supplier_id) && !empty($this->supplier_name);
     }
+
+    public function getRiskBearerLabelAttribute(): string
+    {
+        return match($this->risk_bearer) {
+            'buyer'  => 'Pembeli (PT Arsikon)',
+            default  => 'Vendor / Supplier',
+        };
+    }
 }

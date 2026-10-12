@@ -272,7 +272,7 @@ class RoleController extends Controller
             'Pengadaan & Pembayaran' => [
                 'icon' => 'fa-file-invoice-dollar',
                 'items' => ['view procurement', 'create procurement', 'approve procurement',
-                            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+                            'view purchase orders', 'create purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders',
                             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
                             'view payments', 'create payments', 'verify payments',
                             'view returns', 'create returns', 'approve returns', 'receive returns'],
