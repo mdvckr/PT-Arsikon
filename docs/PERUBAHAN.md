@@ -334,6 +334,26 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/GoodsReceiptTest.php`: Penyesuaian assertions test eksisting.
 - **Hasil Pengujian**: Seluruh 231 test (754 assertions) berstatus HIJAU (PASS).
 
+### T12. Barang Hilang di Jalan / Transit Loss dari Vendor
+- **Tujuan**:
+  - Penanganan kehilangan barang dalam perjalanan dari vendor pada penerimaan barang (Goods Receipt item `qty_missing > 0`).
+  - Batas waktu (grace period) pelaporan kehilangan maksimal 3 hari kerja (`config('procurement.loss_grace_days', 3)`). Pelaporan melewati grace period wajib oleh Admin Pusat.
+  - Pemisahan peran persetujuan kehilangan: approver kehilangan harus berbeda dari pelapor kehilangan (`recorded_by`) DAN petugas penerima barang/pembuat GR (`created_by`, `confirmed_by`, `received_by_user_id`).
+  - Persetujuan klaim (`claim_filed`): memperbarui status missing item GR menjadi `confirmed_lost`, menambah `lost_qty` pada Purchase Order Item terkait, mengurangi outstanding PO hingga dapat menyelesaikan status PO menjadi `received`, serta memastikan stok tersedia di gudang proyek tidak bertambah untuk kuantitas yang hilang.
+  - Notifikasi dan peringatan dini (alert) otomatis kepada Admin Pengadaan jika vendor mencatat tingkat kehilangan barang melebihi ambang batas (`config('procurement.loss_alert_percent', 3)`%) dalam kurun waktu 30 hari.
+- **Perubahan File**:
+  - `config/procurement.php`: File konfigurasi ambang batas `loss_grace_days` dan `loss_alert_percent`.
+  - `database/seeders/RoleAndPermissionSeeder.php`: Pendaftaran permission `create transit losses` dan `approve transit losses`.
+  - `app/Http/Controllers/RoleController.php`: Sinkronisasi modul permissions pada sistem otorisasi peran.
+  - `app/Services/GoodsReceiptService.php`: Membuka akses publik `updatePurchaseOrderStatus` untuk sinkronisasi status PO setelah kehilangan disetujui.
+  - `app/Services/TransitLossService.php`: Business logic pencatatan kehilangan, validasi grace period, guard pemisahan peran approver, approval klaim, audit log, dan deteksi alert rasio kehilangan vendor.
+  - `app/Http/Controllers/TransitLossController.php`: Endpoint handler untuk listing, deklarasi kehilangan, approval kehilangan, dan update status penyelesaian klaim (`recovered` / `written_off`).
+  - `routes/web.php`: Rute web `transit-losses.*` terlindungi middleware auth, active-workspace, dan permissions.
+  - `resources/views/transit-losses/index.blade.php`: Halaman UI daftar kehilangan transit, filter status, modal update klaim vendor, dan badge peringatan.
+  - `resources/views/goods-receipts/show.blade.php`: Tombol dan modal "Nyatakan Hilang" terintegrasi langsung pada item barang GR yang memiliki kuantitas kurang (`qty_missing > 0`).
+  - `tests/Feature/TransitLossVendorTest.php`: Feature test suite mencakup 5 skenario komprehensif (otorisasi, bukti & catatan wajib, pembatasan grace period, pemisahan peran approver, dan integrasi flow approval & pembaruan status PO).
+- **Hasil Pengujian**: Seluruh 236 test (773 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

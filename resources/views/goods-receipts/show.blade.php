@@ -243,6 +243,13 @@
                                         <div style="font-size:10px;color:#991b1b;margin-top:2px;font-weight:600;">
                                             {{ $item->missing_status === 'resolved' ? 'Terselesaikan' : ($item->missing_status === 'confirmed_lost' ? 'Dinyatakan Hilang' : 'Belum Selesai') }}
                                         </div>
+                                        @if($item->missing_status === 'unresolved' && auth()->user()->can('create transit losses'))
+                                            <div style="margin-top:4px;">
+                                                <button type="button" class="btn btn-outline-danger btn-xs" onclick="openDeclareLossModal({{ $item->id }}, '{{ addslashes($itemName) }}', {{ $item->qty_missing }}, '{{ $unitName }}')" style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">
+                                                    <i class="fas fa-triangle-exclamation me-1"></i> Nyatakan Hilang
+                                                </button>
+                                            </div>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
@@ -430,4 +437,66 @@
         </div>
 
     </div>
+
+    {{-- Modal: Nyatakan Hilang (Transit Loss) --}}
+    <div id="declareLossModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:2500;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:12px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
+            <div style="padding:14px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-triangle-exclamation text-danger" style="font-size:16px;"></i>
+                    <strong style="font-size:14px;color:#0f172a;">Nyatakan Barang Hilang (Transit Loss)</strong>
+                </div>
+                <button type="button" onclick="closeDeclareLossModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#64748b;">&times;</button>
+            </div>
+            <form method="POST" action="{{ route('transit-losses.store') }}" enctype="multipart/form-data" style="margin:0;">
+                @csrf
+                <input type="hidden" name="goods_receipt_item_id" id="modalGrItemId">
+                <div style="padding:16px 18px;font-size:12.5px;">
+                    <div style="background:#fef2f2;border:1px solid #fecaca;padding:10px 12px;border-radius:8px;margin-bottom:14px;">
+                        <div style="font-weight:700;color:#991b1b;margin-bottom:2px;" id="modalItemTitle">Nama Barang</div>
+                        <div style="color:#b91c1c;font-size:11.5px;">
+                            Kuantitas Hilang/Selisih: <strong id="modalItemQty">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight:600;font-size:12px;margin-bottom:4px;display:block;">
+                            Bukti Foto / Dokumen Surat Jalan <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" name="evidence" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="font-size:12px;">
+                        <span class="text-muted" style="font-size:11px;">Unggah foto fisik, berita acara, atau foto lembar surat jalan vendor (Max 10MB).</span>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label" style="font-weight:600;font-size:12px;margin-bottom:4px;display:block;">
+                            Catatan & Keterangan Pengiriman <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="notes" class="form-control" rows="3" required placeholder="Sebutkan keterangan sopir, nama armada/ekspedisi, nomor plat, dan kronologi..." style="font-size:12px;"></textarea>
+                    </div>
+                </div>
+                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeclareLossModal()" style="font-size:12px;">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;font-weight:700;">
+                        <i class="fas fa-paper-plane me-1"></i> Ajukan Laporan Kehilangan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+    function openDeclareLossModal(itemId, itemName, qty, unit) {
+        document.getElementById('modalGrItemId').value = itemId;
+        document.getElementById('modalItemTitle').textContent = itemName;
+        document.getElementById('modalItemQty').textContent = qty + ' ' + unit;
+        var modal = document.getElementById('declareLossModal');
+        modal.style.display = 'flex';
+    }
+    function closeDeclareLossModal() {
+        var modal = document.getElementById('declareLossModal');
+        modal.style.display = 'none';
+    }
+    </script>
+    @endpush
 </x-app-layout>

@@ -74,6 +74,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view payments', 'create payments', 'verify payments',
             // Returns
             'view returns', 'create returns', 'approve returns', 'receive returns',
+            // Transit Losses
+            'create transit losses', 'approve transit losses',
             // Reports & Audit
             'view reports', 'view audit logs',
         ];
@@ -112,6 +114,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
             'view returns', 'approve returns', 'receive returns',
+            'create transit losses',
             'view reports',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
@@ -142,6 +145,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view procurement', 'create procurement',
             // Returns
             'view returns', 'create returns', 'receive returns',
+            // Transit Losses
+            'create transit losses',
             // Reports
             'view reports',
         ];
@@ -178,6 +183,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+            'create transit losses',
             'view reports',
             'view audit logs',
         ]);

@@ -427,7 +427,7 @@ class GoodsReceiptService
     /**
      * Perbarui status Purchase Order berdasarkan qty yang sudah diterima vs dipesan.
      */
-    protected function updatePurchaseOrderStatus(int $purchaseOrderId): void
+    public function updatePurchaseOrderStatus(int $purchaseOrderId): void
     {
         $po = PurchaseOrder::with('items')->find($purchaseOrderId);
         if (!$po) {

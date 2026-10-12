@@ -256,7 +256,8 @@ class RoleController extends Controller
             'Logistik & Penerimaan' => [
                 'icon' => 'fa-truck-ramp-box',
                 'items' => ['view goods receipts', 'create goods receipts', 'confirm goods receipts',
-                            'view distributions', 'create distributions', 'ship distributions', 'receive distributions'],
+                            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+                            'create transit losses', 'approve transit losses'],
             ],
             'Permintaan & Pemakaian' => [
                 'icon' => 'fa-clipboard-check',

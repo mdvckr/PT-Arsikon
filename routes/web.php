@@ -28,6 +28,7 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PrintTemplateController;
+use App\Http\Controllers\TransitLossController;
 use App\Http\Controllers\SupabaseSyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
     Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
     Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
+
+    // Transit Losses (Kehilangan Barang di Perjalanan)
+    Route::get('/transit-losses', [TransitLossController::class, 'index'])->name('transit-losses.index');
+    Route::post('/transit-losses', [TransitLossController::class, 'store'])->name('transit-losses.store');
+    Route::post('/transit-losses/{transitLoss}/approve', [TransitLossController::class, 'approve'])->name('transit-losses.approve');
+    Route::post('/transit-losses/{transitLoss}/status', [TransitLossController::class, 'updateStatus'])->name('transit-losses.status');
 
     // Material Requests
     Route::get('/material-requests/stock', [MaterialRequestController::class, 'getStock'])->name('material-requests.stock');
