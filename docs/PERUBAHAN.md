@@ -452,6 +452,29 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PurchaseOrderPayableRuleTest.php`: Feature test suite 7 skenario komprehensif membuktikan aturan nilai sah dan penahanan nominal.
 - **Hasil Pengujian**: Seluruh 263 test (896 assertions) berstatus HIJAU (PASS).
 
+### T16. Seeder Role & Permission serta Command Idempotent
+- **Tujuan**:
+  - Menyediakan artisan command idempotent `php artisan permissions:sync-procurement` yang dapat dijalankan di production tanpa `migrate:fresh` untuk memastikan seluruh canonical permissions dan role Spatie sinkron dengan aturan pengadaan & logistik PT-Arsikon.
+  - Memutakhirkan `RoleAndPermissionSeeder.php` dan `RoleController.php`:
+    - **Owner**: View-only / read-only seluruh modul (tidak memiliki izin mutasi atau approval).
+    - **Admin Pusat**: Full access ke seluruh sistem.
+    - **Admin PO**: Menambahkan izin `approve material requests` (MR / PO Lapangan). Menghapus izin `approve purchase orders`, `close purchase orders`, `approve procurement`, dan `verify payments` (hanya membuat dan mengajukan pembayaran; verifikasi pembayaran serta persetujuan dan penutupan PO/PR adalah wewenang Admin Pusat / Admin).
+    - **Admin Gudang Pusat** & **Admin Gudang Proyek**: Izin operasional pergudangan, penerimaan barang (`confirm goods receipts`), pencatatan kehilangan (`create transit losses`), dll.
+    - **Karyawan**: Menghapus izin `create distributions` (surat jalan hanya boleh diterbitkan oleh divisi gudang/logistik). Karyawan tetap berhak membuat permintaan material (`create material requests` / PO Lapangan) dan peminjaman alat mandiri.
+  - Memperbarui deskripsi metadata `Admin PO` di `RoleController::ROLE_METADATA` menjadi pengajuan pembayaran (bukan verifikasi).
+  - Menyelaraskan suite pengujian:
+    - Memperbarui `tests/Feature/KaryawanRoleTest.php`: memastikan `test_karyawan_does_not_have_create_distributions_permission` dan penolakan 403 saat Karyawan mengakses `/distributions/create`.
+    - Menyelaraskan role user pada `PurchaseOrderApprovalAndRiskTest` dan `PurchaseOrderShortCloseTest` sesuai batasan wewenang baru.
+    - Membuat feature test `tests/Feature/ProcurementRolePermissionSyncTest.php` untuk memverifikasi eksekusi artisan command, batasan hak akses tiap role, dan sifat idempotensinya.
+- **Perubahan File**:
+  - `app/Console/Commands/SyncProcurementPermissions.php`: Artisan command `permissions:sync-procurement`.
+  - `database/seeders/RoleAndPermissionSeeder.php`: Sinkronisasi hak akses Spatie untuk Karyawan dan Admin PO.
+  - `app/Http/Controllers/RoleController.php`: Pembaruan deskripsi role metadata Admin PO.
+  - `tests/Feature/KaryawanRoleTest.php`: Pembaruan assertion Karyawan tidak memiliki izin create distributions.
+  - `tests/Feature/PurchaseOrderApprovalAndRiskTest.php` & `tests/Feature/PurchaseOrderShortCloseTest.php`: Penyelarasan role/permission approver/closer PO.
+  - `tests/Feature/ProcurementRolePermissionSyncTest.php`: Test suite pengujian artisan command dan kepatuhan Spatie role-permission alur pengadaan.
+- **Hasil Pengujian**: Seluruh 269 test (955 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

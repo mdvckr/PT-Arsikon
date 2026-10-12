@@ -74,7 +74,7 @@ class RoleController extends Controller
             'badge_color' => '#5b21b6',
             'badge_bg'    => '#ede9fe',
             'icon'        => 'fa-file-invoice-dollar',
-            'description' => 'Fokus pengadaan, Purchase Order (PO), verifikasi pembayaran, dan supplier.',
+            'description' => 'Fokus pengadaan, Purchase Order (PO), pengajuan pembayaran, dan supplier.',
         ],
         'Karyawan' => [
             'category'    => 'Operasional Lapangan',

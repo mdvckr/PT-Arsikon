@@ -152,7 +152,7 @@ class RoleAndPermissionSeeder extends Seeder
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
 
-        // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material, buat surat jalan) ---
+        // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material/PO Lapangan) ---
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
         $karyawanRole->syncPermissions([
             'view materials',
@@ -164,7 +164,6 @@ class RoleAndPermissionSeeder extends Seeder
             'create material requests',
             'view material usages',
             'view distributions',
-            'create distributions',
         ]);
 
         // --- Admin PO: fokus pengadaan & pembelian ---
@@ -176,12 +175,12 @@ class RoleAndPermissionSeeder extends Seeder
             'view inventory',
             'view tool assignments',
             'view stock opname',
-            'view material requests',
+            'view material requests', 'approve material requests',
             'view material usages',
-            'view procurement', 'approve procurement',
-            'view purchase orders', 'create purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders', 'close purchase orders',
+            'view procurement', 'create procurement',
+            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
-            'view payments', 'create payments', 'verify payments',
+            'view payments', 'create payments',
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'create transit losses',
             'view reports',

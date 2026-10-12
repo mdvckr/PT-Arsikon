@@ -53,11 +53,11 @@ class KaryawanRoleTest extends TestCase
             ->assertOk();
     }
 
-    public function test_karyawan_can_access_distribution_create(): void
+    public function test_karyawan_cannot_access_distribution_create(): void
     {
         $this->actingAs($this->karyawan)
             ->get('/distributions/create')
-            ->assertOk();
+            ->assertForbidden();
     }
 
     // Karyawan BOLEH lihat Pemakaian Material, TIDAK boleh membuatnya
@@ -137,9 +137,9 @@ class KaryawanRoleTest extends TestCase
         $this->assertTrue($this->karyawan->hasPermissionTo('create material requests'));
     }
 
-    public function test_karyawan_has_create_distributions_permission(): void
+    public function test_karyawan_does_not_have_create_distributions_permission(): void
     {
-        $this->assertTrue($this->karyawan->hasPermissionTo('create distributions'));
+        $this->assertFalse($this->karyawan->hasPermissionTo('create distributions'));
     }
 
     // Admin Proyek masih bisa akses MR dan Distributions

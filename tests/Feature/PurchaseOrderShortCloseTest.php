@@ -53,7 +53,7 @@ class PurchaseOrderShortCloseTest extends TestCase
             ['email' => 'closer.po.t10@example.com'],
             ['name' => 'Closer PO T10', 'password' => bcrypt('password')]
         );
-        $this->closerPO->syncRoles(['Admin PO']);
+        $this->closerPO->syncRoles(['Admin Pusat']);
 
         $this->unauthorizedUser = User::firstOrCreate(
             ['email' => 'karyawan.t10@example.com'],
@@ -124,6 +124,8 @@ class PurchaseOrderShortCloseTest extends TestCase
             'unit_price' => 50000,
             'subtotal' => 500000,
         ]);
+
+        $this->creatorPO->givePermissionTo('close purchase orders');
 
         $response = $this->actingAs($this->creatorPO)
             ->post(route('purchase-orders.close', $po), ['reason' => 'Vendor kehabisan stok']);

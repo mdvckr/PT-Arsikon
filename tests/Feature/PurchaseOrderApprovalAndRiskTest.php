@@ -50,7 +50,7 @@ class PurchaseOrderApprovalAndRiskTest extends TestCase
             ['email' => 'approver.po@example.com'],
             ['name' => 'Approver PO', 'password' => bcrypt('password')]
         );
-        $this->approverPO->syncRoles(['Admin PO']);
+        $this->approverPO->syncRoles(['Admin Pusat']);
 
         $this->unauthorizedUser = User::firstOrCreate(
             ['email' => 'karyawan.t8@example.com'],
@@ -114,6 +114,8 @@ class PurchaseOrderApprovalAndRiskTest extends TestCase
             'order_date' => now()->toDateString(),
             'total_amount' => 500000,
         ]);
+
+        $this->creatorPO->givePermissionTo('approve purchase orders');
 
         $response = $this->actingAs($this->creatorPO)
             ->post(route('purchase-orders.approve', $po));
