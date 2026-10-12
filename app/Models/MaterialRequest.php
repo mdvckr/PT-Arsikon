@@ -21,6 +21,7 @@ class MaterialRequest extends Model
         'status',
         'rejection_reason',
         'needed_at',
+        'requested_as',
         'notes',
     ];
 

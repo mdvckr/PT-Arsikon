@@ -178,6 +178,24 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/PoLapanganAvailableStockTest.php`: Test suite memverifikasi keakuratan perhitungan stok tersedia dengan alokasi aktif, badge Cukup/Kurang, sisa dipesan pada item purchase dengan tautan PO, integritas read-only (stok tidak berubah setelah halaman dilihat), dan bebas N+1 query (query inventori tidak bertambah seiring jumlah item).
 - **Hasil Pengujian**: Seluruh 191 test (631 assertions) berstatus HIJAU (PASS).
 
+### T22. Pemohon: Opsi Site Manager / Site Engineering (Metadata Pengajuan)
+- **Tujuan**:
+  - Menyediakan opsi peran kontekstual pemohon saat mengajukan PO Lapangan (`requested_as`: 'Admin Proyek', 'Site Manager', 'Site Engineering', 'Karyawan').
+  - **Keputusan Otonom & Batas**: Opsi "Site Manager" dan "Site Engineering" diimplementasikan murni sebagai **field metadata** pada tabel `material_requests` (`requested_as`), bukan role/permission Spatie baru. Pengguna yang membuat tetap akun pengguna aktif yang login (`requested_by_user_id`).
+  - Menambahkan kolom `requested_as` (nullable string, default 'Admin Proyek') dengan migrasi dan backfill aman untuk seluruh data lama.
+  - Menambahkan pilihan dropdown "Diajukan Sebagai" pada form pengajuan (`create.blade.php`) dengan nilai default 'Admin Proyek'.
+  - Menampilkan metadata pemohon pada halaman detail (`show.blade.php`) dan lembar cetakan (`print.blade.php`) dalam format "Nama Pemohon (Jabatan/Peran Pemohon)".
+- **Perubahan File**:
+  - `database/migrations/2026_10_12_000005_add_requested_as_to_material_requests_table.php`: Migrasi kolom `requested_as` (default 'Admin Proyek') dan backfill otomatis.
+  - `app/Models/MaterialRequest.php`: Menambahkan `requested_as` ke `$fillable`.
+  - `app/Services/MaterialRequestService.php`: Penambahan parameter `?string $requestedAs = null` pada `createRequest` dengan fallback default 'Admin Proyek'.
+  - `app/Http/Controllers/MaterialRequestController.php`: Validasi `requested_as` pada method `store` dan penerusan ke service.
+  - `resources/views/material-requests/create.blade.php`: Dropdown pilihan "Diajukan Sebagai" (Admin Proyek, Site Manager, Site Engineering, Karyawan).
+  - `resources/views/material-requests/show.blade.php`: Tampilan nama pemohon disertai peran kontekstual pada sidebar info card.
+  - `resources/views/material-requests/print.blade.php`: Tampilan nama pemohon dan jabatan pada header informasi serta label tanda tangan pemohon.
+  - `tests/Feature/PoLapanganRequestedAsTest.php`: Test suite memverifikasi penyimpanan `requested_as`, fallback default ke 'Admin Proyek', tampilan di `show` dan `print`, serta kepastian tidak ada role Spatie baru yang dibuat di database.
+- **Hasil Pengujian**: Seluruh 194 test (643 assertions) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom

@@ -133,6 +133,7 @@ class MaterialRequestController extends Controller
             'warehouse_id'               => 'required|exists:warehouses,id',
             'source_warehouse_id'        => 'nullable|exists:warehouses,id',
             'needed_at'                  => 'nullable|date|after_or_equal:today',
+            'requested_as'               => 'nullable|string|max:50',
             'notes'                      => 'nullable|string',
             'quantities'                 => 'nullable|array',
             'specs'                      => 'nullable|array',
@@ -218,7 +219,8 @@ class MaterialRequestController extends Controller
                 $itemsData,
                 true,
                 $validated['notes'] ?? null,
-                $validated['needed_at'] ?? null
+                $validated['needed_at'] ?? null,
+                $validated['requested_as'] ?? null
             );
         } catch (\Throwable $e) {
             return back()->withInput()->withErrors([

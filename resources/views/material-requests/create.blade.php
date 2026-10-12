@@ -463,6 +463,17 @@
                         <input type="date" name="needed_at" class="form-control"
                             value="{{ old('needed_at') }}" min="{{ date('Y-m-d') }}" required>
                     </div>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
+                            Diajukan Sebagai
+                        </label>
+                        <select name="requested_as" id="requested_as" class="form-control" style="font-weight:500;">
+                            <option value="Admin Proyek" {{ old('requested_as', 'Admin Proyek') === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
+                            <option value="Site Manager" {{ old('requested_as') === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
+                            <option value="Site Engineering" {{ old('requested_as') === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
+                            <option value="Karyawan" {{ old('requested_as') === 'Karyawan' ? 'selected' : '' }}>Karyawan</option>
+                        </select>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
                             Catatan <span class="text-muted" style="font-weight:400;">(Opsional)</span>

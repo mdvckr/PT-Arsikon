@@ -22,7 +22,8 @@ class MaterialRequestService
         array $itemsData,
         bool $submitImmediately = true,
         ?string $notes = null,
-        ?string $neededAt = null
+        ?string $neededAt = null,
+        ?string $requestedAs = null
     ): MaterialRequest {
         if ($toWarehouse->is_central) {
             throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
@@ -40,7 +41,9 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes, $neededAt) {
+        $finalRequestedAs = trim($requestedAs ?? '') ?: 'Admin Proyek';
+
+        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes, $neededAt, $finalRequestedAs) {
             $request = MaterialRequest::create([
                 'request_number'        => MaterialRequest::generateRequestNumber(),
                 'from_warehouse_id'     => $sourceWarehouse ? $sourceWarehouse->id : null,  // gudang asal/sumber material (null = pengadaan vendor)
@@ -48,6 +51,7 @@ class MaterialRequestService
                 'requested_by_user_id'  => $requestedBy->id,
                 'status'                => $submitImmediately ? 'submitted' : 'draft',
                 'needed_at'             => $neededAt,
+                'requested_as'          => $finalRequestedAs,
                 'notes'                 => $notes,
             ]);
 

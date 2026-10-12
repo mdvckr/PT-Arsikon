@@ -454,7 +454,12 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Pemohon</span>
-                        <span class="info-val">{{ $materialRequest->requestedBy?->name ?? '-' }}</span>
+                        <span class="info-val">
+                            {{ $materialRequest->requestedBy?->name ?? '-' }}
+                            @if($materialRequest->requested_as)
+                                <span class="text-muted" style="font-weight:400;font-size:11px;">({{ $materialRequest->requested_as }})</span>
+                            @endif
+                        </span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Sumber Material (Kepada)</span>

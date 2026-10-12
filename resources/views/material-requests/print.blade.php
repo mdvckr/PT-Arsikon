@@ -263,6 +263,11 @@
                         <span class="hf-colon">:</span>
                         <span class="hf-val">{{ $proyek }}</span>
                     </div>
+                    <div class="hf-row">
+                        <span class="hf-label">Pemohon</span>
+                        <span class="hf-colon">:</span>
+                        <span class="hf-val">{{ $mr->requestedBy?->name ?? '-' }} ({{ $mr->requested_as ?: 'Admin Proyek' }})</span>
+                    </div>
                 </div>
                 <div class="hf-right">
                     <div class="hf-row-r">
@@ -362,7 +367,7 @@
                     <div style="font-size:10px;margin-top:4px;color:#555;">{{ $mr->requestedBy->name }}</div>
                 @endif
             </div>
-            <div class="sign-label-bottom">(Site Manager)</div>
+            <div class="sign-label-bottom">({{ $mr->requested_as ?: 'Site Manager' }})</div>
         </div>
     </div>
 
