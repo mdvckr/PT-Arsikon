@@ -412,7 +412,7 @@
                 <div class="card-body" style="padding:14px;">
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Nama Proyek (Gudang Pemohon) <span class="text-danger">*</span>
+                            Nama Proyek <span class="text-danger">*</span>
                         </label>
                         <select name="warehouse_id" id="warehouse_id" class="form-control" required style="font-weight:500;" onchange="syncWarehouseOptions()">
                             <option value="">Pilih Gudang / Proyek</option>
@@ -426,7 +426,7 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Sumber Material (Kepada) <span class="text-muted" style="font-weight:400;">(Usulan Pemohon)</span>
+                            Kepada <span class="text-muted" style="font-weight:400;">(Usulan Pemohon)</span>
                         </label>
                         <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" style="font-weight:500;" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
                             <option value="">— Pengadaan / Beli ke Vendor —</option>
