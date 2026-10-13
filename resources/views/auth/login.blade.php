@@ -275,6 +275,7 @@
     </div>
 
     {{-- Error Modal Popup saat Login Gagal / Kata Sandi Salah (iOS 26 Liquid Glass Style) --}}
+    @push('modals')
     @if ($errors->any() || request()->has('preview_error'))
     <div id="loginErrorModal" class="login-modal-overlay" onclick="if(event.target === this) closeLoginErrorModal()">
         <div class="login-modal-box">
@@ -318,6 +319,7 @@
         </div>
     </div>
     @endif
+    @endpush
 
     <script>
         function togglePassword() {
