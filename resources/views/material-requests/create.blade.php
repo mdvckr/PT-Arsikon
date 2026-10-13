@@ -3,71 +3,117 @@
 
     @push('styles')
     <style>
-        .mr-create-layout {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 16px;
-            align-items: start;
+        .form-section-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
         }
 
-        .sticky-sidebar .form-control {
-            height: 35px;
-            padding: 6px 10px;
-            font-size: 12px;
-            line-height: 1.4;
-            border-radius: 6px;
+        .form-section-header {
+            padding: 14px 18px;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-section-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mr-doc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 18px;
+        }
+
+        .mr-doc-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mr-doc-field label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 2px;
+        }
+
+        .mr-doc-field .form-control {
+            height: 38px;
+            padding: 7px 12px;
+            font-size: 12.5px;
+            border-radius: 7px;
             border: 1px solid #cbd5e1;
-            box-sizing: border-box;
             background-color: #ffffff;
             color: #0f172a;
+            font-weight: 500;
+            transition: all 0.15s ease;
         }
 
-        .sticky-sidebar .form-control:focus {
+        .mr-doc-field .form-control:focus {
             border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
             outline: none;
         }
 
-        .sticky-sidebar textarea.form-control {
-            height: auto !important;
-            min-height: 60px;
-            line-height: 1.4;
-            padding: 8px 10px;
-        }
-
         .mr-item-table th {
-            padding: 7px 10px !important;
-            font-size: 10.5px !important;
+            padding: 10px 12px !important;
+            font-size: 11px !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
-            letter-spacing: 0.3px !important;
-            color: #64748b !important;
-            background: #fafafa !important;
-            border-bottom: 1px solid #e2e8f0 !important;
+            letter-spacing: 0.4px !important;
+            color: #475569 !important;
+            background: #f8fafc !important;
+            border-bottom: 1px solid #cbd5e1 !important;
             white-space: nowrap !important;
         }
 
         .mr-item-table td {
-            padding: 6px 10px !important;
+            padding: 8px 10px !important;
             vertical-align: middle !important;
+            font-size: 12px !important;
+        }
+
+        .mr-item-table tbody tr.mat-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .mr-item-table tbody tr.mat-row.row-active {
+            background-color: #f0f7ff !important;
         }
 
         .qty-input {
             text-align: center;
             font-weight: 700;
-            color: #1e293b;
-            width: 80px;
-            height: 30px;
-            font-size: 12px;
-            border-radius: 4px;
+            color: #0f172a;
+            width: 85px;
+            height: 32px;
+            font-size: 12.5px;
+            border-radius: 6px;
             border: 1px solid #cbd5e1;
             padding: 0 4px;
+            background: #ffffff;
+            transition: all 0.15s ease;
         }
 
         .qty-input:focus {
-            border-color: #3b82f6;
+            border-color: #2563eb;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
 
         .qty-input.qty-warning {
@@ -82,37 +128,55 @@
             color: #b91c1c !important;
         }
 
+        /* Sticky Bottom Action Bar */
+        .mr-sticky-bar {
+            position: sticky;
+            bottom: 12px;
+            z-index: 40;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
         @media (max-width: 992px) {
-            .mr-create-layout {
-                grid-template-columns: 1fr !important;
-            }
-            .sticky-sidebar {
-                position: static !important;
+            .mr-doc-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 640px) {
-            .page-header-flex {
+            .mr-doc-grid {
+                grid-template-columns: 1fr;
+            }
+            .mr-sticky-bar {
                 flex-direction: column;
-                align-items: flex-start !important;
-                gap: 10px;
+                align-items: stretch;
             }
         }
     </style>
     @endpush
 
-    <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('material-requests.index') }}">PO Lapangan</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-        <span>Buat PO Lapangan Baru</span>
+    {{-- Breadcrumb --}}
+    <div class="breadcrumb mb-3" style="font-size:12.5px;">
+        <a href="{{ route('material-requests.index') }}" style="color:#64748b;text-decoration:none;">PO Lapangan</a>
+        <span class="breadcrumb-sep" style="margin:0 6px;color:#94a3b8;"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span style="font-weight:600;color:#0f172a;">Buat PO Lapangan Baru</span>
     </div>
 
     @if ($errors->any())
-    <div class="alert alert-danger mb-3" style="border-radius:8px;padding:10px 14px;font-size:12px;">
-        <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada formulir PO Lapangan:
+    <div class="alert alert-danger mb-3" style="border-radius:10px;padding:12px 16px;font-size:12.5px;">
+        <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-triangle-exclamation text-danger"></i> Terdapat kesalahan pada formulir PO Lapangan:
         </div>
-        <ul class="mb-0" style="padding-left:18px;">
+        <ul class="mb-0" style="padding-left:20px;">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
@@ -122,373 +186,461 @@
 
     <form id="materialRequestForm" method="POST" action="{{ route('material-requests.store') }}">
         @csrf
-        <div class="mr-create-layout mb-3">
 
-            <!-- Left: Materials grouped by category -->
-            <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
-                <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
-                        <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Daftar Material Tersedia</span>
+        {{-- SECTION 1: Informasi Dokumen & Proyek --}}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <div class="form-section-title">
+                    <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
+                        <i class="fas fa-file-invoice"></i>
                     </div>
-                    <div>
-                        <span id="totalItemBadge" class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe;">
-                            0 Item Diminta
-                        </span>
-                    </div>
+                    <span>1. Dokumen &amp; Tujuan Permintaan</span>
+                </div>
+                <div class="text-muted" style="font-size:11.5px;">
+                    Lengkapi parameter dokumen PO Lapangan sebelum memilih material
+                </div>
+            </div>
+
+            <div class="mr-doc-grid">
+                {{-- Proyek Pemohon --}}
+                <div class="mr-doc-field">
+                    <label for="warehouse_id">
+                        Nama Proyek / Gudang Pemohon <span class="text-danger">*</span>
+                    </label>
+                    <select name="warehouse_id" id="warehouse_id" class="form-control" required onchange="syncWarehouseOptions()">
+                        <option value="">Pilih Proyek Pemohon</option>
+                        @foreach($warehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>
+                            {{ $wh->project ? $wh->project->name : $wh->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    @error('warehouse_id')
+                    <div class="text-danger" style="font-size:11px;margin-top:2px;">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                <div class="card-body" style="padding:12px 14px;">
-                    {{-- Search Box & Category Filter --}}
-                    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-                        <div style="flex:2;min-width:180px;position:relative;">
-                            <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;"></i>
-                            <input type="text" id="materialSearch" class="form-control" placeholder="Cari nama material, model..." oninput="filterMaterials()" style="padding-left:30px;height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
-                        </div>
-                        <div style="flex:1;min-width:140px;">
-                            <select id="categoryFilter" class="form-control" onchange="filterMaterials()" style="height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
-                                <option value="">Semua Kategori</option>
-                                @foreach($materialCategories as $cat)
-                                <option value="mcat-{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                {{-- Sumber Material --}}
+                <div class="mr-doc-field">
+                    <label for="source_warehouse_id">
+                        Kepada <span class="text-muted" style="font-weight:400;">(Sumber Material)</span>
+                    </label>
+                    <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
+                        <option value="" {{ (string)old('source_warehouse_id', $defaultSourceWarehouseId) === '' ? 'selected' : '' }}>— Pengadaan / Beli ke Vendor —</option>
+                        @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
+                        @foreach($sourceWarehouses as $swh)
+                            @if($swh->is_central && !$isCentralGroupStarted)
+                                <optgroup label="── Gudang Pusat ──">
+                                @php $isCentralGroupStarted = true; @endphp
+                            @elseif(!$swh->is_central && !$isProjectGroupStarted)
+                                @if($isCentralGroupStarted) </optgroup> @endif
+                                <optgroup label="── Gudang Proyek ──">
+                                @php $isProjectGroupStarted = true; @endphp
+                            @endif
+                            <option value="{{ $swh->id }}" {{ (string)old('source_warehouse_id', $defaultSourceWarehouseId) === (string)$swh->id ? 'selected' : '' }}>
+                                {{ $swh->name }}{{ $swh->is_central ? ' (Pusat)' : '' }}
+                            </option>
+                        @endforeach
+                        @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
+                    </select>
+                    <div id="warehouse-conflict-warning" style="display:none;font-size:11px;color:#dc2626;margin-top:3px;font-weight:600;">
+                        <i class="fas fa-triangle-exclamation"></i> Sumber material tidak boleh sama dengan proyek pemohon!
                     </div>
+                    @error('source_warehouse_id')
+                    <div class="text-danger" style="font-size:11px;margin-top:2px;">{{ $message }}</div>
+                    @enderror
+                </div>
 
-                    <div class="alert alert-info mb-2" style="font-size:11.5px;padding:8px 12px;border-radius:6px;line-height:1.35;">
-                        <i class="fas fa-warehouse" style="font-size:10px;"></i> Stok dari <strong>Gudang Pusat</strong> ({{ $centralWarehouse?->name ?? 'Pusat' }}). Permintaan dikirim dari Pusat ke Proyek pemohon.
+                {{-- Dibutuhkan Tgl --}}
+                <div class="mr-doc-field">
+                    <label for="needed_at">
+                        Dibutuhkan Tanggal <span class="text-danger">*</span>
+                    </label>
+                    <input type="date" name="needed_at" id="needed_at" class="form-control"
+                        value="{{ old('needed_at') }}" min="{{ date('Y-m-d') }}" required>
+                    @error('needed_at')
+                    <div class="text-danger" style="font-size:11px;margin-top:2px;">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Diajukan Sebagai --}}
+                <div class="mr-doc-field">
+                    <label for="requested_as">
+                        Diajukan Sebagai
+                    </label>
+                    <select name="requested_as" id="requested_as" class="form-control">
+                        <option value="Admin Proyek" {{ old('requested_as', 'Admin Proyek') === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
+                        <option value="Site Manager" {{ old('requested_as') === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
+                        <option value="Site Engineering" {{ old('requested_as') === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
+                        <option value="Karyawan" {{ old('requested_as') === 'Karyawan' ? 'selected' : '' }}>Karyawan</option>
+                    </select>
+                </div>
+            </div>
+
+            {{-- Catatan Tambahan Pemohon & Alert Info Sumber --}}
+            <div style="padding:0 18px 18px 18px;">
+                <div class="mr-doc-field mb-3">
+                    <label for="notes">Catatan Tambahan Permintaan (Opsional)</label>
+                    <input type="text" name="notes" id="notes" class="form-control" placeholder="Contoh: Kebutuhan mendesak untuk pengecoran lantai 3 zona B..." value="{{ old('notes') }}" style="height:36px;font-size:12px;">
+                </div>
+
+                <div class="alert alert-info mb-0" id="source-wh-info" style="font-size:12px;padding:10px 14px;border-radius:8px;line-height:1.4;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-warehouse text-primary"></i>
+                        <span id="source-wh-text">
+                            @if(empty($defaultSourceWarehouseId))
+                                Ditujukan ke: <strong>Pengadaan / Beli ke Vendor</strong>. Kolom stok menampilkan referensi stok <strong>{{ $centralWarehouse?->name ?? 'Gudang Pusat' }}</strong>.
+                            @else
+                                Stok dari <strong>{{ $sourceWarehouses->firstWhere('id', $defaultSourceWarehouseId)?->name ?? 'Gudang Pusat' }}</strong>. Permintaan dikirim ke Proyek pemohon.
+                            @endif
+                        </span>
                     </div>
-
-                    <div class="table-wrap" style="max-height:500px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;">
-                        <table class="data-table mr-item-table mb-0" id="materialsTable">
-                            <thead>
-                                <tr>
-                                    <th style="min-width:185px;padding:7px 10px;">Nama Material &amp; Model</th>
-                                    <th style="text-align:center;width:85px;padding:7px 8px;">Ukuran</th>
-                                    <th style="text-align:center;width:80px;padding:7px 8px;">Stok Pusat</th>
-                                    <th style="text-align:center;width:88px;padding:7px 8px;">Jml Diminta</th>
-                                    <th style="width:128px;padding:7px 8px;">Spesifikasi</th>
-                                    <th style="text-align:center;width:108px;padding:7px 8px;">Tgl Pakai</th>
-                                    <th style="width:122px;padding:7px 8px;">Alokasi / Zona</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($materialCategories as $category)
-                                @php $groupKey = 'mcat-' . $category->id; @endphp
-                                <tr class="cat-toggle" data-group="{{ $groupKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                                    <td colspan="7" style="padding:6px 10px !important;">
-                                        <div class="flex items-center justify-between" style="width:100%;">
-                                            <div class="flex items-center" style="gap:6px;">
-                                                <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
-                                                <span class="fw-700" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;color:#1e293b;">{{ $category->name }}</span>
-                                                <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">{{ $category->materials->count() }} material</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @foreach($category->materials as $mat)
-                                @php $totalStock = $mat->inventories->sum('quantity'); @endphp
-                                <tr class="mat-row cat-rows {{ $groupKey }}" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
-                                    <td style="padding:6px 10px 6px 22px;">
-                                        <div class="fw-600" style="font-size:12.5px;color:#0f172a;">{{ $mat->name }}</div>
-                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
-                                            @if($mat->type)
-                                            <span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:600;">{{ $mat->type }}</span>
-                                            @endif
-                                            <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;color:#475569;">{{ $mat->sku }}</span>
-                                        </div>
-                                    </td>
-                                    <td style="text-align:center;">
-                                        @if($mat->size)
-                                        <span style="font-size:12px;color:#334155;">{{ $mat->size }}</span>
-                                        @else
-                                        <span class="text-muted" style="font-size:11px;">-</span>
-                                        @endif
-                                    </td>
-                                    <td style="text-align:center;">
-                                        <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
-                                            {{ number_format($totalStock, 0, ',', '.') }}
-                                        </span>
-                                        <span class="text-muted" style="font-size:10px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</span>
-                                    </td>
-                                    <td style="text-align:center;">
-                                        <input type="number"
-                                               name="quantities[{{ $mat->id }}]"
-                                               class="form-control qty-input"
-                                               min="0" step="0.01"
-                                               value="{{ old('quantities.'.$mat->id, 0) }}"
-                                               oninput="validateQtyRow(this); calculateTotal()">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="text"
-                                               name="specs[{{ $mat->id }}]"
-                                               class="form-control"
-                                               placeholder="mis. fc'=25 MPa"
-                                               value="{{ old('specs.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="date"
-                                               name="usage_dates[{{ $mat->id }}]"
-                                               class="form-control"
-                                               value="{{ old('usage_dates.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="text"
-                                               name="usage_locations[{{ $mat->id }}]"
-                                               class="form-control"
-                                               placeholder="mis. Cor Pile Cap TC"
-                                               value="{{ old('usage_locations.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                </tr>
-                                @endforeach
-                                @empty
-                                @endforelse
-
-                                @if($uncategorizedMaterials->isNotEmpty())
-                                <tr class="cat-toggle" data-group="mcat-uncategorized" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                                    <td colspan="7" style="padding:6px 10px !important;">
-                                        <div class="flex items-center" style="gap:6px;">
-                                            <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
-                                            <span class="fw-700" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;color:#1e293b;">Lainnya</span>
-                                            <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">{{ $uncategorizedMaterials->count() }} material</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @foreach($uncategorizedMaterials as $mat)
-                                @php $totalStock = $mat->inventories->sum('quantity'); @endphp
-                                <tr class="mat-row cat-rows mcat-uncategorized" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
-                                    <td style="padding:6px 10px 6px 22px;">
-                                        <div class="fw-600" style="font-size:12.5px;color:#0f172a;">{{ $mat->name }}</div>
-                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
-                                            @if($mat->type)
-                                            <span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:600;">{{ $mat->type }}</span>
-                                            @endif
-                                            <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px;color:#475569;">{{ $mat->sku }}</span>
-                                        </div>
-                                    </td>
-                                    <td style="text-align:center;">
-                                        @if($mat->size)
-                                        <span style="font-size:12px;color:#334155;">{{ $mat->size }}</span>
-                                        @else
-                                        <span class="text-muted" style="font-size:11px;">-</span>
-                                        @endif
-                                    </td>
-                                    <td style="text-align:center;">
-                                        <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
-                                            {{ number_format($totalStock, 0, ',', '.') }}
-                                        </span>
-                                        <span class="text-muted" style="font-size:10px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</span>
-                                    </td>
-                                    <td style="text-align:center;">
-                                        <input type="number"
-                                               name="quantities[{{ $mat->id }}]"
-                                               class="form-control qty-input"
-                                               min="0" step="0.01"
-                                               value="{{ old('quantities.'.$mat->id, 0) }}"
-                                               oninput="validateQtyRow(this); calculateTotal()">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="text"
-                                               name="specs[{{ $mat->id }}]"
-                                               class="form-control"
-                                               placeholder="mis. fc'=25 MPa"
-                                               value="{{ old('specs.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="date"
-                                               name="usage_dates[{{ $mat->id }}]"
-                                               class="form-control"
-                                               value="{{ old('usage_dates.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                    <td style="padding:4px 6px;">
-                                        <input type="text"
-                                               name="usage_locations[{{ $mat->id }}]"
-                                               class="form-control"
-                                               placeholder="mis. Cor Pile Cap TC"
-                                               value="{{ old('usage_locations.'.$mat->id) }}"
-                                               style="height:28px;font-size:11px;padding:2px 6px;">
-                                    </td>
-                                </tr>
-                                @endforeach
-                                @endif
-
-                                @if($materialCategories->isEmpty() && $uncategorizedMaterials->isEmpty())
-                                <tr>
-                                    <td colspan="7" style="text-align:center;padding:28px 16px;color:#94a3b8;">
-                                        <i class="fas fa-inbox" style="font-size:24px;margin-bottom:6px;display:block;color:#cbd5e1;"></i>
-                                        <div style="font-weight:600;font-size:12.5px;color:#64748b;">Tidak ada material yang tersedia</div>
-                                    </td>
-                                </tr>
-                                @endif
-                            </tbody>
-                        </table>
+                    <div id="source-wh-loading" style="display:none;font-size:11.5px;color:#2563eb;font-weight:600;">
+                        <i class="fas fa-spinner fa-spin"></i> Memuat data stok terbaru...
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Manual items: barang tidak ada di Pusat -->
-                    <div class="mt-3" style="border:1.5px dashed #fde68a;border-radius:8px;padding:12px;background:#fffbeb;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <i class="fas fa-pen-to-square" style="font-size:12px;color:#d97706;"></i>
-                                <strong style="font-size:12px;color:#92400e;">Barang Tidak Ada di Pusat — Input Manual</strong>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-warning" onclick="addCustomRequestRow()" style="padding:4px 10px;font-size:11px;border-radius:5px;font-weight:600;">
-                                <i class="fas fa-plus me-1"></i> Tambah Baris
-                            </button>
-                        </div>
-                        <div class="text-muted" style="font-size:10.5px;line-height:1.35;margin-bottom:8px;">
-                            Untuk barang yang <strong>tidak ada di Gudang Pusat</strong> namun dibutuhkan lapangan.
-                        </div>
-                        <div class="table-wrap" style="border:1px solid #fde68a;border-radius:5px;overflow:hidden;">
-                            <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;">
-                                <thead>
-                                    <tr style="background:#fef3c7;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:#92400e;">
-                                        <th style="min-width:160px;padding:6px 8px;">Nama Barang (Manual)</th>
-                                        <th style="min-width:100px;padding:6px 8px;">Spesifikasi</th>
-                                        <th style="min-width:160px;padding:6px 8px;">Kategori</th>
-                                        <th style="width:65px;text-align:center;padding:6px 8px;">Satuan</th>
-                                        <th style="width:75px;text-align:center;padding:6px 8px;">Jumlah</th>
-                                        <th style="width:100px;text-align:center;padding:6px 8px;">Tgl Pakai</th>
-                                        <th style="min-width:120px;padding:6px 8px;">Alokasi / Zona</th>
-                                        <th style="width:36px;text-align:center;padding:6px 4px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="customRequestBody">
-                                    <tr id="customRequestEmpty" style="{{ old('custom_items') && count(old('custom_items')) > 0 ? 'display:none;' : '' }}">
-                                        <td colspan="8" class="text-center text-muted" style="padding:10px;font-size:11px;">Belum ada barang manual. Klik "Tambah Baris".</td>
-                                    </tr>
-                                    @if(old('custom_items'))
-                                        @foreach(old('custom_items') as $cIdx => $cItem)
-                                        <tr style="border-bottom: 1px solid #fef3c7;">
-                                            <td style="padding:5px 6px;">
-                                                <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ $cItem['name'] ?? '' }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:11.5px;height:30px;border-radius:4px;">
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:0 20px 0 6px;">
-                                                    <option value="">Material Khusus (Otomatis)</option>
-                                                    @foreach($materialCategories as $cat)
-                                                        <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ $cItem['unit'] ?? 'pcs' }}" placeholder="pcs" style="text-align:center;font-size:11.5px;height:30px;border-radius:4px;">
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <input type="number" name="custom_items[{{ $cIdx }}][qty]" class="form-control qty-input" min="0.01" step="0.01" value="{{ $cItem['qty'] ?? 0 }}" placeholder="0" required style="text-align:center;height:30px;font-size:11.5px;" oninput="calculateTotal()">
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <input type="date" name="custom_items[{{ $cIdx }}][date]" class="form-control" value="{{ $cItem['date'] ?? '' }}" style="font-size:11px;height:30px;border-radius:4px;padding:2px 6px;">
-                                            </td>
-                                            <td style="padding:5px 6px;">
-                                                <input type="text" name="custom_items[{{ $cIdx }}][location]" class="form-control" value="{{ $cItem['location'] ?? '' }}" placeholder="mis. Lantai 2 / Cor TC" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
-                                            </td>
-                                            <td style="text-align:center;padding:5px 4px;">
-                                                <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;"><i class="fas fa-trash" style="font-size:9px;"></i></button>
-                                            </td>
-                                        </tr>
-                                        @endforeach
+        {{-- SECTION 2: Daftar Material Katalog Master --}}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <div class="form-section-title">
+                    <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
+                        <i class="fas fa-boxes-stacked"></i>
+                    </div>
+                    <span>2. Daftar Material Tersedia (Katalog Master)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span id="totalItemBadge" class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;padding:5px 12px;border-radius:14px;border:1px solid #bfdbfe;">
+                        0 Item Diminta
+                    </span>
+                </div>
+            </div>
+
+            <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;background:#ffffff;">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:240px;position:relative;">
+                        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                        <input type="text" id="materialSearch" class="form-control" placeholder="Cari nama material, kode SKU, spesifikasi..." oninput="filterMaterials()" style="padding-left:36px;height:38px;border-radius:8px;font-size:12.5px;border:1px solid #cbd5e1;">
+                    </div>
+                    <div style="width:240px;">
+                        <select id="categoryFilter" class="form-control" onchange="filterMaterials()" style="height:38px;border-radius:8px;font-size:12.5px;border:1px solid #cbd5e1;font-weight:600;color:#334155;">
+                            <option value="">Semua Kategori</option>
+                            @foreach($materialCategories as $cat)
+                            <option value="mcat-{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrap" style="max-height:550px;overflow-y:auto;overflow-x:auto;">
+                <table class="data-table mr-item-table mb-0" id="materialsTable">
+                    <thead style="position:sticky;top:0;z-index:10;">
+                        <tr>
+                            <th style="min-width:220px;">Nama Material &amp; SKU</th>
+                            <th style="text-align:center;width:80px;">Ukuran</th>
+                            <th style="text-align:center;width:95px;" id="stock-col-header">Stok Sumber</th>
+                            <th style="text-align:center;width:100px;">Jml Diminta</th>
+                            <th style="width:130px;">Spesifikasi</th>
+                            <th style="text-align:center;width:115px;">Tgl Pakai</th>
+                            <th style="width:130px;">Alokasi / Zona</th>
+                            <th style="min-width:140px;">Catatan Baris</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($materialCategories as $category)
+                        @php $groupKey = 'mcat-' . $category->id; @endphp
+                        <tr class="cat-toggle" data-group="{{ $groupKey }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                            <td colspan="8" style="padding:8px 14px !important;">
+                                <div class="flex items-center justify-between" style="width:100%;">
+                                    <div class="flex items-center" style="gap:8px;">
+                                        <i class="fas fa-chevron-down cat-chev" style="font-size:10px;color:#64748b;transition:transform .2s;"></i>
+                                        <span class="fw-700" style="font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">{{ $category->name }}</span>
+                                        <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">{{ $category->materials->count() }} material</span>
+                                    </div>
+                                    <span class="text-muted" style="font-size:11px;">Klik untuk menutup/membuka kategori</span>
+                                </div>
+                            </td>
+                        </tr>
+                        @foreach($category->materials as $mat)
+                        @php $totalStock = $mat->inventories->sum('quantity'); @endphp
+                        <tr class="mat-row cat-rows {{ $groupKey }}" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:8px 12px 8px 24px;">
+                                <div class="fw-700" style="font-size:13px;color:#0f172a;">{{ $mat->name }}</div>
+                                <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                                    @if($mat->type)
+                                     <span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;">{{ $mat->type }}</span>
                                     @endif
-                                </tbody>
-                            </table>
+                                    <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10.5px;color:#64748b;">SKU: {{ $mat->sku }}</span>
+                                </div>
+                            </td>
+                            <td style="text-align:center;">
+                                @if($mat->size)
+                                <span style="font-size:12px;color:#334155;font-weight:500;">{{ $mat->size }}</span>
+                                @else
+                                <span class="text-muted" style="font-size:11px;">-</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
+                                    {{ number_format($totalStock, 0, ',', '.') }}
+                                </span>
+                                <div class="text-muted" style="font-size:10px;margin-top:1px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</div>
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="number"
+                                       name="quantities[{{ $mat->id }}]"
+                                       class="form-control qty-input"
+                                       min="0" step="0.01"
+                                       value="{{ old('quantities.'.$mat->id, 0) }}"
+                                       oninput="validateQtyRow(this); calculateTotal(); markActiveRow(this);">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="specs[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="mis. fc'=25 MPa"
+                                       value="{{ old('specs.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="date"
+                                       name="usage_dates[{{ $mat->id }}]"
+                                       class="form-control"
+                                       value="{{ old('usage_dates.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 6px;border-radius:6px;">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="usage_locations[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="mis. Kolom Lt 2"
+                                       value="{{ old('usage_locations.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="item_notes[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="Catatan..."
+                                       value="{{ old('item_notes.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                        </tr>
+                        @endforeach
+                        @empty
+                        @endforelse
+
+                        @if($uncategorizedMaterials->isNotEmpty())
+                        <tr class="cat-toggle" data-group="mcat-uncategorized" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+                            <td colspan="8" style="padding:8px 14px !important;">
+                                <div class="flex items-center" style="gap:8px;">
+                                    <i class="fas fa-chevron-down cat-chev" style="font-size:10px;color:#64748b;transition:transform .2s;"></i>
+                                    <span class="fw-700" style="font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">Lainnya</span>
+                                    <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">{{ $uncategorizedMaterials->count() }} material</span>
+                                </div>
+                            </td>
+                        </tr>
+                        @foreach($uncategorizedMaterials as $mat)
+                        @php $totalStock = $mat->inventories->sum('quantity'); @endphp
+                        <tr class="mat-row cat-rows mcat-uncategorized" data-material-id="{{ $mat->id }}" data-stock="{{ $totalStock }}" style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:8px 12px 8px 24px;">
+                                <div class="fw-700" style="font-size:13px;color:#0f172a;">{{ $mat->name }}</div>
+                                <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                                    @if($mat->type)
+                                    <span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;">{{ $mat->type }}</span>
+                                    @endif
+                                    <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10.5px;color:#64748b;">SKU: {{ $mat->sku }}</span>
+                                </div>
+                            </td>
+                            <td style="text-align:center;">
+                                @if($mat->size)
+                                <span style="font-size:12px;color:#334155;font-weight:500;">{{ $mat->size }}</span>
+                                @else
+                                <span class="text-muted" style="font-size:11px;">-</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                <span class="badge stock-badge" style="background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;padding:3px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
+                                    {{ number_format($totalStock, 0, ',', '.') }}
+                                </span>
+                                <div class="text-muted" style="font-size:10px;margin-top:1px;">{{ $mat->unit?->abbreviation ?? $mat->unit?->name }}</div>
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="number"
+                                       name="quantities[{{ $mat->id }}]"
+                                       class="form-control qty-input"
+                                       min="0" step="0.01"
+                                       value="{{ old('quantities.'.$mat->id, 0) }}"
+                                       oninput="validateQtyRow(this); calculateTotal(); markActiveRow(this);">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="specs[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="mis. fc'=25 MPa"
+                                       value="{{ old('specs.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                            <td style="text-align:center;">
+                                <input type="date"
+                                       name="usage_dates[{{ $mat->id }}]"
+                                       class="form-control"
+                                       value="{{ old('usage_dates.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 6px;border-radius:6px;">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="usage_locations[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="mis. Kolom Lt 2"
+                                       value="{{ old('usage_locations.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="item_notes[{{ $mat->id }}]"
+                                       class="form-control"
+                                       placeholder="Catatan..."
+                                       value="{{ old('item_notes.'.$mat->id) }}"
+                                       style="height:32px;font-size:11.5px;padding:3px 8px;border-radius:6px;">
+                            </td>
+                        </tr>
+                        @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- SECTION 3: Barang Tidak Ada di Pusat — Input Manual Proyek --}}
+        <div class="form-section-card" style="border:1.5px dashed #fcd34d;background:#fffdfa;">
+            <div class="form-section-header" style="background:#fffbeb;border-bottom:1px solid #fde68a;">
+                <div class="form-section-title">
+                    <div style="width:28px;height:28px;border-radius:6px;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-size:13px;">
+                        <i class="fas fa-pen-to-square"></i>
+                    </div>
+                    <span style="color:#92400e;">3. Barang Khusus / Input Manual Proyek</span>
+                </div>
+                <button type="button" class="btn btn-warning btn-sm" onclick="addCustomRequestRow()" style="padding:6px 14px;font-size:12px;border-radius:7px;font-weight:700;box-shadow:0 2px 6px rgba(245,158,11,0.25);">
+                    <i class="fas fa-plus me-1"></i> Tambah Baris Manual
+                </button>
+            </div>
+
+            <div style="padding:14px 18px;">
+                <div class="text-muted mb-3" style="font-size:12px;line-height:1.4;">
+                    Gunakan tabel ini untuk barang yang <strong>belum terdaftar pada katalog Gudang Pusat</strong> namun sangat dibutuhkan di lapangan. Item ini dapat langsung diproses pengadaannya oleh Admin PO.
+                </div>
+
+                <div class="table-wrap" style="border:1px solid #fde68a;border-radius:8px;overflow:hidden;background:#ffffff;">
+                    <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;">
+                        <thead>
+                            <tr style="background:#fef3c7;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:#92400e;">
+                                <th style="min-width:180px;padding:8px 10px;">Nama Barang (Manual) <span class="text-danger">*</span></th>
+                                <th style="min-width:110px;padding:8px 10px;">Spesifikasi</th>
+                                <th style="min-width:150px;padding:8px 10px;">Kategori</th>
+                                <th style="min-width:160px;padding:8px 10px;">Kelompok</th>
+                                <th style="width:75px;text-align:center;padding:8px 10px;">Satuan</th>
+                                <th style="width:85px;text-align:center;padding:8px 10px;">Jumlah <span class="text-danger">*</span></th>
+                                <th style="width:115px;text-align:center;padding:8px 10px;">Tgl Pakai</th>
+                                <th style="min-width:120px;padding:8px 10px;">Alokasi / Zona</th>
+                                <th style="min-width:130px;padding:8px 10px;">Catatan</th>
+                                <th style="width:40px;text-align:center;padding:8px 6px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="customRequestBody">
+                            <tr id="customRequestEmpty" style="{{ old('custom_items') && count(old('custom_items')) > 0 ? 'display:none;' : '' }}">
+                                <td colspan="10" class="text-center text-muted" style="padding:16px;font-size:12px;">
+                                    <i class="fas fa-box-open" style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:4px;"></i>
+                                    Belum ada barang manual ditambahkan. Klik tombol <strong>"Tambah Baris Manual"</strong> jika diperlukan.
+                                </td>
+                            </tr>
+                            @if(old('custom_items'))
+                                @foreach(old('custom_items') as $cIdx => $cItem)
+                                <tr style="border-bottom: 1px solid #fef3c7;">
+                                    <td style="padding:6px 8px;">
+                                        <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ $cItem['name'] ?? '' }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                            <option value="">Material Khusus (Otomatis)</option>
+                                            @foreach($materialCategories as $cat)
+                                                <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <div class="custom-type-group-wrap" data-index="{{ $cIdx }}">
+                                            <div class="type-select-wrap">
+                                                <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                                    <option value="">— Pilih Kelompok —</option>
+                                                    <option value="__new__">✚ Ketik Kelompok Baru...</option>
+                                                </select>
+                                            </div>
+                                            <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
+                                                <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                                <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
+                                                    <i class="fas fa-list"></i>
+                                                </button>
+                                            </div>
+                                            <input type="hidden" name="custom_items[{{ $cIdx }}][type]" class="custom-type-hidden" value="{{ $cItem['type'] ?? '' }}">
+                                        </div>
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ $cItem['unit'] ?? 'pcs' }}" placeholder="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="number" name="custom_items[{{ $cIdx }}][qty]" class="form-control qty-input" min="0.01" step="0.01" value="{{ $cItem['qty'] ?? 0 }}" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;" oninput="calculateTotal()">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="date" name="custom_items[{{ $cIdx }}][date]" class="form-control" value="{{ $cItem['date'] ?? '' }}" style="font-size:11.5px;height:32px;border-radius:6px;padding:2px 6px;">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="text" name="custom_items[{{ $cIdx }}][location]" class="form-control" value="{{ $cItem['location'] ?? '' }}" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                    </td>
+                                    <td style="padding:6px 8px;">
+                                        <input type="text" name="custom_items[{{ $cIdx }}][notes]" class="form-control" value="{{ $cItem['notes'] ?? '' }}" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                    </td>
+                                    <td style="text-align:center;padding:6px 6px;">
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:28px;height:28px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;">
+                                            <i class="fas fa-trash" style="font-size:10px;"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- STICKY BOTTOM ACTION BAR --}}
+        <div class="mr-sticky-bar">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-cart-flatbed text-primary" style="font-size:18px;"></i>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;">Ringkasan Permintaan</div>
+                        <div style="font-size:13.5px;font-weight:700;color:#0f172a;">
+                            <span id="bottomTotalBadge">0</span> Total Item Terpilih
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right: Request info form -->
-            <div class="card sticky-sidebar" style="position:sticky;top:20px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
-                <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-file-lines text-primary" style="font-size:13px;"></i>
-                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi PO Lapangan</span>
-                </div>
-                <div class="card-body" style="padding:14px;">
-                    <div class="mb-2">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Nama Proyek <span class="text-danger">*</span>
-                        </label>
-                        <select name="warehouse_id" id="warehouse_id" class="form-control" required style="font-weight:500;" onchange="syncWarehouseOptions()">
-                            <option value="">Pilih Gudang / Proyek</option>
-                            @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>{{ $wh->display_name }}</option>
-                            @endforeach
-                        </select>
-                        @error('warehouse_id')
-                        <div class="text-danger" style="font-size:10.5px;margin-top:3px;">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Kepada <span class="text-muted" style="font-weight:400;">(Usulan Pemohon)</span>
-                        </label>
-                        <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" style="font-weight:500;" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
-                            <option value="">— Pengadaan / Beli ke Vendor —</option>
-                            @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
-                            @foreach($sourceWarehouses as $swh)
-                                @if($swh->is_central && !$isCentralGroupStarted)
-                                    <optgroup label="── Gudang Pusat ──">
-                                    @php $isCentralGroupStarted = true; @endphp
-                                @elseif(!$swh->is_central && !$isProjectGroupStarted)
-                                    @if($isCentralGroupStarted) </optgroup> @endif
-                                    <optgroup label="── Gudang Proyek ──">
-                                    @php $isProjectGroupStarted = true; @endphp
-                                @endif
-                                <option value="{{ $swh->id }}" {{ old('source_warehouse_id', $defaultSourceWarehouseId) == $swh->id ? 'selected' : '' }}>
-                                    {{ $swh->name }}{{ $swh->is_central ? ' (Pusat)' : '' }}
-                                </option>
-                            @endforeach
-                            @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
-                        </select>
-                        <div id="warehouse-conflict-warning" style="display:none;font-size:10.5px;color:#dc2626;margin-top:4px;font-weight:600;">
-                            <i class="fas fa-triangle-exclamation"></i> Sumber material tidak boleh sama dengan gudang pemohon!
-                        </div>
-                        @error('source_warehouse_id')
-                        <div class="text-danger" style="font-size:10.5px;margin-top:3px;">{{ $message }}</div>
-                        @enderror
-                        <div id="source-wh-loading" style="display:none;font-size:10.5px;color:#64748b;margin-top:3px;">
-                            <i class="fas fa-spinner fa-spin" style="font-size:10px;"></i> Memuat stok...
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Dibutuhkan Tgl <span class="text-danger">*</span>
-                        </label>
-                        <input type="date" name="needed_at" class="form-control"
-                            value="{{ old('needed_at') }}" min="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Diajukan Sebagai
-                        </label>
-                        <select name="requested_as" id="requested_as" class="form-control" style="font-weight:500;">
-                            <option value="Admin Proyek" {{ old('requested_as', 'Admin Proyek') === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
-                            <option value="Site Manager" {{ old('requested_as') === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
-                            <option value="Site Engineering" {{ old('requested_as') === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
-                            <option value="Karyawan" {{ old('requested_as') === 'Karyawan' ? 'selected' : '' }}>Karyawan</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Catatan <span class="text-muted" style="font-weight:400;">(Opsional)</span>
-                        </label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Catatan keperluan...">{{ old('notes') }}</textarea>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:6px;">
-                        <button type="submit" class="btn btn-primary w-full" style="justify-content:center;padding:9px;font-size:13px;font-weight:600;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                            <i class="fas fa-paper-plane me-1"></i> Ajukan PO Lapangan
-                        </button>
-                        <a href="{{ route('material-requests.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center;padding:7px;font-size:12px;font-weight:500;border-radius:6px;color:#64748b;">
-                            Batal
-                        </a>
-                    </div>
-                </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <a href="{{ route('material-requests.index') }}" class="btn btn-light border" style="padding:8px 18px;font-size:12.5px;font-weight:600;border-radius:8px;color:#475569;">
+                    Batal
+                </a>
+                <button type="submit" class="btn btn-primary" style="padding:9px 24px;font-size:13px;font-weight:700;border-radius:8px;box-shadow:0 2px 8px rgba(37,99,235,0.3);display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-paper-plane"></i> Ajukan PO Lapangan
+                </button>
             </div>
         </div>
     </form>
@@ -545,8 +697,19 @@
         }
 
         // ============================================================
-        // Validasi Kuantitas Input vs Stok Gudang Sumber
+        // Validasi Kuantitas Input vs Stok Gudang Sumber & Highlight Row
         // ============================================================
+        function markActiveRow(input) {
+            var row = input.closest('.mat-row');
+            if (!row) return;
+            var val = parseFloat(input.value) || 0;
+            if (val > 0) {
+                row.classList.add('row-active');
+            } else {
+                row.classList.remove('row-active');
+            }
+        }
+
         function validateQtyRow(input) {
             var val = parseFloat(input.value) || 0;
             if (val < 0) {
@@ -560,7 +723,11 @@
             input.classList.remove('qty-warning', 'qty-exceeds');
             input.removeAttribute('title');
 
-            if (val > 0) {
+            var srcSelect = document.getElementById('source_warehouse_id');
+            var isPengadaan = !srcSelect || !srcSelect.value;
+
+            // Peringatan stok hanya berlaku bila sumbernya adalah Gudang tertentu (bukan Pengadaan / Beli ke Vendor)
+            if (!isPengadaan && val > 0) {
                 if (stock <= 0) {
                     input.classList.add('qty-exceeds');
                     input.title = 'Perhatian: Stok material di gudang sumber saat ini kosong (0)';
@@ -574,17 +741,33 @@
         // ============================================================
         // AJAX: Update stok saat Sumber Gudang berubah
         // ============================================================
+        var centralWhId = '{{ $centralWarehouse?->id }}';
         function onSourceWarehouseChange(warehouseId, warehouseName) {
-            if (!warehouseId) return;
-
+            var targetWhId = warehouseId || centralWhId;
             var loadingEl = document.getElementById('source-wh-loading');
+            var textEl = document.getElementById('source-wh-text');
+            var colHeaderEl = document.getElementById('stock-col-header');
+
+            if (!warehouseId) {
+                if (textEl) {
+                    textEl.innerHTML = 'Ditujukan ke: <strong>Pengadaan / Beli ke Vendor</strong>. Kolom stok menampilkan referensi stok <strong>{{ $centralWarehouse?->name ?? 'Gudang Pusat' }}</strong>.';
+                }
+                if (colHeaderEl) {
+                    colHeaderEl.textContent = 'Stok Pusat';
+                }
+            } else {
+                if (textEl) {
+                    textEl.innerHTML = 'Stok dari <strong>' + warehouseName + '</strong>. Permintaan dikirim ke Proyek pemohon.';
+                }
+                if (colHeaderEl) {
+                    colHeaderEl.textContent = 'Stok Gudang';
+                }
+            }
+
+            if (!targetWhId) return;
             if (loadingEl) loadingEl.style.display = '';
 
-            // Update label info di header tabel
-            var infoEl = document.querySelector('.alert.alert-info strong');
-            if (infoEl) infoEl.textContent = warehouseName;
-
-            fetch('{{ route('material-requests.stock') }}?warehouse_id=' + warehouseId, {
+            fetch('{{ route('material-requests.stock') }}?warehouse_id=' + targetWhId, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             })
             .then(function(res) { return res.json(); })
@@ -620,6 +803,105 @@
             });
         }
 
+        const categoryGroups = @json($existingGroups ?? []);
+
+        function initCustomTypeOptions(tr, preserveVal = true) {
+            const catSelect = tr.querySelector('.custom-item-cat-select');
+            const typeWrap = tr.querySelector('.custom-type-group-wrap');
+            if (!catSelect || !typeWrap) return;
+
+            const selectWrap = typeWrap.querySelector('.type-select-wrap');
+            const selectEl = typeWrap.querySelector('.custom-type-select');
+            const manualWrap = typeWrap.querySelector('.type-manual-wrap');
+            const manualInput = typeWrap.querySelector('.custom-type-manual-input');
+            const hiddenInput = typeWrap.querySelector('.custom-type-hidden');
+
+            const currentVal = (preserveVal ? (hiddenInput.value || '') : '').trim();
+            const catId = catSelect.value;
+            const groups = (catId && categoryGroups[catId]) ? categoryGroups[catId] : [];
+
+            selectEl.innerHTML = '<option value="">— Pilih Kelompok —</option>';
+            let found = false;
+            groups.forEach(function(g) {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = g;
+                if (currentVal && currentVal.toLowerCase() === g.toLowerCase()) {
+                    opt.selected = true;
+                    found = true;
+                }
+                selectEl.appendChild(opt);
+            });
+
+            const newOpt = document.createElement('option');
+            newOpt.value = '__new__';
+            newOpt.textContent = '✚ Ketik Kelompok Baru...';
+            selectEl.appendChild(newOpt);
+
+            if (currentVal && !found) {
+                selectWrap.style.display = 'none';
+                manualWrap.style.display = 'flex';
+                manualInput.value = currentVal;
+                hiddenInput.value = currentVal;
+            } else if (found) {
+                manualWrap.style.display = 'none';
+                selectWrap.style.display = 'block';
+                selectEl.value = currentVal;
+                hiddenInput.value = currentVal;
+            } else {
+                manualWrap.style.display = 'none';
+                selectWrap.style.display = 'block';
+                selectEl.value = '';
+                hiddenInput.value = '';
+            }
+        }
+
+        function onCustomCategoryChange(catSelect) {
+            const tr = catSelect.closest('tr');
+            initCustomTypeOptions(tr, false);
+        }
+
+        function onCustomTypeSelectChange(selectEl) {
+            const typeWrap = selectEl.closest('.custom-type-group-wrap');
+            if (!typeWrap) return;
+            const hiddenInput = typeWrap.querySelector('.custom-type-hidden');
+            if (selectEl.value === '__new__') {
+                toggleCustomTypeMode(selectEl, true);
+            } else {
+                hiddenInput.value = selectEl.value;
+            }
+        }
+
+        function toggleCustomTypeMode(elem, isManual) {
+            const typeWrap = elem.closest('.custom-type-group-wrap');
+            if (!typeWrap) return;
+            const selectWrap = typeWrap.querySelector('.type-select-wrap');
+            const selectEl = typeWrap.querySelector('.custom-type-select');
+            const manualWrap = typeWrap.querySelector('.type-manual-wrap');
+            const manualInput = typeWrap.querySelector('.custom-type-manual-input');
+            const hiddenInput = typeWrap.querySelector('.custom-type-hidden');
+
+            if (isManual) {
+                selectWrap.style.display = 'none';
+                manualWrap.style.display = 'flex';
+                manualInput.value = (hiddenInput.value && hiddenInput.value !== '__new__') ? hiddenInput.value : '';
+                manualInput.focus();
+                hiddenInput.value = manualInput.value;
+            } else {
+                manualWrap.style.display = 'none';
+                selectWrap.style.display = 'block';
+                selectEl.value = '';
+                hiddenInput.value = '';
+            }
+        }
+
+        function onCustomTypeManualInput(manualInput) {
+            const typeWrap = manualInput.closest('.custom-type-group-wrap');
+            if (!typeWrap) return;
+            const hiddenInput = typeWrap.querySelector('.custom-type-hidden');
+            hiddenInput.value = manualInput.value.trim();
+        }
+
         let customReqIndex = {{ count(old('custom_items', [])) }};
         function addCustomRequestRow() {
             const tbody = document.getElementById('customRequestBody');
@@ -634,39 +916,61 @@
             @endforeach
 
             tr.innerHTML = `
-                <td style="padding:5px 6px;">
-                    <input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:11.5px;height:30px;border-radius:4px;">
+                <td style="padding:6px 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;">
                 </td>
-                <td style="padding:5px 6px;">
-                    <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                <td style="padding:6px 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
                 </td>
-                <td style="padding:5px 6px;">
-                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:0 20px 0 6px;">
+                <td style="padding:6px 8px;">
+                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
                         ${categoryOptions}
                     </select>
                 </td>
-                <td style="padding:5px 6px;">
-                    <input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:11.5px;height:30px;border-radius:4px;">
+                <td style="padding:6px 8px;">
+                    <div class="custom-type-group-wrap" data-index="${customReqIndex}">
+                        <div class="type-select-wrap">
+                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                <option value="">— Pilih Kelompok —</option>
+                                <option value="__new__">✚ Ketik Kelompok Baru...</option>
+                            </select>
+                        </div>
+                        <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
+                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                            <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" name="custom_items[${customReqIndex}][type]" class="custom-type-hidden" value="">
+                    </div>
                 </td>
-                <td style="padding:5px 6px;">
-                    <input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;height:30px;font-size:11.5px;" oninput="calculateTotal()">
+                <td style="padding:6px 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;">
                 </td>
-                <td style="padding:5px 6px;">
-                    <input type="date" name="custom_items[${customReqIndex}][date]" class="form-control" style="font-size:11px;height:30px;border-radius:4px;padding:2px 6px;">
+                <td style="padding:6px 8px;">
+                    <input type="number" name="custom_items[${customReqIndex}][qty]" class="form-control qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;" oninput="calculateTotal()">
                 </td>
-                <td style="padding:5px 6px;">
-                    <input type="text" name="custom_items[${customReqIndex}][location]" class="form-control" placeholder="mis. Lantai 2 / Cor TC" style="font-size:11.5px;height:30px;border-radius:4px;padding:2px 6px;">
+                <td style="padding:6px 8px;">
+                    <input type="date" name="custom_items[${customReqIndex}][date]" class="form-control" style="font-size:11.5px;height:32px;border-radius:6px;padding:2px 6px;">
                 </td>
-                <td style="text-align:center;padding:5px 4px;">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:24px;height:24px;padding:0;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-trash" style="font-size:9px;"></i>
+                <td style="padding:6px 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][location]" class="form-control" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                </td>
+                <td style="padding:6px 8px;">
+                    <input type="text" name="custom_items[${customReqIndex}][notes]" class="form-control" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                </td>
+                <td style="text-align:center;padding:6px 6px;">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:28px;height:28px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-trash" style="font-size:10px;"></i>
                     </button>
                 </td>
             `;
             tbody.appendChild(tr);
+            initCustomTypeOptions(tr, false);
             customReqIndex++;
             calculateTotal();
         }
+
         function checkCustomEmpty() {
             const tbody = document.getElementById('customRequestBody');
             const empty = document.getElementById('customRequestEmpty');
@@ -675,6 +979,7 @@
                 empty.style.display = rows.length === 0 ? '' : 'none';
             }
         }
+
         function calculateTotal() {
             var total = 0;
             document.querySelectorAll('.qty-input').forEach(function (input) {
@@ -682,7 +987,11 @@
                 if (val < 0) { val = 0; input.value = 0; }
                 total += val;
             });
-            document.getElementById('totalItemBadge').innerText = total + ' Item Diminta';
+            var text = total.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2}) + ' Item Diminta';
+            var totalBadge = document.getElementById('totalItemBadge');
+            var bottomBadge = document.getElementById('bottomTotalBadge');
+            if (totalBadge) totalBadge.innerText = text;
+            if (bottomBadge) bottomBadge.innerText = total.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 2});
         }
 
         function filterMaterials() {
@@ -732,21 +1041,14 @@
 
                 if (!whVal) {
                     e.preventDefault();
-                    alert('Silakan pilih Gudang Pemohon terlebih dahulu.');
+                    alert('Silakan pilih Proyek Pemohon terlebih dahulu.');
                     if (whSelect) whSelect.focus();
                     return false;
                 }
 
-                if (!srcVal) {
+                if (whVal && srcVal && parseInt(whVal) === parseInt(srcVal)) {
                     e.preventDefault();
-                    alert('Silakan pilih Sumber Gudang Material terlebih dahulu.');
-                    if (srcSelect) srcSelect.focus();
-                    return false;
-                }
-
-                if (parseInt(whVal) === parseInt(srcVal)) {
-                    e.preventDefault();
-                    alert('Validasi Gagal: Sumber gudang material tidak boleh sama dengan gudang pemohon!');
+                    alert('Validasi Gagal: Sumber material tidak boleh sama dengan proyek pemohon!');
                     var conflictWarning = document.getElementById('warehouse-conflict-warning');
                     if (conflictWarning) conflictWarning.style.display = 'block';
                     if (srcSelect) srcSelect.focus();
@@ -803,7 +1105,12 @@
                 document.querySelectorAll('#materialsTable .qty-input').forEach(function(input) {
                     if (parseFloat(input.value) > 0) {
                         validateQtyRow(input);
+                        markActiveRow(input);
                     }
+                });
+                // Inisialisasi baris custom item kelompok
+                document.querySelectorAll('#customRequestBody tr:not(#customRequestEmpty)').forEach(function(tr) {
+                    initCustomTypeOptions(tr, true);
                 });
             }
 

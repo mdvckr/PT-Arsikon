@@ -75,6 +75,16 @@ class MaterialRequest extends Model
         return $this->hasMany(Distribution::class);
     }
 
+    public function goodsReceipts(): HasMany
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
     public static function generateRequestNumber(): string
     {
         return \App\Services\DocumentNumberService::generate('MR', (int) date('Y'));
