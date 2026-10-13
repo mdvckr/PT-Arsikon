@@ -68,12 +68,12 @@
                             <option value="">-- Pilih Purchase Order yang Memiliki Sisa Tagihan --</option>
                             @foreach($pos as $po)
                                 <option value="{{ $po->id }}" {{ (old('purchase_order_id', $selectedPO?->id) == $po->id) ? 'selected' : '' }}>
-                                    {{ $po->po_number }} &mdash; {{ $po->supplier?->name }} (Sisa: Rp {{ number_format($po->remaining_amount, 0, ',', '.') }})
+                                    {{ $po->po_number }} &mdash; {{ $po->supplier?->name }} (Sisa Boleh Dibayar: Rp {{ number_format($po->payable_remaining_amount, 0, ',', '.') }})
                                 </option>
                             @endforeach
                         </select>
                         <span class="text-muted" style="font-size:11.5px;margin-top:4px;display:block;">
-                            Hanya menampilkan PO berstatus terkirim / diterima yang belum lunas sepenuhnya.
+                            Hanya menampilkan PO yang memiliki minimal satu Penerimaan Barang (GR) terkonfirmasi dan memiliki sisa nilai sah.
                         </span>
                     </div>
 
@@ -81,9 +81,13 @@
                     @if($selectedPO)
                     @php
                         $poTotal = (float) $selectedPO->total_amount;
-                        $poPaid = (float) $selectedPO->paid_amount;
-                        $poRemaining = (float) $selectedPO->remaining_amount;
-                        $pct = $poTotal > 0 ? min(100, round(($poPaid / $poTotal) * 100)) : 0;
+                        $poNilaiSah = (float) $selectedPO->nilai_sah;
+                        $poVerified = (float) $selectedPO->verified_payment_amount;
+                        $poPending = (float) $selectedPO->pending_payment_amount;
+                        $poPayableRemaining = (float) $selectedPO->payable_remaining_amount;
+                        $withheldData = $selectedPO->withheld_summary;
+                        $poWithheld = (float) $withheldData['total_withheld'];
+                        $pct = $poNilaiSah > 0 ? min(100, round(($poVerified / $poNilaiSah) * 100)) : 0;
                     @endphp
                     <div style="background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:10px;padding:16px;margin-bottom:20px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -94,7 +98,7 @@
                                 <span class="text-muted ms-2" style="font-size:11px;">({{ $selectedPO->po_number }})</span>
                             </div>
                             <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;">
-                                Terbayar {{ $pct }}%
+                                Terbayar {{ $pct }}% dari Nilai Sah
                             </span>
                         </div>
 
@@ -102,33 +106,59 @@
                             <div style="height:100%;width:{{ $pct }}%;background:#2563eb;"></div>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center;">
                             <div style="background:#ffffff;padding:10px;border-radius:6px;border:1px solid #e2e8f0;">
                                 <div style="font-size:10px;font-weight:700;color:#64748b;">TOTAL NILAI PO</div>
                                 <div style="font-size:13.5px;font-weight:800;color:#0f172a;margin-top:2px;">
                                     Rp {{ number_format($poTotal, 0, ',', '.') }}
                                 </div>
                             </div>
+                            <div style="background:#eff6ff;padding:10px;border-radius:6px;border:1px solid #bfdbfe;">
+                                <div style="font-size:10px;font-weight:700;color:#1e40af;">NILAI SAH SAAT INI</div>
+                                <div style="font-size:13.5px;font-weight:800;color:#1d4ed8;margin-top:2px;">
+                                    Rp {{ number_format($poNilaiSah, 0, ',', '.') }}
+                                </div>
+                            </div>
                             <div style="background:#f0fdf4;padding:10px;border-radius:6px;border:1px solid #bbf7d0;">
                                 <div style="font-size:10px;font-weight:700;color:#166534;">SUDAH DIBAYAR</div>
                                 <div style="font-size:13.5px;font-weight:800;color:#15803d;margin-top:2px;">
-                                    Rp {{ number_format($poPaid, 0, ',', '.') }}
+                                    Rp {{ number_format($poVerified, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            <div style="background:#ecfdf5;padding:10px;border-radius:6px;border:1px solid #a7f3d0;position:relative;">
+                                <div style="font-size:10px;font-weight:700;color:#065f46;">SISA BISA DIBAYAR</div>
+                                <div style="font-size:13.5px;font-weight:800;color:#059669;margin-top:2px;">
+                                    Rp {{ number_format($poPayableRemaining, 0, ',', '.') }}
                                 </div>
                             </div>
                             <div style="background:#fef2f2;padding:10px;border-radius:6px;border:1px solid #fecaca;position:relative;">
-                                <div style="font-size:10px;font-weight:700;color:#991b1b;">SISA TAGIHAN</div>
+                                <div style="font-size:10px;font-weight:700;color:#991b1b;">NILAI TERTAHAN</div>
                                 <div style="font-size:13.5px;font-weight:800;color:#b91c1c;margin-top:2px;">
-                                    Rp {{ number_format($poRemaining, 0, ',', '.') }}
+                                    Rp {{ number_format($poWithheld, 0, ',', '.') }}
                                 </div>
                             </div>
                         </div>
 
+                        @if(!empty($withheldData['items']))
+                        <div style="margin-top:12px;background:#fff5f5;border:1px solid #fed7d7;border-radius:6px;padding:10px 12px;font-size:11.5px;">
+                            <div style="font-weight:700;color:#991b1b;margin-bottom:4px;">
+                                <i class="fas fa-circle-exclamation me-1"></i> Rincian Nilai Tertahan:
+                            </div>
+                            @foreach($withheldData['items'] as $wh)
+                                <div style="display:flex;justify-content:space-between;padding:2px 0;color:#7f1d1d;">
+                                    <span>{{ $wh['item_name'] }} ({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }}) &mdash; {{ $wh['reason'] }}</span>
+                                    <strong style="margin-left:8px;">Rp {{ number_format($wh['value'], 0, ',', '.') }}</strong>
+                                </div>
+                            @endforeach
+                        </div>
+                        @endif
+
                         <div style="margin-top:10px;display:flex;justify-content:flex-end;">
                             <button type="button" 
-                                    onclick="document.getElementById('inputAmount').value = '{{ (int) $poRemaining }}'" 
+                                    onclick="document.getElementById('inputAmount').value = '{{ (int) $poPayableRemaining }}'" 
                                     class="btn btn-sm btn-light border" 
                                     style="font-size:11.5px;font-weight:600;padding:3px 9px;color:#2563eb;background:#ffffff;">
-                                <i class="fas fa-check-double me-1"></i> Bayar Lunas Sisa (Rp {{ number_format($poRemaining, 0, ',', '.') }})
+                                <i class="fas fa-check-double me-1"></i> Bayar Maksimal Nilai Sah (Rp {{ number_format($poPayableRemaining, 0, ',', '.') }})
                             </button>
                         </div>
                     </div>
@@ -147,17 +177,17 @@
                                 <input type="number" 
                                        name="amount" 
                                        id="inputAmount"
-                                       value="{{ old('amount', $selectedPO ? (int)$selectedPO->remaining_amount : '') }}" 
+                                       value="{{ old('amount', $selectedPO ? (int)$selectedPO->payable_remaining_amount : '') }}" 
                                        class="form-control" 
                                        min="1" 
-                                       max="{{ $selectedPO ? $selectedPO->remaining_amount : '' }}"
+                                       max="{{ $selectedPO ? $selectedPO->payable_remaining_amount : '' }}"
                                        step="any" 
                                        placeholder="0"
                                        required
                                        style="height:40px;padding-left:38px;font-size:14px;font-weight:700;color:#047857;border-radius:8px;border-color:#cbd5e1;">
                             </div>
                             <span class="text-muted" style="font-size:11px;margin-top:3px;display:block;">
-                                Maksimal sesuai sisa tagihan PO.
+                                Maksimal sesuai sisa nilai sah yang dapat dibayar.
                             </span>
                         </div>
 

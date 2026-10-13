@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Inventory;
 use App\Models\Material;
+use App\Models\MaterialRequest;
+use App\Models\MaterialRequestItem;
 use App\Models\MaterialUsage;
 use App\Models\StockMutation;
 use App\Models\Tool;
@@ -35,7 +37,10 @@ class MaterialUsageTest extends TestCase
         $this->usageService = new MaterialUsageService($this->stockService);
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->material = Material::firstOrFail();
+        $this->material = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
     }
 
     public function test_can_record_material_usage_and_deducts_stock(): void
@@ -163,10 +168,11 @@ class MaterialUsageTest extends TestCase
     {
         $tool = Tool::first();
         if (!$tool) {
+            $catTool = \App\Models\Category::firstOrCreate(['code' => 'CAT-TOOL-01'], ['name' => 'Alat Berat & Elektrik', 'type' => 'tool']);
             $tool = Tool::create([
                 'name' => 'Bor Listrik Makita',
                 'code' => 'TL-MAK-01',
-                'category_id' => null,
+                'category_id' => $catTool->id,
                 'is_active' => true,
             ]);
         }
@@ -289,5 +295,119 @@ class MaterialUsageTest extends TestCase
         $printRes = $this->actingAs($this->adminProyek)->get(route('material-usages.print', $usage));
         $printRes->assertOk();
         $printRes->assertSee('Terpal Plastik Biru 4x6');
+    }
+
+    public function test_material_usage_linked_to_mr_quota_prevents_excess_usage(): void
+    {
+        $this->stockService->addStock(
+            $this->projectWarehouse,
+            $this->material,
+            50,
+            'initial_test',
+            null,
+            $this->adminProyek->id,
+            'Stok awal'
+        );
+
+        $mr = MaterialRequest::create([
+            'request_number'    => 'MR-TEST-QUOTA-001',
+            'from_warehouse_id' => $this->projectWarehouse->id,
+            'to_warehouse_id'   => Warehouse::where('is_central', true)->first()->id,
+            'requested_by_user_id' => $this->adminProyek->id,
+            'status'            => 'partially_fulfilled',
+            'notes'             => 'MR uji kuota pemakaian',
+        ]);
+
+        $mrItem = MaterialRequestItem::create([
+            'material_request_id' => $mr->id,
+            'material_id'         => $this->material->id,
+            'qty_requested'       => 40,
+            'qty_approved'        => 40,
+            'qty_received'        => 30,
+            'qty_issued'          => 10,
+            'qty_fulfilled'       => 10,
+        ]);
+
+        // Kuota sisa pemakaian dari MR adalah qty_received - qty_issued = 30 - 10 = 20.
+        // Coba pakai 25 (melebihi kuota 20) -> Harus lempar Exception
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('melebihi sisa barang yang sudah diterima di proyek');
+
+        $this->usageService->createUsage(
+            $this->projectWarehouse,
+            $this->adminProyek,
+            [
+                'material_request_id' => $mr->id,
+                'recipient_name'      => 'Tukang Besi',
+                'items'               => [
+                    [
+                        'material_id'              => $this->material->id,
+                        'material_request_item_id' => $mrItem->id,
+                        'quantity'                 => 25,
+                    ],
+                ],
+            ]
+        );
+    }
+
+    public function test_material_usage_increments_qty_issued_and_cancellation_restores_it(): void
+    {
+        $this->stockService->addStock(
+            $this->projectWarehouse,
+            $this->material,
+            50,
+            'initial_test',
+            null,
+            $this->adminProyek->id,
+            'Stok awal'
+        );
+
+        $mr = MaterialRequest::create([
+            'request_number'    => 'MR-TEST-QUOTA-002',
+            'from_warehouse_id' => $this->projectWarehouse->id,
+            'to_warehouse_id'   => Warehouse::where('is_central', true)->first()->id,
+            'requested_by_user_id' => $this->adminProyek->id,
+            'status'            => 'partially_fulfilled',
+            'notes'             => 'MR uji sukses pemakaian & pembatalan',
+        ]);
+
+        $mrItem = MaterialRequestItem::create([
+            'material_request_id' => $mr->id,
+            'material_id'         => $this->material->id,
+            'qty_requested'       => 40,
+            'qty_approved'        => 40,
+            'qty_received'        => 30,
+            'qty_issued'          => 10,
+            'qty_fulfilled'       => 10,
+        ]);
+
+        // Pemakaian 15 unit (kuota = 30 - 10 = 20, 15 <= 20)
+        $usage = $this->usageService->createUsage(
+            $this->projectWarehouse,
+            $this->adminProyek,
+            [
+                'material_request_id' => $mr->id,
+                'recipient_name'      => 'Mandor Cor',
+                'items'               => [
+                    [
+                        'material_id'              => $this->material->id,
+                        'material_request_item_id' => $mrItem->id,
+                        'quantity'                 => 15,
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertNotNull($usage);
+        // qty_issued harus bertambah dari 10 menjadi 25 (BUKAN qty_received yang bertambah)
+        $this->assertEquals(25.0, (float) $mrItem->fresh()->qty_issued);
+        $this->assertEquals(30.0, (float) $mrItem->fresh()->qty_received);
+
+        // Batalkan pemakaian
+        $this->usageService->cancelUsage($usage, $this->adminProyek, 'Salah catat kuantitas bon');
+
+        // qty_issued harus dikembalikan dari 25 menjadi 10
+        $this->assertEquals(10.0, (float) $mrItem->fresh()->qty_issued);
+        $this->assertEquals(30.0, (float) $mrItem->fresh()->qty_received);
     }
 }

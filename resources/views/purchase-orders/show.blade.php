@@ -22,15 +22,26 @@
             </a>
 
             @if($purchaseOrder->status === 'draft')
+                @if((auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
+                    <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Setujui PO ini?')">
+                            <i class="fas fa-check me-1"></i> Setujui PO
+                        </button>
+                    </form>
+                @endif
+            @endif
+
+            @if($purchaseOrder->status === 'approved')
                 <form action="{{ route('purchase-orders.send', $purchaseOrder) }}" method="POST">
                     @csrf
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Kirim PO ini ke Supplier?')">
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim PO ini ke Supplier?')">
                         <i class="fas fa-paper-plane me-1"></i> Kirim ke Supplier
                     </button>
                 </form>
             @endif
 
-            @if($purchaseOrder->status !== 'cancelled')
+            @if(in_array($purchaseOrder->status, ['draft', 'approved', 'sent']))
                 <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Batalkan PO ini?')">
@@ -38,8 +49,35 @@
                     </button>
                 </form>
             @endif
+
+            @if(in_array($purchaseOrder->status, ['sent', 'partial_received']) && $purchaseOrder->outstanding > 0)
+                @if((auth()->user()->can('close purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
+                    <button type="button" class="btn btn-outline-warning" onclick="promptShortClose()">
+                        <i class="fas fa-ban me-1"></i> Short Close
+                    </button>
+                    <form id="shortCloseForm" action="{{ route('purchase-orders.close', $purchaseOrder) }}" method="POST" style="display:none;">
+                        @csrf
+                        <input type="hidden" name="reason" id="shortCloseReason">
+                    </form>
+                    <script>
+                        function promptShortClose() {
+                            let reason = prompt('Masukkan alasan penutupan (Short Close) PO:');
+                            if (reason && reason.trim().length > 0) {
+                                document.getElementById('shortCloseReason').value = reason.trim();
+                                document.getElementById('shortCloseForm').submit();
+                            }
+                        }
+                    </script>
+                @endif
+            @endif
         </div>
     </div>
+
+    @if(session('error'))
+        <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="alert alert-success mb-4" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
@@ -61,17 +99,192 @@
             <div>
                 <span class="text-muted block text-xs">Status PO:</span>
                 <span class="badge badge-{{ $purchaseOrder->status_color }}">{{ $purchaseOrder->status_label }}</span>
+                @if(in_array($purchaseOrder->status, ['approved', 'sent', 'partial_received', 'received']) && $purchaseOrder->approver)
+                    <span class="block text-xs text-muted mt-1">Disetujui: <strong>{{ $purchaseOrder->approver->name }}</strong> ({{ $purchaseOrder->approved_at?->format('d/m/Y H:i') }})</span>
+                @endif
             </div>
             <div>
                 <span class="text-muted block text-xs">Total Nilai PO:</span>
                 <strong class="text-primary" style="font-size:16px;">Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}</strong>
             </div>
+            <div>
+                <span class="text-muted block text-xs">Gudang Tujuan Pengiriman:</span>
+                <strong>{{ $purchaseOrder->deliveryWarehouse ? $purchaseOrder->deliveryWarehouse->name . ($purchaseOrder->deliveryWarehouse->project ? ' - ' . $purchaseOrder->deliveryWarehouse->project->name : '') : 'Gudang Pusat' }}</strong>
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Penanggung Risiko Pengiriman:</span>
+                @if($purchaseOrder->risk_bearer === 'buyer')
+                    <span class="badge" style="background:#fee2e2;color:#991b1b;font-weight:600;font-size:11.5px;">
+                        <i class="fas fa-shield-alt me-1"></i> Pembeli (PT Arsikon)
+                    </span>
+                @else
+                    <span class="badge" style="background:#ecfdf5;color:#065f46;font-weight:600;font-size:11.5px;">
+                        <i class="fas fa-truck me-1"></i> Vendor / Supplier
+                    </span>
+                @endif
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Estimasi Tiba:</span>
+                <span>{{ $purchaseOrder->expected_delivery ? $purchaseOrder->expected_delivery->format('d M Y') : '-' }}</span>
+            </div>
+            <div>
+                <span class="text-muted block text-xs">Dibuat Oleh:</span>
+                <span>{{ $purchaseOrder->creator?->name ?? '-' }}</span>
+            </div>
         </div>
+    </div>
+
+    <!-- SECTION FINANSIAL & PEMBAYARAN PO (Nilai Sah, Nilai Tertahan, Status Bayar) -->
+    @php
+        $poNilaiSah = (float) $purchaseOrder->nilai_sah;
+        $poVerifiedPaid = (float) $purchaseOrder->verified_payment_amount;
+        $poPendingPaid = (float) $purchaseOrder->pending_payment_amount;
+        $poPayableRemaining = (float) $purchaseOrder->payable_remaining_amount;
+        $withheldData = $purchaseOrder->withheld_summary;
+        $poTotalWithheld = (float) $withheldData['total_withheld'];
+        $hasConfirmedGr = $purchaseOrder->hasConfirmedGoodsReceipt();
+    @endphp
+    <div class="card mb-6" style="padding:20px; border:1.5px solid #cbd5e1; background:#ffffff;">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h3 style="font-size:16px; font-weight:700; color:#0f172a;" class="flex items-center gap-2">
+                    <i class="fas fa-coins text-primary"></i> Ringkasan Finansial & Nilai Sah Tagihan PO
+                </h3>
+                <p class="text-muted" style="font-size:12.5px; margin-top:2px;">
+                    Pembayaran tagihan dihitung berdasarkan nilai sah barang yang telah diterima baik di gudang (dan kehilangan tanggungan pembeli).
+                </p>
+            </div>
+            <div>
+                @if($hasConfirmedGr && $poPayableRemaining > 0)
+                    <a href="{{ route('payments.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary" style="font-size:12.5px; font-weight:700; padding:7px 14px; border-radius:6px;">
+                        <i class="fas fa-credit-card me-1"></i> Ajukan Pembayaran
+                    </a>
+                @elseif(! $hasConfirmedGr)
+                    <span class="badge" style="background:#f1f5f9; color:#64748b; font-size:11.5px; padding:6px 10px; border:1px solid #cbd5e1;">
+                        <i class="fas fa-clock me-1"></i> Belum ada Penerimaan Barang (GR) terkonfirmasi
+                    </span>
+                @else
+                    <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11.5px; padding:6px 10px; border:1px solid #bbf7d0;">
+                        <i class="fas fa-check-double me-1"></i> Nilai Sah Lunas / Penuh Diajukan
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase;">TOTAL NILAI PO</div>
+                <div style="font-size:15px; font-weight:800; color:#0f172a; margin-top:4px;">
+                    Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#eff6ff; padding:12px; border-radius:8px; border:1px solid #bfdbfe; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#1e40af; text-transform:uppercase;">NILAI SAH SAAT INI</div>
+                <div style="font-size:15px; font-weight:800; color:#1d4ed8; margin-top:4px;">
+                    Rp {{ number_format($poNilaiSah, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#f0fdf4; padding:12px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#166534; text-transform:uppercase;">SUDAH DIBAYAR</div>
+                <div style="font-size:15px; font-weight:800; color:#15803d; margin-top:4px;">
+                    Rp {{ number_format($poVerifiedPaid, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#fffbeb; padding:12px; border-radius:8px; border:1px solid #fde68a; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#b45309; text-transform:uppercase;">PENDING VERIFIKASI</div>
+                <div style="font-size:15px; font-weight:800; color:#d97706; margin-top:4px;">
+                    Rp {{ number_format($poPendingPaid, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#ecfdf5; padding:12px; border-radius:8px; border:1px solid #a7f3d0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#065f46; text-transform:uppercase;">SISA BISA DIBAYAR</div>
+                <div style="font-size:15px; font-weight:800; color:#059669; margin-top:4px;">
+                    Rp {{ number_format($poPayableRemaining, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#fef2f2; padding:12px; border-radius:8px; border:1px solid #fecaca; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#991b1b; text-transform:uppercase;">NILAI TERTAHAN</div>
+                <div style="font-size:15px; font-weight:800; color:#b91c1c; margin-top:4px;">
+                    Rp {{ number_format($poTotalWithheld, 0, ',', '.') }}
+                </div>
+            </div>
+        </div>
+
+        @if(!empty($withheldData['items']))
+            <div class="mt-3" style="background:#fff5f5; border:1px solid #fed7d7; border-radius:8px; padding:12px 14px;">
+                <div style="font-size:12px; font-weight:700; color:#991b1b; margin-bottom:6px;" class="flex items-center gap-1">
+                    <i class="fas fa-circle-exclamation"></i> Rincian Nilai Tertahan (Unresolved / Rusak / Tanggungan Vendor / Belum Tiba):
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    @foreach($withheldData['items'] as $wh)
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; border-bottom:1px dashed #fecaca;">
+                            <div>
+                                <strong>{{ $wh['item_name'] }}</strong>
+                                <span class="text-muted">({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }})</span>
+                                &mdash; <span style="color:#7f1d1d;">{{ $wh['reason'] }}</span>
+                            </div>
+                            <div style="font-weight:700; color:#b91c1c;">
+                                Rp {{ number_format($wh['value'], 0, ',', '.') }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        {{-- Tabel Riwayat Pembayaran --}}
+        @if($purchaseOrder->payments && $purchaseOrder->payments->count() > 0)
+            <div class="mt-4 pt-3" style="border-top:1px solid #e2e8f0;">
+                <h4 style="font-size:13.5px; font-weight:700; color:#334155; margin-bottom:10px;">
+                    <i class="fas fa-history me-1"></i> Riwayat Pembayaran PO:
+                </h4>
+                <div class="table-wrap">
+                    <table class="data-table" style="background:#fff; font-size:12px;">
+                        <thead>
+                            <tr>
+                                <th>No. Pembayaran</th>
+                                <th>Tanggal</th>
+                                <th>Nominal</th>
+                                <th>Metode</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($purchaseOrder->payments as $pmt)
+                                <tr>
+                                    <td><code>{{ $pmt->payment_number }}</code></td>
+                                    <td>{{ $pmt->payment_date ? $pmt->payment_date->format('d/m/Y') : '-' }}</td>
+                                    <td><strong>Rp {{ number_format($pmt->amount, 0, ',', '.') }}</strong></td>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $pmt->payment_method)) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $pmt->status_color }}">
+                                            {{ $pmt->status_label }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('payments.show', $pmt) }}" class="btn btn-xs btn-secondary">
+                                            <i class="fas fa-eye"></i> Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- Section Barang yang Dipesan -->
     <div class="card mb-6" style="padding:20px;">
         <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;color:#1e293b;">Barang yang Dipesan (Item PO)</h3>
+        @if($purchaseOrder->notes)
+            <div class="mb-4" style="background:#f8fafc;border-left:4px solid #64748b;padding:10px 14px;border-radius:4px;font-size:13px;white-space:pre-line;">
+                <span class="text-muted block font-semibold text-xs mb-1">Catatan Dokumen / Riwayat Short Close:</span>
+                {{ $purchaseOrder->notes }}
+            </div>
+        @endif
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
@@ -79,6 +292,9 @@
                         <th>#</th>
                         <th>Material</th>
                         <th class="text-center">Jumlah Dipesan</th>
+                        @if($purchaseOrder->status !== 'draft')
+                            <th class="text-center">Diterima / Ditutup</th>
+                        @endif
                         <th class="text-end">Harga Satuan</th>
                         <th class="text-end">Subtotal</th>
                     </tr>
@@ -105,10 +321,47 @@
                                     </span>
                                 </div>
                             @endif
+
+                            @if($item->deliverySchedules && $item->deliverySchedules->count() > 0)
+                                <div class="mt-2" style="font-size:11px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <span style="color:#475569; font-weight:600;"><i class="fas fa-calendar-days me-1"></i> Jadwal Kedatangan:</span>
+                                    <div class="mt-1" style="display:flex; flex-direction:column; gap:3px;">
+                                        @foreach($item->deliverySchedules as $sch)
+                                            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                                                <span>
+                                                    <strong>{{ $sch->stage_label }}:</strong>
+                                                    {{ number_format($sch->planned_qty, 2, ',', '.') }} {{ $item->displayUnit() }}
+                                                    (Rencana: {{ $sch->planned_date ? $sch->planned_date->format('d/m/Y') : '-' }})
+                                                </span>
+                                                <span>
+                                                    <span class="text-success fw-semibold">{{ number_format($sch->received_qty, 2, ',', '.') }} tiba</span>
+                                                    @if($sch->status === 'received')
+                                                        <span class="badge" style="background:#dcfce7;color:#166534;font-size:9.5px;">Tuntas</span>
+                                                    @elseif($sch->is_late)
+                                                        <span class="badge" style="background:#fee2e2;color:#991b1b;font-size:9.5px;">Terlambat</span>
+                                                    @else
+                                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:9.5px;">Menunggu</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </td>
                         <td class="text-center">
                             {{ number_format($item->quantity, 2, ',', '.') }} {{ $item->displayUnit() }}
                         </td>
+                        @if($purchaseOrder->status !== 'draft')
+                            <td class="text-center">
+                                <span class="text-success font-semibold">{{ number_format($item->received_qty, 2, ',', '.') }} diterima</span>
+                                @if((float)$item->short_closed_qty > 0)
+                                    <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10.5px;">
+                                        Ditutup: {{ number_format($item->short_closed_qty, 2, ',', '.') }}
+                                    </span>
+                                @endif
+                            </td>
+                        @endif
                         <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
                         <td class="text-end"><strong class="text-primary">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
                     </tr>

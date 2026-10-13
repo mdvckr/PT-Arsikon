@@ -268,6 +268,11 @@ class ToolAssignmentController extends Controller
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat disetujui.');
         }
 
+        // T17: Pemisahan peran - penyetuju tidak boleh sama dengan pengaju
+        if ((int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
+            return back()->with('error', 'Penyetuju peminjaman tidak boleh sama dengan pengaju.');
+        }
+
         // Cek ketersediaan stok untuk semua alat di gudang asal
         $warehouse = $toolLoan->fromWarehouse;
         foreach ($toolLoan->items as $item) {
@@ -327,6 +332,11 @@ class ToolAssignmentController extends Controller
 
         if ($toolLoan->status !== 'pending') {
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat ditolak.');
+        }
+
+        // T17: Pemisahan peran - penolak tidak boleh sama dengan pengaju
+        if ((int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
+            return back()->with('error', 'Penolak peminjaman tidak boleh sama dengan pengaju.');
         }
 
         $request->validate([
@@ -526,8 +536,8 @@ class ToolAssignmentController extends Controller
             abort(403, 'Anda tidak memiliki akses ke data peminjaman di gudang ini.');
         }
 
-        if (!in_array($toolLoan->status, ['pending', 'active'])) {
-            return back()->with('error', 'Hanya peminjaman berstatus Menunggu Persetujuan atau Aktif yang dapat dibatalkan.');
+        if (!in_array($toolLoan->status, ['pending', 'active', 'overdue'])) {
+            return back()->with('error', 'Hanya peminjaman berstatus Menunggu Persetujuan, Aktif, atau Terlambat yang dapat dibatalkan.');
         }
 
         $request->validate([
@@ -535,10 +545,10 @@ class ToolAssignmentController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $toolLoan) {
-            $isPreviouslyActive = ($toolLoan->status === 'active');
+            $isPreviouslyActive = in_array($toolLoan->status, ['active', 'overdue']);
 
             foreach ($toolLoan->items as $item) {
-                if ($isPreviouslyActive && $item->status === 'active') {
+                if ($isPreviouslyActive && in_array($item->status, ['active', 'overdue'])) {
                     $warehouse = $item->fromWarehouse ?? $toolLoan->fromWarehouse ?? $item->tool?->currentWarehouse;
                     if ($warehouse && $item->tool) {
                         $this->toolInvService->returnStock($warehouse, $item->tool, (int)$item->quantity, 'good');

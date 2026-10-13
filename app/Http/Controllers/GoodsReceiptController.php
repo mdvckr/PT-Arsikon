@@ -7,6 +7,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Models\Material;
+use App\Models\PoDeliverySchedule;
 use App\Services\GoodsReceiptService;
 use Illuminate\Http\Request;
 
@@ -128,86 +129,92 @@ class GoodsReceiptController extends Controller
         ));
     }
 
-    // ── AJAX: Ambil Jadwal Kedatangan dari Tahapan (incoming_stages) ──────
+    // ── AJAX: Ambil Jadwal Kedatangan dari po_delivery_schedules ──────────
 
     public function getScheduledIncoming(Request $request)
     {
         $this->authorize('create goods receipts');
 
         $date = $request->query('date', 'all');
+        $warehouseId = $request->query('warehouse_id');
+
+        $query = PoDeliverySchedule::with([
+            'purchaseOrderItem.purchaseOrder.supplier',
+            'purchaseOrderItem.purchaseOrder.deliveryWarehouse',
+            'purchaseOrderItem.material.category',
+            'purchaseOrderItem.material.unit',
+            'purchaseOrderItem.tool.category',
+            'warehouse',
+        ])
+        ->whereIn('status', ['planned', 'partial'])
+        ->whereRaw('(planned_qty - received_qty) > 0')
+        ->whereHas('purchaseOrderItem.purchaseOrder', function ($q) {
+            $q->whereIn('status', ['approved', 'sent', 'partial_received']);
+        });
+
+        if (!empty($date) && $date !== 'all') {
+            $query->whereDate('planned_date', $date);
+        }
+
+        if (!empty($warehouseId)) {
+            $query->where(function ($q) use ($warehouseId) {
+                $q->where('warehouse_id', $warehouseId)
+                  ->orWhereHas('purchaseOrderItem.purchaseOrder', fn($poQ) => $poQ->where('delivery_warehouse_id', $warehouseId));
+            });
+        }
+
+        $schedules = $query->orderBy('planned_date', 'asc')->get();
         $results = [];
 
-        // 1. Ambil dari incoming_stages Material yang berstatus 'planned'
-        $materials = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])
-            ->whereNotNull('incoming_stages')
-            ->get();
+        foreach ($schedules as $sch) {
+            $poItem = $sch->purchaseOrderItem;
+            if (!$poItem) continue;
 
-        foreach ($materials as $m) {
-            if (empty($m->incoming_stages)) continue;
-            foreach ($m->incoming_stages as $idx => $stg) {
-                if (($stg['status'] ?? '') === 'planned') {
-                    if (empty($date) || $date === 'all' || ($stg['date'] ?? '') === $date) {
-                        $firstInv = $m->inventories->first();
-                        $results[] = [
-                            'item_type'       => 'material',
-                            'material_id'     => $m->id,
-                            'tool_id'         => null,
-                            'code'            => $m->code ?? $m->sku ?? '-',
-                            'name'            => $m->name,
-                            'category_name'   => $m->category?->name ?? 'Material',
-                            'unit'            => $m->unit?->abbreviation ?? 'Unit',
-                            'stage_reference' => $stg['stage'] ?? ("Tahap " . ($idx + 1)),
-                            'scheduled_date'  => $stg['date'] ?? '-',
-                            'quantity'        => (float) ($stg['qty'] ?? 1),
-                            'notes'           => $stg['notes'] ?? null,
-                            'warehouse_id'    => $stg['warehouse_id'] ?? $firstInv?->warehouse_id,
-                            'warehouse_name'  => $firstInv?->warehouse?->name,
-                            'supplier_id'     => $m->supplier_id ?? null,
-                            'supplier_name'   => $m->supplier_name ?? $m->supplier?->name ?? null,
-                        ];
-                    }
-                }
-            }
+            $po = $poItem->purchaseOrder;
+            $isTool = $poItem->isTool();
+
+            $whId = $sch->warehouse_id ?? $po?->delivery_warehouse_id;
+            $whName = $sch->warehouse?->name ?? $po?->deliveryWarehouse?->name;
+
+            $code = $isTool
+                ? ($poItem->tool?->code ?? '-')
+                : ($poItem->material?->sku ?? $poItem->material?->code ?? 'NON-MASTER');
+
+            $name = $poItem->displayName();
+            $categoryName = $isTool
+                ? ($poItem->tool?->category?->name ?? 'Alat / Mesin')
+                : ($poItem->material?->category?->name ?? 'Material');
+
+            $unit = $poItem->displayUnit();
+            $remainingQty = (float) $sch->remaining_qty;
+
+            $results[] = [
+                'schedule_id'             => $sch->id,
+                'id'                      => $sch->id,
+                'purchase_order_id'       => $po?->id,
+                'purchase_order_number'   => $po?->po_number,
+                'purchase_order_item_id'  => $poItem->id,
+                'po_delivery_schedule_id' => $sch->id,
+                'item_type'               => $isTool ? 'tool' : 'material',
+                'material_id'             => $poItem->material_id,
+                'tool_id'                 => $poItem->tool_id,
+                'code'                    => $code,
+                'name'                    => $name,
+                'category_name'           => $categoryName,
+                'unit'                    => $unit,
+                'stage_reference'         => $sch->stage_label ?? ('Tahap #' . $sch->id),
+                'scheduled_date'          => $sch->planned_date ? $sch->planned_date->format('Y-m-d') : '-',
+                'quantity'                => $remainingQty,
+                'planned_qty'             => (float) $sch->planned_qty,
+                'received_qty'            => (float) $sch->received_qty,
+                'notes'                   => $sch->notes,
+                'warehouse_id'            => $whId,
+                'warehouse_name'          => $whName,
+                'supplier_id'             => $po?->supplier_id,
+                'supplier_name'           => $po?->supplier_name ?? $po?->supplier?->name,
+                'is_late'                 => $sch->is_late,
+            ];
         }
-
-        // 2. Ambil dari incoming_stages Tool yang berstatus 'planned'
-        $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])
-            ->whereNotNull('incoming_stages')
-            ->get();
-
-        foreach ($tools as $t) {
-            if (empty($t->incoming_stages)) continue;
-            foreach ($t->incoming_stages as $idx => $stg) {
-                if (($stg['status'] ?? '') === 'planned') {
-                    if (empty($date) || $date === 'all' || ($stg['date'] ?? '') === $date) {
-                        $whId = $stg['warehouse_id'] ?? $t->current_warehouse_id ?? $t->inventories->first()?->warehouse_id;
-                        $whName = $t->currentWarehouse?->name ?? $t->inventories->first()?->warehouse?->name;
-                        $results[] = [
-                            'item_type'       => 'tool',
-                            'material_id'     => null,
-                            'tool_id'         => $t->id,
-                            'code'            => $t->code ?? '-',
-                            'name'            => $t->name,
-                            'category_name'   => $t->category?->name ?? 'Alat / Mesin',
-                            'unit'            => 'Unit',
-                            'stage_reference' => $stg['stage'] ?? ("Tahap " . ($idx + 1)),
-                            'scheduled_date'  => $stg['date'] ?? '-',
-                            'quantity'        => max(1, (int) round((float) ($stg['qty'] ?? 1))),
-                            'notes'           => $stg['notes'] ?? null,
-                            'warehouse_id'    => $whId,
-                            'warehouse_name'  => $whName,
-                            'supplier_id'     => null,
-                            'supplier_name'   => null,
-                        ];
-                    }
-                }
-            }
-        }
-
-        // Urutkan berdasarkan tanggal kedatangan terdekat
-        usort($results, function ($a, $b) {
-            return strcmp($a['scheduled_date'], $b['scheduled_date']);
-        });
 
         return response()->json([
             'date'  => $date,
@@ -240,6 +247,7 @@ class GoodsReceiptController extends Controller
         return response()->json([
             'supplier_id'   => $purchaseOrder->supplier_id,
             'supplier_name' => $purchaseOrder->supplier?->name,
+            'warehouse_id'  => $purchaseOrder->delivery_warehouse_id,
             'items'         => $items,
         ]);
     }
@@ -269,18 +277,30 @@ class GoodsReceiptController extends Controller
             $request->merge(['items' => $items]);
         }
 
+        // Fallback warehouse_id jika dari PO
+        if (!$request->filled('warehouse_id') && $request->filled('purchase_order_id')) {
+            $po = PurchaseOrder::find($request->purchase_order_id);
+            if ($po?->delivery_warehouse_id) {
+                $request->merge(['warehouse_id' => $po->delivery_warehouse_id]);
+            }
+        }
+
         // Tentukan apakah supplier dari list atau ketik bebas
         $supplierIdRaw = $request->input('supplier_id');
-        $supplierNameRaw = trim($request->input('supplier_name', ''));
+        $cleanedSupplierName = preg_replace('/\s+/', ' ', trim($request->input('supplier_name', '')));
         $isSupplierFromList = !empty($supplierIdRaw) && is_numeric($supplierIdRaw);
 
         // Jika tidak pilih dari list tapi ada nama ketik
-        if (!$isSupplierFromList && !empty($supplierNameRaw)) {
-            // Cari atau buat supplier baru
-            $supplier = \App\Models\Supplier::firstOrCreate(
-                ['name' => $supplierNameRaw],
-                ['name' => $supplierNameRaw, 'phone' => null, 'address' => null]
-            );
+        if (!$isSupplierFromList && !empty($cleanedSupplierName)) {
+            // Cari atau buat supplier baru secara case-insensitive
+            $supplier = \App\Models\Supplier::whereRaw('LOWER(name) = ?', [mb_strtolower($cleanedSupplierName)])->first();
+            if (!$supplier) {
+                $supplier = \App\Models\Supplier::create([
+                    'name'    => $cleanedSupplierName,
+                    'phone'   => null,
+                    'address' => null,
+                ]);
+            }
             $request->merge(['supplier_id' => $supplier->id]);
         }
 
@@ -300,7 +320,10 @@ class GoodsReceiptController extends Controller
             'items.*.stage_reference'        => 'nullable|string|max:100',
             'items.*.condition'              => 'nullable|in:good,damaged,reject',
             'items.*.purchase_order_item_id' => 'nullable|exists:purchase_order_items,id',
+            'items.*.po_delivery_schedule_id'=> 'nullable|exists:po_delivery_schedules,id',
             'items.*.quantity'               => 'required|numeric|min:0.01',
+            'items.*.qty_shipped'            => 'nullable|numeric|min:0',
+            'items.*.qty_damaged'            => 'nullable|numeric|min:0',
             'items.*.unit_price'             => 'nullable|numeric|min:0',
             'items.*.notes'                  => 'nullable|string|max:500',
         ]);
@@ -310,8 +333,34 @@ class GoodsReceiptController extends Controller
             return back()->withInput()->with('error', 'Anda tidak memiliki hak akses untuk mencatat penerimaan di gudang ini.');
         }
 
+        // Validasi T14: qty alat selalu bilangan bulat di GR
+        foreach ($request->input('items', []) as $idx => $item) {
+            $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
+            if (!$isTool && !empty($item['purchase_order_item_id'])) {
+                $poi = \App\Models\PurchaseOrderItem::find($item['purchase_order_item_id']);
+                if ($poi && $poi->isTool()) {
+                    $isTool = true;
+                }
+            }
+
+            if ($isTool) {
+                $qty = $item['quantity'] ?? null;
+                $shipped = $item['qty_shipped'] ?? null;
+                $damaged = $item['qty_damaged'] ?? null;
+                if (!is_null($qty) && fmod((float)$qty, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.quantity" => "Kuantitas alat harus berupa bilangan bulat."]);
+                }
+                if (!is_null($shipped) && fmod((float)$shipped, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.qty_shipped" => "Kuantitas alat yang dikirim harus berupa bilangan bulat."]);
+                }
+                if (!is_null($damaged) && fmod((float)$damaged, 1) != 0) {
+                    return back()->withInput()->withErrors(["items.{$idx}.qty_damaged" => "Kuantitas alat rusak harus berupa bilangan bulat."]);
+                }
+            }
+        }
+
         // Simpan nama supplier dan penerima ke validated
-        $validated['supplier_name'] = $supplierNameRaw ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
+        $validated['supplier_name'] = $cleanedSupplierName ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
         $validated['received_by_name'] = trim($request->input('received_by_name', '')) ?: null;
 
         $receipt = $this->service->create($validated, auth()->id());

@@ -20,8 +20,25 @@ class MaterialRequest extends Model
         'approved_at',
         'status',
         'rejection_reason',
+        'needed_at',
+        'requested_as',
         'notes',
     ];
+
+    protected $casts = [
+        'needed_at'   => 'date',
+        'approved_at' => 'datetime',
+    ];
+
+    public function getIsOverdueAttribute(): bool
+    {
+        if (!$this->needed_at) {
+            return false;
+        }
+
+        return \Carbon\Carbon::parse($this->needed_at)->startOfDay()->lt(now()->startOfDay())
+            && !in_array($this->status, ['fulfilled', 'rejected', 'cancelled']);
+    }
 
     public function fromWarehouse(): BelongsTo
     {
@@ -60,18 +77,6 @@ class MaterialRequest extends Model
 
     public static function generateRequestNumber(): string
     {
-        $prefix = 'REQ-' . date('Ymd') . '-';
-        $latest = self::where('request_number', 'like', $prefix . '%')
-                      ->orderBy('id', 'desc')
-                      ->first();
-
-        if ($latest) {
-            $lastNumber = (int) substr($latest->request_number, -4);
-            $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $nextNumber = '0001';
-        }
-
-        return $prefix . $nextNumber;
+        return \App\Services\DocumentNumberService::generate('MR', (int) date('Y'));
     }
 }

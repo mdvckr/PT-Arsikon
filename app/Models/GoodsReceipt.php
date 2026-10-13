@@ -81,14 +81,7 @@ class GoodsReceipt extends Model
 
     public static function generateReceiptNumber(): string
     {
-        $prefix = 'GR-' . date('Ymd') . '-';
-        $latest = self::where('receipt_number', 'like', $prefix . '%')
-                      ->orderBy('id', 'desc')
-                      ->first();
-
-        $lastNumber = $latest ? (int) substr($latest->receipt_number, -4) : 0;
-
-        return $prefix . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        return \App\Services\DocumentNumberService::generate('GR', (int) date('Y'));
     }
 
     /**

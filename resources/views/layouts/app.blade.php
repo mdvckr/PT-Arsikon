@@ -1598,7 +1598,7 @@
                 $roleBadge = 'Proyek';
                 $roleIcon = 'fa-helmet-safety';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
-                $subDesc = 'Permintaan material & alat proyek';
+                $subDesc = 'PO Lapangan & alat proyek';
             } elseif ($authUser->hasRole('Admin PO')) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
@@ -1665,132 +1665,221 @@
                 </a>
             </div>
 
-            <!-- MASTER DATA -->
-            @canAny(['view materials', 'view tools', 'view inventory'])
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Logistik</div>
-                @can('view goods receipts')
-                <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                    <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
-                </a>
-                @endcan
-                
-                @can('view materials')
-                <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
-                    <i class="fas fa-boxes-stacked"></i> Material
-                </a>
-                @can('view material usages')
-                <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
-                    <i class="fas fa-dolly"></i> Pemakaian Material
-                </a>
-                @endcan
+            <!-- 1. GRUP TEKNIS -->
+            @php
+                $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
+                $canTeknis = auth()->user()->can('view material usages')
+                    || auth()->user()->can('view returns')
+                    || auth()->user()->can('view tools')
+                    || auth()->user()->can('view tool assignments')
+                    || $canDailyLog;
+                $isTeknisActive = request()->routeIs(['material-usages.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']);
+            @endphp
+            @if($canTeknis)
+            <div class="nav-section" x-data="{ open: {{ ($isTeknisActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+                <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
+                    <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Teknis</div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
+                </div>
+                <div x-show="open" style="{{ ($isTeknisActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                    @can('view material usages')
+                    <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
+                        <i class="fas fa-dolly"></i> Pemakaian Material
+                    </a>
+                    @endcan
 
-                @endcan
-                @can('view tools')
-                <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
-                    <i class="fas fa-screwdriver-wrench"></i> Alat
-                </a>
-                <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
-                    <i class="fas fa-hand-holding"></i> Peminjaman Alat
-                </a>
-                @endcan
-                @can('view inventory')
-                <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
-                    <i class="fas fa-layer-group"></i> Inventori
-                </a>
-                @endcan
-            </div>
-            @endcanAny
+                    @can('view returns')
+                    <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
+                        <i class="fas fa-rotate-left"></i> Retur Material
+                    </a>
+                    @endcan
 
-            <!-- TRANSAKSI -->
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Transaksi</div>
-                
-                @can('view material requests')
-                <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-circle-plus"></i> Permintaan Material
-                </a>
-                @endcan
-                
-                @can('view distributions')
-                <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                    <i class="fas fa-right-left"></i> Surat Jalan
-                </a>
-                @endcan
-                
-                @if(!auth()->user()->hasRole('Karyawan'))
-                <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
-                    <i class="fas fa-calendar-check"></i> Log Harian Proyek
-                </a>
-                @endif
-            </div>
+                    @can('view tools')
+                    <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
+                        <i class="fas fa-screwdriver-wrench"></i> Master Alat
+                    </a>
+                    @endcan
 
-            <!-- ALAT & STOK -->
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Stok</div>
-                @can('view stock opname')
-                <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-check"></i> Stock Opname
-                </a>
-                @endcan
-            </div>
+                    @can('view tool assignments')
+                    <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
+                        <i class="fas fa-hand-holding"></i> Peminjaman Alat
+                    </a>
+                    @endcan
 
-            <!-- PENGADAAN (Admin PO, Admin Pusat & Owner) -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Pengadaan</div>
-                <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
-                    <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
-                </a>
-                <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
-                </a>
-                <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
-                    <i class="fas fa-receipt"></i> Nota Pembelian Harian
-                </a>
-                <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                    <i class="fas fa-money-bill-wave"></i> Pembayaran
-                </a>
-                <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                    <i class="fas fa-stamp"></i> Template Kop Surat
-                </a>
+                    @if($canDailyLog)
+                    <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-check"></i> Log Harian Proyek
+                    </a>
+                    @endif
+                </div>
             </div>
             @endif
 
-            <!-- PENGEMBALIAN -->
-            @can('view returns')
-            <div class="nav-section">
-                <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
-                    <i class="fas fa-rotate-left"></i> Pengembalian
-                </a>
-            </div>
-            @endcan
+            <!-- 2. GRUP PENGADAAN -->
+            @php
+                $canPengadaan = auth()->user()->can('view material requests')
+                    || auth()->user()->can('view procurement')
+                    || (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
+                    || auth()->user()->can('view purchase receipts')
+                    || auth()->user()->can('view payments');
+                $isPengadaanActive = request()->routeIs(['material-requests.*', 'procurement.*', 'purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*']);
+            @endphp
+            @if($canPengadaan)
+            <div class="nav-section" x-data="{ open: {{ ($isPengadaanActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+                <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
+                    <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Pengadaan</div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
+                </div>
+                <div x-show="open" style="{{ ($isPengadaanActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                    @can('view material requests')
+                    <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
+                        <i class="fas fa-file-circle-plus"></i> PO Lapangan
+                    </a>
+                    @endcan
 
-            <!-- LAPORAN -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Laporan</div>
-                <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i> Laporan
-                </a>
-                @can('view audit logs')
-                <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
-                    <i class="fas fa-shield-halved"></i> Audit Log
-                </a>
-                @endcan
+                    @can('view procurement')
+                    <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
+                        <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
+                    </a>
+                    @endcan
+
+                    @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']) && auth()->user()->can('view purchase orders'))
+                    <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                        <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                    </a>
+                    @endif
+
+                    @can('view purchase receipts')
+                    <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
+                        <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                    </a>
+                    @endcan
+
+                    @can('view payments')
+                    <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                        <i class="fas fa-money-bill-wave"></i> Pembayaran
+                    </a>
+                    @endcan
+
+                    @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
+                    <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
+                        <i class="fas fa-stamp"></i> Template Kop Surat
+                    </a>
+                    @endif
+                </div>
             </div>
             @endif
 
-            <!-- ADMIN (Pengguna, Jabatan, Gudang, Proyek) -->
+            <!-- 3. GRUP LOGISTIK -->
+            @php
+                $canLogistik = auth()->user()->can('view goods receipts')
+                    || auth()->user()->can('view distributions')
+                    || auth()->user()->can('view inventory')
+                    || auth()->user()->can('view stock opname')
+                    || auth()->user()->can('view materials')
+                    || auth()->user()->can('view reports');
+                $isLogistikActive = request()->routeIs(['goods-receipts.*', 'distributions.*', 'inventory.*', 'stock-opnames.*', 'materials.*']) || request()->routeIs('reports.mutation');
+            @endphp
+            @if($canLogistik)
+            <div class="nav-section" x-data="{ open: {{ ($isLogistikActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+                <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
+                    <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Logistik</div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
+                </div>
+                <div x-show="open" style="{{ ($isLogistikActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                    @can('view goods receipts')
+                    <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+                        <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang (GR)
+                    </a>
+                    @endcan
+
+                    @can('view distributions')
+                    <a href="{{ route('distributions.index') }}" class="nav-item {{ (request()->routeIs('distributions.*') && !request('status')) ? 'active' : '' }}">
+                        <i class="fas fa-right-left"></i> Surat Jalan (Distribusi)
+                    </a>
+                    <a href="{{ route('distributions.index', ['status' => 'shipped']) }}" class="nav-item {{ (request()->routeIs('distributions.*') && request('status') === 'shipped') ? 'active' : '' }}">
+                        <i class="fas fa-dolly-flatbed"></i> Penerimaan Surat Jalan
+                    </a>
+                    @endcan
+
+                    @can('view inventory')
+                    <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+                        <i class="fas fa-layer-group"></i> Inventori
+                    </a>
+                    @endcan
+
+                    @can('view reports')
+                    <a href="{{ route('reports.mutation') }}" class="nav-item {{ request()->routeIs('reports.mutation') ? 'active' : '' }}">
+                        <i class="fas fa-arrow-right-arrow-left"></i> Mutasi Stok
+                    </a>
+                    @endcan
+
+                    @can('view stock opname')
+                    <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
+                        <i class="fas fa-clipboard-check"></i> Stock Opname
+                    </a>
+                    @endcan
+
+                    @can('view materials')
+                    <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
+                        <i class="fas fa-boxes-stacked"></i> Master & Stok Minimum
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            @endif
+
+            <!-- 4. GRUP LAPORAN & AUDIT -->
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']) && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
+            @php
+                $isLaporanActive = request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools', 'audit-logs.*']);
+            @endphp
+            <div class="nav-section" x-data="{ open: {{ $isLaporanActive ? 'true' : 'false' }} }">
+                <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
+                    <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Laporan & Audit</div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
+                </div>
+                <div x-show="open" style="{{ $isLaporanActive ? '' : 'display: none;' }}">
+                    @can('view reports')
+                    <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools']) ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i> Laporan
+                    </a>
+                    @endcan
+                    @can('view audit logs')
+                    <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
+                        <i class="fas fa-shield-halved"></i> Audit Log
+                    </a>
+                    @endcan
+                </div>
+            </div>
+            @endif
+
+            <!-- 5. GRUP ADMIN SISTEM -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-            <div class="nav-section">
-                <div class="nav-section-label" style="padding: 8px 20px 4px;">Admin</div>
-                <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <i class="fas fa-users"></i> Pengguna & Akun
-                </a>
-                <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
-                    <i class="fas fa-warehouse"></i> Gudang & Proyek
-                </a>
+            @php
+                $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*', 'supabase-sync.*']);
+            @endphp
+            <div class="nav-section" x-data="{ open: {{ $isAdminActive ? 'true' : 'false' }} }">
+                <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
+                    <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Admin Sistem</div>
+                    <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
+                </div>
+                <div x-show="open" style="{{ $isAdminActive ? '' : 'display: none;' }}">
+                    <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="fas fa-users"></i> Pengguna & Akun
+                    </a>
+                    <a href="{{ route('roles.index') }}" class="nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                        <i class="fas fa-id-badge"></i> Jabatan & Hak Akses
+                    </a>
+                    <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
+                        <i class="fas fa-warehouse"></i> Gudang & Proyek
+                    </a>
+                    @if(Route::has('supabase-sync.index'))
+                    <a href="{{ route('supabase-sync.index') }}" class="nav-item {{ request()->routeIs('supabase-sync.*') ? 'active' : '' }}">
+                        <i class="fas fa-cloud-arrow-up"></i> Sinkronisasi Cloud
+                    </a>
+                    @endif
+                </div>
             </div>
             @endif
         </nav>

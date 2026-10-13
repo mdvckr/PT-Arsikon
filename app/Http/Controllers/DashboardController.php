@@ -101,11 +101,38 @@ class DashboardController extends Controller
             ->groupBy(fn($i) => $i->material?->category?->name ?? 'Lainnya')
             ->map(fn($items) => $items->sum('quantity'));
 
+        // T13: Monitoring Kedatangan Barang dari Jadwal PO (Hari Ini dan Terlambat)
+        $incomingTodayCount = \App\Models\PoDeliverySchedule::whereIn('status', ['planned', 'partial'])
+            ->whereDate('planned_date', now()->toDateString())
+            ->whereRaw('(planned_qty - received_qty) > 0')
+            ->whereHas('purchaseOrderItem.purchaseOrder', fn($q) => $q->whereIn('status', ['approved', 'sent', 'partial_received']))
+            ->when($warehouseId, function ($q) use ($warehouseId) {
+                $q->where(function ($w) use ($warehouseId) {
+                    $w->where('warehouse_id', $warehouseId)
+                      ->orWhereHas('purchaseOrderItem.purchaseOrder', fn($poQ) => $poQ->where('delivery_warehouse_id', $warehouseId));
+                });
+            })
+            ->count();
+
+        $incomingLateCount = \App\Models\PoDeliverySchedule::whereIn('status', ['planned', 'partial'])
+            ->whereNotNull('planned_date')
+            ->whereDate('planned_date', '<', now()->toDateString())
+            ->whereRaw('(planned_qty - received_qty) > 0')
+            ->whereHas('purchaseOrderItem.purchaseOrder', fn($q) => $q->whereIn('status', ['approved', 'sent', 'partial_received']))
+            ->when($warehouseId, function ($q) use ($warehouseId) {
+                $q->where(function ($w) use ($warehouseId) {
+                    $w->where('warehouse_id', $warehouseId)
+                      ->orWhereHas('purchaseOrderItem.purchaseOrder', fn($poQ) => $poQ->where('delivery_warehouse_id', $warehouseId));
+                });
+            })
+            ->count();
+
         return view('dashboard', compact(
             'totalMaterials', 'totalTools', 'pendingRequests', 'lowStockItems',
             'recentRequests', 'recentDistributions', 'mutations', 'toolStats',
             'toolsReady', 'toolsInUse', 'toolsMaintenance',
-            'openOpname', 'inventoryByCategory'
+            'openOpname', 'inventoryByCategory',
+            'incomingTodayCount', 'incomingLateCount'
         ));
     }
 }

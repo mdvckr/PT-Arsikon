@@ -199,15 +199,19 @@
             @php
                 $po = $payment->purchaseOrder;
                 $poTotal = (float) $po->total_amount;
-                $poPaid = (float) $po->paid_amount;
-                $poRemaining = (float) $po->remaining_amount;
-                $paidPercent = $poTotal > 0 ? min(100, round(($poPaid / $poTotal) * 100)) : 0;
+                $poNilaiSah = (float) $po->nilai_sah;
+                $poPaid = (float) $po->verified_payment_amount;
+                $poPending = (float) $po->pending_payment_amount;
+                $poPayableRemaining = (float) $po->payable_remaining_amount;
+                $withheldData = $po->withheld_summary;
+                $poWithheld = (float) $withheldData['total_withheld'];
+                $paidPercent = $poNilaiSah > 0 ? min(100, round(($poPaid / $poNilaiSah) * 100)) : 0;
             @endphp
             <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-receipt text-primary" style="font-size:14px;"></i>
-                        <span style="font-size:13.5px;font-weight:700;color:#0f172a;">Informasi Purchase Order Terkait</span>
+                        <span style="font-size:13.5px;font-weight:700;color:#0f172a;">Informasi Purchase Order & Status Finansial</span>
                     </div>
                     <a href="{{ route('purchase-orders.show', $po) }}" style="font-size:11.5px;color:#2563eb;font-weight:700;text-decoration:none;">
                         Buka Detail PO &rarr;
@@ -225,40 +229,66 @@
                         <span class="info-val">{{ $po->supplier?->name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">No. Telepon / Kontak Supplier</span>
-                        <span class="info-val">{{ $po->supplier?->phone ?? '-' }}</span>
+                        <span class="info-label">Penanggung Risiko Pengiriman</span>
+                        <span class="info-val">{{ $po->risk_bearer_label }}</span>
                     </div>
 
                     {{-- Progress Pembayaran PO --}}
                     <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;">
-                            <span style="font-weight:700;color:#475569;">Progress Pembayaran Tagihan PO:</span>
+                            <span style="font-weight:700;color:#475569;">Progress Pembayaran Terhadap Nilai Sah:</span>
                             <span style="font-weight:800;color:{{ $paidPercent >= 100 ? '#059669' : '#2563eb' }};">{{ $paidPercent }}% Lunas</span>
                         </div>
                         <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-bottom:12px;">
                             <div style="height:100%;width:{{ $paidPercent }}%;background:{{ $paidPercent >= 100 ? '#10b981' : '#3b82f6' }};border-radius:4px;transition:width 0.3s ease;"></div>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center;">
                             <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
-                                <div style="font-size:10.5px;color:#64748b;font-weight:600;">TOTAL NILAI PO</div>
+                                <div style="font-size:10px;color:#64748b;font-weight:600;">TOTAL PO</div>
                                 <div style="font-size:13px;font-weight:800;color:#0f172a;margin-top:2px;">
                                     Rp {{ number_format($poTotal, 0, ',', '.') }}
                                 </div>
                             </div>
+                            <div style="background:#eff6ff;padding:10px;border-radius:8px;border:1px solid #bfdbfe;">
+                                <div style="font-size:10px;color:#1e40af;font-weight:600;">NILAI SAH</div>
+                                <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-top:2px;">
+                                    Rp {{ number_format($poNilaiSah, 0, ',', '.') }}
+                                </div>
+                            </div>
                             <div style="background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #bbf7d0;">
-                                <div style="font-size:10.5px;color:#166534;font-weight:600;">TOTAL DIBAYAR</div>
+                                <div style="font-size:10px;color:#166534;font-weight:600;">SUDAH DIBAYAR</div>
                                 <div style="font-size:13px;font-weight:800;color:#15803d;margin-top:2px;">
                                     Rp {{ number_format($poPaid, 0, ',', '.') }}
                                 </div>
                             </div>
+                            <div style="background:#ecfdf5;padding:10px;border-radius:8px;border:1px solid #a7f3d0;">
+                                <div style="font-size:10px;color:#065f46;font-weight:600;">SISA BISA DIBAYAR</div>
+                                <div style="font-size:13px;font-weight:800;color:#059669;margin-top:2px;">
+                                    Rp {{ number_format($poPayableRemaining, 0, ',', '.') }}
+                                </div>
+                            </div>
                             <div style="background:#fef2f2;padding:10px;border-radius:8px;border:1px solid #fecaca;">
-                                <div style="font-size:10.5px;color:#991b1b;font-weight:600;">SISA TAGIHAN</div>
+                                <div style="font-size:10px;color:#991b1b;font-weight:600;">NILAI TERTAHAN</div>
                                 <div style="font-size:13px;font-weight:800;color:#b91c1c;margin-top:2px;">
-                                    Rp {{ number_format($poRemaining, 0, ',', '.') }}
+                                    Rp {{ number_format($poWithheld, 0, ',', '.') }}
                                 </div>
                             </div>
                         </div>
+
+                        @if(!empty($withheldData['items']))
+                        <div style="margin-top:12px;background:#fff5f5;border:1px solid #fed7d7;border-radius:6px;padding:10px 12px;font-size:11.5px;">
+                            <div style="font-weight:700;color:#991b1b;margin-bottom:4px;">
+                                <i class="fas fa-circle-exclamation me-1"></i> Rincian Nilai Tertahan:
+                            </div>
+                            @foreach($withheldData['items'] as $wh)
+                                <div style="display:flex;justify-content:space-between;padding:2px 0;color:#7f1d1d;">
+                                    <span>{{ $wh['item_name'] }} ({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }}) &mdash; {{ $wh['reason'] }}</span>
+                                    <strong style="margin-left:8px;">Rp {{ number_format($wh['value'], 0, ',', '.') }}</strong>
+                                </div>
+                            @endforeach
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

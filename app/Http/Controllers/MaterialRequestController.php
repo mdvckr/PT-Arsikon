@@ -18,7 +18,7 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('view material requests');
 
-        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse', 'approvedBy']);
+        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse.project', 'approvedBy', 'items.category']);
 
         if (auth()->user()->hasRole(['Admin Gudang Proyek', 'Karyawan'])) {
             $query->where('requested_by_user_id', auth()->id());
@@ -32,9 +32,25 @@ class MaterialRequestController extends Controller
             $query->where('request_number', 'like', "%{$request->search}%");
         }
 
-        $requests = $query->latest()->paginate(15)->withQueryString();
+        if ($request->filled('category_id')) {
+            $query->whereHas('items', function ($iq) use ($request) {
+                $iq->where('category_id', $request->category_id);
+            });
+        }
 
-        return view('material-requests.index', compact('requests'));
+        if ($request->filled('overdue') && $request->overdue == '1') {
+            $query->whereNotNull('needed_at')
+                  ->whereDate('needed_at', '<', now()->toDateString())
+                  ->whereNotIn('status', ['fulfilled', 'rejected', 'cancelled']);
+        }
+
+        $sort = in_array($request->sort, ['created_at', 'needed_at']) ? $request->sort : 'created_at';
+        $direction = strtolower($request->direction) === 'asc' ? 'asc' : 'desc';
+
+        $requests = $query->orderBy($sort, $direction)->paginate(15)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+
+        return view('material-requests.index', compact('requests', 'categories'));
     }
 
     public function create()
@@ -76,16 +92,16 @@ class MaterialRequestController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Gudang tujuan (gudang pemohon = gudang proyek)
+        // Gudang tujuan (gudang pemohon = gudang proyek yang boleh diakses pengguna)
         $accessibleWhIds = auth()->user()->accessibleWarehouseIds();
-        if (auth()->user()->hasRole('Admin Gudang Proyek')) {
-            $warehouses = Warehouse::where('is_central', false)->whereIn('id', $accessibleWhIds)->orderBy('name')->get();
-        } else {
-            $warehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
-        }
+        $warehouses = Warehouse::where('is_central', false)
+            ->whereIn('id', $accessibleWhIds)
+            ->orderBy('name')
+            ->get();
+
         if ($warehouseId) {
             $selectedWh = Warehouse::find($warehouseId);
-            if ($selectedWh && $selectedWh->is_central) {
+            if ($selectedWh && ($selectedWh->is_central || !in_array($selectedWh->id, $accessibleWhIds))) {
                 $warehouseId = $warehouses->first()?->id;
             }
         } else {
@@ -115,8 +131,9 @@ class MaterialRequestController extends Controller
 
         $validated = $request->validate([
             'warehouse_id'               => 'required|exists:warehouses,id',
-            'source_warehouse_id'        => 'required|exists:warehouses,id',
+            'source_warehouse_id'        => 'nullable|exists:warehouses,id',
             'needed_at'                  => 'nullable|date|after_or_equal:today',
+            'requested_as'               => 'nullable|string|max:50',
             'notes'                      => 'nullable|string',
             'quantities'                 => 'nullable|array',
             'specs'                      => 'nullable|array',
@@ -133,14 +150,306 @@ class MaterialRequestController extends Controller
         ]);
 
         // Validasi: gudang sumber tidak boleh sama dengan gudang tujuan (pemohon)
-        if ((int) $validated['warehouse_id'] === (int) $validated['source_warehouse_id']) {
+        if (!empty($validated['source_warehouse_id']) && (int) $validated['warehouse_id'] === (int) $validated['source_warehouse_id']) {
             return back()->withInput()->withErrors([
-                'source_warehouse_id' => 'Sumber gudang material tidak boleh sama dengan gudang pemohon.',
-                'warehouse_id'        => 'Gudang pemohon tidak boleh sama dengan sumber gudang material.',
+                'source_warehouse_id' => 'Sumber material tidak boleh sama dengan gudang pemohon.',
+                'warehouse_id'        => 'Gudang pemohon tidak boleh sama dengan sumber material.',
             ]);
         }
 
+        // Validasi server: cek hak akses pemohon ke gudang tujuan
+        $toWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
+        if (!auth()->user()->hasAccessToWarehouse($toWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke gudang proyek ini.');
+        }
+
+        if ($toWarehouse->is_central) {
+            return back()->withInput()->withErrors(['warehouse_id' => 'PO Lapangan hanya dapat ditujukan ke Gudang Proyek.']);
+        }
+
+        $sourceWarehouse = !empty($validated['source_warehouse_id'])
+            ? Warehouse::findOrFail($validated['source_warehouse_id'])
+            : null;
+
         // Build items dari quantities[material_id] => qty (master) + custom_items manual
+        $itemsData = [];
+        if (!empty($validated['quantities'])) {
+            foreach ($validated['quantities'] as $materialId => $qty) {
+                $qty = (float) $qty;
+                if ($qty <= 0) continue;
+                $itemsData[] = [
+                    'material_id'    => $materialId,
+                    'qty_requested'  => $qty,
+                    'notes'          => null,
+                    'specification'  => trim($request->input("specs.{$materialId}") ?? ''),
+                    'usage_location' => trim($request->input("usage_locations.{$materialId}") ?? ''),
+                    'usage_date'     => $request->input("usage_dates.{$materialId}") ?: null,
+                ];
+            }
+        }
+        if (!empty($validated['custom_items'])) {
+            foreach ($validated['custom_items'] as $cItem) {
+                $qty = (float) ($cItem['qty'] ?? 0);
+                if ($qty <= 0) continue;
+                $name = trim($cItem['name'] ?? '');
+                if ($name === '') continue;
+                $itemsData[] = [
+                    'material_id'      => null,
+                    'custom_item_name' => $name,
+                    'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
+                    'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
+                    'qty_requested'    => $qty,
+                    'notes'            => 'Manual - tidak ada di gudang sumber',
+                    'specification'    => trim($cItem['spec'] ?? ''),
+                    'usage_location'   => trim($cItem['location'] ?? ''),
+                    'usage_date'       => $cItem['date'] ?? null,
+                ];
+            }
+        }
+
+        if (!empty($validated['custom_items'])) {
+            foreach ($validated['custom_items'] as $cIdx => $cItem) {
+                if (!empty($cItem['category_id'])) {
+                    $cat = \App\Models\Category::find($cItem['category_id']);
+                    if ($cat && $cat->type === 'tool' && fmod((float)($cItem['qty'] ?? 0), 1) != 0) {
+                        return back()->withInput()->withErrors([
+                            "custom_items.{$cIdx}.qty" => "Kuantitas alat harus berupa bilangan bulat."
+                        ]);
+                    }
+                }
+            }
+        }
+
+        if (empty($itemsData)) {
+            return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta (master atau manual).']);
+        }
+
+        try {
+            $mr = $this->service->createRequest(
+                $toWarehouse,
+                $sourceWarehouse,
+                auth()->user(),
+                $itemsData,
+                true,
+                $validated['notes'] ?? null,
+                $validated['needed_at'] ?? null,
+                $validated['requested_as'] ?? null
+            );
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors([
+                'warehouse_id'  => $e->getMessage(),
+                'general_error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('material-requests.show', $mr)
+            ->with('success', "PO Lapangan #{$mr->request_number} berhasil diajukan.");
+    }
+
+    /**
+     * AJAX: Ambil data stok semua material untuk gudang tertentu.
+     */
+    public function getStock(Request $request)
+    {
+        $request->validate(['warehouse_id' => 'required|exists:warehouses,id']);
+
+        $stocks = Inventory::where('warehouse_id', $request->warehouse_id)
+            ->whereNotNull('material_id')
+            ->get()
+            ->mapWithKeys(fn($inv) => [$inv->material_id => (float) $inv->quantity]);
+
+        return response()->json($stocks);
+    }
+
+    public function show(Request $request, MaterialRequest $materialRequest)
+    {
+        $this->authorize('view material requests');
+        $materialRequest->load([
+            'requestedBy',
+            'fromWarehouse',
+            'toWarehouse.project',
+            'approvedBy',
+            'items.category',
+            'items.material.unit',
+            'items.material.category',
+            'items.purchaseOrderItems.purchaseOrder',
+            'materialUsages.issuedBy',
+            'materialUsages.warehouse',
+            'distributions.fromWarehouse',
+            'distributions.toWarehouse',
+            'distributions.creator',
+        ]);
+
+        $sourceWarehouseId = $materialRequest->from_warehouse_id;
+        $materialIds = $materialRequest->items->pluck('material_id')->filter()->unique()->values();
+
+        $sourceInventories = collect();
+        if ($sourceWarehouseId && $materialIds->isNotEmpty()) {
+            $sourceInventories = Inventory::where('warehouse_id', $sourceWarehouseId)
+                ->whereIn('material_id', $materialIds)
+                ->get()
+                ->keyBy('material_id');
+        }
+
+        if ($request->boolean('print')) {
+            return view('material-requests.print', compact('materialRequest'));
+        }
+
+        return view('material-requests.show', compact('materialRequest', 'sourceInventories'));
+    }
+
+    public function approve(MaterialRequest $materialRequest)
+    {
+        $this->authorize('approve material requests');
+
+        try {
+            $this->service->approveRequest($materialRequest, auth()->user());
+            return back()->with('success', "Permintaan #{$materialRequest->request_number} disetujui.");
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function reject(Request $request, MaterialRequest $materialRequest)
+    {
+        $this->authorize('approve material requests');
+
+        $request->validate(['rejection_reason' => 'required|string']);
+
+        try {
+            $this->service->rejectRequest($materialRequest, auth()->user(), $request->rejection_reason);
+            return back()->with('success', "Permintaan #{$materialRequest->request_number} ditolak.");
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function edit(MaterialRequest $materialRequest)
+    {
+        $this->authorize('view material requests');
+
+        if (!in_array($materialRequest->status, ['submitted', 'draft'])) {
+            abort(403, 'PO Lapangan ini sudah diproses dan tidak dapat diubah.');
+        }
+
+        $user = auth()->user();
+        if ($materialRequest->requested_by_user_id !== $user->id && !$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
+            abort(403, 'Anda tidak memiliki hak untuk mengedit PO Lapangan ini.');
+        }
+
+        $centralWarehouse = Warehouse::where('is_central', true)->first();
+        $sourceWarehouseId = old('source_warehouse_id', $materialRequest->from_warehouse_id ?? $centralWarehouse?->id);
+        $warehouseId = old('warehouse_id', $materialRequest->to_warehouse_id);
+
+        $materialCategories = Category::where('type', 'material')
+            ->with(['materials' => function ($q) use ($sourceWarehouseId) {
+                $q->where('is_active', true)
+                  ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
+                      if ($sourceWarehouseId) {
+                          $iq->where('warehouse_id', $sourceWarehouseId);
+                      }
+                  }])
+                  ->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get()
+            ->filter(fn($cat) => $cat->materials->isNotEmpty())
+            ->values();
+
+        $uncategorizedMaterials = Material::where('is_active', true)
+            ->whereNull('category_id')
+            ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
+                if ($sourceWarehouseId) {
+                    $iq->where('warehouse_id', $sourceWarehouseId);
+                }
+            }])
+            ->orderBy('name')
+            ->get();
+
+        $accessibleWhIds = $user->accessibleWarehouseIds();
+        $warehouses = Warehouse::where('is_central', false)
+            ->whereIn('id', $accessibleWhIds)
+            ->orderBy('name')
+            ->get();
+
+        $sourceWarehouses = Warehouse::where('is_active', true)
+            ->orderByRaw('is_central DESC')
+            ->orderBy('name')
+            ->get();
+
+        $materialRequest->load(['items.material', 'items.category']);
+
+        return view('material-requests.edit', compact(
+            'materialRequest',
+            'materialCategories',
+            'uncategorizedMaterials',
+            'warehouses',
+            'warehouseId',
+            'centralWarehouse',
+            'sourceWarehouses',
+            'sourceWarehouseId'
+        ));
+    }
+
+    public function update(Request $request, MaterialRequest $materialRequest)
+    {
+        $this->authorize('view material requests');
+
+        if (!in_array($materialRequest->status, ['submitted', 'draft'])) {
+            abort(403, 'PO Lapangan ini sudah diproses dan tidak dapat diubah.');
+        }
+
+        $user = auth()->user();
+        if ($materialRequest->requested_by_user_id !== $user->id && !$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
+            abort(403, 'Anda tidak memiliki hak untuk mengedit PO Lapangan ini.');
+        }
+
+        $originalNeededAt = $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('Y-m-d') : null;
+        $neededAtRule = 'nullable|date';
+        if ($request->filled('needed_at') && $request->needed_at !== $originalNeededAt) {
+            $neededAtRule .= '|after_or_equal:today';
+        }
+
+        $validated = $request->validate([
+            'warehouse_id'               => 'required|exists:warehouses,id',
+            'source_warehouse_id'        => 'nullable|exists:warehouses,id',
+            'needed_at'                  => $neededAtRule,
+            'requested_as'               => 'nullable|string|max:50',
+            'notes'                      => 'nullable|string',
+            'quantities'                 => 'nullable|array',
+            'specs'                      => 'nullable|array',
+            'usage_locations'            => 'nullable|array',
+            'usage_dates'                => 'nullable|array',
+            'custom_items'               => 'nullable|array',
+            'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
+            'custom_items.*.category_id' => 'nullable|exists:categories,id',
+            'custom_items.*.unit'        => 'nullable|string|max:50',
+            'custom_items.*.qty'         => 'required_with:custom_items|numeric|min:0.01',
+            'custom_items.*.spec'        => 'nullable|string|max:255',
+            'custom_items.*.location'    => 'nullable|string|max:255',
+            'custom_items.*.date'        => 'nullable|date',
+        ]);
+
+        if (!empty($validated['source_warehouse_id']) && (int) $validated['warehouse_id'] === (int) $validated['source_warehouse_id']) {
+            return back()->withInput()->withErrors([
+                'source_warehouse_id' => 'Sumber material tidak boleh sama dengan gudang pemohon.',
+                'warehouse_id'        => 'Gudang pemohon tidak boleh sama dengan sumber material.',
+            ]);
+        }
+
+        $toWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
+        if (!$user->hasAccessToWarehouse($toWarehouse)) {
+            abort(403, 'Anda tidak memiliki akses ke gudang proyek ini.');
+        }
+
+        if ($toWarehouse->is_central) {
+            return back()->withInput()->withErrors(['warehouse_id' => 'PO Lapangan hanya dapat ditujukan ke Gudang Proyek.']);
+        }
+
+        $sourceWarehouse = !empty($validated['source_warehouse_id'])
+            ? Warehouse::findOrFail($validated['source_warehouse_id'])
+            : null;
+
         $itemsData = [];
         if (!empty($validated['quantities'])) {
             foreach ($validated['quantities'] as $materialId => $qty) {
@@ -180,88 +489,24 @@ class MaterialRequestController extends Controller
             return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada material yang diminta (master atau manual).']);
         }
 
-        $toWarehouse     = Warehouse::findOrFail($validated['warehouse_id']);
-        $sourceWarehouse = Warehouse::findOrFail($validated['source_warehouse_id']);
-
-        if ($toWarehouse->is_central) {
-            return back()->withInput()->withErrors(['warehouse_id' => 'Permintaan material hanya dapat ditujukan ke Gudang Proyek.']);
-        }
-
         try {
-            $mr = $this->service->createRequest(
+            $this->service->updateRequest(
+                $materialRequest,
                 $toWarehouse,
                 $sourceWarehouse,
-                auth()->user(),
+                $user,
                 $itemsData,
-                true,
-                $validated['notes'] ?? null
+                $validated['notes'] ?? null,
+                $validated['needed_at'] ?? null,
+                $validated['requested_as'] ?? null
             );
         } catch (\Throwable $e) {
             return back()->withInput()->withErrors([
-                'warehouse_id'  => $e->getMessage(),
                 'general_error' => $e->getMessage(),
             ]);
         }
 
-        return redirect()->route('material-requests.show', $mr)
-            ->with('success', "Permintaan material #{$mr->request_number} berhasil diajukan.");
-    }
-
-    /**
-     * AJAX: Ambil data stok semua material untuk gudang tertentu.
-     */
-    public function getStock(Request $request)
-    {
-        $request->validate(['warehouse_id' => 'required|exists:warehouses,id']);
-
-        $stocks = Inventory::where('warehouse_id', $request->warehouse_id)
-            ->whereNotNull('material_id')
-            ->get()
-            ->mapWithKeys(fn($inv) => [$inv->material_id => (float) $inv->quantity]);
-
-        return response()->json($stocks);
-    }
-
-    public function show(Request $request, MaterialRequest $materialRequest)
-    {
-        $this->authorize('view material requests');
-        $materialRequest->load([
-            'requestedBy',
-            'fromWarehouse',
-            'toWarehouse.project',
-            'approvedBy',
-            'items.material.unit',
-            'items.material.category',
-            'materialUsages.issuedBy',
-            'materialUsages.warehouse',
-            'distributions.fromWarehouse',
-            'distributions.toWarehouse',
-            'distributions.creator',
-        ]);
-
-        if ($request->boolean('print')) {
-            return view('material-requests.print', compact('materialRequest'));
-        }
-
-        return view('material-requests.show', compact('materialRequest'));
-    }
-
-    public function approve(MaterialRequest $materialRequest)
-    {
-        $this->authorize('approve material requests');
-
-        $this->service->approveRequest($materialRequest, auth()->user());
-
-        return back()->with('success', "Permintaan #{$materialRequest->request_number} disetujui.");
-    }
-
-    public function reject(Request $request, MaterialRequest $materialRequest)
-    {
-        $this->authorize('approve material requests');
-
-        $request->validate(['rejection_reason' => 'required|string']);
-        $this->service->rejectRequest($materialRequest, auth()->user(), $request->rejection_reason);
-
-        return back()->with('success', "Permintaan #{$materialRequest->request_number} ditolak.");
+        return redirect()->route('material-requests.show', $materialRequest)
+            ->with('success', "PO Lapangan #{$materialRequest->request_number} berhasil diperbarui.");
     }
 }

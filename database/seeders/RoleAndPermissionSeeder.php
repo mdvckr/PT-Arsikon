@@ -67,13 +67,15 @@ class RoleAndPermissionSeeder extends Seeder
             // Procurement
             'view procurement', 'create procurement', 'approve procurement',
             // Purchase Orders
-            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase orders', 'create purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders', 'close purchase orders',
             // Purchase Receipts
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             // Payments
             'view payments', 'create payments', 'verify payments',
             // Returns
             'view returns', 'create returns', 'approve returns', 'receive returns',
+            // Transit Losses
+            'create transit losses', 'approve transit losses',
             // Reports & Audit
             'view reports', 'view audit logs',
         ];
@@ -112,6 +114,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
             'view returns', 'approve returns', 'receive returns',
+            'create transit losses',
             'view reports',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
@@ -142,12 +145,14 @@ class RoleAndPermissionSeeder extends Seeder
             'view procurement', 'create procurement',
             // Returns
             'view returns', 'create returns', 'receive returns',
+            // Transit Losses
+            'create transit losses',
             // Reports
             'view reports',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
 
-        // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material, buat surat jalan) ---
+        // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material/PO Lapangan) ---
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
         $karyawanRole->syncPermissions([
             'view materials',
@@ -159,7 +164,6 @@ class RoleAndPermissionSeeder extends Seeder
             'create material requests',
             'view material usages',
             'view distributions',
-            'create distributions',
         ]);
 
         // --- Admin PO: fokus pengadaan & pembelian ---
@@ -171,13 +175,14 @@ class RoleAndPermissionSeeder extends Seeder
             'view inventory',
             'view tool assignments',
             'view stock opname',
-            'view material requests',
+            'view material requests', 'approve material requests',
             'view material usages',
-            'view procurement', 'approve procurement',
+            'view procurement', 'create procurement',
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
-            'view payments', 'create payments', 'verify payments',
+            'view payments', 'create payments',
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+            'create transit losses',
             'view reports',
             'view audit logs',
         ]);

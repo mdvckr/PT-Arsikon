@@ -17,18 +17,20 @@ class MaterialRequestService
      */
     public function createRequest(
         Warehouse $toWarehouse,
-        Warehouse $sourceWarehouse,
+        ?Warehouse $sourceWarehouse,
         User $requestedBy,
         array $itemsData,
         bool $submitImmediately = true,
-        ?string $notes = null
+        ?string $notes = null,
+        ?string $neededAt = null,
+        ?string $requestedAs = null
     ): MaterialRequest {
         if ($toWarehouse->is_central) {
-            throw new Exception("Permintaan material hanya dapat ditujukan ke Gudang Proyek.");
+            throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
         }
 
-        if ($toWarehouse->id === $sourceWarehouse->id) {
-            throw new Exception("Gudang sumber tidak boleh sama dengan gudang tujuan.");
+        if ($sourceWarehouse && $toWarehouse->id === $sourceWarehouse->id) {
+            throw new Exception("Sumber material tidak boleh sama dengan gudang pemohon.");
         }
 
         if (!$requestedBy->hasAccessToWarehouse($toWarehouse)) {
@@ -39,13 +41,17 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes) {
+        $finalRequestedAs = trim($requestedAs ?? '') ?: 'Admin Proyek';
+
+        return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes, $neededAt, $finalRequestedAs) {
             $request = MaterialRequest::create([
                 'request_number'        => MaterialRequest::generateRequestNumber(),
-                'from_warehouse_id'     => $sourceWarehouse->id,  // gudang asal/sumber material
-                'to_warehouse_id'       => $toWarehouse->id,      // gudang tujuan (pemohon)
+                'from_warehouse_id'     => $sourceWarehouse ? $sourceWarehouse->id : null,  // gudang asal/sumber material (null = pengadaan vendor)
+                'to_warehouse_id'       => $toWarehouse->id,                                 // gudang tujuan (pemohon)
                 'requested_by_user_id'  => $requestedBy->id,
                 'status'                => $submitImmediately ? 'submitted' : 'draft',
+                'needed_at'             => $neededAt,
+                'requested_as'          => $finalRequestedAs,
                 'notes'                 => $notes,
             ]);
 
@@ -55,15 +61,51 @@ class MaterialRequestService
                     throw new Exception("Jumlah pengajuan harus > 0.");
                 }
 
+                // T14: Item alat (tool)
+                if (!empty($item['tool_id']) || ($item['item_type'] ?? '') === 'tool') {
+                    if (fmod($qtyRequested, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                    }
+                    $tool = !empty($item['tool_id']) ? \App\Models\Tool::findOrFail($item['tool_id']) : null;
+                    MaterialRequestItem::create([
+                        'material_request_id' => $request->id,
+                        'item_type'           => 'tool',
+                        'tool_id'             => $tool?->id,
+                        'material_id'         => null,
+                        'category_id'         => $tool?->category_id,
+                        'qty_requested'       => (int) $qtyRequested,
+                        'qty_approved'        => $submitImmediately ? (int) $qtyRequested : 0,
+                        'notes'               => $item['notes'] ?? null,
+                        'specification'       => $item['specification'] ?? null,
+                        'usage_location'      => $item['usage_location'] ?? null,
+                        'usage_date'          => $item['usage_date'] ?? null,
+                    ]);
+                    continue;
+                }
+
                 // Custom manual item (tidak ada di gudang sumber)
                 if (empty($item['material_id'])) {
                     $customName = trim($item['custom_item_name'] ?? '');
                     if ($customName === '') {
                         throw new Exception("Nama barang custom tidak boleh kosong.");
                     }
+
+                    $customCategoryId = null;
+                    if (!empty($item['category_id'])) {
+                        $cat = \App\Models\Category::find($item['category_id']);
+                        if (!$cat) {
+                            throw new Exception("Kategori custom tidak valid.");
+                        }
+                        if ($cat->type === 'tool' && fmod($qtyRequested, 1) != 0) {
+                            throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                        }
+                        $customCategoryId = $cat->id;
+                    }
+
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
                         'material_id'         => null,
+                        'category_id'         => $customCategoryId,
                         'custom_item_name'    => $customName,
                         'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
                         'qty_requested'       => $qtyRequested,
@@ -81,6 +123,7 @@ class MaterialRequestService
                 MaterialRequestItem::create([
                     'material_request_id' => $request->id,
                     'material_id'         => $material->id,
+                    'category_id'         => $material->category_id, // Server mengisi dari kategori materialnya dan mengabaikan nilai klien
                     'qty_requested'       => $qtyRequested,
                     'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
                     'notes'               => $item['notes'] ?? null,
@@ -94,8 +137,8 @@ class MaterialRequestService
 
             if ($submitImmediately) {
                 NotificationHelper::notifyCentralWarehouseAdmins(
-                    "Permintaan Material: #{$request->request_number}",
-                    "Permintaan material diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
+                    "PO Lapangan: #{$request->request_number}",
+                    "PO Lapangan diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
                     "approval_needed",
                     route('material-requests.show', $request)
                 );
@@ -109,8 +152,8 @@ class MaterialRequestService
                         if ($sAdmin->id !== $requestedBy->id) {
                             NotificationHelper::notifyUser(
                                 $sAdmin,
-                                "Permintaan Material Keluar: #{$request->request_number}",
-                                "Gudang {$toWarehouse->name} mengajukan permintaan material dari {$sourceWarehouse->name}.",
+                                "PO Lapangan Keluar: #{$request->request_number}",
+                                "Gudang {$toWarehouse->name} mengajukan PO Lapangan dari {$sourceWarehouse->name}.",
                                 "info",
                                 route('material-requests.show', $request)
                             );
@@ -136,6 +179,156 @@ class MaterialRequestService
     }
 
     /**
+     * Update Material Request (PO Lapangan) header and items.
+     */
+    public function updateRequest(
+        MaterialRequest $request,
+        Warehouse $toWarehouse,
+        ?Warehouse $sourceWarehouse,
+        User $user,
+        array $itemsData,
+        ?string $notes = null,
+        ?string $neededAt = null,
+        ?string $requestedAs = null
+    ): MaterialRequest {
+        if (!in_array($request->status, ['submitted', 'draft'])) {
+            throw new Exception("Hanya pengajuan dengan status draft atau menunggu persetujuan yang dapat diubah.");
+        }
+
+        if ($request->requested_by_user_id !== $user->id && !$user->hasAnyRole(['Owner', 'Admin Pusat'])) {
+            throw new Exception("Anda tidak memiliki izin untuk mengubah pengajuan ini.");
+        }
+
+        if ($toWarehouse->is_central) {
+            throw new Exception("PO Lapangan hanya dapat ditujukan ke Gudang Proyek.");
+        }
+
+        if ($sourceWarehouse && $toWarehouse->id === $sourceWarehouse->id) {
+            throw new Exception("Sumber material tidak boleh sama dengan gudang pemohon.");
+        }
+
+        if (!$user->hasAccessToWarehouse($toWarehouse)) {
+            throw new Exception("User tidak memiliki akses ke Gudang Proyek ini.");
+        }
+
+        if (empty($itemsData)) {
+            throw new Exception("Daftar material yang diminta tidak boleh kosong.");
+        }
+
+        $finalRequestedAs = trim($requestedAs ?? '') ?: ($request->requested_as ?: 'Admin Proyek');
+
+        return DB::transaction(function () use ($request, $toWarehouse, $sourceWarehouse, $itemsData, $notes, $neededAt, $finalRequestedAs) {
+            $request->update([
+                'to_warehouse_id'   => $toWarehouse->id,
+                'from_warehouse_id' => $sourceWarehouse ? $sourceWarehouse->id : null,
+                'needed_at'         => $neededAt,
+                'requested_as'      => $finalRequestedAs,
+                'notes'             => $notes,
+            ]);
+
+            // Sinkronisasi item: update item yang ada tanpa mengubah qty_approved, buat item baru, dan hapus yang dihilangkan
+            $existingItems = $request->items()->get();
+            $handledItemIds = [];
+
+            foreach ($itemsData as $item) {
+                $qtyRequested = (float) $item['qty_requested'];
+                if ($qtyRequested <= 0) continue;
+
+                if (empty($item['material_id'])) {
+                    $customName = trim($item['custom_item_name'] ?? '');
+                    if ($customName === '') continue;
+
+                    $customCategoryId = null;
+                    if (!empty($item['category_id'])) {
+                        $cat = \App\Models\Category::find($item['category_id']);
+                        if (!$cat) {
+                            throw new Exception("Kategori custom tidak valid.");
+                        }
+                        $customCategoryId = $cat->id;
+                    }
+
+                    $matchCustom = $existingItems->first(function ($it) use ($customName, $handledItemIds) {
+                        return empty($it->material_id) &&
+                               !in_array($it->id, $handledItemIds) &&
+                               strtolower(trim((string)$it->custom_item_name)) === strtolower($customName);
+                    });
+
+                    if ($matchCustom) {
+                        $matchCustom->update([
+                            'category_id'      => $customCategoryId,
+                            'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                            'qty_requested'    => $qtyRequested,
+                            'notes'            => $item['notes'] ?? null,
+                            'specification'    => $item['specification'] ?? null,
+                            'usage_location'   => $item['usage_location'] ?? null,
+                            'usage_date'       => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $matchCustom->id;
+                    } else {
+                        $newItem = MaterialRequestItem::create([
+                            'material_request_id' => $request->id,
+                            'item_type'           => 'material',
+                            'material_id'         => null,
+                            'category_id'         => $customCategoryId,
+                            'custom_item_name'    => $customName,
+                            'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
+                            'qty_requested'       => $qtyRequested,
+                            'qty_approved'        => 0,
+                            'notes'               => $item['notes'] ?? null,
+                            'specification'       => $item['specification'] ?? null,
+                            'usage_location'      => $item['usage_location'] ?? null,
+                            'usage_date'          => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $newItem->id;
+                    }
+                } else {
+                    $material = Material::findOrFail($item['material_id']);
+
+                    $matchMat = $existingItems->first(function ($it) use ($material, $handledItemIds) {
+                        return (int)$it->material_id === (int)$material->id && !in_array($it->id, $handledItemIds);
+                    });
+
+                    if ($matchMat) {
+                        $matchMat->update([
+                            'category_id'    => $material->category_id,
+                            'qty_requested'  => $qtyRequested,
+                            'notes'          => $item['notes'] ?? null,
+                            'specification'  => $item['specification'] ?? null,
+                            'usage_location' => $item['usage_location'] ?? null,
+                            'usage_date'     => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $matchMat->id;
+                    } else {
+                        $newItem = MaterialRequestItem::create([
+                            'material_request_id' => $request->id,
+                            'item_type'           => 'material',
+                            'material_id'         => $material->id,
+                            'category_id'         => $material->category_id,
+                            'custom_item_name'    => null,
+                            'custom_item_unit'    => null,
+                            'qty_requested'       => $qtyRequested,
+                            'qty_approved'        => 0,
+                            'notes'               => $item['notes'] ?? null,
+                            'specification'       => $item['specification'] ?? null,
+                            'usage_location'      => $item['usage_location'] ?? null,
+                            'usage_date'          => $item['usage_date'] ?? null,
+                        ]);
+                        $handledItemIds[] = $newItem->id;
+                    }
+                }
+            }
+
+            // Hapus item lama yang tidak ada di data yang diupdate
+            $itemsToDelete = $existingItems->whereNotIn('id', $handledItemIds);
+            foreach ($itemsToDelete as $delItem) {
+                $delItem->delete();
+            }
+
+            return $request->fresh(['items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy']);
+        });
+    }
+
+    /**
      * Approve Material Request by Central Warehouse Admin.
      */
     public function approveRequest(
@@ -145,6 +338,10 @@ class MaterialRequestService
     ): MaterialRequest {
         if ($request->status !== 'submitted') {
             throw new Exception("Hanya pengajuan berstatus 'submitted' yang dapat disetujui.");
+        }
+
+        if ($request->requested_by_user_id === $approvedBy->id) {
+            throw new Exception("Pembuat permintaan tidak dapat menyetujui pengajuannya sendiri.");
         }
 
         return DB::transaction(function () use ($request, $approvedBy, $approvedItemsQty) {
@@ -171,8 +368,8 @@ class MaterialRequestService
             if ($request->requestedBy) {
                 NotificationHelper::notifyUser(
                     $request->requestedBy,
-                    "Permintaan Material Disetujui: #{$request->request_number}",
-                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
+                    "PO Lapangan Disetujui: #{$request->request_number}",
+                    "PO Lapangan #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
                     "success",
                     route('material-requests.show', $request)
                 );
@@ -188,8 +385,8 @@ class MaterialRequestService
                 }
                 NotificationHelper::notifyUser(
                     $targetUser,
-                    "Permintaan Material Disetujui: #{$request->request_number}",
-                    "Permintaan material #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
+                    "PO Lapangan Disetujui: #{$request->request_number}",
+                    "PO Lapangan #{$request->request_number} dari {$request->fromWarehouse?->name} telah disetujui oleh {$approvedBy->name}.",
                     "info",
                     route('material-requests.show', $request)
                 );
@@ -220,8 +417,8 @@ class MaterialRequestService
         if ($request->requestedBy) {
             NotificationHelper::notifyUser(
                 $request->requestedBy,
-                "Permintaan Material Ditolak: #{$request->request_number}",
-                "Permintaan material Anda ditolak oleh {$rejectedBy->name}. Alasan: {$rejectionReason}",
+                "PO Lapangan Ditolak: #{$request->request_number}",
+                "PO Lapangan Anda ditolak oleh {$rejectedBy->name}. Alasan: {$rejectionReason}",
                 "danger",
                 route('material-requests.show', $request)
             );

@@ -70,21 +70,14 @@ class Distribution extends Model
         return $this->hasMany(DistributionItem::class);
     }
 
+    public function transitLosses(): HasMany
+    {
+        return $this->hasMany(TransitLoss::class);
+    }
+
     public static function generateDistributionNumber(): string
     {
-        $prefix = 'DST-' . date('Ymd') . '-';
-        $latest = self::where('distribution_number', 'like', $prefix . '%')
-                      ->orderBy('id', 'desc')
-                      ->first();
-
-        if ($latest) {
-            $lastNumber = (int) substr($latest->distribution_number, -4);
-            $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $nextNumber = '0001';
-        }
-
-        return $prefix . $nextNumber;
+        return \App\Services\DocumentNumberService::generate('DST', (int) date('Y'));
     }
 
     /**

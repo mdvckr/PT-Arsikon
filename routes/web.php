@@ -28,6 +28,7 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PrintTemplateController;
+use App\Http\Controllers\TransitLossController;
 use App\Http\Controllers\SupabaseSyncController;
 use Illuminate\Support\Facades\Route;
 
@@ -82,11 +83,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
     Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
 
+    // Transit Losses (Kehilangan Barang di Perjalanan)
+    Route::get('/transit-losses', [TransitLossController::class, 'index'])->name('transit-losses.index');
+    Route::post('/transit-losses', [TransitLossController::class, 'store'])->name('transit-losses.store');
+    Route::post('/transit-losses/{transitLoss}/approve', [TransitLossController::class, 'approve'])->name('transit-losses.approve');
+    Route::post('/transit-losses/{transitLoss}/status', [TransitLossController::class, 'updateStatus'])->name('transit-losses.status');
+
     // Material Requests
     Route::get('/material-requests/stock', [MaterialRequestController::class, 'getStock'])->name('material-requests.stock');
     Route::post('/material-requests/{materialRequest}/approve', [MaterialRequestController::class, 'approve'])->name('material-requests.approve');
     Route::post('/material-requests/{materialRequest}/reject', [MaterialRequestController::class, 'reject'])->name('material-requests.reject');
-    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('material-requests', MaterialRequestController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
     // Distributions
     Route::get('/distributions/{distribution}/print', [DistributionController::class, 'print'])->name('distributions.print');
@@ -140,8 +147,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
     Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO']], function () {
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
+        Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+        Route::post('/purchase-orders/{purchaseOrder}/close',  [PurchaseOrderController::class, 'close'])->name('purchase-orders.close');
+        Route::put('/purchase-orders/{purchaseOrder}/schedules', [PurchaseOrderController::class, 'updateSchedules'])->name('purchase-orders.update-schedules');
     });
 
     // Nota Pembelian Harian / Purchase Receipts

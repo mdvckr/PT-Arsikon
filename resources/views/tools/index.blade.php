@@ -254,9 +254,14 @@
                             </span>
                         </td>
                         <td style="padding:9px 14px;vertical-align:middle;">
-                            <a href="{{ route('tools.show', $tool) }}" class="fw-600" style="color:#0f172a;font-size:13px;text-decoration:none;display:inline-block;line-height:1.35;">
-                                {{ $tool->name }}
-                            </a>
+                            <div class="flex items-center gap-1.5" style="flex-wrap:wrap;">
+                                <a href="{{ route('tools.show', $tool) }}" class="fw-600" style="color:#0f172a;font-size:13px;text-decoration:none;display:inline-block;line-height:1.35;">
+                                    {{ $tool->name }}
+                                </a>
+                                @if($tool->isOwnedByCentral())
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;" title="Aset Milik Gudang Pusat">Milik Pusat</span>
+                                @endif
+                            </div>
                             @if($tool->type)
                             <div style="font-size:11.5px;color:#64748b;margin-top:2px;">{{ $tool->type }}</div>
                             @endif

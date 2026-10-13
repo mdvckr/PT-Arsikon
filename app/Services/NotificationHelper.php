@@ -149,9 +149,7 @@ class NotificationHelper
         ?string $soundType = 'approval'
     ): void {
         try {
-            $projectAdmins = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Admin Gudang Proyek', 'Admin Pusat']);
-            })->whereHas('warehouses', function ($w) use ($warehouseId) {
+            $projectAdmins = User::role('Admin Gudang Proyek')->whereHas('warehouses', function ($w) use ($warehouseId) {
                 $w->where('warehouses.id', $warehouseId);
             })->get();
 
@@ -181,24 +179,27 @@ class NotificationHelper
         ?string $url = null,
         ?int $warehouseId = null
     ): void {
-        // 1. Notifikasi Approval ke Admin Pusat
-        self::notifyAdminPusat($title, $message, $type, $url, 'approval');
-
-        // 2. Jika ada gudang proyek spesifik, kabari juga admin gudang proyek tersebut
+        // 1. Jika ada gudang proyek spesifik, kabari admin gudang proyek tersebut.
+        // Jika gudang pusat atau tanpa warehouseId, kabari Admin Pusat.
         if ($warehouseId) {
             try {
                 $warehouse = Warehouse::find($warehouseId);
                 if ($warehouse && !$warehouse->is_central) {
                     self::notifyProjectWarehouseAdmins($warehouseId, $title, $message, $type, $url, 'approval');
-                } elseif ($warehouse && $warehouse->is_central) {
-                    $gudangPusat = User::role('Admin Gudang Pusat')->get();
-                    foreach ($gudangPusat as $admin) {
-                        $admin->notify(new SystemNotification($title, $message, $type, $url, 'approval'));
+                } else {
+                    self::notifyAdminPusat($title, $message, $type, $url, 'approval');
+                    if ($warehouse && $warehouse->is_central) {
+                        $gudangPusat = User::role('Admin Gudang Pusat')->get();
+                        foreach ($gudangPusat as $admin) {
+                            $admin->notify(new SystemNotification($title, $message, $type, $url, 'approval'));
+                        }
                     }
                 }
             } catch (\Throwable $e) {
                 Log::warning('Gagal mengirim notifikasi gudang: ' . $e->getMessage());
             }
+        } else {
+            self::notifyAdminPusat($title, $message, $type, $url, 'approval');
         }
 
         // 3. Masuk ke daftar pantauan Owner dalam bentuk laporan read-only

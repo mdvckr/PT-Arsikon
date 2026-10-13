@@ -87,7 +87,7 @@
     @endpush
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('material-requests.index') }}">Permintaan Material</a>
+        <a href="{{ route('material-requests.index') }}">PO Lapangan</a>
         <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
         <span>{{ $materialRequest->request_number }}</span>
     </div>
@@ -120,12 +120,29 @@
 
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             @php
+                $hasPurchaseItems = $materialRequest->items->contains(fn($it) => $it->fulfillment === 'purchase' && ((float)$it->qty_approved - (float)$it->qty_ordered) > 0);
                 $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
+                $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) || auth()->user()->can('create purchase orders');
             @endphp
 
-            @if($hasCustomItems && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
+            @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems && $canCreatePo)
+                <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                    <i class="fas fa-cart-shopping"></i> Buat PO ke Vendor
+                </a>
+            @elseif($hasCustomItems && $canCreatePo)
                 <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
                     <i class="fas fa-cart-shopping"></i> Buat PO (Item Manual)
+                </a>
+            @endif
+
+            @php
+                $canEdit = in_array($materialRequest->status, ['submitted', 'draft']) &&
+                    ($materialRequest->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']));
+            @endphp
+
+            @if($canEdit)
+                <a href="{{ route('material-requests.edit', $materialRequest) }}" class="btn btn-sm btn-outline-primary" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+                    <i class="fas fa-edit"></i> Edit PO Lapangan
                 </a>
             @endif
 
@@ -137,7 +154,7 @@
                 @can('approve material requests')
                 <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;">
                     @csrf
-                    <button type="submit" class="btn btn-success btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;font-weight:600;" onclick="return confirm('Setujui permintaan ini?')">
+                    <button type="submit" class="btn btn-success btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;font-weight:600;" onclick="return confirm('Setujui PO Lapangan ini?')">
                         <i class="fas fa-check me-1"></i> Setujui
                     </button>
                 </form>
@@ -165,16 +182,32 @@
         {{-- Left: Items --}}
         <div style="display:flex;flex-direction:column;gap:16px;">
 
-            @if($hasCustomItems)
+            @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
+            <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;overflow:hidden;">
+                <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-cart-shopping" style="color:#d97706;font-size:14px;"></i>
+                        <span style="font-size:12px;color:#92400e;">
+                            PO Lapangan ini memiliki <strong>item dengan jalur pembelian vendor</strong> (fulfillment: purchase) yang belum dipesan. Anda dapat langsung menerbitkan Purchase Order ke supplier dengan alamat kirim Gudang Proyek <strong>{{ $materialRequest->toWarehouse?->name }}</strong>.
+                        </span>
+                    </div>
+                    @if($canCreatePo)
+                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
+                        <i class="fas fa-cart-plus me-1"></i> Buat PO ke Vendor
+                    </a>
+                    @endif
+                </div>
+            </div>
+            @elseif($hasCustomItems)
             <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;overflow:hidden;">
                 <div class="card-body" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <i class="fas fa-circle-info" style="color:#d97706;font-size:14px;"></i>
                         <span style="font-size:12px;color:#92400e;">
-                            Permintaan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
+                            PO Lapangan ini memiliki <strong>item khusus/manual</strong> yang tidak ada di inventori Pusat. Item ini dapat langsung dibelikan oleh <strong>Admin PO</strong> melalui Purchase Order.
                         </span>
                     </div>
-                    @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
+                    @if($canCreatePo)
                     <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm btn-warning" style="font-size:11px;padding:4px 10px;border-radius:5px;font-weight:600;">
                         <i class="fas fa-cart-plus me-1"></i> Buat PO Item Manual
                     </a>
@@ -188,7 +221,7 @@
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                     <div style="display:flex;align-items:center;gap:6px;">
                         <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
-                        <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Item Permintaan</span>
+                        <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Item PO Lapangan</span>
                     </div>
                     <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:10.5px;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe;">
                         {{ $materialRequest->items->count() }} Item
@@ -200,12 +233,14 @@
                             <tr>
                                 <th style="width:36px;text-align:center;padding:7px 10px;">#</th>
                                 <th style="min-width:160px;padding:7px 12px;">Material</th>
+                                <th style="min-width:110px;padding:7px 10px;">Kategori</th>
                                 <th style="min-width:120px;padding:7px 10px;">Spesifikasi</th>
                                 <th style="text-align:right;padding:7px 10px;width:95px;">Qty Diminta</th>
                                 <th style="text-align:right;padding:7px 10px;width:85px;">Disetujui</th>
                                 <th style="text-align:center;padding:7px 10px;width:70px;">Satuan</th>
                                 <th style="text-align:center;padding:7px 10px;width:105px;">Tgl Pakai</th>
                                 <th style="min-width:130px;padding:7px 10px;">Alokasi / Zona</th>
+                                <th style="min-width:140px;padding:7px 10px;text-align:center;">Stok Tersedia</th>
                                 <th style="text-align:center;padding:7px 10px;width:90px;">Status</th>
                             </tr>
                         </thead>
@@ -213,8 +248,9 @@
                             @foreach($materialRequest->items as $idx => $item)
                             @php
                                 $approved = (float) $item->qty_approved;
-                                $fulfilled = (float) $item->qty_fulfilled;
-                                $remaining = max(0, $approved - $fulfilled);
+                                $received = (float) $item->qty_received;
+                                $issued = (float) $item->qty_issued;
+                                $remaining = max(0, $approved - $received);
                                 $unit = $item->displayUnit();
                                 $isCustom = $item->isCustom();
                             @endphp
@@ -232,6 +268,11 @@
                                     </div>
                                 </td>
                                 <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
+                                    <span class="badge" style="background:#f1f5f9;color:#475569;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">
+                                        {{ $item->displayCategoryName() }}
+                                    </span>
+                                </td>
+                                <td style="font-size:11.5px;color:#334155;padding:8px 10px;">
                                     {{ $item->specification ?: '-' }}
                                 </td>
                                 <td class="fw-600" style="text-align:right;padding:8px 10px;">{{ format_quantity($item->qty_requested) }}</td>
@@ -246,14 +287,61 @@
                                     {{ $item->usage_location ?: '-' }}
                                 </td>
                                 <td style="text-align:center;padding:8px 10px;">
+                                    @if($item->fulfillment === 'purchase')
+                                        @php
+                                            $approvedQty = (float) $item->qty_approved;
+                                            $orderedQty  = (float) $item->qty_ordered;
+                                            $remainingOrder = max(0, $approvedQty - $orderedQty);
+                                            $relatedPos = $item->purchaseOrderItems ? $item->purchaseOrderItems->map->purchaseOrder->filter()->unique('id') : collect();
+                                        @endphp
+                                        <div style="font-weight:600;color:#d97706;font-size:11.5px;">
+                                            Sisa dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
+                                        </div>
+                                        @if($relatedPos->isNotEmpty())
+                                            <div style="font-size:10.5px;margin-top:2px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                                                @foreach($relatedPos as $po)
+                                                    <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;text-decoration:none;" title="Lihat PO">
+                                                        <i class="fas fa-file-invoice me-1" style="font-size:9px;"></i>{{ $po->po_number }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    @elseif($item->material_id)
+                                        @php
+                                            $inv = isset($sourceInventories) ? $sourceInventories->get($item->material_id) : null;
+                                            $qtyOnHand = $inv ? (float) $inv->quantity : 0;
+                                            $qtyAllocated = $inv ? (float) ($inv->qty_allocated ?? 0) : 0;
+                                            $availableStock = max(0, $qtyOnHand - $qtyAllocated);
+                                            $targetQty = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+                                            $isSufficient = $availableStock >= $targetQty && $targetQty > 0;
+                                        @endphp
+                                        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                                            <span style="font-weight:700;color:#0f172a;font-size:12px;">
+                                                {{ format_quantity($availableStock) }} {{ $unit }}
+                                            </span>
+                                            @if($isSufficient)
+                                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
+                                                    <i class="fas fa-check me-1" style="font-size:8.5px;"></i>Cukup
+                                                </span>
+                                            @else
+                                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
+                                                    <i class="fas fa-triangle-exclamation me-1" style="font-size:8.5px;"></i>Kurang
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-muted" style="font-size:11px;">-</span>
+                                    @endif
+                                </td>
+                                <td style="text-align:center;padding:8px 10px;">
                                     @if(in_array($materialRequest->status, ['draft', 'submitted']))
                                         <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Menunggu</span>
-                                    @elseif($fulfilled >= $approved && $approved > 0)
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;"><i class="fas fa-check" style="font-size:8px;"></i> Terpenuhi</span>
-                                    @elseif($fulfilled > 0)
-                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Sebagian</span>
+                                    @elseif($received >= $approved && $approved > 0)
+                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;"><i class="fas fa-check" style="font-size:8px;"></i> Tiba Lengkap</span>
+                                    @elseif($received > 0)
+                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Tiba Sebagian ({{ format_quantity($received) }})</span>
                                     @else
-                                        <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Belum</span>
+                                        <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;">Belum Tiba</span>
                                     @endif
                                 </td>
                             </tr>
@@ -391,32 +479,44 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-file-lines text-primary" style="font-size:13px;"></i>
-                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Permintaan</span>
+                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi PO Lapangan</span>
                 </div>
                 <div class="card-body" style="padding:12px 14px;">
                     <div class="info-row">
-                        <span class="info-label">No. Permintaan</span>
+                        <span class="info-label">No. PO Lapangan</span>
                         <span class="info-val">{{ $materialRequest->request_number }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Pemohon</span>
-                        <span class="info-val">{{ $materialRequest->requestedBy?->name ?? '-' }}</span>
+                        <span class="info-val">
+                            {{ $materialRequest->requestedBy?->name ?? '-' }}
+                            @if($materialRequest->requested_as)
+                                <span class="text-muted" style="font-weight:400;font-size:11px;">({{ $materialRequest->requested_as }})</span>
+                            @endif
+                        </span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Gudang Asal</span>
-                        <span class="info-val">{{ $materialRequest->fromWarehouse?->name ?? '-' }}</span>
+                        <span class="info-label">Sumber Material (Kepada)</span>
+                        <span class="info-val">{{ $materialRequest->fromWarehouse ? $materialRequest->fromWarehouse->name : 'Pengadaan / Beli ke Vendor' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Gudang Tujuan</span>
-                        <span class="info-val">{{ $materialRequest->toWarehouse?->name ?? '-' }}</span>
+                        <span class="info-label">{{ $materialRequest->toWarehouse?->isProject() ? 'Nama Proyek' : 'Gudang Pemohon' }}</span>
+                        <span class="info-val">{{ $materialRequest->toWarehouse?->display_name ?? '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Tgl Diajukan</span>
+                        <span class="info-label">Tanggal Order</span>
                         <span class="info-val">{{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y') : '-' }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="info-label">Dibutuhkan Pada</span>
-                        <span class="info-val">{{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-' }}</span>
+                        <span class="info-label">Dibutuhkan Tgl</span>
+                        <span class="info-val">
+                            {{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-' }}
+                            @if($materialRequest->is_overdue)
+                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:4px;font-weight:600;">
+                                    <i class="fas fa-triangle-exclamation me-1"></i>Terlambat
+                                </span>
+                            @endif
+                        </span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Diproses Oleh</span>
@@ -438,7 +538,7 @@
         <div class="modal-box">
             <div class="modal-header">
                 <i class="fas fa-xmark-circle text-danger"></i>
-                <span class="modal-title">Tolak Permintaan</span>
+                <span class="modal-title">Tolak PO Lapangan</span>
                 <button class="btn-close-modal" onclick="document.getElementById('rejectModal').classList.remove('show')">
                     <i class="fas fa-times"></i>
                 </button>
@@ -453,7 +553,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary"
                         onclick="document.getElementById('rejectModal').classList.remove('show')">Batal</button>
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-xmark"></i> Tolak Permintaan</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-xmark"></i> Tolak PO Lapangan</button>
                 </div>
             </form>
         </div>

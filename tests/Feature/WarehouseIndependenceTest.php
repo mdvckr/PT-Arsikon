@@ -41,6 +41,27 @@ class WarehouseIndependenceTest extends TestCase
         $this->adminPusat   = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->adminProyekA = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
         $this->karyawan     = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+
+        Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id]
+        );
+        $catTool = \App\Models\Category::firstOrCreate(['code' => 'CAT-TOOL-01'], ['name' => 'Alat Berat & Elektrik', 'type' => 'tool']);
+        \App\Models\Tool::firstOrCreate(
+            ['code' => 'TOOL-GEN-01'],
+            [
+                'category_id' => $catTool->id,
+                'current_warehouse_id' => $this->centralWarehouse->id,
+                'name' => 'Genset Silent 5000W',
+                'brand' => 'Honda Silent',
+                'type' => 'Alat Berat',
+                'stock_total' => 5,
+                'stock_available' => 5,
+                'is_active' => true,
+            ]
+        );
+        $mat = Material::where('sku', 'MAT-SEM-001')->first();
+        (new StockService())->addStock($this->projectWarehouseA, $mat, 50, 'initial_stock');
     }
 
     // User model: accessibleWarehouseIds()

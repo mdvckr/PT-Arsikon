@@ -181,7 +181,7 @@
                                     'Admin Gudang Pusat' => ['icon' => 'fa-warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
                                     'Admin Gudang Proyek' => ['icon' => 'fa-helmet-safety', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
                                     'Admin PO' => ['icon' => 'fa-file-invoice-dollar', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Divisi Pengadaan & Purchase Order (Pemasok, harga, permohonan beli)'],
-                                    'Karyawan' => ['icon' => 'fa-user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & permintaan material)'],
+                                    'Karyawan' => ['icon' => 'fa-user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
                                     default => ['icon' => 'fa-id-card', 'color' => '#64748b', 'bg' => 'rgba(100,116,139,0.1)', 'desc' => 'Hak akses jabatan khusus'],
                                 };
                                 $isChecked = in_array($role->name, old('roles', $userRoles));

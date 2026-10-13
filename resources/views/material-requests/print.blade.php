@@ -236,8 +236,9 @@
         $items    = $mr->items;
         $docNo    = substr($mr->request_number, strrpos($mr->request_number, '-') + 1);
         $proyek   = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name ?? '-';
-        $kepada   = $mr->fromWarehouse?->name ?? 'Pengadaan';
-        $tglOrder = $mr->created_at ? $mr->created_at->format('d/m/y') : '-';
+        $kepada        = $mr->fromWarehouse ? $mr->fromWarehouse->name : 'Pengadaan / Beli ke Vendor';
+        $tglOrder      = $mr->created_at ? $mr->created_at->format('d/m/y') : '-';
+        $tglDibutuhkan = $mr->needed_at ? \Carbon\Carbon::parse($mr->needed_at)->format('d/m/y') : '-';
         $minRows  = 12;
         $emptyRows = max(0, $minRows - $items->count());
     @endphp
@@ -262,6 +263,11 @@
                         <span class="hf-colon">:</span>
                         <span class="hf-val">{{ $proyek }}</span>
                     </div>
+                    <div class="hf-row">
+                        <span class="hf-label">Pemohon</span>
+                        <span class="hf-colon">:</span>
+                        <span class="hf-val">{{ $mr->requestedBy?->name ?? '-' }} ({{ $mr->requested_as ?: 'Admin Proyek' }})</span>
+                    </div>
                 </div>
                 <div class="hf-right">
                     <div class="hf-row-r">
@@ -273,6 +279,11 @@
                         <span class="hf-label" style="min-width:110px;text-align:right;">Tanggal Order</span>
                         <span class="hf-colon">:</span>
                         <span class="hf-val-r">{{ $tglOrder }}</span>
+                    </div>
+                    <div class="hf-row-r">
+                        <span class="hf-label" style="min-width:110px;text-align:right;">Dibutuhkan Tgl</span>
+                        <span class="hf-colon">:</span>
+                        <span class="hf-val-r">{{ $tglDibutuhkan }}</span>
                     </div>
                 </div>
             </div>
@@ -356,7 +367,7 @@
                     <div style="font-size:10px;margin-top:4px;color:#555;">{{ $mr->requestedBy->name }}</div>
                 @endif
             </div>
-            <div class="sign-label-bottom">(Site Manager)</div>
+            <div class="sign-label-bottom">({{ $mr->requested_as ?: 'Site Manager' }})</div>
         </div>
     </div>
 

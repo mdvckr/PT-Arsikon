@@ -185,7 +185,7 @@ class DailyLogService
         foreach ($incomingGoodsReceipts as $gr) $totalItemsIn += $gr->items->count();
         foreach ($materialReturns as $r) $totalItemsIn += $r->items->count();
         $totalItemsOut = $usages->sum(fn($u) => $u->items->count()) + $outgoingDistributions->sum(fn($d) => $d->items->count());
-        $totalToolsActive = $toolAssignments->where('status','active')->count();
+        $totalToolsActive = $toolAssignments->whereIn('status', ['active', 'overdue'])->count();
         $totalRecipients = $usages->pluck('recipient_name')->unique()->count();
         $totalToolsReady = $toolBalance->sum('stock_available');
         $totalToolsInUse = $toolBalance->sum('stock_borrowed');

@@ -48,10 +48,10 @@ class MaterialUsageService
             if (!empty($data['material_request_id'])) {
                 $materialRequest = MaterialRequest::with('items.material')->find($data['material_request_id']);
                 if (!$materialRequest) {
-                    throw new Exception("Nomor Permintaan Material (MR) tidak ditemukan.");
+                    throw new Exception("Nomor PO Lapangan (MR) tidak ditemukan.");
                 }
                 if (!in_array($materialRequest->status, ['approved', 'partially_fulfilled'])) {
-                    throw new Exception("Hanya Permintaan Material (MR) dengan status 'Disetujui' atau 'Terkirim Sebagian' yang dapat ditarik.");
+                    throw new Exception("Hanya PO Lapangan (MR) dengan status 'Disetujui' atau 'Terkirim Sebagian' yang dapat ditarik.");
                 }
                 $mrItemsMap = $materialRequest->items->keyBy('material_id');
             }
@@ -91,16 +91,16 @@ class MaterialUsageService
                     $mrItem = $mrItemsMap->get($materialId);
                     if (!$mrItem) {
                         throw new Exception(sprintf(
-                            "Material '%s' tidak terdaftar dalam rincian Permintaan Material #%s.",
+                            "Material '%s' tidak terdaftar dalam rincian PO Lapangan #%s.",
                             $material->name,
                             $materialRequest->request_number
                         ));
                     }
 
-                    $remainingQuota = max(0, (float)$mrItem->qty_approved - (float)$mrItem->qty_fulfilled);
+                    $remainingQuota = max(0, (float)$mrItem->qty_received - (float)$mrItem->qty_issued);
                     if ($qty > $remainingQuota) {
                         throw new Exception(sprintf(
-                            "Kuantitas material '%s' (%s %s) melebihi sisa kuota persetujuan MR #%s (sisa disetujui: %s %s). Pengeluaran harus sesuai persetujuan.",
+                            "Kuantitas material '%s' (%s %s) melebihi sisa barang yang sudah diterima di proyek pada PO Lapangan #%s (diterima belum dipakai: %s %s). Pengeluaran harus sesuai barang yang sudah diterima.",
                             $material->name,
                             $qty,
                             $material->unit?->abbreviation ?? 'unit',
@@ -192,25 +192,13 @@ class MaterialUsageService
                     $mutationNotes
                 );
 
-                // If linked to MR, increment fulfilled qty
+                // If linked to MR, increment issued qty
                 if ($materialRequest && $mrItemsMap) {
                     $mrItem = $mrItemsMap->get($vItem['material']->id);
                     if ($mrItem) {
-                        $mrItem->increment('qty_fulfilled', $vItem['quantity']);
+                        $mrItem->increment('qty_issued', $vItem['quantity']);
+                        $mrItem->update(['qty_fulfilled' => $mrItem->qty_issued]); // backfill
                     }
-                }
-            }
-
-            // Update MR status based on fulfillment
-            if ($materialRequest) {
-                $freshMrItems = $materialRequest->items()->get();
-                $allFulfilled = $freshMrItems->every(fn($i) => (float)$i->qty_fulfilled >= (float)$i->qty_approved);
-                $anyFulfilled = $freshMrItems->contains(fn($i) => (float)$i->qty_fulfilled > 0);
-
-                if ($allFulfilled) {
-                    $materialRequest->update(['status' => 'fulfilled']);
-                } elseif ($anyFulfilled) {
-                    $materialRequest->update(['status' => 'partially_fulfilled']);
                 }
             }
 
@@ -288,19 +276,22 @@ class MaterialUsageService
                             // Lock MR item row to prevent race conditions
                             $lockedMrItem = \App\Models\MaterialRequestItem::where('id', $mrItem->id)->lockForUpdate()->first();
                             if ($lockedMrItem) {
-                                $newFulfilled = max(0, (float)$lockedMrItem->qty_fulfilled - (float)$item->quantity);
-                                $lockedMrItem->update(['qty_fulfilled' => $newFulfilled]);
+                                $newIssued = max(0, (float)$lockedMrItem->qty_issued - (float)$item->quantity);
+                                $lockedMrItem->update([
+                                    'qty_issued'    => $newIssued,
+                                    'qty_fulfilled' => $newIssued, // backfill
+                                ]);
                             }
                         }
                     }
 
                     $freshItems = $mr->items()->get();
-                    $allFulfilled = $freshItems->every(fn($it) => (float)$it->qty_fulfilled >= (float)$it->qty_approved);
-                    $anyFulfilled = $freshItems->contains(fn($it) => (float)$it->qty_fulfilled > 0);
+                    $allFulfilled = $freshItems->every(fn($it) => (float)$it->qty_received >= ((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested));
+                    $anyReceived = $freshItems->contains(fn($it) => (float)$it->qty_received > 0);
 
                     if ($allFulfilled) {
                         $mr->update(['status' => 'fulfilled']);
-                    } elseif ($anyFulfilled) {
+                    } elseif ($anyReceived) {
                         $mr->update(['status' => 'partially_fulfilled']);
                     } else {
                         $mr->update(['status' => 'approved']);

@@ -74,14 +74,14 @@ class RoleController extends Controller
             'badge_color' => '#5b21b6',
             'badge_bg'    => '#ede9fe',
             'icon'        => 'fa-file-invoice-dollar',
-            'description' => 'Fokus pengadaan, Purchase Order (PO), verifikasi pembayaran, dan supplier.',
+            'description' => 'Fokus pengadaan, Purchase Order (PO), pengajuan pembayaran, dan supplier.',
         ],
         'Karyawan' => [
             'category'    => 'Operasional Lapangan',
             'badge_color' => '#374151',
             'badge_bg'    => '#f3f4f6',
             'icon'        => 'fa-id-badge',
-            'description' => 'Peminjaman alat kerja mandiri dan pembuatan permintaan material.',
+            'description' => 'Peminjaman alat kerja mandiri dan pembuatan PO Lapangan.',
         ],
     ];
 
@@ -256,7 +256,8 @@ class RoleController extends Controller
             'Logistik & Penerimaan' => [
                 'icon' => 'fa-truck-ramp-box',
                 'items' => ['view goods receipts', 'create goods receipts', 'confirm goods receipts',
-                            'view distributions', 'create distributions', 'ship distributions', 'receive distributions'],
+                            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+                            'create transit losses', 'approve transit losses'],
             ],
             'Permintaan & Pemakaian' => [
                 'icon' => 'fa-clipboard-check',
@@ -272,7 +273,7 @@ class RoleController extends Controller
             'Pengadaan & Pembayaran' => [
                 'icon' => 'fa-file-invoice-dollar',
                 'items' => ['view procurement', 'create procurement', 'approve procurement',
-                            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+                            'view purchase orders', 'create purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders', 'close purchase orders',
                             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
                             'view payments', 'create payments', 'verify payments',
                             'view returns', 'create returns', 'approve returns', 'receive returns'],

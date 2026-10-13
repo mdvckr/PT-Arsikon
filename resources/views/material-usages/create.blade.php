@@ -284,7 +284,7 @@
                     <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                         <div style="display:flex; align-items:center; gap:6px;">
                             <i class="fas fa-file-invoice text-primary" style="font-size:13px;"></i>
-                            <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Metode & Surat Permintaan Material</span>
+                            <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Metode & Surat PO Lapangan</span>
                         </div>
                         <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10.5px; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe; font-weight:600;">
                             Gudang: {{ $selectedWarehouse?->name ?? '-' }}
@@ -298,7 +298,7 @@
                                 <div class="flex items-center justify-between mb-1">
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-file-shield text-primary" style="font-size: 13px;"></i>
-                                        <strong style="font-size: 12.5px; color: #0f172a;">Tarik dari Permintaan (MR)</strong>
+                                        <strong style="font-size: 12.5px; color: #0f172a;">Tarik dari PO Lapangan (MR)</strong>
                                     </div>
                                     <span class="mode-radio"></span>
                                 </div>
@@ -327,7 +327,7 @@
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
                                 <label class="form-label mb-0" style="font-size:11.5px; font-weight:600; color:#334155; display:flex; align-items:center; gap:6px;">
                                     <i class="fas fa-file-signature text-primary" style="font-size:12px;"></i>
-                                    Pilih Nomor Permintaan Material (MR) <span class="text-danger">*</span>
+                                    Pilih Nomor PO Lapangan (MR) <span class="text-danger">*</span>
                                 </label>
                                 @if($approvedMRs->isNotEmpty())
                                 <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe;">
@@ -447,7 +447,7 @@
                             <thead>
                                 <tr style="background:#fafafa; border-bottom:1px solid #e2e8f0; font-size:10.5px; text-transform:uppercase; letter-spacing:0.3px; color:#64748b;">
                                     <th style="text-align: left; padding:7px 12px;">Nama Material</th>
-                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">MR Disetujui</th>
+                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">Tiba / Pakai</th>
                                     <th style="text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
                                     <th style="text-align: center; width: 100px; padding:7px 8px;">Stok Gudang</th>
                                     <th style="text-align: center; width: 140px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
@@ -463,8 +463,8 @@
                         {{-- Empty State jika belum pilih MR --}}
                         <div id="mrEmptyState" style="padding: 28px 16px; text-align: center; color: #94a3b8;">
                             <i class="fas fa-inbox" style="font-size: 24px; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
-                            <div style="font-size: 12.5px; font-weight: 600; color: #475569;">Belum Ada Permintaan (MR) yang Dipilih</div>
-                            <div style="font-size: 11px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>Metode & Surat Permintaan Material</strong> di atas.</div>
+                            <div style="font-size: 12.5px; font-weight: 600; color: #475569;">Belum Ada PO Lapangan (MR) yang Dipilih</div>
+                            <div style="font-size: 11px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>Metode & Surat PO Lapangan</strong> di atas.</div>
                         </div>
                     </div>
 
@@ -779,8 +779,8 @@
                             ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><i class="fas fa-check"></i> Terpenuhi</span>' : ''}
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
-                            <div class="fw-700" style="font-size: 12px; color:#1e293b;">${item.qty_approved} ${item.unit}</div>
-                            <div class="text-muted" style="font-size: 10.5px;">Sudah: ${item.qty_fulfilled}</div>
+                            <div class="fw-700" style="font-size: 12px; color:#1e293b;">Tiba: ${item.qty_received} ${item.unit}</div>
+                            <div class="text-muted" style="font-size: 10.5px;">Pakai: ${item.qty_issued}</div>
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
                             <span class="badge" style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius:4px; ${remaining > 0 ? 'background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#64748b;'}">

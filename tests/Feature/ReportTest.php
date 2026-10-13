@@ -41,7 +41,10 @@ class ReportTest extends TestCase
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->projectUser = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
         $this->supplier = Supplier::firstOrFail();
-        $this->semenMaterial = Material::where('sku', 'MAT-SEM-001')->firstOrFail();
+        $this->semenMaterial = Material::firstOrCreate(
+            ['sku' => 'MAT-SEM-001'],
+            ['name' => 'Semen Portland 50kg', 'category_id' => \App\Models\Category::first()->id, 'unit_id' => \App\Models\Unit::first()->id, 'min_stock_central' => 100]
+        );
 
         // Reset inventory for test isolation
         \App\Models\Inventory::where('warehouse_id', $this->centralWarehouse->id)

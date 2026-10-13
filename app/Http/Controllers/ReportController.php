@@ -69,8 +69,16 @@ class ReportController extends Controller
     {
         $this->authorize('view reports');
 
-        $data = $this->service->toolReport();
+        $request->validate([
+            'warehouse_id' => 'nullable|exists:warehouses,id',
+        ]);
 
-        return view('reports.tools', compact('data'));
+        $warehouseId = $request->warehouse_id;
+        $projectWarehouses = Warehouse::where('is_central', false)->orderBy('name')->get();
+
+        $data = $this->service->toolReport();
+        $centralToolsInProjects = $this->service->centralToolsInProjectsReport($warehouseId);
+
+        return view('reports.tools', compact('data', 'centralToolsInProjects', 'projectWarehouses', 'warehouseId'));
     }
 }

@@ -28,6 +28,7 @@ class ToolLoan extends Model
         'returned_lost',
         'return_notes',
         'status',
+        'overdue_notified_at',
         'notes',
         'rejection_reason',
         'cancelled_at',
@@ -36,11 +37,12 @@ class ToolLoan extends Model
     ];
 
     protected $casts = [
-        'assigned_at'        => 'datetime',
-        'expected_return_at' => 'date',
-        'returned_at'        => 'datetime',
-        'approved_at'        => 'datetime',
-        'cancelled_at'       => 'datetime',
+        'assigned_at'         => 'datetime',
+        'expected_return_at'  => 'date',
+        'returned_at'         => 'datetime',
+        'approved_at'         => 'datetime',
+        'cancelled_at'        => 'datetime',
+        'overdue_notified_at' => 'datetime',
     ];
 
     public function fromWarehouse(): BelongsTo

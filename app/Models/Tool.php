@@ -15,6 +15,7 @@ class Tool extends Model
     protected $fillable = [
         'category_id',
         'current_warehouse_id',
+        'owner_warehouse_id',
         'code',
         'name',
         'type',
@@ -31,13 +32,14 @@ class Tool extends Model
     ];
 
     protected $casts = [
-        'is_active'        => 'boolean',
-        'stock_total'      => 'integer',
-        'stock_available'  => 'integer',
-        'stock_borrowed'   => 'integer',
-        'stock_maintenance'=> 'integer',
-        'stock_damaged'    => 'integer',
-        'incoming_stages'  => 'array',
+        'is_active'          => 'boolean',
+        'owner_warehouse_id' => 'integer',
+        'stock_total'        => 'integer',
+        'stock_available'    => 'integer',
+        'stock_borrowed'     => 'integer',
+        'stock_maintenance'  => 'integer',
+        'stock_damaged'      => 'integer',
+        'incoming_stages'    => 'array',
     ];
 
     public function category(): BelongsTo
@@ -48,6 +50,19 @@ class Tool extends Model
     public function currentWarehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'current_warehouse_id');
+    }
+
+    public function ownerWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class, 'owner_warehouse_id');
+    }
+
+    public function isOwnedByCentral(): bool
+    {
+        if ($this->owner_warehouse_id) {
+            return (bool) ($this->ownerWarehouse?->is_central ?? false);
+        }
+        return true;
     }
 
     public function assignments(): HasMany

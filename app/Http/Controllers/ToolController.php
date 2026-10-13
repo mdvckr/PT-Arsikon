@@ -439,7 +439,8 @@ class ToolController extends Controller
             'category_id'          => $category?->id,
             'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
             'notes'                => $validated['notes'] ?? null,
-            'incoming_stages'      => $incomingStages,
+            // T13: incoming_stages dibekukan (read-only, tidak ditimpa saat edit)
+            'incoming_stages'      => $tool->incoming_stages,
         ]);
 
         // Sync aggregate stock snapshot to the active warehouse inventory

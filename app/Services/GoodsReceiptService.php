@@ -7,6 +7,10 @@ use App\Models\GoodsReceiptItem;
 use App\Models\Material;
 use App\Models\Tool;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\PoDeliverySchedule;
+use App\Models\MaterialRequest;
+use App\Models\MaterialRequestItem;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -78,11 +82,15 @@ class GoodsReceiptService
     public function create(array $validated, int $userId): GoodsReceipt
     {
         return DB::transaction(function () use ($validated, $userId) {
+            $supplierName = !empty($validated['supplier_name'])
+                ? preg_replace('/\s+/', ' ', trim($validated['supplier_name']))
+                : null;
+
             $receipt = GoodsReceipt::create([
                 'receipt_number'      => GoodsReceipt::generateReceiptNumber(),
                 'purchase_order_id'   => $validated['purchase_order_id'] ?? null,
                 'supplier_id'         => $validated['supplier_id'],
-                'supplier_name'       => $validated['supplier_name'] ?? null,
+                'supplier_name'       => $supplierName,
                 'warehouse_id'        => $validated['warehouse_id'],
                 'received_by_user_id' => $userId,
                 'received_by_name'    => $validated['received_by_name'] ?? null,
@@ -95,17 +103,57 @@ class GoodsReceiptService
 
             foreach ($validated['items'] as $item) {
                 $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
+                $poItemId = $item['purchase_order_item_id'] ?? null;
+                $poItem = $poItemId ? PurchaseOrderItem::where('id', $poItemId)->lockForUpdate()->first() : null;
+                if (!$isTool && $poItem && $poItem->isTool()) {
+                    $isTool = true;
+                }
+
+                $qtyReceived = (float) ($item['qty_received'] ?? $item['quantity'] ?? 0);
+                $qtyDamaged  = (float) ($item['qty_damaged'] ?? 0);
+                $qtyShipped  = (float) ($item['qty_shipped'] ?? ($qtyReceived + $qtyDamaged));
+
+                if ($isTool) {
+                    if (fmod($qtyReceived, 1) != 0 || fmod($qtyDamaged, 1) != 0 || fmod($qtyShipped, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada penerimaan barang harus berupa bilangan bulat.");
+                    }
+                }
+
+                if ($qtyReceived + $qtyDamaged > $qtyShipped) {
+                    throw new Exception("Jumlah diterima ({$qtyReceived}) + rusak ({$qtyDamaged}) tidak boleh melebihi jumlah yang dikirim vendor ({$qtyShipped}).");
+                }
+
+                // Validasi batas outstanding PO
+                if ($poItem) {
+                    $outstanding = max(0, (float)$poItem->quantity - (float)$poItem->received_qty - (float)$poItem->lost_qty - (float)$poItem->short_closed_qty);
+                    if (($qtyReceived + $qtyDamaged) > $outstanding) {
+                        $itemName = $poItem->displayName();
+                        throw new Exception("Penerimaan barang {$itemName} (" . ($qtyReceived + $qtyDamaged) . ") melebihi sisa outstanding PO ({$outstanding}).");
+                    }
+                }
+
+                $qtyMissing = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
+                $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
+
+                // T9: GR tidak menerima unit_price dari request untuk item ber-PO. Selalu salin dari PO item.
+                $unitPrice = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
+
                 GoodsReceiptItem::create([
-                    'goods_receipt_id'       => $receipt->id,
-                    'item_type'              => $isTool ? 'tool' : 'material',
-                    'purchase_order_item_id' => $item['purchase_order_item_id'] ?? null,
-                    'stage_reference'        => $item['stage_reference'] ?? null,
-                    'material_id'            => $isTool ? null : ($item['material_id'] ?? null),
-                    'tool_id'                => $isTool ? ($item['tool_id'] ?? null) : null,
-                    'qty_received'           => $item['quantity'] ?? $item['qty_received'] ?? 0,
-                    'condition'              => $item['condition'] ?? 'good',
-                    'unit_price'             => $item['unit_price'] ?? 0,
-                    'notes'                  => $item['notes'] ?? null,
+                    'goods_receipt_id'        => $receipt->id,
+                    'item_type'               => $isTool ? 'tool' : 'material',
+                    'purchase_order_item_id'  => $poItemId,
+                    'po_delivery_schedule_id' => $item['po_delivery_schedule_id'] ?? null,
+                    'stage_reference'         => $item['stage_reference'] ?? null,
+                    'material_id'             => $isTool ? null : ($item['material_id'] ?? null),
+                    'tool_id'                 => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'qty_shipped'             => $qtyShipped,
+                    'qty_received'            => $qtyReceived,
+                    'qty_damaged'             => $qtyDamaged,
+                    'qty_missing'             => $qtyMissing,
+                    'missing_status'          => $missingStatus,
+                    'condition'               => $item['condition'] ?? 'good',
+                    'unit_price'              => $unitPrice,
+                    'notes'                   => $item['notes'] ?? null,
                 ]);
             }
 
@@ -133,17 +181,27 @@ class GoodsReceiptService
             }
 
             $receiptDateStr = $receipt->receipt_date ? $receipt->receipt_date->format('Y-m-d') : now()->toDateString();
+            $mrToRecalculate = collect();
 
             // Tambah stok di gudang tujuan untuk setiap item
             foreach ($receipt->items as $item) {
-                if ((float) $item->qty_received <= 0) {
-                    continue;
+                $poItem = $item->purchase_order_item_id
+                    ? PurchaseOrderItem::where('id', $item->purchase_order_item_id)->lockForUpdate()->first()
+                    : null;
+
+                // Validasi ulang kuota outstanding saat confirm
+                if ($poItem) {
+                    $outstanding = max(0, (float)$poItem->quantity - (float)$poItem->received_qty - (float)$poItem->lost_qty - (float)$poItem->short_closed_qty);
+                    if (((float)$item->qty_received + (float)$item->qty_damaged) > $outstanding) {
+                        $itemName = $poItem->displayName();
+                        throw new Exception("Penerimaan barang {$itemName} (" . ((float)$item->qty_received + (float)$item->qty_damaged) . ") melebihi sisa outstanding PO ({$outstanding}).");
+                    }
                 }
 
                 if ($item->isTool()) {
-                    // Penanganan Alat / Mesin
+                    // Penanganan Alat / Mesin: stok bertambah HANYA dari qty_received baik
                     $tool = $item->tool;
-                    if ($tool) {
+                    if ($tool && (float) $item->qty_received > 0) {
                         $this->toolInventoryService->addStock(
                             $warehouse,
                             $tool,
@@ -151,49 +209,23 @@ class GoodsReceiptService
                             "Penerimaan Supplier #{$receipt->receipt_number} — {$receipt->supplier?->name}"
                         );
 
-                        // Sinkronisasi status incoming_stages di Tool
-                        if (!empty($tool->incoming_stages)) {
-                            $stages = $tool->incoming_stages;
-                            $stageUpdated = false;
-
-                            // 1. Cocokkan dengan stage_reference jika diberikan
-                            if (!empty($item->stage_reference)) {
-                                foreach ($stages as $idx => $stg) {
-                                    if (strcasecmp($stg['stage'] ?? '', $item->stage_reference) === 0 || (string)$idx === (string)$item->stage_reference) {
-                                        if (($stg['status'] ?? '') === 'planned') {
-                                            $stages[$idx]['status'] = 'received';
-                                            $stages[$idx]['received_date'] = $receiptDateStr;
-                                            $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                            $stageUpdated = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 2. Jika belum terupdate (misal stage_reference tidak dipilih manual), otomatis ubah tahap 'planned' pertama
-                            if (!$stageUpdated) {
-                                foreach ($stages as $idx => $stg) {
-                                    if (($stg['status'] ?? '') === 'planned') {
-                                        $stages[$idx]['status'] = 'received';
-                                        $stages[$idx]['received_date'] = $receiptDateStr;
-                                        $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                        $stageUpdated = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if ($stageUpdated) {
-                                $tool->update(['incoming_stages' => $stages]);
+                        // T14: GR item alat di gudang proyek: isi tools.owner_warehouse_id = gudang pusat bila masih NULL
+                        if (is_null($tool->owner_warehouse_id)) {
+                            $centralWarehouse = Warehouse::where('is_central', true)->first();
+                            if ($centralWarehouse) {
+                                $tool->update(['owner_warehouse_id' => $centralWarehouse->id]);
                             }
                         }
+                    }
+
+                    // T11 BUGFIX: cabang ALAT menaikkan received_qty PO item persis seperti cabang material
+                    if ($poItem && (float) $item->qty_received > 0) {
+                        $poItem->increment('received_qty', (float) $item->qty_received);
                     }
                 } else {
                     // Penanganan Material
                     $material = $item->material;
                     if (!$material && $item->purchase_order_item_id) {
-                        $poItem = $item->purchaseOrderItem;
                         if ($poItem && !empty($poItem->custom_item_name)) {
                             $material = Material::autoRegisterCustom($poItem->custom_item_name, $poItem->custom_item_unit ?? $poItem->unit);
                             $item->update(['material_id' => $material->id]);
@@ -204,71 +236,133 @@ class GoodsReceiptService
                         }
                     }
 
-                    if (!$material) {
-                        continue;
-                    }
+                    if ($material) {
+                        if (empty($material->supplier_id) && empty($material->supplier_name) && ($receipt->supplier_id || $receipt->supplier_name)) {
+                            $material->update([
+                                'supplier_id'   => $receipt->supplier_id,
+                                'supplier_name' => $receipt->supplier_name ?: $receipt->supplier?->name,
+                            ]);
+                        }
 
-                    if (empty($material->supplier_id) && empty($material->supplier_name) && ($receipt->supplier_id || $receipt->supplier_name)) {
-                        $material->update([
-                            'supplier_id'   => $receipt->supplier_id,
-                            'supplier_name' => $receipt->supplier_name ?: $receipt->supplier?->name,
-                        ]);
-                    }
+                        // Stok bertambah HANYA dari qty_received (diterima baik)
+                        if ((float) $item->qty_received > 0) {
+                            $this->stockService->addStock(
+                                $warehouse,
+                                $material,
+                                (float) $item->qty_received,
+                                'goods_receipt',
+                                $receipt->id,
+                                $userId,
+                                "Penerimaan Supplier #{$receipt->receipt_number} — {$receipt->supplier?->name}"
+                            );
+                        }
 
-                    $this->stockService->addStock(
-                        $warehouse,
-                        $material,
-                        (float) $item->qty_received,
-                        'goods_receipt',
-                        $receipt->id,
-                        $userId,
-                        "Penerimaan Supplier #{$receipt->receipt_number} — {$receipt->supplier?->name}"
-                    );
-
-                    // Update qty_received di PO item jika terhubung
-                    if ($item->purchase_order_item_id) {
-                        $poItem = $item->purchaseOrderItem;
-                        if ($poItem) {
+                        // Update received_qty di PO item (HANYA dari qty_received baik)
+                        if ($poItem && (float) $item->qty_received > 0) {
                             $poItem->increment('received_qty', (float) $item->qty_received);
                         }
                     }
+                }
 
-                    // Sinkronisasi status incoming_stages di Material
-                    if (!empty($material->incoming_stages)) {
-                        $stages = $material->incoming_stages;
-                        $stageUpdated = false;
+                // T13: Sinkronisasi ke PoDeliverySchedule (menggantikan incoming_stages)
+                if ($poItem && (float) $item->qty_received > 0) {
+                    $schedule = null;
+                    if ($item->po_delivery_schedule_id) {
+                        $schedule = PoDeliverySchedule::where('id', $item->po_delivery_schedule_id)
+                            ->lockForUpdate()
+                            ->first();
+                    }
 
-                        // 1. Cocokkan dengan stage_reference jika diberikan
-                        if (!empty($item->stage_reference)) {
-                            foreach ($stages as $idx => $stg) {
-                                if (strcasecmp($stg['stage'] ?? '', $item->stage_reference) === 0 || (string)$idx === (string)$item->stage_reference) {
-                                    if (($stg['status'] ?? '') === 'planned') {
-                                        $stages[$idx]['status'] = 'received';
-                                        $stages[$idx]['received_date'] = $receiptDateStr;
-                                        $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                        $stageUpdated = true;
-                                        break;
-                                    }
-                                }
+                    // Jika tidak memilih jadwal, alokasikan ke jadwal terdekat yang terbuka (urut tanggal & id)
+                    if (!$schedule) {
+                        $schedule = PoDeliverySchedule::where('purchase_order_item_id', $poItem->id)
+                            ->whereIn('status', ['planned', 'partial'])
+                            ->whereRaw('(planned_qty - received_qty) > 0')
+                            ->orderByRaw('planned_date IS NULL, planned_date ASC, id ASC')
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($schedule) {
+                            $item->update(['po_delivery_schedule_id' => $schedule->id]);
+                            $autoNote = "[Alokasi Otomatis Jadwal: {$schedule->stage_label}]";
+                            $item->update(['notes' => trim(($item->notes ? $item->notes . ' ' : '') . $autoNote)]);
+                        }
+                    }
+
+                    if ($schedule) {
+                        $newReceived = (float) $schedule->received_qty + (float) $item->qty_received;
+                        $schedule->received_qty = $newReceived;
+                        $schedule->status = $newReceived >= (float) $schedule->planned_qty ? 'received' : 'partial';
+                        $schedule->save();
+                    }
+                }
+
+                // Resolusi missing_status proporsional dari GR sebelumnya jika PO item mengirimkan barang susulan
+                if ($poItem && (float) $item->qty_received > 0) {
+                    $unresolvedItems = GoodsReceiptItem::where('purchase_order_item_id', $poItem->id)
+                        ->where('id', '!=', $item->id)
+                        ->where('missing_status', 'unresolved')
+                        ->where('qty_missing', '>', 0)
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+                    $remainingIncoming = (float) $item->qty_received;
+                    foreach ($unresolvedItems as $unresolved) {
+                        if ($remainingIncoming <= 0) break;
+                        if ($remainingIncoming >= (float) $unresolved->qty_missing) {
+                            $remainingIncoming -= (float) $unresolved->qty_missing;
+                            $unresolved->update(['missing_status' => 'resolved']);
+                        } else {
+                            $unresolved->decrement('qty_missing', $remainingIncoming);
+                            $remainingIncoming = 0;
+                        }
+                    }
+                }
+
+                // T11: Hubungkan ke MR item (qty_received MR item += qty_received GR item)
+                if ($poItem && $poItem->material_request_item_id && (float) $item->qty_received > 0) {
+                    $mrItem = MaterialRequestItem::where('id', $poItem->material_request_item_id)->lockForUpdate()->first();
+                    if ($mrItem) {
+                        $mrItem->increment('qty_received', (float) $item->qty_received);
+                        if ($mrItem->material_request_id) {
+                            $mrToRecalculate->push($mrItem->material_request_id);
+                        }
+                    }
+                }
+            }
+
+            // Hitung ulang status MR dan kirim notifikasi
+            foreach ($mrToRecalculate->unique() as $mrId) {
+                $mr = MaterialRequest::with('items')->find($mrId);
+                if ($mr) {
+                    $allReceived = true;
+                    $anyReceived = false;
+                    foreach ($mr->items as $mri) {
+                        $targetQty = (float)$mri->qty_approved > 0 ? (float)$mri->qty_approved : (float)$mri->qty_requested;
+                        if ((float)$mri->qty_received >= $targetQty) {
+                            $anyReceived = true;
+                        } else {
+                            $allReceived = false;
+                            if ((float)$mri->qty_received > 0) {
+                                $anyReceived = true;
                             }
                         }
+                    }
 
-                        // 2. Jika belum terupdate (misal stage_reference tidak dipilih manual), otomatis ubah tahap 'planned' pertama
-                        if (!$stageUpdated) {
-                            foreach ($stages as $idx => $stg) {
-                                if (($stg['status'] ?? '') === 'planned') {
-                                    $stages[$idx]['status'] = 'received';
-                                    $stages[$idx]['received_date'] = $receiptDateStr;
-                                    $stages[$idx]['received_gr'] = $receipt->receipt_number;
-                                    $stageUpdated = true;
-                                    break;
-                                }
-                            }
-                        }
+                    if ($allReceived && $mr->items->isNotEmpty()) {
+                        $mr->update(['status' => 'fulfilled']);
+                    } elseif ($anyReceived) {
+                        $mr->update(['status' => 'partially_fulfilled']);
+                    }
 
-                        if ($stageUpdated) {
-                            $material->update(['incoming_stages' => $stages]);
-                        }
+                    if ($mr->requestedBy) {
+                        NotificationHelper::notifyUser(
+                            $mr->requestedBy,
+                            "Barang PO Lapangan Diterima: #{$mr->request_number}",
+                            "Barang untuk PO Lapangan #{$mr->request_number} sudah diterima di gudang {$warehouse->name}.",
+                            'info',
+                            route('material-requests.show', $mr)
+                        );
                     }
                 }
             }
@@ -312,23 +406,24 @@ class GoodsReceiptService
     /**
      * Perbarui status Purchase Order berdasarkan qty yang sudah diterima vs dipesan.
      */
-    protected function updatePurchaseOrderStatus(int $purchaseOrderId): void
+    public function updatePurchaseOrderStatus(int $purchaseOrderId): void
     {
         $po = PurchaseOrder::with('items')->find($purchaseOrderId);
         if (!$po) {
             return;
         }
 
-        $totalOrdered  = (float) $po->items->sum('quantity');
-        $totalReceived = (float) $po->items->sum('received_qty');
+        $totalOutstanding = (float) $po->items->sum(fn($i) => $i->outstanding);
+        $totalReceived    = (float) $po->items->sum('received_qty');
 
         if ($totalReceived <= 0) {
             return;
         }
 
-        $newStatus = $totalReceived >= $totalOrdered ? 'received' : 'partial_received';
+        // T11: 'received' HANYA jika SEMUA item outstanding = 0; selain itu 'partial_received'
+        $newStatus = $totalOutstanding <= 0 ? 'received' : 'partial_received';
 
-        if (!in_array($po->status, ['received', 'cancelled'])) {
+        if (!in_array($po->status, ['received', 'cancelled', 'closed'])) {
             $po->update(['status' => $newStatus]);
         }
     }

@@ -291,55 +291,12 @@ class DistributionAndReceivingTest extends TestCase
             ],
         ];
 
-        // 1. Create distribution with custom item via HTTP POST
+        // 1. Create distribution with custom item via HTTP POST fails under T4 rules
         $response = $this->actingAs($this->adminUser)->post(route('distributions.store'), $postData);
-        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('error');
 
         $distribution = \App\Models\Distribution::where('vehicle_number', 'B 5555 XYZ')->first();
-        $this->assertNotNull($distribution);
-        $response->assertRedirect(route('distributions.show', $distribution));
-
-        $item = $distribution->items()->first();
-        $this->assertNotNull($item);
-        $this->assertTrue($item->isCustom());
-        $this->assertEquals('Kabel Roll Ekstra 50m', $item->custom_item_name);
-        $this->assertEquals('roll', $item->custom_item_unit);
-        $this->assertEquals('Kabel Roll Ekstra 50m', $item->name());
-        $this->assertEquals('roll', $item->unitAbbr());
-        $this->assertEquals(2.0, (float) $item->qty_shipped);
-
-        // 2. Ship distribution
-        $shipResponse = $this->actingAs($this->adminUser)->post(route('distributions.ship', $distribution));
-        $shipResponse->assertSessionHasNoErrors();
-        $distribution->refresh();
-        $this->assertEquals('in_transit', $distribution->status);
-
-        // 3. Check show & print pages render the custom item
-        $showRes = $this->actingAs($this->adminUser)->get(route('distributions.show', $distribution));
-        $showRes->assertOk();
-        $showRes->assertSee('Kabel Roll Ekstra 50m');
-
-        $printRes = $this->actingAs($this->adminUser)->get(route('distributions.print', $distribution));
-        $printRes->assertOk();
-        $printRes->assertSee('Kabel Roll Ekstra 50m');
-
-        // 4. Project warehouse receives custom item
-        $receiveData = [
-            'items' => [
-                [
-                    'distribution_item_id' => $item->id,
-                    'received_quantity'    => 2,
-                    'qty_damaged_or_lost'  => 0,
-                ],
-            ],
-        ];
-        $receiveRes = $this->actingAs($this->projectUser)->post(route('distributions.receive', $distribution), $receiveData);
-        $receiveRes->assertSessionHasNoErrors();
-
-        $item->refresh();
-        $this->assertEquals(2.0, (float) $item->qty_received);
-        $distribution->refresh();
-        $this->assertEquals('completed', $distribution->status);
+        $this->assertNull($distribution);
     }
 
     public function test_auto_approves_mr_when_creating_surat_jalan(): void
@@ -355,8 +312,9 @@ class DistributionAndReceivingTest extends TestCase
         // 2. Verify initial status
         $this->assertEquals('submitted', $request->status);
 
-        // 3. Create Surat Jalan from that MR
-        $distribution = $this->distributionService->create([
+        // 3. Under T4 rules, creating Surat Jalan from submitted MR must be rejected
+        $this->expectException(\Exception::class);
+        $this->distributionService->create([
             'material_request_id'  => $request->id,
             'from_warehouse_id'    => $this->centralWarehouse->id,
             'to_warehouse_id'      => $this->projectWarehouse->id,
@@ -367,18 +325,6 @@ class DistributionAndReceivingTest extends TestCase
                 ['type' => 'material', 'material_id' => $this->semenMaterial->id, 'quantity' => 200],
             ],
         ], $this->adminUser->id);
-
-        // 4. Key assertions
-        $request->refresh();
-        $this->assertEquals('approved', $request->status,
-            'MR should be auto-approved when creating Surat Jalan');
-        $this->assertNotNull($request->approved_by_user_id,
-            'MR should have approved_by_user_id');
-        $this->assertEquals($this->adminUser->id, $request->approved_by_user_id,
-            'approved_by_user_id should match user who created SJ');
-
-        // 5. Verify distribution status
-        $this->assertEquals('draft', $distribution->status);
     }
 
     public function test_full_employee_to_admin_surat_jalan_journey(): void
@@ -639,59 +585,12 @@ class DistributionAndReceivingTest extends TestCase
             ],
         ];
 
+        // Sesuai aturan T4: Item custom manual tidak boleh dibuatkan surat jalan (hanya material terdaftar di master).
         $response = $this->actingAs($this->adminUser)->post(route('distributions.store'), $postData);
-        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('error');
 
         $distribution = \App\Models\Distribution::where('vehicle_number', 'B 9999 HYB')->first();
-        $this->assertNotNull($distribution);
-        $this->assertCount(2, $distribution->items);
-
-        $customItem = $distribution->items->where('custom_item_name', 'Baut Anchor Khusus M16')->first();
-        $this->assertNotNull($customItem);
-        $this->assertTrue($customItem->isCustom());
-        $this->assertNull($customItem->material_id);
-
-        // 2. Ship the distribution
-        $this->actingAs($this->adminUser)->post(route('distributions.ship', $distribution));
-        $distribution->refresh();
-        $this->assertEquals('in_transit', $distribution->status);
-
-        // 3. Receive at destination project warehouse
-        $receiveData = [
-            'surat_jalan' => 'SJ-AUTO-001',
-            'items' => [
-                [
-                    'distribution_item_id' => $distribution->items->first()->id,
-                    'received_quantity'    => 5,
-                    'qty_damaged_or_lost'  => 0,
-                ],
-                [
-                    'distribution_item_id' => $customItem->id,
-                    'received_quantity'    => 50,
-                    'qty_damaged_or_lost'  => 0,
-                ],
-            ],
-        ];
-
-        $receiveResponse = $this->actingAs($this->projectUser)->post(route('distributions.receive', $distribution), $receiveData);
-        $receiveResponse->assertSessionHasNoErrors();
-        $distribution->refresh();
-        $this->assertEquals('completed', $distribution->status);
-
-        // 4. Verify custom item was automatically registered in Master Materials
-        $autoMaterial = \App\Models\Material::where('name', 'Baut Anchor Khusus M16')->first();
-        $this->assertNotNull($autoMaterial, 'Custom item must be auto-registered in master materials');
-        $this->assertStringStartsWith('MAT-AUTO-', $autoMaterial->sku);
-
-        // 5. Verify stock was automatically added to Project Warehouse Inventory
-        $projectInventory = \App\Models\Inventory::where('warehouse_id', $this->projectWarehouse->id)
-            ->where('material_id', $autoMaterial->id)
-            ->first();
-        $this->assertNotNull($projectInventory, 'Inventory record must be created in project warehouse');
-        $this->assertEquals(50.0, (float) $projectInventory->quantity);
-
-        // 6. Verify distribution item has material_id linked
-        $this->assertEquals($autoMaterial->id, $customItem->fresh()->material_id);
+        $this->assertNull($distribution);
     }
 
     public function test_confirming_surat_jalan_dispatches_notifications_to_approvers_and_parties(): void

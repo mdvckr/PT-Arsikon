@@ -9,6 +9,7 @@ use App\Models\Material;
 use App\Models\MaterialRequest;
 use App\Models\MaterialRequestItem;
 use App\Models\ToolAssignment;
+use App\Models\TransitLoss;
 use App\Models\User;
 use App\Models\Warehouse;
 use Exception;
@@ -33,20 +34,8 @@ class DistributionService
         $mr = null;
         if (!empty($data['material_request_id'])) {
             $mr = MaterialRequest::with(['items.material.unit'])->findOrFail($data['material_request_id']);
-            if (!in_array($mr->status, ['submitted', 'approved', 'partially_fulfilled'])) {
-                throw new Exception("Permintaan material {$mr->request_number} berstatus '{$mr->status}', tidak dapat dibuatkan Surat Jalan.");
-            }
-            if ($mr->status === 'submitted') {
-                $mr->update([
-                    'status' => 'approved',
-                    'approved_by_user_id' => $userId,
-                    'approved_at' => now(),
-                ]);
-                foreach ($mr->items as $mIt) {
-                    if ((float) $mIt->qty_approved <= 0) {
-                        $mIt->update(['qty_approved' => $mIt->qty_requested]);
-                    }
-                }
+            if (!in_array($mr->status, ['approved', 'partially_fulfilled'])) {
+                throw new Exception("PO Lapangan {$mr->request_number} berstatus '{$mr->status}', tidak dapat dibuatkan Surat Jalan. Status harus 'approved' atau 'partially_fulfilled'.");
             }
         }
 
@@ -70,7 +59,7 @@ class DistributionService
 
         $items = (array) ($data['items'] ?? []);
         if (empty($items)) {
-            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong. Pilih permintaan material, peminjaman alat, atau tambahkan item.");
+            throw new Exception("Daftar barang/alat yang dikirim tidak boleh kosong. Pilih PO Lapangan, peminjaman alat, atau tambahkan item.");
         }
 
         $fromWarehouse = Warehouse::findOrFail($data['from_warehouse_id']);
@@ -102,8 +91,6 @@ class DistributionService
                         if ((int) $ta->tool_id !== (int) $item['tool_id']) {
                             throw new Exception("Sumber pengajuan alat tidak sesuai.");
                         }
-                        // Untuk gudang pusat (central), jangan batasi qty alat berdasarkan TA.
-                        // Pembatasan sesungguhnya adalah stok fisik di gudang, yang dicek saat pengiriman (ship()).
                         if (!$fromWarehouse->is_central && $qty > $ta->quantity) {
                             throw new Exception(sprintf(
                                 "Jumlah alat %s (%s) melebihi jumlah pengajuan (%s).",
@@ -127,24 +114,10 @@ class DistributionService
                     continue;
                 }
 
-                // Item custom (tidak ada di sistem — bebas tulis nama)
+                // Item custom/manual tidak boleh dibuatkan surat jalan
                 $itemType = $item['type'] ?? 'material';
-                if ($itemType === 'custom') {
-                    $customName = trim($item['custom_item_name'] ?? '');
-                    if (empty($customName)) {
-                        continue; // skip baris custom tanpa nama
-                    }
-                    DistributionItem::create([
-                        'distribution_id'     => $distribution->id,
-                        'custom_item_name'    => $customName,
-                        'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
-                        'qty_shipped'         => $qty,
-                        'qty_received'        => 0,
-                        'qty_damaged_or_lost' => 0,
-                        'qty_lost'            => 0,
-                        'notes'               => $item['notes'] ?? null,
-                    ]);
-                    continue;
+                if ($itemType === 'custom' || !empty($item['custom_item_name']) || empty($item['material_id'])) {
+                    throw new Exception("Barang custom/manual tidak dapat dikirim melalui Surat Jalan pemindahan stok. Hanya material terdaftar di master yang diperbolehkan.");
                 }
 
                 // Item material
@@ -155,12 +128,20 @@ class DistributionService
                             ->first();
 
                         if ($requestItem) {
+                            if ($requestItem->fulfillment === 'purchase') {
+                                $matName = $requestItem->material?->name ?? 'Material';
+                                throw new Exception("Item '{$matName}' dialokasikan untuk pembelian (purchase), tidak dapat dikirim melalui Surat Jalan pemindahan stok.");
+                            }
+
                             $approvedQty = (float) $requestItem->qty_approved > 0 ? (float) $requestItem->qty_approved : (float) $requestItem->qty_requested;
-                            $remaining = $approvedQty - (float) $requestItem->qty_fulfilled;
+                            $inTransit   = (float) $requestItem->qty_in_transit;
+                            $received    = (float) $requestItem->qty_received;
+                            $remaining   = max(0, $approvedQty - $inTransit - $received);
+
                             if ($qty > $remaining) {
                                 $material = $requestItem->material;
                                 throw new Exception(sprintf(
-                                    "Jumlah pengiriman %s (%s) melebihi sisa persetujuan (%s).",
+                                    "Jumlah pengiriman %s (%s) melebihi sisa kuota kirim (%s).",
                                     $material?->name,
                                     $qty,
                                     $remaining
@@ -265,7 +246,7 @@ class DistributionService
                     $distribution->fromWarehouse,
                     $item->material,
                     (float) $item->qty_shipped,
-                    'distribution_ship',
+                    'distribution_out',
                     $distribution->id,
                     $userId,
                     "Pengiriman Surat Jalan No: {$distribution->distribution_number}"
@@ -285,27 +266,15 @@ class DistributionService
                 );
                 $projectInventory->increment('qty_in_transit', (float) $item->qty_shipped);
 
-                // Update qty_fulfilled pada item permintaan jika terhubung dengan MR
+                // Update qty_in_transit pada item MR jika terhubung dengan MR
                 if ($distribution->material_request_id) {
-                    $mrItemQuery = MaterialRequestItem::where('material_request_id', $distribution->material_request_id);
-                    if ($item->isCustom()) {
-                        $mrItemQuery->whereNull('material_id')
-                            ->where('custom_item_name', $item->custom_item_name);
-                    } else {
-                        $mrItemQuery->where('material_id', $item->material_id);
+                    $mrItem = MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
+                        ->where('material_id', $item->material_id)
+                        ->first();
+                    if ($mrItem) {
+                        $mrItem->increment('qty_in_transit', (float) $item->qty_shipped);
                     }
-                    $mrItemQuery->increment('qty_fulfilled', (float) $item->qty_shipped);
                 }
-            }
-
-            // Perbarui status MR keseluruhan
-            if ($distribution->materialRequest) {
-                $mr        = $distribution->materialRequest->fresh(['items']);
-                $fulfilled = $mr->items->every(fn($i) => (float) $i->qty_fulfilled >= (float) $i->qty_approved);
-                $mr->update([
-                    'status' => $fulfilled ? 'fulfilled'
-                                : (in_array($mr->status, ['approved', 'partially_fulfilled']) ? 'partially_fulfilled' : $mr->status),
-                ]);
             }
 
             $distribution->update([
@@ -414,8 +383,14 @@ class DistributionService
                     throw new Exception("Jumlah diterima, rusak, atau hilang tidak boleh bernilai negatif.");
                 }
 
-                if (($qtyReceived + $qtyDamaged + $qtyLost) > $qtyShipped) {
+                $totalHandled = $qtyReceived + $qtyDamaged + $qtyLost;
+                if ($totalHandled > $qtyShipped) {
                     throw new Exception("Total diterima ({$qtyReceived}) + rusak ({$qtyDamaged}) + hilang ({$qtyLost}) melebihi jumlah kirim ({$qtyShipped}).");
+                }
+
+                $discrepancy = max(0, $qtyShipped - $qtyReceived);
+                if ($qtyLost <= 0 && $qtyDamaged <= 0 && $discrepancy > 0) {
+                    $qtyLost = $discrepancy;
                 }
 
                 $distributionItem->update([
@@ -429,26 +404,7 @@ class DistributionService
                     continue;
                 }
 
-                $material = null;
-                if ($distributionItem->isCustom()) {
-                    // Opsi B: Auto-register custom item ke Master Material & Inventori
-                    $material = Material::autoRegisterCustom(
-                        $distributionItem->custom_item_name,
-                        $distributionItem->custom_item_unit
-                    );
-                    $distributionItem->update(['material_id' => $material->id]);
-
-                    // Jika distribusi ini terikat ke MR, perbarui juga material_id pada item MR
-                    if ($distribution->material_request_id) {
-                        MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
-                            ->whereNull('material_id')
-                            ->where('custom_item_name', $distributionItem->custom_item_name)
-                            ->update(['material_id' => $material->id]);
-                    }
-                } else {
-                    $material = $distributionItem->material;
-                }
-
+                $material = $distributionItem->material;
                 if (!$material) {
                     continue;
                 }
@@ -457,7 +413,7 @@ class DistributionService
                     ->where('material_id', $material->id)
                     ->first();
 
-                if ($projectInventory && !$distributionItem->isCustom()) {
+                if ($projectInventory) {
                     $projectInventory->decrement('qty_in_transit', min($qtyShipped, (float) $projectInventory->qty_in_transit));
                 }
 
@@ -466,11 +422,63 @@ class DistributionService
                         $distribution->toWarehouse,
                         $material,
                         $qtyReceived,
-                        'distribution_receive',
+                        'distribution_in',
                         $distribution->id,
                         $userId,
                         "Penerimaan Surat Jalan No: {$distribution->distribution_number}"
                     );
+                }
+
+                // Catat selisih ke tabel transit_losses
+                $lossAmount = $qtyDamaged + $qtyLost;
+                if ($lossAmount > 0) {
+                    TransitLoss::create([
+                        'distribution_id'      => $distribution->id,
+                        'distribution_item_id' => $distributionItem->id,
+                        'material_id'          => $material->id,
+                        'qty'                  => $lossAmount,
+                        'lost_qty'             => $lossAmount,
+                        'loss_value'           => 0,
+                        'status'               => 'recorded',
+                        'notes'                => "Selisih pengiriman Surat Jalan #{$distribution->distribution_number}. Dikirim: {$qtyShipped}, Diterima: {$qtyReceived}, Hilang/Rusak: {$lossAmount}.",
+                        'recorded_by'          => $userId,
+                    ]);
+                }
+
+                // Update MR item: qty_in_transit -= qty_shipped (zero out), qty_received += qty_received
+                if ($distribution->material_request_id) {
+                    $mrItem = MaterialRequestItem::where('material_request_id', $distribution->material_request_id)
+                        ->where('material_id', $material->id)
+                        ->first();
+                    if ($mrItem) {
+                        $newInTransit = max(0, (float) $mrItem->qty_in_transit - $qtyShipped);
+                        $newReceived  = (float) $mrItem->qty_received + $qtyReceived;
+                        $mrItem->update([
+                            'qty_in_transit' => $newInTransit,
+                            'qty_received'   => $newReceived,
+                            'qty_fulfilled'  => $newReceived,
+                        ]);
+                    }
+                }
+            }
+
+            // Hitung status MR berdasarkan qty_received (BUKAN dari terbitnya surat jalan / shipped)
+            if ($distribution->material_request_id) {
+                $mr = MaterialRequest::with('items')->find($distribution->material_request_id);
+                if ($mr) {
+                    $allFulfilled = $mr->items->every(function ($it) {
+                        $target = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
+                        return (float) $it->qty_received >= $target;
+                    });
+                    $sumReceived = $mr->items->sum('qty_received');
+
+                    if ($allFulfilled) {
+                        $mr->update(['status' => 'fulfilled']);
+                    } elseif ($sumReceived > 0) {
+                        $mr->update(['status' => 'partially_fulfilled']);
+                    } else {
+                        $mr->update(['status' => 'approved']);
+                    }
                 }
             }
 
