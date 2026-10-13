@@ -224,6 +224,14 @@
                             @else
                                 <span class="text-muted" style="font-size:11.5px;">— Non-PO —</span>
                             @endif
+
+                            @if($r->materialRequest)
+                                <div style="margin-top:4px;">
+                                    <a href="{{ route('material-requests.show', $r->materialRequest) }}" class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:4px;text-decoration:none;font-weight:600;" title="PO Lapangan">
+                                        <i class="fas fa-clipboard-check me-1"></i> #{{ $r->materialRequest->request_number }}
+                                    </a>
+                                </div>
+                            @endif
                         </td>
                         <td style="text-align:center;" class="nowrap">
                             @if($r->status === 'confirmed')

@@ -24,7 +24,7 @@ class GoodsReceiptController extends Controller
         $user        = auth()->user();
         $warehouseId = $request->warehouse_id ?? session('active_warehouse_id');
 
-        $query = GoodsReceipt::with(['supplier', 'warehouse', 'creator'])->withCount('items')
+        $query = GoodsReceipt::with(['supplier', 'warehouse', 'creator', 'purchaseOrder', 'materialRequest'])->withCount('items')
             ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId));
 
         // Batasi ke gudang yang boleh diakses user (kecuali Owner/Admin)
@@ -37,6 +37,8 @@ class GoodsReceiptController extends Controller
             $query->where(function ($q) use ($request) {
                 $q->where('receipt_number', 'like', "%{$request->search}%")
                   ->orWhere('invoice_number', 'like', "%{$request->search}%")
+                  ->orWhereHas('purchaseOrder', fn($pq) => $pq->where('po_number', 'like', "%{$request->search}%"))
+                  ->orWhereHas('materialRequest', fn($mq) => $mq->where('request_number', 'like', "%{$request->search}%"))
                   ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$request->search}%"));
             });
         }
@@ -53,10 +55,11 @@ class GoodsReceiptController extends Controller
 
     // ── Create ────────────────────────────────────────────────────────────
 
-    public function create()
+    public function create(Request $request)
     {
         $this->authorize('create goods receipts');
 
+        $user       = auth()->user();
         $suppliers  = Supplier::orderBy('name')->get();
         $warehouses = $this->accessibleWarehouses();
         $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
@@ -118,14 +121,60 @@ class GoodsReceiptController extends Controller
             ];
         });
 
-        // PO yang statusnya bisa diterima barangnya (sent atau partial_received)
-        $purchaseOrders = PurchaseOrder::with(['supplier', 'items.material'])
-            ->whereIn('status', ['sent', 'partial_received'])
-            ->orderBy('po_number')
-            ->get();
+        $accessibleWarehouseIds = $warehouses->pluck('id');
+
+        // PO yang statusnya bisa diterima barangnya (approved, sent, atau partial_received)
+        $poQuery = PurchaseOrder::with([
+            'supplier',
+            'deliveryWarehouse.project',
+            'items.material',
+            'items.tool',
+            'items.materialRequestItem.materialRequest.toWarehouse.project'
+        ])
+        ->whereIn('status', ['approved', 'sent', 'partial_received']);
+
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $poQuery->where(function ($sub) use ($accessibleWarehouseIds) {
+                $sub->whereIn('delivery_warehouse_id', $accessibleWarehouseIds)
+                    ->orWhereHas('items.materialRequestItem.materialRequest', fn($mrQ) => $mrQ->whereIn('to_warehouse_id', $accessibleWarehouseIds))
+                    ->orWhereHas('materialRequest', fn($mrQ) => $mrQ->whereIn('to_warehouse_id', $accessibleWarehouseIds));
+            });
+        }
+
+        $purchaseOrders = $poQuery->orderBy('po_number')->get();
+
+        // PO Lapangan (Material Request) yang aktif dan bisa diproses penerimaannya
+        $mrQuery = \App\Models\MaterialRequest::with([
+            'toWarehouse.project',
+            'requestedBy',
+            'purchaseOrders',
+            'items.purchaseOrderItems.purchaseOrder',
+            'distributions' => fn($dq) => $dq->where('status', 'in_transit')
+        ])
+        ->whereIn('status', ['approved', 'partially_fulfilled']);
+
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $mrQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
+        }
+
+        $materialRequests = $mrQuery->latest()->get();
+
+        // Surat Jalan yang sedang dikirim (in_transit) menuju gudang user
+        $distQuery = \App\Models\Distribution::with(['fromWarehouse', 'toWarehouse.project', 'materialRequest'])
+            ->where('status', 'in_transit');
+
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+            $distQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
+        }
+
+        $inTransitDistributions = $distQuery->latest()->get();
+
+        $selectedMrId = $request->query('from_mr_id', $request->query('material_request_id', $request->query('mr_id')));
+        $selectedPoId = $request->query('purchase_order_id', $request->query('po_id'));
 
         return view('goods-receipts.create', compact(
-            'suppliers', 'warehouses', 'materials', 'materialsJson', 'tools', 'toolsJson', 'purchaseOrders'
+            'suppliers', 'warehouses', 'materials', 'materialsJson', 'tools', 'toolsJson',
+            'purchaseOrders', 'materialRequests', 'inTransitDistributions', 'selectedMrId', 'selectedPoId'
         ));
     }
 
@@ -229,26 +278,109 @@ class GoodsReceiptController extends Controller
     {
         $this->authorize('create goods receipts');
 
-        $purchaseOrder->load(['items.material.unit', 'items.material.category', 'supplier']);
+        $purchaseOrder->load([
+            'materialRequest.toWarehouse.project',
+            'items.material.unit',
+            'items.material.category',
+            'items.tool.category',
+            'items.materialRequestItem.materialRequest.toWarehouse.project',
+            'supplier',
+            'deliveryWarehouse.project'
+        ]);
 
-        $items = $purchaseOrder->items->map(fn($item) => [
-            'purchase_order_item_id' => $item->id,
-            'material_id'            => $item->material_id,
-            'material_name'          => $item->material?->name ?? $item->custom_item_name,
-            'material_code'          => $item->material?->code ?? 'NON-MASTER',
-            'category_name'          => $item->material?->category?->name ?? 'Material Khusus Proyek',
-            'unit_abbr'              => $item->material?->unit?->abbreviation ?? $item->custom_item_unit ?? $item->unit ?? 'unit',
-            'qty_ordered'            => (float) $item->quantity,
-            'qty_received'           => (float) $item->received_qty,
-            'qty_remaining'          => max(0, (float) $item->quantity - (float) $item->received_qty),
-            'unit_price'             => (float) $item->unit_price,
-        ])->filter(fn($i) => $i['qty_remaining'] > 0)->values();
+        $items = $purchaseOrder->items->map(function ($item) {
+            $isTool = $item->isTool();
+            $mr = $item->materialRequestItem?->materialRequest ?? $item->purchaseOrder?->materialRequest;
+            $qtyRemaining = max(0, (float) $item->quantity - (float) $item->received_qty);
+
+            return [
+                'purchase_order_item_id'   => $item->id,
+                'material_request_item_id' => $item->material_request_item_id,
+                'item_type'                => $isTool ? 'tool' : 'material',
+                'material_id'              => $item->material_id,
+                'tool_id'                  => $item->tool_id,
+                'material_name'            => $item->displayName(),
+                'material_code'            => $isTool ? ($item->tool?->code ?? '-') : ($item->material?->code ?? 'NON-MASTER'),
+                'category_name'            => $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Material Khusus Proyek'),
+                'unit_abbr'                => $item->displayUnit(),
+                'qty_ordered'              => (float) $item->quantity,
+                'qty_received'             => (float) $item->received_qty,
+                'qty_remaining'            => $qtyRemaining > 0 ? $qtyRemaining : (float) $item->quantity,
+                'unit_price'               => (float) $item->unit_price,
+                'mr_id'                    => $mr?->id,
+                'mr_number'                => $mr?->request_number,
+                'project_name'             => $mr?->toWarehouse?->project?->name ?? $mr?->toWarehouse?->name,
+            ];
+        })->values();
+
+        $linkedMr = $purchaseOrder->materialRequest ?? $purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first();
 
         return response()->json([
-            'supplier_id'   => $purchaseOrder->supplier_id,
-            'supplier_name' => $purchaseOrder->supplier?->name,
-            'warehouse_id'  => $purchaseOrder->delivery_warehouse_id,
-            'items'         => $items,
+            'po_id'               => $purchaseOrder->id,
+            'po_number'           => $purchaseOrder->po_number,
+            'supplier_id'         => $purchaseOrder->supplier_id,
+            'supplier_name'       => $purchaseOrder->supplier?->name ?? $purchaseOrder->supplier_name,
+            'warehouse_id'        => $purchaseOrder->delivery_warehouse_id,
+            'material_request_id' => $linkedMr?->id,
+            'mr_number'           => $linkedMr?->request_number,
+            'project_name'        => $linkedMr?->toWarehouse?->project?->name ?? $linkedMr?->toWarehouse?->name,
+            'items'               => $items,
+        ]);
+    }
+
+    // ── AJAX: Load MR Items (PO Lapangan) untuk di-prefill ke form ──────────
+
+    public function getMrItems(\App\Models\MaterialRequest $materialRequest)
+    {
+        $this->authorize('create goods receipts');
+
+        $materialRequest->load([
+            'items.material.unit',
+            'items.material.category',
+            'items.tool.category',
+            'items.purchaseOrderItems.purchaseOrder.supplier',
+            'purchaseOrders.supplier',
+            'toWarehouse.project'
+        ]);
+
+        $items = $materialRequest->items->map(function ($item) use ($materialRequest) {
+            $isTool = $item->tool_id !== null || ($item->item_type ?? '') === 'tool';
+            $approved = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+            $received = (float) $item->qty_received;
+            $remaining = max(0, $approved - $received);
+            $linkedPoi = $item->purchaseOrderItems->first();
+
+            return [
+                'item_type'                => $isTool ? 'tool' : 'material',
+                'material_request_item_id' => $item->id,
+                'purchase_order_item_id'   => $linkedPoi?->id,
+                'material_id'              => $item->material_id,
+                'tool_id'                  => $item->tool_id,
+                'material_name'            => $item->displayName(),
+                'material_code'            => $isTool ? ($item->tool?->code ?? '-') : ($item->material?->code ?? 'NON-MASTER'),
+                'category_name'            => $item->displayCategoryName(),
+                'unit_abbr'                => $item->displayUnit(),
+                'qty_ordered'              => $approved,
+                'qty_received'             => $received,
+                'qty_remaining'            => $remaining > 0 ? $remaining : $approved,
+                'unit_price'               => (float) ($linkedPoi?->unit_price ?? 0),
+                'mr_id'                    => $materialRequest->id,
+                'mr_number'                => $materialRequest->request_number,
+            ];
+        })->values();
+
+        $linkedPo = $materialRequest->purchaseOrders()->latest()->first() 
+            ?? $materialRequest->items->flatMap->purchaseOrderItems->pluck('purchaseOrder')->filter()->first();
+
+        return response()->json([
+            'material_request_id' => $materialRequest->id,
+            'mr_number'           => $materialRequest->request_number,
+            'warehouse_id'        => $materialRequest->to_warehouse_id,
+            'warehouse_name'      => $materialRequest->toWarehouse?->project?->name ?? $materialRequest->toWarehouse?->name,
+            'purchase_order_id'   => $linkedPo?->id,
+            'supplier_id'         => $linkedPo?->supplier_id,
+            'supplier_name'       => $linkedPo?->supplier?->name ?? $linkedPo?->supplier_name,
+            'items'               => $items,
         ]);
     }
 
@@ -258,30 +390,77 @@ class GoodsReceiptController extends Controller
     {
         $this->authorize('create goods receipts');
 
-        // Auto-register custom items from PO if material_id is not yet created
+        // Auto-register custom items from PO or Material Request if material_id is not yet created
         if ($request->has('items') && is_array($request->items)) {
             $items = $request->items;
             foreach ($items as $k => $v) {
-                if (empty($v['material_id']) && !empty($v['purchase_order_item_id'])) {
-                    $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
-                    if ($poItem && !empty($poItem->custom_item_name)) {
-                        $mat = Material::autoRegisterCustom($poItem->custom_item_name, $poItem->custom_item_unit ?? $poItem->unit);
-                        $items[$k]['material_id'] = $mat->id;
-                        $poItem->update(['material_id' => $mat->id]);
-                        if ($poItem->material_request_item_id) {
-                            $poItem->materialRequestItem?->update(['material_id' => $mat->id]);
+                if (empty($v['material_id']) && empty($v['tool_id'])) {
+                    if (!empty($v['purchase_order_item_id'])) {
+                        $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
+                        if ($poItem && !empty($poItem->custom_item_name)) {
+                            $mrItem = $poItem->materialRequestItem;
+                            $catId  = $mrItem?->category_id ?: ($v['category_id'] ?? null);
+                            $spec   = $mrItem?->specification ?: ($v['specification'] ?? null);
+                            $typeName = $mrItem?->custom_item_type ?: ($poItem->custom_item_type ?? ($v['type'] ?? null));
+                            $mat    = Material::autoRegisterCustom(
+                                $poItem->custom_item_name,
+                                $poItem->custom_item_unit ?? $poItem->unit,
+                                $catId,
+                                $typeName,
+                                null,
+                                $spec
+                            );
+                            $items[$k]['material_id'] = $mat->id;
+                            $poItem->update(['material_id' => $mat->id]);
+                            if ($poItem->material_request_item_id) {
+                                $poItem->materialRequestItem?->update(['material_id' => $mat->id]);
+                            }
                         }
+                    } elseif (!empty($v['material_request_item_id'])) {
+                        $mrItem = \App\Models\MaterialRequestItem::find($v['material_request_item_id']);
+                        if ($mrItem && !empty($mrItem->custom_item_name)) {
+                            $catId = $mrItem->category_id ?: ($v['category_id'] ?? null);
+                            $spec  = $mrItem->specification ?: ($v['specification'] ?? null);
+                            $typeName = $mrItem->custom_item_type ?: ($v['type'] ?? null);
+                            $mat   = Material::autoRegisterCustom(
+                                $mrItem->custom_item_name,
+                                $mrItem->custom_item_unit ?? 'unit',
+                                $catId,
+                                $typeName,
+                                null,
+                                $spec
+                            );
+                            $items[$k]['material_id'] = $mat->id;
+                            $mrItem->update(['material_id' => $mat->id]);
+                        }
+                    } elseif (!empty($v['custom_item_name'])) {
+                        $mat = Material::autoRegisterCustom(
+                            $v['custom_item_name'],
+                            $v['custom_item_unit'] ?? 'unit',
+                            !empty($v['category_id']) ? (int) $v['category_id'] : null,
+                            $v['type'] ?? null,
+                            $v['brand'] ?? null,
+                            $v['specification'] ?? ($v['size'] ?? null)
+                        );
+                        $items[$k]['material_id'] = $mat->id;
                     }
                 }
             }
             $request->merge(['items' => $items]);
         }
 
-        // Fallback warehouse_id jika dari PO
-        if (!$request->filled('warehouse_id') && $request->filled('purchase_order_id')) {
-            $po = PurchaseOrder::find($request->purchase_order_id);
-            if ($po?->delivery_warehouse_id) {
-                $request->merge(['warehouse_id' => $po->delivery_warehouse_id]);
+        // Fallback warehouse_id jika dari PO atau PO Lapangan
+        if (!$request->filled('warehouse_id')) {
+            if ($request->filled('purchase_order_id')) {
+                $po = PurchaseOrder::find($request->purchase_order_id);
+                if ($po?->delivery_warehouse_id) {
+                    $request->merge(['warehouse_id' => $po->delivery_warehouse_id]);
+                }
+            } elseif ($request->filled('material_request_id')) {
+                $mr = \App\Models\MaterialRequest::find($request->material_request_id);
+                if ($mr?->to_warehouse_id) {
+                    $request->merge(['warehouse_id' => $mr->to_warehouse_id]);
+                }
             }
         }
 
@@ -306,6 +485,7 @@ class GoodsReceiptController extends Controller
 
         $validated = $request->validate([
             'purchase_order_id'              => 'nullable|exists:purchase_orders,id',
+            'material_request_id'            => 'nullable|exists:material_requests,id',
             'supplier_id'                    => 'required|exists:suppliers,id',
             'supplier_name'                  => 'nullable|string|max:255',
             'warehouse_id'                   => 'required|exists:warehouses,id',
@@ -320,6 +500,7 @@ class GoodsReceiptController extends Controller
             'items.*.stage_reference'        => 'nullable|string|max:100',
             'items.*.condition'              => 'nullable|in:good,damaged,reject',
             'items.*.purchase_order_item_id' => 'nullable|exists:purchase_order_items,id',
+            'items.*.material_request_item_id'=> 'nullable|exists:material_request_items,id',
             'items.*.po_delivery_schedule_id'=> 'nullable|exists:po_delivery_schedules,id',
             'items.*.quantity'               => 'required|numeric|min:0.01',
             'items.*.qty_shipped'            => 'nullable|numeric|min:0',
@@ -376,9 +557,9 @@ class GoodsReceiptController extends Controller
         $this->authorize('view goods receipts');
         $goodsReceipt->load([
             'supplier', 'warehouse', 'creator', 'receivedBy',
-            'confirmedBy', 'purchaseOrder', 
+            'confirmedBy', 'purchaseOrder', 'materialRequest.toWarehouse.project',
             'items.material.unit', 'items.material.category',
-            'items.tool.category',
+            'items.tool.category', 'items.materialRequestItem',
         ]);
 
         return view('goods-receipts.show', compact('goodsReceipt'));

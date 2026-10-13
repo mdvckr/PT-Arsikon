@@ -86,9 +86,16 @@ class GoodsReceiptService
                 ? preg_replace('/\s+/', ' ', trim($validated['supplier_name']))
                 : null;
 
+            $mrId = $validated['material_request_id'] ?? null;
+            if (!$mrId && !empty($validated['purchase_order_id'])) {
+                $po = PurchaseOrder::with('items.materialRequestItem')->find($validated['purchase_order_id']);
+                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first();
+            }
+
             $receipt = GoodsReceipt::create([
                 'receipt_number'      => GoodsReceipt::generateReceiptNumber(),
                 'purchase_order_id'   => $validated['purchase_order_id'] ?? null,
+                'material_request_id' => $mrId,
                 'supplier_id'         => $validated['supplier_id'],
                 'supplier_name'       => $supplierName,
                 'warehouse_id'        => $validated['warehouse_id'],
@@ -108,6 +115,8 @@ class GoodsReceiptService
                 if (!$isTool && $poItem && $poItem->isTool()) {
                     $isTool = true;
                 }
+
+                $mrItemId = $item['material_request_item_id'] ?? ($poItem?->material_request_item_id ?? null);
 
                 $qtyReceived = (float) ($item['qty_received'] ?? $item['quantity'] ?? 0);
                 $qtyDamaged  = (float) ($item['qty_damaged'] ?? 0);
@@ -139,21 +148,22 @@ class GoodsReceiptService
                 $unitPrice = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
 
                 GoodsReceiptItem::create([
-                    'goods_receipt_id'        => $receipt->id,
-                    'item_type'               => $isTool ? 'tool' : 'material',
-                    'purchase_order_item_id'  => $poItemId,
-                    'po_delivery_schedule_id' => $item['po_delivery_schedule_id'] ?? null,
-                    'stage_reference'         => $item['stage_reference'] ?? null,
-                    'material_id'             => $isTool ? null : ($item['material_id'] ?? null),
-                    'tool_id'                 => $isTool ? ($item['tool_id'] ?? null) : null,
-                    'qty_shipped'             => $qtyShipped,
-                    'qty_received'            => $qtyReceived,
-                    'qty_damaged'             => $qtyDamaged,
-                    'qty_missing'             => $qtyMissing,
-                    'missing_status'          => $missingStatus,
-                    'condition'               => $item['condition'] ?? 'good',
-                    'unit_price'              => $unitPrice,
-                    'notes'                   => $item['notes'] ?? null,
+                    'goods_receipt_id'         => $receipt->id,
+                    'item_type'                => $isTool ? 'tool' : 'material',
+                    'purchase_order_item_id'   => $poItemId,
+                    'material_request_item_id' => $mrItemId,
+                    'po_delivery_schedule_id'  => $item['po_delivery_schedule_id'] ?? null,
+                    'stage_reference'          => $item['stage_reference'] ?? null,
+                    'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
+                    'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'qty_shipped'              => $qtyShipped,
+                    'qty_received'             => $qtyReceived,
+                    'qty_damaged'              => $qtyDamaged,
+                    'qty_missing'              => $qtyMissing,
+                    'missing_status'           => $missingStatus,
+                    'condition'                => $item['condition'] ?? 'good',
+                    'unit_price'               => $unitPrice,
+                    'notes'                    => $item['notes'] ?? null,
                 ]);
             }
 
@@ -225,13 +235,29 @@ class GoodsReceiptService
                 } else {
                     // Penanganan Material
                     $material = $item->material;
-                    if (!$material && $item->purchase_order_item_id) {
-                        if ($poItem && !empty($poItem->custom_item_name)) {
-                            $material = Material::autoRegisterCustom($poItem->custom_item_name, $poItem->custom_item_unit ?? $poItem->unit);
+                    if (!$material && ($item->purchase_order_item_id || $item->material_request_item_id)) {
+                        $mrItem = $item->materialRequestItem ?? $poItem?->materialRequestItem;
+                        $customName = $poItem?->custom_item_name ?? $mrItem?->custom_item_name;
+                        $customUnit = $poItem?->custom_item_unit ?? ($poItem?->unit ?? ($mrItem?->custom_item_unit ?? 'unit'));
+
+                        if (!empty($customName)) {
+                            $catId = $mrItem?->category_id;
+                            $spec  = $mrItem?->specification;
+                            $typeName = $mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null);
+                            $material = Material::autoRegisterCustom(
+                                $customName,
+                                $customUnit,
+                                $catId,
+                                $typeName,
+                                null,
+                                $spec
+                            );
                             $item->update(['material_id' => $material->id]);
-                            $poItem->update(['material_id' => $material->id]);
-                            if ($poItem->material_request_item_id) {
-                                $poItem->materialRequestItem?->update(['material_id' => $material->id]);
+                            if ($poItem) {
+                                $poItem->update(['material_id' => $material->id]);
+                            }
+                            if ($mrItem) {
+                                $mrItem->update(['material_id' => $material->id]);
                             }
                         }
                     }
@@ -320,8 +346,9 @@ class GoodsReceiptService
                 }
 
                 // T11: Hubungkan ke MR item (qty_received MR item += qty_received GR item)
-                if ($poItem && $poItem->material_request_item_id && (float) $item->qty_received > 0) {
-                    $mrItem = MaterialRequestItem::where('id', $poItem->material_request_item_id)->lockForUpdate()->first();
+                $mrItemId = $poItem?->material_request_item_id ?? $item->material_request_item_id;
+                if ($mrItemId && (float) $item->qty_received > 0) {
+                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->first();
                     if ($mrItem) {
                         $mrItem->increment('qty_received', (float) $item->qty_received);
                         if ($mrItem->material_request_id) {
@@ -329,6 +356,10 @@ class GoodsReceiptService
                         }
                     }
                 }
+            }
+
+            if ($receipt->material_request_id) {
+                $mrToRecalculate->push($receipt->material_request_id);
             }
 
             // Hitung ulang status MR dan kirim notifikasi

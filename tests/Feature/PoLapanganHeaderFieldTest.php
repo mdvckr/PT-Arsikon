@@ -155,4 +155,30 @@ class PoLapanganHeaderFieldTest extends TestCase
             'Penanda lewat tanggal dibutuhkan harus tampil saat needed_at lewat.'
         );
     }
+
+    public function test_create_page_defaults_kepada_to_pengadaan_vendor(): void
+    {
+        $response = $this->actingAs($this->adminProyek)->get(route('material-requests.create'));
+        $response->assertStatus(200);
+
+        // Opsi '— Pengadaan / Beli ke Vendor —' harus terpilih secara default
+        $response->assertSee('<option value="" selected>— Pengadaan / Beli ke Vendor —</option>', false);
+    }
+
+    public function test_can_submit_material_request_to_pengadaan_without_source_warehouse(): void
+    {
+        $targetDate = now()->addDays(5)->format('Y-m-d');
+
+        $response = $this->actingAs($this->adminProyek)->post(route('material-requests.store'), [
+            'warehouse_id'        => $this->projectWh1->id,
+            'source_warehouse_id' => '', // Pengadaan / Beli ke Vendor
+            'needed_at'           => $targetDate,
+            'quantities'          => [$this->material->id => 12],
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $mr = MaterialRequest::latest()->first();
+        $this->assertNotNull($mr);
+        $this->assertNull($mr->from_warehouse_id);
+    }
 }

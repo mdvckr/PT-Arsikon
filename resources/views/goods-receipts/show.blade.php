@@ -333,6 +333,23 @@
                         </span>
                     </div>
 
+                    @php
+                        $linkedMr = $goodsReceipt->materialRequest ?? $goodsReceipt->purchaseOrder?->items?->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->first();
+                    @endphp
+                    @if($linkedMr)
+                    <div class="info-row">
+                        <span class="info-label">PO Lapangan</span>
+                        <span class="info-val">
+                            <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#2563eb;text-decoration:none;font-weight:700;">
+                                <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                            </a>
+                            <div style="font-size:10.5px;color:#64748b;font-weight:normal;">
+                                {{ $linkedMr->toWarehouse?->project?->name ?? $linkedMr->toWarehouse?->name }}
+                            </div>
+                        </span>
+                    </div>
+                    @endif
+
                     <div class="info-row">
                         <span class="info-label">Supplier</span>
                         <span class="info-val" style="display:inline-flex;align-items:center;gap:4px;">

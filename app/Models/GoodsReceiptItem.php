@@ -14,6 +14,7 @@ class GoodsReceiptItem extends Model
         'goods_receipt_id',
         'item_type',
         'purchase_order_item_id',
+        'material_request_item_id',
         'po_delivery_schedule_id',
         'stage_reference',
         'material_id',
@@ -54,6 +55,11 @@ class GoodsReceiptItem extends Model
     public function purchaseOrderItem(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrderItem::class);
+    }
+
+    public function materialRequestItem(): BelongsTo
+    {
+        return $this->belongsTo(MaterialRequestItem::class);
     }
 
     public function deliverySchedule(): BelongsTo

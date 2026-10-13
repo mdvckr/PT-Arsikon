@@ -22,8 +22,8 @@ class ProcurementController extends Controller
 
     public function create()
     {
-        $materials = Material::with('unit')->orderBy('name')->get();
-        return view('procurement.create', compact('materials'));
+        return redirect()->route('material-requests.create')
+            ->with('info', 'Alur pengajuan permintaan material telah disatukan ke formulir PO Lapangan.');
     }
 
     public function store(Request $request)

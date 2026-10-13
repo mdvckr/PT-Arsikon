@@ -20,7 +20,15 @@ return new class extends Migration
             $table->string('pr_number')->unique();
             $table->foreignId('requested_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('material_request_id')->nullable()->constrained('material_requests')->nullOnDelete();
-            $table->enum('status', ['draft', 'submitted', 'approved', 'rejected', 'po_created'])->default('draft');
+            $table->enum('status', [
+                'draft',
+                'submitted',
+                'approved',
+                'rejected',
+                'po_created',
+                'partially_ordered',
+                'fully_ordered'
+            ])->default('draft');
             $table->date('needed_by')->nullable();
             $table->text('justification')->nullable();
             $table->text('rejection_reason')->nullable();
@@ -35,6 +43,7 @@ return new class extends Migration
             $table->foreignId('procurement_request_id')->constrained('procurement_requests')->onDelete('cascade');
             $table->foreignId('material_id')->constrained('materials')->onDelete('cascade');
             $table->decimal('quantity', 12, 2);
+            $table->decimal('qty_ordered', 12, 2)->default(0.00);
             $table->decimal('estimated_price', 15, 2)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -45,11 +54,22 @@ return new class extends Migration
             $table->id();
             $table->string('po_number')->unique();
             $table->foreignId('procurement_request_id')->nullable()->constrained('procurement_requests')->nullOnDelete();
+            $table->foreignId('material_request_id')->nullable()->constrained('material_requests')->nullOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('cascade');
             $table->string('supplier_name')->nullable();
+            $table->foreignId('delivery_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('status', ['draft', 'sent', 'partial_received', 'received', 'cancelled'])->default('draft');
+            $table->enum('status', [
+                'draft',
+                'approved',
+                'sent',
+                'partial_received',
+                'received',
+                'cancelled',
+                'closed'
+            ])->default('draft');
+            $table->enum('risk_bearer', ['vendor', 'buyer'])->default('vendor');
             $table->date('order_date');
             $table->date('expected_delivery')->nullable();
             $table->decimal('total_amount', 15, 2)->default(0.00);
@@ -64,12 +84,17 @@ return new class extends Migration
         Schema::create('purchase_order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
-            $table->foreignId('material_id')->nullable()->constrained('materials')->onDelete('cascade');
-            $table->string('custom_item_name')->nullable();
-            $table->string('custom_item_unit', 50)->nullable();
+            $table->foreignId('material_id')->nullable()->constrained('materials')->nullOnDelete();
+            $table->foreignId('tool_id')->nullable()->constrained('tools')->nullOnDelete();
+            $table->foreignId('procurement_request_item_id')->nullable()->constrained('procurement_request_items')->nullOnDelete();
             $table->foreignId('material_request_item_id')->nullable()->constrained('material_request_items')->nullOnDelete();
+            $table->string('custom_item_name')->nullable();
+            $table->string('custom_item_type', 100)->nullable();
+            $table->string('custom_item_unit', 50)->nullable();
             $table->decimal('quantity', 12, 2);
             $table->decimal('received_qty', 12, 2)->default(0.00);
+            $table->decimal('lost_qty', 12, 2)->default(0.00);
+            $table->decimal('short_closed_qty', 12, 2)->default(0.00);
             $table->decimal('unit_price', 15, 2)->default(0.00);
             $table->decimal('subtotal', 15, 2)->default(0.00);
             $table->decimal('total_price', 15, 2)->default(0.00);
@@ -78,11 +103,27 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 5. Goods Receipts (Incoming Warehouse Verification)
+        // 5. PO Delivery Schedules (Staged Delivery Batches)
+        Schema::create('po_delivery_schedules', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('purchase_order_item_id')->constrained('purchase_order_items')->cascadeOnDelete();
+            $table->string('stage_label', 100)->nullable();
+            $table->date('planned_date')->nullable();
+            $table->decimal('planned_qty', 12, 2);
+            $table->decimal('received_qty', 12, 2)->default(0.00);
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->enum('status', ['planned', 'partial', 'received', 'cancelled'])->default('planned');
+            $table->text('notes')->nullable();
+            $table->timestamp('late_notified_at')->nullable();
+            $table->timestamps();
+        });
+
+        // 6. Goods Receipts (Incoming Warehouse Verification)
         Schema::create('goods_receipts', function (Blueprint $table) {
             $table->id();
             $table->string('receipt_number')->unique();
             $table->foreignId('purchase_order_id')->nullable()->constrained('purchase_orders')->nullOnDelete();
+            $table->foreignId('material_request_id')->nullable()->constrained('material_requests')->nullOnDelete();
             $table->string('status')->default('draft');
             $table->string('invoice_number', 100)->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -98,16 +139,22 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 6. Goods Receipt Items (Multi-type: materials and tools with stages)
+        // 7. Goods Receipt Items (Multi-type: materials and tools with stages)
         Schema::create('goods_receipt_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('goods_receipt_id')->constrained('goods_receipts')->onDelete('cascade');
             $table->string('item_type', 20)->default('material');
             $table->foreignId('purchase_order_item_id')->nullable()->constrained('purchase_order_items')->nullOnDelete();
+            $table->foreignId('material_request_item_id')->nullable()->constrained('material_request_items')->nullOnDelete();
+            $table->foreignId('po_delivery_schedule_id')->nullable()->constrained('po_delivery_schedules')->nullOnDelete();
             $table->string('stage_reference', 100)->nullable();
             $table->foreignId('material_id')->nullable()->constrained('materials');
             $table->foreignId('tool_id')->nullable()->constrained('tools')->nullOnDelete();
-            $table->decimal('qty_received', 12, 2);
+            $table->decimal('qty_shipped', 12, 2)->default(0.00);
+            $table->decimal('qty_received', 12, 2)->default(0.00);
+            $table->decimal('qty_damaged', 12, 2)->default(0.00);
+            $table->decimal('qty_missing', 12, 2)->default(0.00);
+            $table->enum('missing_status', ['none', 'unresolved', 'resolved', 'confirmed_lost'])->default('none');
             $table->string('condition', 20)->default('good');
             $table->decimal('unit_price', 12, 2)->nullable();
             $table->text('notes')->nullable();
@@ -222,6 +269,7 @@ return new class extends Migration
         Schema::dropIfExists('purchase_receipts');
         Schema::dropIfExists('goods_receipt_items');
         Schema::dropIfExists('goods_receipts');
+        Schema::dropIfExists('po_delivery_schedules');
         Schema::dropIfExists('purchase_order_items');
         Schema::dropIfExists('purchase_orders');
         Schema::dropIfExists('procurement_request_items');

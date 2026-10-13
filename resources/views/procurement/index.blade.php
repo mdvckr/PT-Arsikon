@@ -1,16 +1,23 @@
 <x-app-layout>
     <x-slot name="title">Permintaan Pengadaan</x-slot>
 
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-3">
         <div>
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Permintaan Pengadaan (PR)</h2>
-            <p class="text-muted" style="font-size:13px;">Manajemen permintaan pengadaan material</p>
+            <p class="text-muted" style="font-size:13px;">Arsip permintaan pengadaan material</p>
         </div>
         @can("create procurement")
-        <a href="{{ route("procurement.create") }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Buat PR Baru
+        <a href="{{ route('material-requests.create') }}" class="btn btn-primary" style="font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;">
+            <i class="fas fa-plus me-1"></i> Buat PO Lapangan Baru
         </a>
         @endcan
+    </div>
+
+    <div class="alert alert-info mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:10px 14px;border-radius:8px;font-size:12.5px;display:flex;align-items:center;gap:10px;">
+        <i class="fas fa-circle-info" style="font-size:16px;color:#2563eb;"></i>
+        <div>
+            Halaman ini merupakan <strong>arsip data</strong> Permintaan Pengadaan (PR). Untuk seluruh kebutuhan material dan pengadaan proyek terkini, alur telah dipusatkan melalui formulir <strong><a href="{{ route('material-requests.create') }}" style="color:#1d4ed8;text-decoration:underline;font-weight:600;">PO Lapangan</a></strong>.
+        </div>
     </div>
 
     <div class="card">

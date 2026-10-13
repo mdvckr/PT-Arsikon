@@ -140,8 +140,14 @@ class Material extends Model
     /**
      * Auto-register custom/manual item to master materials table.
      */
-    public static function autoRegisterCustom(string $name, ?string $unitName = 'unit', ?int $categoryId = null): Material
-    {
+    public static function autoRegisterCustom(
+        string $name,
+        ?string $unitName = 'unit',
+        ?int $categoryId = null,
+        ?string $typeName = null,
+        ?string $brand = null,
+        ?string $size = null
+    ): Material {
         $cleanName = trim($name);
         $material = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
         if ($material) {
@@ -188,6 +194,19 @@ class Material extends Model
             );
         }
 
+        // Resolve kelompok/type: prioritaskan $typeName, atau cari kelompok yang sudah ada di kategori ini, atau fallback kontekstual
+        $resolvedType = trim($typeName ?? '');
+        if (empty($resolvedType)) {
+            // Cek apakah kategori ini sudah memiliki kelompok (type) yang ada di master
+            $existingType = static::where('category_id', $category->id)
+                ->whereNotNull('type')
+                ->where('type', '!=', '')
+                ->where('type', '!=', 'Material Proyek')
+                ->value('type');
+
+            $resolvedType = $existingType ?: ($category->code !== 'CAT-CUST' ? $category->name : 'Material Proyek');
+        }
+
         // Generate unique SKU
         $maxId = (int) (static::max('id') ?? 0) + 1;
         $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
@@ -201,8 +220,9 @@ class Material extends Model
             'unit_id'     => $unit->id,
             'sku'         => $sku,
             'name'        => $cleanName,
-            'brand'       => 'Custom / Proyek',
-            'type'        => 'Material Proyek',
+            'brand'       => $brand ?: 'Custom / Proyek',
+            'type'        => $resolvedType,
+            'size'        => $size ?: null,
             'is_active'   => true,
             'description' => 'Didaftarkan otomatis oleh sistem dari Permintaan / Penerimaan Barang Proyek',
         ]);

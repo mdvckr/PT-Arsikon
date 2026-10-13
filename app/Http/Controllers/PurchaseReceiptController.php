@@ -15,6 +15,8 @@ class PurchaseReceiptController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('view purchase receipts');
+
         $query = PurchaseReceipt::with(['purchaseOrder', 'project', 'supplier', 'creator', 'items']);
 
         if ($request->search) {
@@ -44,17 +46,26 @@ class PurchaseReceiptController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('create purchase receipts');
+
+        $user = auth()->user();
         $pos = PurchaseOrder::with('supplier')->latest()->get();
         $projects = Project::orderBy('name')->get();
         $suppliers = Supplier::orderBy('name')->get();
         $materials = Material::with('unit')->orderBy('name')->get();
         $selectedPO = $request->po_id ? PurchaseOrder::find($request->po_id) : null;
 
-        return view('purchase-receipts.create', compact('pos', 'projects', 'suppliers', 'materials', 'selectedPO'));
+        $defaultProjectName = $user->activeWarehouse()?->project?->name
+            ?? $user->warehouses->firstWhere('type', 'project')?->project?->name
+            ?? '';
+
+        return view('purchase-receipts.create', compact('pos', 'projects', 'suppliers', 'materials', 'selectedPO', 'defaultProjectName'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create purchase receipts');
+
         $validated = $request->validate([
             'purchase_order_id' => 'nullable|exists:purchase_orders,id',
             'project_name'      => 'nullable|string|max:255',
@@ -136,12 +147,16 @@ class PurchaseReceiptController extends Controller
 
     public function show(PurchaseReceipt $purchaseReceipt)
     {
+        $this->authorize('view purchase receipts');
+
         $purchaseReceipt->load(['purchaseOrder', 'project', 'supplier', 'creator', 'items.material.unit']);
         return view('purchase-receipts.show', compact('purchaseReceipt'));
     }
 
     public function destroy(PurchaseReceipt $purchaseReceipt)
     {
+        $this->authorize('delete purchase receipts');
+
         if ($purchaseReceipt->image_path) {
             Storage::disk('public')->delete($purchaseReceipt->image_path);
         }

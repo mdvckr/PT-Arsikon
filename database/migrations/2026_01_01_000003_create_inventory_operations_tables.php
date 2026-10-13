@@ -64,9 +64,11 @@ return new class extends Migration
         Schema::create('material_requests', function (Blueprint $table) {
             $table->id();
             $table->string('request_number')->unique();
-            $table->foreignId('from_warehouse_id')->constrained('warehouses');
+            $table->foreignId('from_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignId('to_warehouse_id')->constrained('warehouses');
+            $table->date('needed_at')->nullable();
             $table->foreignId('requested_by_user_id')->constrained('users');
+            $table->string('requested_as', 50)->nullable()->default('Admin Proyek');
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->enum('status', [
@@ -87,14 +89,28 @@ return new class extends Migration
         Schema::create('material_request_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('material_request_id')->constrained('material_requests')->onDelete('cascade');
-            $table->foreignId('material_id')->nullable()->constrained('materials');
+            $table->enum('item_type', ['material', 'tool'])->default('material');
+            $table->foreignId('material_id')->nullable()->constrained('materials')->nullOnDelete();
+            $table->foreignId('tool_id')->nullable()->constrained('tools')->nullOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->string('custom_item_type', 100)->nullable();
             $table->string('custom_item_name')->nullable();
             $table->string('custom_item_unit', 50)->nullable();
+            $table->enum('fulfillment', ['stock', 'purchase'])->nullable();
             $table->decimal('qty_requested', 12, 2);
             $table->decimal('qty_approved', 12, 2)->default(0.00);
+            $table->decimal('qty_ordered', 12, 2)->default(0.00);
+            $table->decimal('qty_in_transit', 12, 2)->default(0.00);
+            $table->decimal('qty_received', 12, 2)->default(0.00);
             $table->decimal('qty_fulfilled', 12, 2)->default(0.00);
+            $table->decimal('qty_issued', 12, 2)->default(0.00);
             $table->text('notes')->nullable();
+            $table->string('specification', 255)->nullable();
+            $table->string('usage_location', 255)->nullable();
+            $table->date('usage_date')->nullable();
             $table->timestamps();
+
+            $table->index('category_id', 'idx_mr_items_category_id');
         });
 
         // 6. Material Usages (Field consumption on project sites)

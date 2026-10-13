@@ -16,6 +16,7 @@ class MaterialRequestItem extends Model
         'item_type',
         'material_id',
         'category_id',
+        'custom_item_type',
         'tool_id',
         'custom_item_name',
         'custom_item_unit',

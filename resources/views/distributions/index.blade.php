@@ -107,6 +107,30 @@
     </div>
     @endif
 
+    {{-- Quick Status Filter Tabs --}}
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <a href="{{ route('distributions.index', array_filter(['search' => request('search')])) }}" 
+           class="btn btn-sm {{ !request('status') ? 'btn-primary' : 'btn-light border' }}" 
+           style="border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;">
+           Semua Surat Jalan
+        </a>
+        <a href="{{ route('distributions.index', array_filter(['status' => 'in_transit', 'search' => request('search')])) }}" 
+           class="btn btn-sm {{ request('status') === 'in_transit' ? 'btn-primary' : 'btn-light border' }}" 
+           style="border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+           <i class="fas fa-truck-fast"></i> Dalam Perjalanan (Perlu Diterima)
+        </a>
+        <a href="{{ route('distributions.index', array_filter(['status' => 'completed', 'search' => request('search')])) }}" 
+           class="btn btn-sm {{ request('status') === 'completed' ? 'btn-primary' : 'btn-light border' }}" 
+           style="border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;">
+           Selesai / Diterima
+        </a>
+        <a href="{{ route('distributions.index', array_filter(['status' => 'draft', 'search' => request('search')])) }}" 
+           class="btn btn-sm {{ request('status') === 'draft' ? 'btn-primary' : 'btn-light border' }}" 
+           style="border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;">
+           Draft
+        </a>
+    </div>
+
     <div class="card mb-3" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
         <div class="card-body" style="padding:12px 16px;">
             <form method="GET" class="dist-filter-grid">

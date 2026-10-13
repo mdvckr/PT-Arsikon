@@ -131,6 +131,18 @@
                 <span class="text-muted block text-xs">Dibuat Oleh:</span>
                 <span>{{ $purchaseOrder->creator?->name ?? '-' }}</span>
             </div>
+            @php
+                $linkedMr = $purchaseOrder->materialRequest ?? $purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first();
+            @endphp
+            @if($linkedMr)
+            <div>
+                <span class="text-muted block text-xs">Dari PO Lapangan:</span>
+                <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#2563eb;text-decoration:none;font-weight:700;">
+                    <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                </a>
+                <span class="block text-xs text-muted">{{ $linkedMr->toWarehouse?->project?->name ?? $linkedMr->toWarehouse?->name }}</span>
+            </div>
+            @endif
         </div>
     </div>
 

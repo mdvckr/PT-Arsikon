@@ -56,8 +56,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::get('/notifications/unread', [NotificationController::class, 'unreadList'])->name('notifications.unread');
     Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     // Master Data
     Route::post('/materials/delete-group', [MaterialController::class, 'deleteGroup'])->name('materials.delete-group');
@@ -80,6 +82,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Goods Receipts
     Route::get('/goods-receipts/scheduled-incoming', [GoodsReceiptController::class, 'getScheduledIncoming'])->name('goods-receipts.scheduledIncoming');
     Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
+    Route::get('/goods-receipts/mr-items/{materialRequest}', [GoodsReceiptController::class, 'getMrItems'])->name('goods-receipts.mrItems');
     Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
     Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
 

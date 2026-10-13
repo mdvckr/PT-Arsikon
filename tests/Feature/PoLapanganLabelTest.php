@@ -82,8 +82,8 @@ class PoLapanganLabelTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('PO Lapangan');
         $response->assertDontSee('Permintaan Material');
-        // Harus menampilkan format "Nama Gudang - Nama Proyek" untuk gudang tujuan yang terhubung proyek
-        $response->assertSee('Gudang Site Tower A - Proyek Gedung Tower A');
+        // Harus menampilkan nama proyek untuk gudang tujuan yang terhubung proyek
+        $response->assertSee('Proyek Gedung Tower A');
         // Label untuk gudang proyek di detail info card
         $response->assertSee('Nama Proyek');
     }

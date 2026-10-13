@@ -107,6 +107,7 @@ class MaterialRequestService
                         'material_id'         => null,
                         'category_id'         => $customCategoryId,
                         'custom_item_name'    => $customName,
+                        'custom_item_type'    => trim($item['custom_item_type'] ?? '') ?: null,
                         'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
                         'qty_requested'       => $qtyRequested,
                         'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
@@ -136,15 +137,16 @@ class MaterialRequestService
             $loaded = $request->load('items.material', 'fromWarehouse', 'toWarehouse', 'requestedBy');
 
             if ($submitImmediately) {
+                $sourceName = $sourceWarehouse ? $sourceWarehouse->name : 'Pengadaan / Beli ke Vendor';
                 NotificationHelper::notifyCentralWarehouseAdmins(
                     "PO Lapangan: #{$request->request_number}",
-                    "PO Lapangan diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceWarehouse->name}).",
+                    "PO Lapangan diajukan oleh {$requestedBy->name} dari {$toWarehouse->name} (sumber: {$sourceName}).",
                     "approval_needed",
                     route('material-requests.show', $request)
                 );
 
                 // Jika sumber adalah Gudang Proyek lain, beritahu juga admin gudang proyek sumber tersebut
-                if (!$sourceWarehouse->is_central) {
+                if ($sourceWarehouse && !$sourceWarehouse->is_central) {
                     $sourceAdmins = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $sourceWarehouse->id))
                         ->whereHas('roles', fn($r) => $r->where('name', 'Admin Gudang Proyek'))
                         ->get();
@@ -256,6 +258,7 @@ class MaterialRequestService
                     if ($matchCustom) {
                         $matchCustom->update([
                             'category_id'      => $customCategoryId,
+                            'custom_item_type' => trim($item['custom_item_type'] ?? '') ?: null,
                             'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
                             'qty_requested'    => $qtyRequested,
                             'notes'            => $item['notes'] ?? null,
@@ -271,6 +274,7 @@ class MaterialRequestService
                             'material_id'         => null,
                             'category_id'         => $customCategoryId,
                             'custom_item_name'    => $customName,
+                            'custom_item_type'    => trim($item['custom_item_type'] ?? '') ?: null,
                             'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
                             'qty_requested'       => $qtyRequested,
                             'qty_approved'        => 0,

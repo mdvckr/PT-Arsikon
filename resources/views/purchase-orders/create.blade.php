@@ -19,23 +19,25 @@
         </div>
     @endif
 
-    @if(isset($selectedMR) && $selectedMR)
-    <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-            <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
-            <div>
-                <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #{{ $selectedMR->request_number }}</strong>
-                <span style="font-size:11.5px;color:#b45309;">
-                    Gudang Tujuan Pengiriman: <strong>{{ $selectedMR->toWarehouse?->name }}</strong>.
-                    Item dengan jalur pembelian vendor dimuat otomatis ke daftar pesanan di bawah.
-                </span>
+    <div id="mr_info_banner_container">
+        @if(isset($selectedMR) && $selectedMR)
+        <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
+                <div>
+                    <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #{{ $selectedMR->request_number }}</strong>
+                    <span style="font-size:11.5px;color:#b45309;">
+                        Gudang Tujuan Pengiriman: <strong>{{ $selectedMR->toWarehouse?->project?->name ?? $selectedMR->toWarehouse?->name }}</strong>.
+                        Item dengan jalur pembelian vendor dimuat otomatis ke daftar pesanan di bawah.
+                    </span>
+                </div>
             </div>
+            <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:5px 10px;font-size:11px;font-weight:600;">
+                PO Lapangan: {{ $selectedMR->request_number }}
+            </span>
         </div>
-        <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:5px 10px;font-size:11px;font-weight:600;">
-            PO Lapangan: {{ $selectedMR->request_number }}
-        </span>
+        @endif
     </div>
-    @endif
 
     <form action="{{ route('purchase-orders.store') }}" method="POST">
         @csrf
@@ -75,14 +77,40 @@
                 </div>
 
                 <div>
-                    <label class="form-label font-semibold">Dari Permintaan Pengadaan (PR)</label>
-                    <select name="procurement_request_id" class="form-control">
-                        <option value="">-- Tanpa PR (PO Langsung) --</option>
-                        @foreach($approvedPRs as $pr)
-                            <option value="{{ $pr->id }}" {{ (old('procurement_request_id', request('pr_id')) == $pr->id) ? 'selected' : '' }}>
-                                {{ $pr->pr_number }} ({{ $pr->items->count() }} item)
-                            </option>
-                        @endforeach
+                    <label class="form-label font-semibold">Dari PO Lapangan (Permintaan Proyek)</label>
+                    <input type="hidden" name="procurement_request_id" id="hidden_procurement_request_id" value="{{ old('procurement_request_id', request('pr_id')) }}">
+                    <select name="material_request_id" id="material_request_select" class="form-control" onchange="handleMrHeaderChange(this)">
+                        <option value="">-- Tanpa PO Lapangan (PO Mandiri / Restok) --</option>
+                        @if(isset($approvedMRs) && $approvedMRs->isNotEmpty())
+                            <optgroup label="PO Lapangan Proyek (Membutuhkan Pengadaan)">
+                                @foreach($approvedMRs as $mr)
+                                    @php
+                                        $projName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
+                                        $itemsCount = $mr->items->filter(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id)) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0)->count();
+                                        $isSelected = (old('material_request_id', $selectedMR?->id ?? request('from_mr_id')) == $mr->id);
+                                    @endphp
+                                    <option value="{{ $mr->id }}" 
+                                        data-type="mr"
+                                        data-warehouse-id="{{ $mr->to_warehouse_id }}"
+                                        data-mr-num="{{ $mr->request_number }}"
+                                        data-project="{{ $projName }}"
+                                        {{ $isSelected ? 'selected' : '' }}>
+                                        #{{ $mr->request_number }} — {{ $projName }} ({{ $itemsCount }} item butuh dipesan)
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endif
+                        @if(isset($approvedPRs) && $approvedPRs->isNotEmpty())
+                            <optgroup label="Permintaan Pengadaan PR (Pusat / Legacy)">
+                                @foreach($approvedPRs as $pr)
+                                    <option value="pr:{{ $pr->id }}" 
+                                        data-type="pr"
+                                        {{ (old('procurement_request_id', request('pr_id')) == $pr->id) ? 'selected' : '' }}>
+                                        [PR] {{ $pr->pr_number }} ({{ $pr->items->count() }} item)
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endif
                     </select>
                 </div>
 
@@ -220,6 +248,7 @@
                                     <input type="hidden" name="items[{{ $idx }}][tool_id]" class="po-tool-id" value="{{ $mrItem->tool_id }}">
                                     <input type="hidden" name="items[{{ $idx }}][material_request_item_id]" class="po-mr-item-id" value="{{ $mrItem->id }}">
                                     <input type="hidden" name="items[{{ $idx }}][custom_item_name]" class="po-custom-name" value="{{ $mrItem->custom_item_name }}">
+                                    <input type="hidden" name="items[{{ $idx }}][custom_item_type]" class="po-custom-type" value="{{ $mrItem->custom_item_type }}">
                                     <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" class="po-custom-unit" value="{{ $unitName }}">
 
                                     <div style="font-weight:600;font-size:13px;color:#0f172a;">
@@ -274,9 +303,10 @@
                                                     $mrItemQuota = (float)$mrItem->qty_approved > 0
                                                         ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
                                                         : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
+                                                    $whName = $mrItem->materialRequest?->toWarehouse?->project?->name ?? $mrItem->materialRequest?->toWarehouse?->name ?? 'Proyek';
                                                 @endphp
-                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
-                                                    [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
+                                                <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $whName }}">
+                                                    [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $whName }} (Butuh: {{ (float)$mrItem->qty_requested }})
                                                 </option>
                                             @endforeach
                                         </optgroup>
@@ -320,6 +350,7 @@
 
     <script>
         let poRowIdx = {{ $selectedPR ? count($selectedPR->items) : (isset($selectedMR) && $selectedMR ? max(1, $selectedMR->items->whereNull('material_id')->count()) : 1) }};
+        const mrItemsMap = @json($mrItemsMap ?? []);
 
         // Cache options template for adding new rows dynamically
         const optionsTemplateHtml = `
@@ -338,9 +369,10 @@
                         $mrItemQuota = (float)$mrItem->qty_approved > 0
                             ? max(0.01, (float)$mrItem->qty_approved - (float)$mrItem->qty_ordered)
                             : max(0.01, (float)$mrItem->qty_requested - (float)$mrItem->qty_ordered);
+                        $whName = $mrItem->materialRequest?->toWarehouse?->project?->name ?? $mrItem->materialRequest?->toWarehouse?->name ?? 'Proyek';
                     @endphp
-                    <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $mrItem->materialRequest?->fromWarehouse?->name }}">
-                        [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $mrItem->materialRequest?->fromWarehouse?->name }} (Butuh: {{ (float)$mrItem->qty_requested }})
+                    <option value="mr:{{ $mrItem->id }}" data-type="mr" data-mr-id="{{ $mrItem->id }}" data-name="{{ $mrItem->custom_item_name }}" data-unit="{{ $mrItem->custom_item_unit ?? 'unit' }}" data-qty="{{ $mrItemQuota }}" data-mr-num="{{ $mrItem->materialRequest?->request_number }}" data-warehouse="{{ $whName }}">
+                        [MR #{{ $mrItem->materialRequest?->request_number }}] {{ $mrItem->custom_item_name }} ({{ $mrItem->custom_item_unit ?? 'unit' }}) - {{ $whName }} (Butuh: {{ (float)$mrItem->qty_requested }})
                     </option>
                 @endforeach
             </optgroup>
@@ -349,6 +381,122 @@
                 <option value="manual:new" data-type="manual">+ Input Barang Baru Manual (Ketik Sendiri)</option>
             </optgroup>
         `;
+
+        function handleMrHeaderChange(selectEl) {
+            const val = selectEl.value;
+            const hiddenPrInput = document.getElementById('hidden_procurement_request_id');
+            const warehouseSelect = document.querySelector('select[name="delivery_warehouse_id"]');
+            const bannerContainer = document.getElementById('mr_info_banner_container');
+
+            if (val.startsWith('pr:')) {
+                const prId = val.replace('pr:', '');
+                hiddenPrInput.value = prId;
+                window.location.href = "{{ route('purchase-orders.create') }}?pr_id=" + prId;
+                return;
+            } else {
+                hiddenPrInput.value = '';
+            }
+
+            if (!val) {
+                if (bannerContainer) bannerContainer.innerHTML = '';
+                resetPoRowsToBlank();
+                return;
+            }
+
+            const mrData = mrItemsMap[val];
+            if (!mrData) return;
+
+            // 1. Auto-pilih Gudang Tujuan Pengiriman ke Proyek pemohon
+            if (mrData.to_warehouse_id && warehouseSelect) {
+                warehouseSelect.value = mrData.to_warehouse_id;
+            }
+
+            // 2. Tampilkan banner PO Lapangan
+            if (bannerContainer) {
+                bannerContainer.innerHTML = `
+                    <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
+                            <div>
+                                <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #${mrData.request_number}</strong>
+                                <span style="font-size:11.5px;color:#b45309;">
+                                    Gudang Tujuan Pengiriman: <strong>${mrData.project_name}</strong>.
+                                    Item dengan jalur pembelian vendor dimuat otomatis ke daftar pesanan di bawah.
+                                </span>
+                            </div>
+                        </div>
+                        <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;padding:5px 10px;font-size:11px;font-weight:600;">
+                            PO Lapangan: #${mrData.request_number}
+                        </span>
+                    </div>
+                `;
+            }
+
+            // 3. Masukkan item PO Lapangan ke tabel pesanan
+            populateRowsFromMrItems(mrData.items, mrData.request_number, mrData.project_name);
+        }
+
+        function populateRowsFromMrItems(items, mrNum, projName) {
+            const tbody = document.getElementById('po-items-tbody');
+            tbody.innerHTML = '';
+            poRowIdx = 0;
+
+            if (!items || items.length === 0) {
+                resetPoRowsToBlank();
+                return;
+            }
+
+            items.forEach(function(item, idx) {
+                const row = document.createElement('tr');
+                row.className = 'po-item-row';
+                row.innerHTML = `
+                    <td>
+                        <input type="hidden" name="items[${idx}][material_id]" class="po-material-id" value="${item.material_id || ''}">
+                        <input type="hidden" name="items[${idx}][tool_id]" class="po-tool-id" value="${item.tool_id || ''}">
+                        <input type="hidden" name="items[${idx}][material_request_item_id]" class="po-mr-item-id" value="${item.id}">
+                        <input type="hidden" name="items[${idx}][custom_item_name]" class="po-custom-name" value="${item.custom_item_name || ''}">
+                        <input type="hidden" name="items[${idx}][custom_item_type]" class="po-custom-type" value="${item.custom_item_type || ''}">
+                        <input type="hidden" name="items[${idx}][custom_item_unit]" class="po-custom-unit" value="${item.unit || 'unit'}">
+
+                        <div style="font-weight:600;font-size:13px;color:#0f172a;">
+                            ${item.name}
+                            ${item.is_custom ? '<span class="badge" style="background:#fef3c7;color:#92400e;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:600;">Custom</span>' : ''}
+                        </div>
+                        <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                            <i class="fas fa-link me-1"></i> Dari PO Lapangan <strong>#${mrNum}</strong> (${projName})
+                            ${item.notes ? '<span class="text-muted ms-1">| Catatan: ' + item.notes + '</span>' : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex items-center gap-1">
+                            <input type="number" step="0.01" min="0.01" max="${item.quota}" name="items[${idx}][quantity]" value="${item.quota}" class="form-control po-qty" oninput="calcPoRow(this)" required>
+                            <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">${item.unit || 'unit'}</span>
+                        </div>
+                        <div style="font-size:10px;color:#64748b;margin-top:2px;">Sisa kuota: ${item.quota}</div>
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" min="0" name="items[${idx}][unit_price]" value="${item.price || 0}" class="form-control po-price" oninput="calcPoRow(this)" required>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                calcPoRow(row.querySelector('.po-qty'));
+            });
+
+            poRowIdx = items.length;
+        }
+
+        function resetPoRowsToBlank() {
+            const tbody = document.getElementById('po-items-tbody');
+            tbody.innerHTML = '';
+            poRowIdx = 0;
+            addPoRow();
+        }
 
         function handleItemSelect(selectEl) {
             const row = selectEl.closest('tr');
@@ -407,7 +555,7 @@
                 extraContainer.innerHTML = `
                     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 10px;font-size:12px;color:#1e40af;">
                         <i class="fas fa-info-circle me-1"></i>
-                        <strong>Item PO Lapangan (MR #${mrNum}):</strong> "${customName}" dari <em>${warehouse}</em>.
+                        <strong>Item PO Lapangan (MR #${mrNum}):</strong> "${customName}" untuk <em>${warehouse}</em>.
                         <div class="mt-1 flex items-center gap-2">
                             <span>Koreksi Satuan jika perlu:</span>
                             <input type="text" class="form-control form-control-sm" style="width:110px;padding:2px 6px;height:24px;font-size:12px;" value="${customUnit}" oninput="syncRowCustomUnit(this, '${row.getAttribute('data-row-id') || ''}')">

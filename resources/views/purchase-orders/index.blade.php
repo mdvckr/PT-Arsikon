@@ -149,6 +149,16 @@
                                                 PR: {{ $po->procurementRequest->pr_number }}
                                             </div>
                                         @endif
+                                        @php
+                                            $linkedMr = $po->materialRequest ?? $po->items->firstWhere('material_request_item_id', '!=', null)?->materialRequestItem?->materialRequest;
+                                        @endphp
+                                        @if($linkedMr)
+                                            <div style="font-size:10px;margin-top:2px;">
+                                                <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#1d4ed8;text-decoration:none;font-weight:600;" title="PO Lapangan">
+                                                    <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                                                </a>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td>
                                         <strong>{{ $po->display_supplier_name }}</strong>

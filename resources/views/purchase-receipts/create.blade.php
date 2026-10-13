@@ -42,7 +42,7 @@
 
                 <div>
                     <label class="form-label font-semibold">Proyek (Opsional)</label>
-                    <input type="text" name="project_name" value="{{ old('project_name') }}" placeholder="Ketik nama proyek..." class="form-control">
+                    <input type="text" name="project_name" value="{{ old('project_name', $defaultProjectName ?? '') }}" placeholder="Ketik nama proyek..." class="form-control">
                 </div>
 
                 <div>

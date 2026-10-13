@@ -91,16 +91,15 @@ class SidebarNavigationTest extends TestCase
 
         // Boleh muncul:
         $response->assertSee('PO Lapangan');
-        $response->assertSee('Permintaan Pengadaan');
         $response->assertSee('Purchase Order (PO)');
         $response->assertSee('Nota Pembelian Harian');
         $response->assertSee('Pembayaran');
         $response->assertSee('Surat Jalan (Distribusi)');
         $response->assertSee('Inventori');
 
-        // Tidak boleh muncul (karena Admin PO tidak memiliki izin view goods receipts):
+        // Tidak boleh muncul (Permintaan Pengadaan disatukan ke PO Lapangan, tidak ada akses GR, tidak ada Admin Sistem):
+        $response->assertDontSee('Permintaan Pengadaan');
         $response->assertDontSee('Penerimaan Barang (GR)');
-        // Dan tidak punya akses Admin Sistem
         $response->assertDontSee('Admin Sistem');
     }
 
@@ -115,11 +114,11 @@ class SidebarNavigationTest extends TestCase
         $response->assertSee('Pemakaian Material');
         $response->assertSee('Retur Material');
         $response->assertSee('PO Lapangan');
+        $response->assertSee('Nota Pembelian Harian');
 
         // Tidak boleh muncul:
-        // Admin Gudang Proyek tidak boleh akses Purchase Order (PO), Nota Pembelian, Pembayaran
+        // Admin Gudang Proyek tidak boleh akses Purchase Order (PO), Pembayaran, Admin Sistem
         $response->assertDontSee('Purchase Order (PO)');
-        $response->assertDontSee('Nota Pembelian Harian');
         $response->assertDontSee('Pembayaran');
         $response->assertDontSee('Admin Sistem');
     }
@@ -180,5 +179,20 @@ class SidebarNavigationTest extends TestCase
 
         // Grup Pengadaan harus diinisialisasi dengan open: true
         $this->assertStringContainsString('x-data="{ open: true }"', $content);
+    }
+
+    public function test_redundant_menu_items_are_removed_from_sidebar(): void
+    {
+        $response = $this->actingAs($this->owner)->get(route('dashboard'));
+        $response->assertOk();
+
+        // Menu kembar Penerimaan Surat Jalan harus sudah dihilangkan (cukup Surat Jalan (Distribusi))
+        $response->assertDontSee('Penerimaan Surat Jalan');
+
+        // Menu Permintaan Pengadaan disatukan ke PO Lapangan
+        $response->assertDontSee('Permintaan Pengadaan');
+
+        // Menu Jabatan & Hak Akses dihapus dari sidebar
+        $response->assertDontSee('Jabatan & Hak Akses');
     }
 }

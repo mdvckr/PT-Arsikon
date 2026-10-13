@@ -11,6 +11,7 @@ class PurchaseOrder extends Model
 
     protected $fillable = [
         'po_number',
+        'material_request_id',
         'procurement_request_id',
         'supplier_id',
         'supplier_name',
@@ -49,6 +50,7 @@ class PurchaseOrder extends Model
     public function creator()            { return $this->belongsTo(User::class, 'created_by'); }
     public function approver()           { return $this->belongsTo(User::class, 'approved_by'); }
     public function deliveryWarehouse()  { return $this->belongsTo(Warehouse::class, 'delivery_warehouse_id'); }
+    public function materialRequest()    { return $this->belongsTo(MaterialRequest::class); }
     public function procurementRequest() { return $this->belongsTo(ProcurementRequest::class); }
     public function items()              { return $this->hasMany(PurchaseOrderItem::class); }
     public function payments()           { return $this->hasMany(Payment::class); }

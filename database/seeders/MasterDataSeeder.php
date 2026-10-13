@@ -87,5 +87,126 @@ class MasterDataSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        // 4. Seed Master Materials & Initial Central Warehouse Stock (Local / Dev only)
+        if (!app()->environment('testing')) {
+            $centralWh = Warehouse::where('is_central', true)->first();
+            $supplierCat = Supplier::where('code', 'SUP-TCL')->first();
+            $supplierBesi = Supplier::where('code', 'SUP-JR')->first();
+            $supplierUmum = Supplier::where('code', 'SUP-IJ')->first();
+
+            $materialsData = [
+            [
+                'sku' => 'MAT-SEM-001',
+                'name' => 'Semen Portland 50kg',
+                'category_id' => $catStruktur->id,
+                'unit_id' => $unitSak->id,
+                'supplier_id' => $supplierUmum?->id,
+                'brand' => 'Tiga Roda',
+                'size' => '50 kg',
+                'type' => 'PCC',
+                'min_stock_central' => 100,
+                'is_active' => true,
+                'stock' => 500,
+            ],
+            [
+                'sku' => 'MAT-BSI-010',
+                'name' => 'Besi Beton Ulir D10',
+                'category_id' => $catStruktur->id,
+                'unit_id' => $unitBtg->id,
+                'supplier_id' => $supplierBesi?->id,
+                'brand' => 'Krakatau Steel',
+                'size' => '12 meter',
+                'type' => 'Ulir D10',
+                'min_stock_central' => 50,
+                'is_active' => true,
+                'stock' => 300,
+            ],
+            [
+                'sku' => 'MAT-BSI-013',
+                'name' => 'Besi Beton Ulir D13',
+                'category_id' => $catStruktur->id,
+                'unit_id' => $unitBtg->id,
+                'supplier_id' => $supplierBesi?->id,
+                'brand' => 'Krakatau Steel',
+                'size' => '12 meter',
+                'type' => 'Ulir D13',
+                'min_stock_central' => 50,
+                'is_active' => true,
+                'stock' => 250,
+            ],
+            [
+                'sku' => 'MAT-PSR-001',
+                'name' => 'Pasir Pasang Cor',
+                'category_id' => $catStruktur->id,
+                'unit_id' => $unitM3->id,
+                'supplier_id' => $supplierUmum?->id,
+                'brand' => 'Merapi',
+                'size' => 'M3',
+                'type' => 'Pasir Cor',
+                'min_stock_central' => 10,
+                'is_active' => true,
+                'stock' => 45,
+            ],
+            [
+                'sku' => 'MAT-SPL-001',
+                'name' => 'Batu Split 2/3',
+                'category_id' => $catStruktur->id,
+                'unit_id' => $unitM3->id,
+                'supplier_id' => $supplierUmum?->id,
+                'brand' => 'Lokal',
+                'size' => '2/3 cm',
+                'type' => 'Agregat Kasar',
+                'min_stock_central' => 10,
+                'is_active' => true,
+                'stock' => 40,
+            ],
+            [
+                'sku' => 'MAT-CAT-001',
+                'name' => 'Cat Dinding Eksterior White 25kg',
+                'category_id' => $catArsitek->id,
+                'unit_id' => $unitPcs->id,
+                'supplier_id' => $supplierCat?->id,
+                'brand' => 'Dulux Weathershield',
+                'size' => '25 kg (Pail)',
+                'type' => 'Eksterior',
+                'min_stock_central' => 10,
+                'is_active' => true,
+                'stock' => 35,
+            ],
+            [
+                'sku' => 'MAT-PIP-001',
+                'name' => 'Pipa PVC AW 3 inch',
+                'category_id' => $catMep->id,
+                'unit_id' => $unitBtg->id,
+                'supplier_id' => $supplierUmum?->id,
+                'brand' => 'Rucika',
+                'size' => '4 meter',
+                'type' => 'AW',
+                'min_stock_central' => 20,
+                'is_active' => true,
+                'stock' => 80,
+            ],
+        ];
+
+        foreach ($materialsData as $mData) {
+            $initialStock = $mData['stock'];
+            unset($mData['stock']);
+            $material = Material::firstOrCreate(['sku' => $mData['sku']], $mData);
+
+            if ($centralWh) {
+                Inventory::firstOrCreate(
+                    [
+                        'warehouse_id' => $centralWh->id,
+                        'material_id'  => $material->id,
+                    ],
+                    [
+                        'quantity'      => $initialStock,
+                        'qty_allocated' => 0,
+                    ]
+                );
+            }
+        }
     }
+}
 }

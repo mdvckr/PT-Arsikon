@@ -507,6 +507,27 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `tests/Feature/SidebarNavigationTest.php`: Test suite 7 skenario (urutan grup Teknis->Pengadaan->Logistik, link PO Lapangan ke `material-requests.index`, visibilitas per role Admin PO/Admin Proyek/Karyawan/Owner, penyembunyian grup kosong untuk pengguna tanpa izin, serta auto-open grup route aktif).
 - **Hasil Pengujian**: Seluruh 276 test (1011 assertions) berstatus HIJAU (PASS).
 
+### T25. Eliminasi Duplikasi UI & Default Form PO Lapangan
+- **Tujuan**:
+  - Mengarahkan default pilihan "Kepada (Usulan Pemohon)" pada form pembuatan PO Lapangan (`/material-requests/create`) otomatis ke "Pengadaan / Beli ke Vendor" (`from_warehouse_id = null`), sehingga pembuat permintaan tidak perlu memilih manual dan tidak terjadi error validasi saat ingin mengajukan pengadaan ke vendor luar.
+  - Mengeliminasi duplikasi menu sidebar pada grup Logistik, di mana sebelumnya terdapat dua menu yang mengarah ke modul yang sama (`Surat Jalan (Distribusi)` dan `Penerimaan Surat Jalan`).
+  - Mengkonsolidasikan alur penerimaan surat jalan langsung di halaman `distributions.index` dengan menambahkan Quick Status Filter Tabs ("Semua Surat Jalan", "Dalam Perjalanan (Perlu Diterima)", "Selesai / Diterima", "Draft") sehingga pengguna dapat memfilter surat jalan yang perlu diterima dalam 1-klik tanpa menu sidebar terpisah.
+  - Mengeliminasi menu duplikat "Permintaan Pengadaan" dari Sidebar grup Pengadaan untuk memusatkan seluruh pengajuan permintaan barang (baik internal gudang maupun beli vendor) ke satu pintu utama: **PO Lapangan**.
+  - Mengarahkan aksi buat PR baru (`procurement.create`) otomatis ke `material-requests.create` dan menyematkan banner arsip informasi pada `procurement.index` tanpa menghapus riwayat audit data PR yang sudah ada di database.
+  - Memastikan menu redundan "Jabatan & Hak Akses" tetap tersembunyi dari navigasi sidebar Admin Sistem.
+- **Perubahan File**:
+  - `app/Http/Controllers/MaterialRequestController.php`: `$defaultSourceWarehouseId` default ke string kosong `''` (Pengadaan), `$editSourceWarehouseId` tidak memaksakan gudang pusat bila asalnya bernilai null.
+  - `resources/views/material-requests/create.blade.php`: Dropdown otomatis terpilih di "— Pengadaan / Beli ke Vendor —", validasi JS dan warning stok dinonaktifkan untuk Pengadaan.
+  - `resources/views/material-requests/edit.blade.php`: Sinkronisasi dropdown dan warning stok.
+  - `app/Services/MaterialRequestService.php`: Penanganan null-safe saat `$sourceWarehouse` bernilai null saat auto-approve/reject.
+  - `resources/views/layouts/app.blade.php`: Penghapusan menu kembar `Penerimaan Surat Jalan` dan `Permintaan Pengadaan`, perapian active route `distributions.*`.
+  - `resources/views/distributions/index.blade.php`: Penambahan Quick Filter Tabs interaktif per status distribusi.
+  - `app/Http/Controllers/ProcurementController.php`: Pengalihan rute buat PR ke formulir PO Lapangan.
+  - `resources/views/procurement/index.blade.php`: Penambahan banner arsip dan pengalihan tombol buat baru ke PO Lapangan.
+  - `tests/Feature/PoLapanganHeaderFieldTest.php`: Penambahan test case default pengadaan dan submit PO Lapangan tanpa gudang asal.
+  - `tests/Feature/SidebarNavigationTest.php`: Penambahan test case verifikasi menu kembar dan menu pengadaan lama tidak muncul lagi di sidebar.
+- **Hasil Pengujian**: Seluruh test terkait (`SidebarNavigationTest`, `PoLapanganHeaderFieldTest`, `DistributionAndReceivingTest`, `WarehouseIndependenceTest`, `SeparationOfDutiesTest`, `ProcurementMultiPoTest`) berstatus HIJAU (PASS).
+
 ---
 
 ## 2. Asumsi & Keputusan Otonom
@@ -608,3 +629,145 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
 - (d) **T24**: Susunan grup sidebar: Dashboard di puncak, diikuti tiga grup utama: **Teknis** -> **Pengadaan** -> **Logistik**, lalu **Laporan & Audit** dan **Admin Sistem** di posisi bawah.
 - (e) **T20**: "Dibutuhkan Tgl" (`needed_at`) dan "Tanggal Order" (`created_at`) diimplementasikan sebagai dua atribut tanggal terpisah di antarmuka.
 
+---
+
+## 8. Pembaruan UI PO Lapangan & Eliminasi Duplikasi (T25)
+- **Konteks & Masalah**:
+  1. Pengguna merasa ambigu karena menu "Permintaan Pengadaan" duplikat dengan "PO Lapangan", padahal tujuannya sama-sama meminta pengadaan barang dari proyek.
+  2. Tabel material tersedia pada `material-requests/create` kosong ("Tidak ada material yang tersedia") karena database lokal belum memiliki master material konstruksi dan stok awal Gudang Pusat.
+  3. Form sisi kanan ("Informasi PO Lapangan") menampilkan format "Gudang Proyek ... - Nama Proyek", padahal pengguna hanya menginginkan tampilan nama **Proyek**.
+  4. Form sisi kanan memiliki textarea "Catatan (Opsional)" umum yang membingungkan alokasi kebutuhan tiap item, sehingga pengguna meminta catatan dipindahkan menjadi kolom catatan per baris item, dan textarea di kanan dihapus.
+- **Implementasi**:
+  1. **Seeder Master Material & Stok Pusat (`MasterDataSeeder.php`)**:
+     - Ditambahkan 7 master material konstruksi umum (Semen Portland 50kg, Besi D10, Besi D13, Pasir Pasang, Batu Split 2/3, Cat Dinding Eksterior, Pipa PVC AW) dan stok awal di Gudang Pusat khusus lingkungan local/production (di-skip pada testing agar tidak mempengaruhi fixture pengujian unit).
+  2. **Eliminasi Menu Duplikat Permintaan Pengadaan**:
+     - Menghapus item menu Permintaan Pengadaan dari grup Pengadaan di sidebar (`resources/views/layouts/app.blade.php`).
+     - Me-redirect `ProcurementController@create` ke route `material-requests.create`.
+     - Memberikan notice banner dan tombol pintas di `resources/views/procurement/index.blade.php`.
+  3. **Penambahan Kolom Catatan per Item**:
+     - Kolom `Catatan` ditambahkan pada `materialsTable`, `uncategorizedMaterials`, dan tabel `customRequestTable` (barang manual/khusus) di `create.blade.php` dan `edit.blade.php`.
+     - JavaScript `addCustomRequestRow()` dan `addCustomItemRow()` diperbarui untuk menyertakan input catatan.
+     - Backend `MaterialRequestController@store` dan `update` menyimpan input `item_notes` dan `custom_items.*.notes` ke kolom `notes` pada tabel `material_request_items`.
+     - `show.blade.php` dan `print.blade.php` menampilkan catatan per baris item.
+  4. **Perbaikan Card Kanan "Informasi PO Lapangan"**:
+     - Pilihan nama proyek diperbaiki menampilkan nama proyek murni: `{{ $wh->project ? $wh->project->name : $wh->name }}` (tanpa awalan gudang).
+     - Textarea catatan di card kanan dihapus sesuai permintaan.
+  5. **Akses Pengisian Nota Pembelian Harian untuk Admin Gudang Proyek**:
+     - Menambahkan permissions `'view purchase receipts'`, `'create purchase receipts'`, dan `'delete purchase receipts'` untuk role `Admin Gudang Proyek` di `RoleAndPermissionSeeder.php`.
+     - Mengamankan aksi controller `PurchaseReceiptController` dengan `$this->authorize(...)`.
+     - Memberikan nilai default proyek otomatis (`$defaultProjectName`) pada form `purchase-receipts.create` sesuai proyek yang dikelola Admin Gudang Proyek.
+     - Mengaktifkan menu **Nota Pembelian Harian** pada grup Pengadaan di sidebar untuk Admin Gudang Proyek.
+- **Hasil Pengujian**:
+  - `php artisan test --filter=PurchaseReceipt`: PASS 100% (3 tests, 11 assertions).
+  - `php artisan test --filter=PoLapanganLabelTest`: PASS 100% (4 tests, 14 assertions).
+  - `php artisan test --filter=SidebarNavigationTest`: PASS 100% (8 tests, 60 assertions).
+  - `php artisan test --filter=MaterialRequest`: PASS 100% (7 tests, 34 assertions).
+  - `php artisan test --filter=DistributionAndReceivingTest`: PASS 100% (15 tests, 58 assertions).
+  - `php artisan test --filter=MasterDataTest`: PASS 100% (6 tests, 29 assertions).
+
+---
+
+## 9. Integrasi Penerimaan Barang (Goods Receipt) dengan PO Lapangan (T26)
+- **Konteks & Masalah**:
+  1. Pengguna menanyakan integrasi di URL `http://127.0.0.1:8000/goods-receipts/create` yang belum terhubung dengan PO Lapangan (`material_requests`). Saat barang yang diminta sudah dikirim (baik dari gudang pusat via Surat Jalan maupun langsung dari vendor via PO), admin proyek harus menerima barang tersebut, tetapi di form penerimaan nomor PO Lapangan tidak muncul.
+  2. Dropdown PO vendor pada form penerimaan hanya mencantumkan nomor PO umum tanpa kejelasan proyek atau PO Lapangan pemohon.
+  3. Halaman detail PO Lapangan (`material-requests/{id}`) belum menyediakan tombol langsung untuk penerimaan barang masuk maupun ringkasan riwayat dokumen penerimaan barang (Goods Receipt).
+- **Implementasi**:
+  1. **Migrasi Database (`2026_10_13_000001_add_material_request_id_to_goods_receipts_tables.php`)**:
+     - Menambahkan kolom `material_request_id` (nullable, foreign key ke `material_requests`) pada tabel `goods_receipts`.
+     - Menambahkan kolom `material_request_item_id` (nullable, foreign key ke `material_request_items`) pada tabel `goods_receipt_items`.
+  2. **Model & Relasi**:
+     - `GoodsReceipt`: Ditambahkan relasi `materialRequest()` (`belongsTo(MaterialRequest::class)`).
+     - `GoodsReceiptItem`: Ditambahkan relasi `materialRequestItem()` (`belongsTo(MaterialRequestItem::class)`).
+     - `MaterialRequest`: Ditambahkan relasi `goodsReceipts()` (`hasMany(GoodsReceipt::class)`).
+  3. **Backend Service (`GoodsReceiptService.php`)**:
+     - `create()`: Otomatis mendeteksi dan menyimpan `material_request_id` baik langsung dari input form maupun diturunkan dari Purchase Order terkait, serta menyimpan `material_request_item_id` pada item penerimaan.
+     - `confirm()`: Mendukung pembaruan `qty_received` pada item PO Lapangan dan otomatis menghitung ulang status MR menjadi `partially_fulfilled` atau `fulfilled`.
+  4. **Controller & Endpoint Baru (`GoodsReceiptController.php` & `routes/web.php`)**:
+     - Ditambahkan endpoint JSON `Route::get('/goods-receipts/mr-items/{materialRequest}', [GoodsReceiptController::class, 'getMrItems'])`.
+     - `getPoItems()`: Mengembalikan relasi `mr_id`, `mr_number`, `project_name`, dan `material_request_item_id`.
+     - `create()`: Mendukung query parameter `from_mr_id` dan `purchase_order_id`, memuat daftar PO Lapangan aktif, serta mendeteksi pengiriman Surat Jalan `in_transit` menuju proyek penerima.
+     - `index()`: Mengoptimalkan eager load `materialRequest` dan mendukung pencarian berdasarkan nomor PO Lapangan.
+  5. **Antarmuka Form Penerimaan (`goods-receipts/create.blade.php` & `goods-receipt-create.js`)**:
+     - Ditambahkan banner peringatan jika terdapat Surat Jalan (`Distribution`) yang sedang dalam pengiriman (`in_transit`) menuju proyek dengan tombol 1-klik "Terima Surat Jalan Ini".
+     - Ditambahkan field pilihan "Hubungkan PO Lapangan" (`#mrSelect`).
+     - Dropdown Purchase Order menampilkan label lengkap: `[PO Lapangan: #MR-xxxx - Nama Proyek]`.
+     - Saat PO Lapangan dipilih, sistem otomatis memilih gudang proyek tujuan dan memfilter / memilih PO Vendor terkait.
+  6. **Antarmuka PO Lapangan (`material-requests/show.blade.php`)**:
+     - Menambahkan tombol aksi cepat: **"Terima Barang Masuk (GR)"** dan **"Terima Surat Jalan (#DST-...)"** di header halaman.
+     - Menambahkan banner status pengiriman Surat Jalan `in_transit`.
+     - Menambahkan tabel **Riwayat Penerimaan Barang Masuk (GR)** yang menampilkan dokumen tanda terima, gudang, vendor/PO, penerima, dan link rincian.
+  7. **Antarmuka Rincian & Daftar Goods Receipt (`show.blade.php` & `index.blade.php`)**:
+     - Menampilkan informasi PO Lapangan dan proyek terkait pada ringkasan sidebar dan daftar tanda terima barang.
+- **Hasil Pengujian**:
+  - `php artisan test --filter=GoodsReceipt`: PASS 100% (12 tests, 40 assertions).
+  - `php artisan test --filter=PoDirectFromMrTest`: PASS 100% (8 tests, 25 assertions).
+  - `php artisan test --filter=PoLapanganAvailableStockTest`: PASS 100% (4 tests, 14 assertions).
+  - `php artisan test --filter=WarehouseIndependenceTest`: PASS 100% (15 tests, 32 assertions).
+
+---
+
+## 10. Integrasi Dropdown PO Lapangan pada Form Buat Purchase Order (PO) (T27)
+- **Konteks & Masalah**:
+  1. Pada form Buat Purchase Order (`/purchase-orders/create`), field dropdown di card "Informasi Header PO" masih menggunakan label lama **"Dari Permintaan Pengadaan (PR)"** yang hanya memiliki opsi `-- Tanpa PR (PO Langsung) --`. Hal ini membuat pengguna bingung karena Permintaan Pengadaan (PR) sudah tidak digunakan dan tidak terhubung dengan PO Lapangan (`material_requests`).
+  2. Saat memilih item manual PO Lapangan di baris pesanan, label gudang sempat menampilkan string kosong ("tea dari .") karena mengambil kolom `fromWarehouse` yang bernilai null (karena sumbernya memang pengadaan vendor langsung).
+  3. Tabel `purchase_orders` belum memiliki kolom relasi langsung `material_request_id` di header level (sebelumnya hanya tersimpan di item-level `material_request_items`).
+- **Implementasi**:
+  1. **Migrasi Database (`2026_10_13_000002_add_material_request_id_to_purchase_orders_table.php`)**:
+     - Menambahkan foreign key nullable `material_request_id` pada tabel `purchase_orders`.
+  2. **Model & Relasi**:
+     - `PurchaseOrder`: Ditambahkan `material_request_id` pada `$fillable` dan relasi `materialRequest()` (`belongsTo(MaterialRequest::class)`).
+     - `MaterialRequest`: Ditambahkan relasi `purchaseOrders()` (`hasMany(PurchaseOrder::class)`).
+  3. **Backend Controller (`PurchaseOrderController.php`)**:
+     - `create()`: Mengambil daftar `$approvedMRs` yang butuh pengadaan vendor dan memetakan struktur `$mrItemsMap` (berisi ID, nama barang, kuota, satuan, harga) untuk kebutuhan interaktivitas JavaScript frontend tanpa reload.
+     - `store()`: Memvalidasi `material_request_id`, menyimpan `material_request_id` pada entitas `PurchaseOrder`, dan otomatis mengarahkan gudang tujuan pengiriman sesuai gudang proyek pemohon bila belum ditentukan.
+     - `index()`: Mengoptimalkan eager load `materialRequest` dan menambahkan pencarian PO berdasarkan nomor PO Lapangan.
+  4. **Antarmuka Form Buat PO (`purchase-orders/create.blade.php`)**:
+     - Mengubah field dropdown di header menjadi **"Dari PO Lapangan (Permintaan Proyek)"** dengan daftar seluruh PO Lapangan yang butuh dibeli ke vendor (disertai nomor MR, nama proyek, dan jumlah item butuh dipesan).
+     - Menambahkan fungsi JavaScript `handleMrHeaderChange(this)`:
+       - Otomatis mengisi **Gudang Tujuan Pengiriman** ke proyek pemohon saat PO Lapangan dipilih.
+       - Otomatis memuat dan menampilkan seluruh item pesanan dari PO Lapangan tersebut ke tabel dengan kuota maksimal, satuan, dan badge referensi.
+       - Menampilkan banner alert PO Lapangan di atas form.
+     - Memperbaiki penamaan label lokasi pada item manual: `"tea" untuk [Nama Proyek]` (bukan `"tea" dari .`).
+  5. **Antarmuka Rincian & Daftar PO (`purchase-orders/show.blade.php` & `index.blade.php`)**:
+     - Menampilkan informasi nomor PO Lapangan dan nama proyek pada card rincian header PO dan tabel daftar PO.
+- **Hasil Pengujian**:
+  - `php artisan test --filter=PoHeaderMrIntegrationTest`: PASS 100% (2 tests, 14 assertions).
+  - `php artisan test --filter=PoDirectFromMrTest`: PASS 100% (8 tests, 25 assertions).
+  - `php artisan test --filter=PoDeliveryScheduleTest`: PASS 100% (7 tests, 38 assertions).
+  - `php artisan test --filter=GoodsReceipt`: PASS 100% (12 tests, 40 assertions).
+
+---
+
+## 11. Konsolidasi Migrasi Database (Migration Squashing ke 6 File Utama) (T28)
+- **Konteks & Masalah**:
+  1. Terdapat 12 file migrasi tambahan (bertanggal Oktober 2026) yang terpecah-pecah di atas 6 file migrasi utama. Hal ini menyebabkan skema database terfragmentasi, menyulitkan pelacakan skema, dan memperlambat proses instalasi serta deployment ulang database.
+  2. Pengguna menginginkan struktur skema database disatukan kembali secara efisien ke dalam **6 file migrasi utama** per domain fungsional tanpa ada tabel atau kolom yang tertinggal.
+- **Implementasi**:
+  1. **Konsolidasi ke 6 File Migrasi Utama**:
+     - **File 1 (`2026_01_01_000001_create_core_identity_tables.php`)**:
+       - Fondasi autentikasi & sistem: `users`, `password_reset_tokens`, `failed_jobs`, `personal_access_tokens`, Spatie Roles & Permissions, `notifications`, `jobs`, `job_batches`, `sessions`, `cache`.
+     - **File 2 (`2026_01_01_000002_create_master_data_tables.php`)**:
+       - Master data: `projects`, `warehouses`, `user_warehouses`, `categories`, `units`, `suppliers`, `materials`, dan `tools` (ditambahkan kolom aset pusat: `owner_warehouse_id`).
+     - **File 3 (`2026_01_01_000003_create_inventory_operations_tables.php`)**:
+       - Operasional gudang & PO Lapangan: `inventories`, `stock_mutations`, `tool_inventories`, `material_requests` (ditambahkan kolom `needed_at`, `requested_as`, `from_warehouse_id` nullable), `material_request_items` (ditambahkan kolom `item_type`, `tool_id`, `category_id`, `fulfillment`, `qty_ordered`, `qty_in_transit`, `qty_received`, `qty_issued`, `specification`, `usage_location`, `usage_date`, dan indeks `idx_mr_items_category_id`), serta `material_usages` dan items.
+     - **File 4 (`2026_01_01_000004_create_procurement_purchasing_tables.php`)**:
+       - Pengadaan & pembelian vendor: `procurement_requests` (status enum lengkap), `procurement_request_items` (ditambahkan `qty_ordered`), `purchase_orders` (ditambahkan `material_request_id`, `delivery_warehouse_id`, `risk_bearer`, dan status enum lengkap), `purchase_order_items` (ditambahkan `tool_id`, `procurement_request_item_id`, `lost_qty`, `short_closed_qty`), tabel baru `po_delivery_schedules` (jadwal bertahap, kuota, alokasi gudang, dan `late_notified_at`), `goods_receipts` (ditambahkan `material_request_id`), `goods_receipt_items` (ditambahkan `material_request_item_id`, `po_delivery_schedule_id`, `qty_shipped`, `qty_damaged`, `qty_missing`, `missing_status`), `purchase_receipts`, `payments`, dan `returns`.
+     - **File 5 (`2026_01_01_000005_create_field_operations_logistics_tables.php`)**:
+       - Operasional lapangan & logistik: `tool_loans` (ditambahkan `overdue_notified_at`), `tool_assignments`, `tool_inspections`, `maintenances`, `distributions`, `distribution_items`, dan tabel baru `transit_losses` (pelacakan selisih & klaim kehilangan barang saat perjalanan pengiriman).
+     - **File 6 (`2026_01_01_000006_create_audit_system_tables.php`)**:
+       - Audit & penomoran dokumen: `stock_opnames`, `stock_opname_items`, `audit_logs`, `print_templates`, dan tabel baru `document_counters` (generator nomor urut sekuensial bebas tabrakan).
+  2. **Pembersihan File Migrasi**:
+     - Menghapus seluruh 12 file migrasi tambahan (`2026_10_*`) dari repositori. Folder `database/migrations/` kini rapi dan hanya memiliki 6 file kanonikal.
+  3. **Penyesuaian Null-Safety pada Antarmuka**:
+     - Memperbaiki pemanggilan relasi di `purchase-orders/show.blade.php`: menggunakan `$purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first()` untuk mencegah exception null pada baris item PO umum/non-MR.
+  4. **Eksekusi Database Fresh & Seed**:
+     - Berhasil menjalankan `php artisan migrate:fresh --seed` tanpa error, menyusun seluruh tabel dan indeks, serta memuat akun pengguna, master data, dan contoh log harian.
+- **Hasil Pengujian**:
+  - `php artisan test --filter=PoHeaderMrIntegrationTest`: PASS 100% (2 tests, 14 assertions).
+  - `php artisan test --filter=PoDirectFromMrTest`: PASS 100% (8 tests, 25 assertions).
+  - `php artisan test --filter=GoodsReceiptTest`: PASS 100% (6 tests, 23 assertions).
+  - `php artisan test --filter=WarehouseIndependenceTest`: PASS 100% (15 tests, 32 assertions).
+  - `php artisan test --filter=PurchaseOrderPayableRuleTest`: PASS 100% (7 tests, 36 assertions).
+  - `php artisan test --filter=KaryawanRoleTest`: PASS 100% (18 tests, 18 assertions).
+  - `php artisan test --filter=MasterDataTest`: PASS 100% (6 tests, 31 assertions).

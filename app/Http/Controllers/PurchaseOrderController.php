@@ -32,8 +32,10 @@ class PurchaseOrderController extends Controller
         $query = PurchaseOrder::with([
             'supplier',
             'creator',
+            'materialRequest',
+            'procurementRequest',
             'items.material.unit',
-            'items.materialRequestItem',
+            'items.materialRequestItem.materialRequest',
             'receipts'
         ]);
 
@@ -46,6 +48,8 @@ class PurchaseOrderController extends Controller
                 $q->where('po_number', 'like', "%{$request->search}%")
                   ->orWhere('supplier_name', 'like', "%{$request->search}%")
                   ->orWhereHas('supplier', fn($s) => $s->where('name', 'like', "%{$request->search}%"))
+                  ->orWhereHas('materialRequest', fn($mr) => $mr->where('request_number', 'like', "%{$request->search}%"))
+                  ->orWhereHas('procurementRequest', fn($pr) => $pr->where('pr_number', 'like', "%{$request->search}%"))
                   ->orWhereHas('items', function ($it) use ($request) {
                       $it->where('custom_item_name', 'like', "%{$request->search}%")
                          ->orWhereHas('material', fn($m) => $m->where('name', 'like', "%{$request->search}%"));
@@ -76,23 +80,84 @@ class PurchaseOrderController extends Controller
         $approvedPRs  = ProcurementRequest::whereIn('status', ['approved', 'partially_ordered'])->with('items.material')->get();
         $selectedPR   = $request->pr_id ? ProcurementRequest::with('items.material.unit')->find($request->pr_id) : null;
         $warehouses   = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
-        
+
+        // Ambil seluruh PO Lapangan (MR) yang approved atau partially_fulfilled yang butuh pengadaan
+        $approvedMRs = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
+            ->with(['items.material.unit', 'items.tool', 'fromWarehouse', 'toWarehouse.project'])
+            ->whereHas('items', function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('fulfillment', 'purchase')
+                        ->orWhereNull('material_id');
+                });
+            })
+            ->latest()
+            ->get()
+            ->filter(function ($mr) {
+                return $mr->items->contains(function ($it) {
+                    $sisa = (float) $it->qty_approved > 0
+                        ? (float) $it->qty_approved - (float) $it->qty_ordered
+                        : (float) $it->qty_requested - (float) $it->qty_ordered;
+                    return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
+                });
+            })
+            ->values();
+
+        // Peta item PO Lapangan untuk interaktivitas JavaScript di antarmuka
+        $mrItemsMap = $approvedMRs->mapWithKeys(function ($mr) {
+            $items = $mr->items->filter(function ($it) {
+                $sisa = (float) $it->qty_approved > 0
+                    ? (float) $it->qty_approved - (float) $it->qty_ordered
+                    : (float) $it->qty_requested - (float) $it->qty_ordered;
+                return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
+            })->map(function ($it) use ($mr) {
+                $sisa = (float) $it->qty_approved > 0
+                    ? (float) $it->qty_approved - (float) $it->qty_ordered
+                    : (float) $it->qty_requested - (float) $it->qty_ordered;
+                return [
+                    'id'               => $it->id,
+                    'material_id'      => $it->material_id,
+                    'tool_id'          => $it->tool_id,
+                    'name'             => $it->displayName(),
+                    'is_custom'        => $it->isCustom(),
+                    'custom_item_name' => $it->custom_item_name,
+                    'custom_item_type' => $it->custom_item_type,
+                    'unit'             => $it->displayUnit(),
+                    'quota'            => round($sisa, 2),
+                    'notes'            => $it->notes,
+                    'price'            => (float) ($it->material?->unit_price ?? 0),
+                    'mr_num'           => $mr->request_number,
+                    'warehouse'        => $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name ?? 'Proyek',
+                ];
+            })->values();
+
+            return [$mr->id => [
+                'id'              => $mr->id,
+                'request_number'  => $mr->request_number,
+                'to_warehouse_id' => $mr->to_warehouse_id,
+                'project_name'    => $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name,
+                'items'           => $items,
+            ]];
+        });
+
         $selectedMR = null;
         $mrPurchaseItems = collect();
-        if ($request->from_mr_id) {
-            $mr = \App\Models\MaterialRequest::with(['items.material.unit', 'items.tool', 'fromWarehouse', 'toWarehouse'])->find($request->from_mr_id);
+        $targetMrId = $request->from_mr_id ?? old('material_request_id');
+        if ($targetMrId) {
+            $mr = \App\Models\MaterialRequest::with(['items.material.unit', 'items.tool', 'fromWarehouse', 'toWarehouse.project'])->find($targetMrId);
             if ($mr) {
                 // T7: Dukung seluruh item master & custom dengan fulfillment purchase dan sisa kuota > 0
                 $purchaseCandidates = $mr->items->filter(function ($it) use ($mr) {
                     if (in_array($mr->status, ['approved', 'partially_fulfilled'])) {
-                        $sisa = (float) $it->qty_approved - (float) $it->qty_ordered;
-                        return $it->fulfillment === 'purchase' && $sisa > 0;
+                        $sisa = (float) $it->qty_approved > 0
+                            ? (float) $it->qty_approved - (float) $it->qty_ordered
+                            : (float) $it->qty_requested - (float) $it->qty_ordered;
+                        return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
                     }
                     // Jika submitted, dukung item custom atau purchase untuk preview/notifikasi
                     return empty($it->material_id) || $it->fulfillment === 'purchase';
                 })->values();
 
-                if ($purchaseCandidates->isEmpty()) {
+                if ($purchaseCandidates->isEmpty() && $request->from_mr_id) {
                     return redirect()->route('material-requests.show', $mr)
                         ->with('error', "PO Lapangan #{$mr->request_number} tidak memiliki item dengan jalur pembelian vendor atau seluruh kuota pengadaan telah habis.");
                 }
@@ -107,11 +172,11 @@ class PurchaseOrderController extends Controller
             ->whereHas('materialRequest', function ($q) {
                 $q->whereIn('status', ['submitted', 'approved', 'partially_fulfilled']);
             })
-            ->with(['materialRequest.fromWarehouse', 'materialRequest.toWarehouse'])
+            ->with(['materialRequest.fromWarehouse', 'materialRequest.toWarehouse.project'])
             ->latest()
             ->get();
 
-        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'selectedMR', 'mrPurchaseItems', 'mrCustomItems', 'warehouses'));
+        return view('purchase-orders.create', compact('suppliers', 'materials', 'approvedPRs', 'selectedPR', 'approvedMRs', 'mrItemsMap', 'selectedMR', 'mrPurchaseItems', 'mrCustomItems', 'warehouses'));
     }
 
     public function store(Request $request)
@@ -120,6 +185,7 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'supplier_id'                      => 'nullable|exists:suppliers,id',
             'supplier_name'                    => 'nullable|string|max:255',
+            'material_request_id'              => 'nullable|exists:material_requests,id',
             'procurement_request_id'           => 'nullable|exists:procurement_requests,id',
             'delivery_warehouse_id'            => 'nullable|exists:warehouses,id',
             'risk_bearer'                      => 'nullable|in:vendor,buyer',
@@ -131,6 +197,7 @@ class PurchaseOrderController extends Controller
             'items.*.material_id'              => 'nullable|exists:materials,id',
             'items.*.tool_id'                  => 'nullable|exists:tools,id',
             'items.*.custom_item_name'         => 'nullable|string|max:255',
+            'items.*.custom_item_type'         => 'nullable|string|max:100',
             'items.*.custom_item_unit'         => 'nullable|string|max:50',
             'items.*.material_request_item_id' => 'nullable|exists:material_request_items,id',
             'items.*.procurement_request_item_id' => 'nullable|exists:procurement_request_items,id',
@@ -278,10 +345,27 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId) {
+        $materialRequestId = !empty($validated['material_request_id']) ? $validated['material_request_id'] : null;
+        if (!$materialRequestId) {
+            foreach ($request->input('items', []) as $item) {
+                if (!empty($item['material_request_item_id'])) {
+                    $materialRequestId = MaterialRequestItem::where('id', $item['material_request_item_id'])->value('material_request_id');
+                    if ($materialRequestId) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!$deliveryWarehouseId && $materialRequestId) {
+            $deliveryWarehouseId = MaterialRequest::find($materialRequestId)?->to_warehouse_id;
+        }
+
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $materialRequestId) {
             $po = PurchaseOrder::create([
                 'supplier_id'           => $supplierId,
                 'supplier_name'         => $supplierName,
+                'material_request_id'   => $materialRequestId,
                 'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
                 'delivery_warehouse_id' => $deliveryWarehouseId,
                 'risk_bearer'           => $validated['risk_bearer'] ?? 'vendor',
@@ -337,6 +421,7 @@ class PurchaseOrderController extends Controller
                     'material_id'                 => $materialId,
                     'tool_id'                     => $toolId,
                     'custom_item_name'            => $customName,
+                    'custom_item_type'            => $mrItem?->custom_item_type ?: ($item['custom_item_type'] ?? null),
                     'custom_item_unit'            => $customUnit,
                     'material_request_item_id'    => $mrItemId,
                     'procurement_request_item_id' => $prItemId,

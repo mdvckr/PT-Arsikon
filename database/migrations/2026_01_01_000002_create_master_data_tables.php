@@ -109,6 +109,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained('categories');
             $table->foreignId('current_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->foreignId('owner_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->string('code')->unique();
             $table->string('name');
             $table->string('size')->nullable();

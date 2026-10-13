@@ -14,6 +14,7 @@ class PurchaseOrderItem extends Model
         'material_id',
         'tool_id',
         'custom_item_name',
+        'custom_item_type',
         'custom_item_unit',
         'material_request_item_id',
         'procurement_request_item_id',

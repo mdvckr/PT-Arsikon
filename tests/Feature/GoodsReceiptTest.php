@@ -302,4 +302,107 @@ class GoodsReceiptTest extends TestCase
         $receipt->refresh();
         $this->assertEquals('draft', $receipt->status);
     }
+
+    public function test_get_po_items_and_mr_items_endpoint_and_goods_receipt_submission(): void
+    {
+        $adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
+
+        // 1. Create MR with custom item
+        $mr = \App\Models\MaterialRequest::create([
+            'request_number'      => 'REQ-CUSTOM-001',
+            'to_warehouse_id'     => $this->projectWarehouse->id,
+            'requested_by_user_id'=> $adminProyek->id,
+            'status'              => 'approved',
+            'approved_by_user_id' => $this->adminUser->id,
+            'approved_at'         => now(),
+        ]);
+
+        $mrItem = \App\Models\MaterialRequestItem::create([
+            'material_request_id' => $mr->id,
+            'material_id'         => null,
+            'custom_item_name'    => 'Pipa PVC 3 inch Wavin',
+            'custom_item_unit'    => 'batang',
+            'qty_requested'       => 20,
+            'qty_approved'        => 20,
+            'qty_received'        => 0,
+            'fulfillment'         => 'purchase',
+        ]);
+
+        // 2. Create PO linked to MR
+        $po = \App\Models\PurchaseOrder::create([
+            'po_number'           => 'PO-2026-LINKED-MR',
+            'material_request_id' => $mr->id,
+            'supplier_id'         => $this->supplier->id,
+            'supplier_name'       => $this->supplier->name,
+            'delivery_warehouse_id'=> $this->projectWarehouse->id,
+            'created_by'          => $this->adminUser->id,
+            'status'              => 'sent',
+            'order_date'          => now()->toDateString(),
+            'total_amount'        => 1000000,
+        ]);
+
+        $poItem = \App\Models\PurchaseOrderItem::create([
+            'purchase_order_id'       => $po->id,
+            'material_request_item_id'=> $mrItem->id,
+            'material_id'             => null,
+            'custom_item_name'        => 'Pipa PVC 3 inch Wavin',
+            'custom_item_unit'        => 'batang',
+            'quantity'                => 20,
+            'received_qty'            => 0,
+            'unit_price'              => 50000,
+            'total_price'             => 1000000,
+        ]);
+
+        // 3. Test getPoItems endpoint
+        $this->actingAs($adminProyek);
+        $resPoItems = $this->getJson(route('goods-receipts.poItems', $po));
+        $resPoItems->assertStatus(200);
+        $resPoItems->assertJsonFragment(['material_name' => 'Pipa PVC 3 inch Wavin']);
+        $resPoItems->assertJsonFragment(['mr_number' => 'REQ-CUSTOM-001']);
+
+        // 4. Test getMrItems endpoint
+        $resMrItems = $this->getJson(route('goods-receipts.mrItems', $mr));
+        $resMrItems->assertStatus(200);
+        $resMrItems->assertJsonFragment(['material_name' => 'Pipa PVC 3 inch Wavin']);
+        $resMrItems->assertJsonFragment(['mr_number' => 'REQ-CUSTOM-001']);
+
+        // 5. Submit goods receipt receiving from this PO & MR
+        $postData = [
+            'purchase_order_id'   => $po->id,
+            'material_request_id' => $mr->id,
+            'supplier_id'         => $this->supplier->id,
+            'warehouse_id'        => $this->projectWarehouse->id,
+            'received_at'         => now()->toDateString(),
+            'invoice_number'      => 'SJ-PIPA-01',
+            'items'               => [
+                [
+                    'material_id'              => null,
+                    'purchase_order_item_id'   => $poItem->id,
+                    'material_request_item_id' => $mrItem->id,
+                    'custom_item_name'         => 'Pipa PVC 3 inch Wavin',
+                    'custom_item_unit'         => 'batang',
+                    'quantity'                 => 20,
+                    'unit_price'               => 50000,
+                ],
+            ],
+        ];
+
+        $resStore = $this->post(route('goods-receipts.store'), $postData);
+        $resStore->assertRedirect();
+
+        $receipt = \App\Models\GoodsReceipt::where('invoice_number', 'SJ-PIPA-01')->first();
+        $this->assertNotNull($receipt, 'GoodsReceipt harus berhasil disimpan');
+        $this->assertEquals($po->id, $receipt->purchase_order_id);
+        $this->assertEquals($mr->id, $receipt->material_request_id);
+
+        // Confirm
+        $resConfirm = $this->post(route('goods-receipts.confirm', $receipt));
+        $resConfirm->assertSessionHas('success');
+
+        // Material auto created
+        $mat = Material::where('name', 'Pipa PVC 3 inch Wavin')->first();
+        $this->assertNotNull($mat);
+        $this->assertEquals($mat->id, $poItem->fresh()->material_id);
+        $this->assertEquals($mat->id, $mrItem->fresh()->material_id);
+    }
 }

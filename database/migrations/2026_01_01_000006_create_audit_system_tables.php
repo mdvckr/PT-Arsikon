@@ -76,6 +76,17 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
+
+        // 5. Document Numbering Counters (Sequential number generator)
+        Schema::create('document_counters', function (Blueprint $table) {
+            $table->id();
+            $table->string('type', 50);
+            $table->integer('year');
+            $table->unsignedInteger('last_number')->default(0);
+            $table->timestamps();
+
+            $table->unique(['type', 'year']);
+        });
     }
 
     /**
@@ -83,6 +94,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('document_counters');
         Schema::dropIfExists('print_templates');
         Schema::dropIfExists('audit_logs');
         Schema::dropIfExists('stock_opname_items');

@@ -61,11 +61,11 @@ class MaterialRequestController extends Controller
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();
 
-        // Default sumber: Gudang Pusat
-        $defaultSourceWarehouseId = old('source_warehouse_id', $centralWarehouse?->id);
+        // Default sumber: Pengadaan / Beli ke Vendor
+        $defaultSourceWarehouseId = old('source_warehouse_id', '');
 
-        // Stok material dari gudang sumber default
-        $sourceWarehouseId = $defaultSourceWarehouseId;
+        // Stok material dari gudang sumber (jika Pengadaan, gunakan Gudang Pusat sebagai referensi stok)
+        $sourceWarehouseId = $defaultSourceWarehouseId ?: $centralWarehouse?->id;
         $materialCategories = Category::where('type', 'material')
             ->with(['materials' => function ($q) use ($sourceWarehouseId) {
                 $q->where('is_active', true)
@@ -114,6 +114,17 @@ class MaterialRequestController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Daftar kelompok barang per kategori untuk pilihan bertingkat
+        $existingGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->where('type', '!=', 'Material Proyek')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
         return view('material-requests.create', compact(
             'materialCategories',
             'uncategorizedMaterials',
@@ -121,7 +132,8 @@ class MaterialRequestController extends Controller
             'warehouseId',
             'centralWarehouse',
             'sourceWarehouses',
-            'defaultSourceWarehouseId'
+            'defaultSourceWarehouseId',
+            'existingGroups'
         ));
     }
 
@@ -137,15 +149,19 @@ class MaterialRequestController extends Controller
             'notes'                      => 'nullable|string',
             'quantities'                 => 'nullable|array',
             'specs'                      => 'nullable|array',
+            'item_notes'                 => 'nullable|array',
+            'item_notes.*'               => 'nullable|string|max:255',
             'usage_locations'            => 'nullable|array',
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
+            'custom_items.*.type'        => 'nullable|string|max:100',
             'custom_items.*.unit'        => 'nullable|string|max:50',
             'custom_items.*.qty'         => 'required_with:custom_items|numeric|min:0.01',
             'custom_items.*.spec'        => 'nullable|string|max:255',
             'custom_items.*.location'    => 'nullable|string|max:255',
+            'custom_items.*.notes'       => 'nullable|string|max:255',
             'custom_items.*.date'        => 'nullable|date',
         ]);
 
@@ -177,10 +193,11 @@ class MaterialRequestController extends Controller
             foreach ($validated['quantities'] as $materialId => $qty) {
                 $qty = (float) $qty;
                 if ($qty <= 0) continue;
+                $itemNote = trim($request->input("item_notes.{$materialId}") ?? '');
                 $itemsData[] = [
                     'material_id'    => $materialId,
                     'qty_requested'  => $qty,
-                    'notes'          => null,
+                    'notes'          => $itemNote ?: null,
                     'specification'  => trim($request->input("specs.{$materialId}") ?? ''),
                     'usage_location' => trim($request->input("usage_locations.{$materialId}") ?? ''),
                     'usage_date'     => $request->input("usage_dates.{$materialId}") ?: null,
@@ -193,13 +210,15 @@ class MaterialRequestController extends Controller
                 if ($qty <= 0) continue;
                 $name = trim($cItem['name'] ?? '');
                 if ($name === '') continue;
+                $customNote = trim($cItem['notes'] ?? '');
                 $itemsData[] = [
                     'material_id'      => null,
                     'custom_item_name' => $name,
+                    'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
                     'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
-                    'notes'            => 'Manual - tidak ada di gudang sumber',
+                    'notes'            => $customNote ?: 'Manual - tidak ada di gudang sumber',
                     'specification'    => trim($cItem['spec'] ?? ''),
                     'usage_location'   => trim($cItem['location'] ?? ''),
                     'usage_date'       => $cItem['date'] ?? null,
@@ -272,7 +291,10 @@ class MaterialRequestController extends Controller
             'items.category',
             'items.material.unit',
             'items.material.category',
-            'items.purchaseOrderItems.purchaseOrder',
+            'items.purchaseOrderItems.purchaseOrder.goodsReceipts.warehouse',
+            'items.purchaseOrderItems.purchaseOrder.supplier',
+            'goodsReceipts.warehouse',
+            'goodsReceipts.supplier',
             'materialUsages.issuedBy',
             'materialUsages.warehouse',
             'distributions.fromWarehouse',
@@ -338,15 +360,16 @@ class MaterialRequestController extends Controller
         }
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();
-        $sourceWarehouseId = old('source_warehouse_id', $materialRequest->from_warehouse_id ?? $centralWarehouse?->id);
+        $sourceWarehouseId = old('source_warehouse_id', $materialRequest->from_warehouse_id ?? '');
+        $stockWarehouseId = $sourceWarehouseId ?: $centralWarehouse?->id;
         $warehouseId = old('warehouse_id', $materialRequest->to_warehouse_id);
 
         $materialCategories = Category::where('type', 'material')
-            ->with(['materials' => function ($q) use ($sourceWarehouseId) {
+            ->with(['materials' => function ($q) use ($stockWarehouseId) {
                 $q->where('is_active', true)
-                  ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
-                      if ($sourceWarehouseId) {
-                          $iq->where('warehouse_id', $sourceWarehouseId);
+                  ->with(['unit', 'inventories' => function ($iq) use ($stockWarehouseId) {
+                      if ($stockWarehouseId) {
+                          $iq->where('warehouse_id', $stockWarehouseId);
                       }
                   }])
                   ->orderBy('name');
@@ -379,6 +402,17 @@ class MaterialRequestController extends Controller
 
         $materialRequest->load(['items.material', 'items.category']);
 
+        // Daftar kelompok barang per kategori untuk pilihan bertingkat
+        $existingGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->where('type', '!=', 'Material Proyek')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
         return view('material-requests.edit', compact(
             'materialRequest',
             'materialCategories',
@@ -387,7 +421,8 @@ class MaterialRequestController extends Controller
             'warehouseId',
             'centralWarehouse',
             'sourceWarehouses',
-            'sourceWarehouseId'
+            'sourceWarehouseId',
+            'existingGroups'
         ));
     }
 
@@ -418,15 +453,19 @@ class MaterialRequestController extends Controller
             'notes'                      => 'nullable|string',
             'quantities'                 => 'nullable|array',
             'specs'                      => 'nullable|array',
+            'item_notes'                 => 'nullable|array',
+            'item_notes.*'               => 'nullable|string|max:255',
             'usage_locations'            => 'nullable|array',
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
+            'custom_items.*.type'        => 'nullable|string|max:100',
             'custom_items.*.unit'        => 'nullable|string|max:50',
             'custom_items.*.qty'         => 'required_with:custom_items|numeric|min:0.01',
             'custom_items.*.spec'        => 'nullable|string|max:255',
             'custom_items.*.location'    => 'nullable|string|max:255',
+            'custom_items.*.notes'       => 'nullable|string|max:255',
             'custom_items.*.date'        => 'nullable|date',
         ]);
 
@@ -455,10 +494,11 @@ class MaterialRequestController extends Controller
             foreach ($validated['quantities'] as $materialId => $qty) {
                 $qty = (float) $qty;
                 if ($qty <= 0) continue;
+                $itemNote = trim($request->input("item_notes.{$materialId}") ?? '');
                 $itemsData[] = [
                     'material_id'    => $materialId,
                     'qty_requested'  => $qty,
-                    'notes'          => null,
+                    'notes'          => $itemNote ?: null,
                     'specification'  => trim($request->input("specs.{$materialId}") ?? ''),
                     'usage_location' => trim($request->input("usage_locations.{$materialId}") ?? ''),
                     'usage_date'     => $request->input("usage_dates.{$materialId}") ?: null,
@@ -471,13 +511,15 @@ class MaterialRequestController extends Controller
                 if ($qty <= 0) continue;
                 $name = trim($cItem['name'] ?? '');
                 if ($name === '') continue;
+                $customNote = trim($cItem['notes'] ?? '');
                 $itemsData[] = [
                     'material_id'      => null,
                     'custom_item_name' => $name,
+                    'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
                     'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
-                    'notes'            => 'Manual - tidak ada di gudang sumber',
+                    'notes'            => $customNote ?: 'Manual - tidak ada di gudang sumber',
                     'specification'    => trim($cItem['spec'] ?? ''),
                     'usage_location'   => trim($cItem['location'] ?? ''),
                     'usage_date'       => $cItem['date'] ?? null,

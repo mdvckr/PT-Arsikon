@@ -736,6 +736,48 @@
     </div>
     @endif
 
+    @if(isset($inTransitDistributions) && $inTransitDistributions->isNotEmpty())
+    <div class="card mb-3" style="border:1.5px solid #bfdbfe;border-radius:12px;background:linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);box-shadow:0 3px 12px rgba(37,99,235,0.08);overflow:hidden;">
+        <div class="card-body" style="padding:14px 18px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:flex-start;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:9px;background:#2563eb;color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(37,99,235,0.3);">
+                        <i class="fas fa-truck-fast" style="font-size:16px;"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size:13.5px;font-weight:700;color:#1e3a8a;margin:0 0 3px 0;">
+                            Barang PO Lapangan Sedang Dikirim dari Gudang Pusat (Surat Jalan Dalam Perjalanan)
+                        </h4>
+                        <p style="font-size:12px;color:#334155;margin:0;line-height:1.4;">
+                            Terdapat <strong>{{ $inTransitDistributions->count() }} Surat Jalan</strong> yang sedang menuju ke gudang proyek Anda. Jika barang fisik telah tiba bersama supir, konfirmasikan penerimaan langsung melalui Surat Jalan terkait:
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+                @foreach($inTransitDistributions as $dist)
+                <div style="background:#ffffff;border:1px solid #dbeafe;border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-weight:700;border:1px solid #bfdbfe;padding:3px 8px;border-radius:6px;">
+                            #{{ $dist->distribution_number }}
+                        </span>
+                        @if($dist->materialRequest)
+                            <span style="color:#64748b;">• PO Lapangan:</span>
+                            <strong style="color:#0f172a;">#{{ $dist->materialRequest->request_number }}</strong>
+                        @endif
+                        <span style="color:#64748b;">• Tujuan: <strong style="color:#0f172a;">{{ $dist->toWarehouse?->name }}</strong></span>
+                        <span style="color:#64748b;">• Supir: {{ $dist->driver_name ?? '-' }} ({{ $dist->vehicle_number ?? '-' }})</span>
+                    </div>
+                    <a href="{{ route('distributions.show', $dist) }}" class="btn btn-sm btn-primary" style="font-size:11.5px;font-weight:700;padding:5px 14px;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
+                        <i class="fas fa-boxes-packing me-1"></i> Terima Surat Jalan Ini
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('goods-receipts.store') }}" id="receiptForm">
         @csrf
         <div class="receipt-create-layout">
@@ -927,18 +969,62 @@
                                 @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
                             </div>
 
+                            {{-- Field Hubungkan PO Lapangan --}}
+                            <div class="mb-3">
+                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
+                                    <span>Hubungkan PO Lapangan</span>
+                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Permintaan Proyek)</span>
+                                </label>
+                                <div class="input-icon-wrap">
+                                    <i class="fas fa-clipboard-check input-icon"></i>
+                                    <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
+                                        <option value="">— Pilih PO Lapangan (Opsional) —</option>
+                                        @foreach($materialRequests as $mr)
+                                        @php
+                                            $projectName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
+                                            $poIds = $mr->purchaseOrders->pluck('id')
+                                                ->merge($mr->items->flatMap->purchaseOrderItems->pluck('purchase_order_id'))
+                                                ->filter()->unique()->implode(',');
+                                            $inTransitCount = $mr->distributions->where('status', 'in_transit')->count();
+                                        @endphp
+                                        <option value="{{ $mr->id }}"
+                                            data-warehouse-id="{{ $mr->to_warehouse_id }}"
+                                            data-project="{{ $projectName }}"
+                                            data-po-ids="{{ $poIds }}"
+                                            data-in-transit="{{ $inTransitCount }}"
+                                            {{ (old('material_request_id', $selectedMrId ?? '') == $mr->id) ? 'selected' : '' }}>
+                                            #{{ $mr->request_number }} • {{ $projectName }} ({{ $mr->requestedBy?->name ?? '-' }})
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div id="mrInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
+                                    <i class="fas fa-circle-check me-1"></i>
+                                    <span id="mrBannerText"></span>
+                                </div>
+                            </div>
+
                             <div class="mb-0">
                                 <label class="form-label">
                                     Hubungkan Purchase Order (PO)
-                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Opsional)</span>
+                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
                                 </label>
                                 <div class="input-icon-wrap">
                                     <i class="fas fa-file-contract input-icon"></i>
                                     <select id="poSelect" name="purchase_order_id" class="form-control" onchange="loadPoItems(this.value)">
                                         <option value="">— Tanpa PO (Pembelian Langsung) —</option>
                                         @foreach($purchaseOrders as $po)
-                                        <option value="{{ $po->id }}" data-supplier="{{ $po->supplier_id }}" data-supplier-name="{{ $po->supplier?->name }}" {{ old('purchase_order_id') == $po->id ? 'selected' : '' }}>
-                                            #{{ $po->po_number }} • {{ $po->supplier?->name }}
+                                        @php
+                                            $mrInfo = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
+                                            $mrText = $mrInfo ? ' [PO Lapangan: #' . $mrInfo->request_number . ' - ' . ($mrInfo->toWarehouse?->project?->name ?? $mrInfo->toWarehouse?->name) . ']' : '';
+                                        @endphp
+                                        <option value="{{ $po->id }}"
+                                            data-supplier="{{ $po->supplier_id }}"
+                                            data-supplier-name="{{ $po->supplier?->name }}"
+                                            data-warehouse-id="{{ $po->delivery_warehouse_id }}"
+                                            data-mr-id="{{ $po->material_request_id ?? $mrInfo?->id ?? '' }}"
+                                            {{ (old('purchase_order_id', $selectedPoId ?? '') == $po->id) ? 'selected' : '' }}>
+                                            #{{ $po->po_number }} • {{ $po->supplier?->name }}{{ $mrText }}
                                             @if($po->status === 'partial_received') (Sebagian Diterima) @endif
                                         </option>
                                         @endforeach
@@ -1086,12 +1172,30 @@
         $suppliersData = $suppliers->map(function($s) {
             return ['id' => $s->id, 'name' => $s->name];
         });
+        $mrsData = $materialRequests->map(function($mr) {
+            $poIds = $mr->purchaseOrders->pluck('id')
+                ->merge($mr->items->flatMap->purchaseOrderItems->pluck('purchase_order_id'))
+                ->filter()->unique()->values()->all();
+            $inTransitCount = $mr->distributions->where('status', 'in_transit')->count();
+            return [
+                'id' => $mr->id,
+                'request_number' => $mr->request_number,
+                'warehouse_id' => $mr->to_warehouse_id,
+                'project_name' => $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name,
+                'po_ids' => $poIds,
+                'in_transit_count' => $inTransitCount,
+            ];
+        });
     @endphp
     var grSuppliers = {!! json_encode($suppliersData) !!};
+    var grMaterialRequests = {!! json_encode($mrsData) !!};
     var grConfig = {
         poItemsUrl:   '{{ url("/goods-receipts/po-items") }}',
+        mrItemsUrl:   '{{ url("/goods-receipts/mr-items") }}',
         scheduledUrl: '{{ route("goods-receipts.scheduledIncoming") }}',
-        today:        '{{ date("Y-m-d") }}'
+        today:        '{{ date("Y-m-d") }}',
+        selectedMrId: '{{ old("material_request_id", $selectedMrId ?? "") }}',
+        selectedPoId: '{{ old("purchase_order_id", $selectedPoId ?? "") }}'
     };
     </script>
     <script src="{{ asset('js/goods-receipt-create.js') }}?v={{ filemtime(public_path('js/goods-receipt-create.js')) }}"></script>

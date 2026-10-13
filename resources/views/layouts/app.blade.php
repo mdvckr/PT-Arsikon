@@ -1501,6 +1501,7 @@
 </head>
 
 <body
+    x-data="notificationCenter"
     data-user-id="{{ auth()->id() ?? '' }}"
     data-is-admin-pusat="{{ auth()->user()?->hasRole('Admin Pusat') ? '1' : '0' }}"
     data-is-owner="{{ auth()->user()?->hasRole('Owner') ? '1' : '0' }}"
@@ -1545,12 +1546,23 @@
         </div>
 
         <div class="topbar-actions">
-            <a href="{{ route('notifications.index') }}" class="topbar-circle-btn" title="Notifikasi ({{ $unreadNotificationsCount }} belum dibaca)">
-                <i class="fas fa-bell"></i>
-                @if($unreadNotificationsCount > 0)
-                <span class="notif-badge">{{ $unreadNotificationsCount > 99 ? '99+' : $unreadNotificationsCount }}</span>
-                @endif
-            </a>
+            <!-- Liquid Glass Notification Bell with Dropdown Panel -->
+            <div class="relative" id="glass-notification-bell">
+                <button 
+                    type="button" 
+                    class="topbar-circle-btn" 
+                    title="Notifikasi"
+                    @click.stop="togglePanel()"
+                    aria-label="Pusat Notifikasi"
+                >
+                    <i class="fas fa-bell"></i>
+                    <x-notification.glass-badge :count="$unreadNotificationsCount" />
+                </button>
+
+                <!-- Liquid Glass Panel Dropdown -->
+                <x-notification.glass-panel />
+            </div>
+
             <div class="topbar-action-separator"></div>
             <a href="{{ route('profile.edit') }}" class="topbar-user-chip" title="Lihat Profil">
                 <div class="topbar-user-avatar">{{ $userInitial }}</div>
@@ -1614,49 +1626,6 @@
             }
         @endphp
 
-        <!-- <div class="workspace-card">
-            <div class="workspace-header-row">
-                <span class="workspace-label">WORKSPACE</span>
-                <span class="ws-badge">
-                    <i class="fas {{ $roleIcon }}"></i> {{ $roleBadge }}
-                </span>
-            </div>
-
-            @if($warehouses->count() > 1)
-            <form method="POST" action="{{ route('workspace.switch') }}" id="workspaceForm">
-                @csrf
-                <div class="workspace-select-wrapper">
-                    <select name="warehouse_id" onchange="document.getElementById('workspaceForm').submit()" class="workspace-select" title="Ganti Workspace Gudang">
-                        @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ $activeWarehouseId == $wh->id ? 'selected' : '' }}>
-                                [{{ $wh->is_central ? 'Pusat' : 'Proyek' }}] {{ $wh->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <i class="fas fa-chevron-down workspace-arrow"></i>
-                </div>
-            </form>
-            @else
-            <div class="workspace-name" title="{{ $activeWarehouseName }}">
-                <i class="{{ ($activeWarehouse?->is_central ?? false) ? 'fas fa-building' : 'fas fa-helmet-safety' }}" style="font-size:12px; opacity:0.95; flex-shrink:0;"></i>
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $activeWarehouseName }}</span>
-            </div>
-            @endif
-
-            <div class="workspace-sub-row">
-                @if($subHeadline)
-                <div class="workspace-sub-item highlight" title="{{ $subHeadline }}">
-                    <i class="{{ ($activeWarehouse?->is_central ?? false) ? 'fas fa-city' : 'fas fa-location-dot' }}"></i>
-                    <span>{{ $subHeadline }}</span>
-                </div>
-                @endif
-                <div class="workspace-sub-item" title="{{ $subDesc }}">
-                    <i class="fas fa-circle-info" style="font-size:9px;"></i>
-                    <span>{{ $subDesc }}</span>
-                </div>
-            </div>
-        </div> -->
-
         <nav style="flex:1; padding: 8px 0;">
             <!-- DASHBOARD -->
             <div class="nav-section">
@@ -1676,15 +1645,21 @@
                 $isTeknisActive = request()->routeIs(['material-usages.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']);
             @endphp
             @if($canTeknis)
-            <div class="nav-section" x-data="{ open: {{ ($isTeknisActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+            <div class="nav-section" x-data="{ open: true }">
                 <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
                     <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Teknis</div>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
                 </div>
-                <div x-show="open" style="{{ ($isTeknisActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                <div x-show="open">
                     @can('view material usages')
                     <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
                         <i class="fas fa-dolly"></i> Pemakaian Material
+                    </a>
+                    @endcan
+
+                    @can('view materials')
+                    <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
+                        <i class="fas fa-boxes-stacked"></i> Data Material
                     </a>
                     @endcan
 
@@ -1696,7 +1671,7 @@
 
                     @can('view tools')
                     <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
-                        <i class="fas fa-screwdriver-wrench"></i> Master Alat
+                        <i class="fas fa-screwdriver-wrench"></i> Data Alat
                     </a>
                     @endcan
 
@@ -1718,28 +1693,21 @@
             <!-- 2. GRUP PENGADAAN -->
             @php
                 $canPengadaan = auth()->user()->can('view material requests')
-                    || auth()->user()->can('view procurement')
                     || (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments');
-                $isPengadaanActive = request()->routeIs(['material-requests.*', 'procurement.*', 'purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*']);
+                $isPengadaanActive = request()->routeIs(['material-requests.*', 'purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*']);
             @endphp
             @if($canPengadaan)
-            <div class="nav-section" x-data="{ open: {{ ($isPengadaanActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+            <div class="nav-section" x-data="{ open: true }">
                 <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
                     <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Pengadaan</div>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
                 </div>
-                <div x-show="open" style="{{ ($isPengadaanActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                <div x-show="open">
                     @can('view material requests')
                     <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                         <i class="fas fa-file-circle-plus"></i> PO Lapangan
-                    </a>
-                    @endcan
-
-                    @can('view procurement')
-                    <a href="{{ route('procurement.index') }}" class="nav-item {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
-                        <i class="fas fa-clipboard-list"></i> Permintaan Pengadaan
                     </a>
                     @endcan
 
@@ -1781,12 +1749,12 @@
                 $isLogistikActive = request()->routeIs(['goods-receipts.*', 'distributions.*', 'inventory.*', 'stock-opnames.*', 'materials.*']) || request()->routeIs('reports.mutation');
             @endphp
             @if($canLogistik)
-            <div class="nav-section" x-data="{ open: {{ ($isLogistikActive || request()->routeIs('dashboard')) ? 'true' : 'false' }} }">
+            <div class="nav-section" x-data="{ open: true }">
                 <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
                     <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Logistik</div>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
                 </div>
-                <div x-show="open" style="{{ ($isLogistikActive || request()->routeIs('dashboard')) ? '' : 'display: none;' }}">
+                <div x-show="open">
                     @can('view goods receipts')
                     <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
                         <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang (GR)
@@ -1794,11 +1762,8 @@
                     @endcan
 
                     @can('view distributions')
-                    <a href="{{ route('distributions.index') }}" class="nav-item {{ (request()->routeIs('distributions.*') && !request('status')) ? 'active' : '' }}">
+                    <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                         <i class="fas fa-right-left"></i> Surat Jalan (Distribusi)
-                    </a>
-                    <a href="{{ route('distributions.index', ['status' => 'shipped']) }}" class="nav-item {{ (request()->routeIs('distributions.*') && request('status') === 'shipped') ? 'active' : '' }}">
-                        <i class="fas fa-dolly-flatbed"></i> Penerimaan Surat Jalan
                     </a>
                     @endcan
 
@@ -1808,23 +1773,12 @@
                     </a>
                     @endcan
 
-                    @can('view reports')
-                    <a href="{{ route('reports.mutation') }}" class="nav-item {{ request()->routeIs('reports.mutation') ? 'active' : '' }}">
-                        <i class="fas fa-arrow-right-arrow-left"></i> Mutasi Stok
-                    </a>
-                    @endcan
-
                     @can('view stock opname')
                     <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-check"></i> Stock Opname
                     </a>
                     @endcan
 
-                    @can('view materials')
-                    <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
-                        <i class="fas fa-boxes-stacked"></i> Master & Stok Minimum
-                    </a>
-                    @endcan
                 </div>
             </div>
             @endif
@@ -1834,12 +1788,12 @@
             @php
                 $isLaporanActive = request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools', 'audit-logs.*']);
             @endphp
-            <div class="nav-section" x-data="{ open: {{ $isLaporanActive ? 'true' : 'false' }} }">
+            <div class="nav-section" x-data="{ open: true }">
                 <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
                     <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Laporan & Audit</div>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
                 </div>
-                <div x-show="open" style="{{ $isLaporanActive ? '' : 'display: none;' }}">
+                <div x-show="open">
                     @can('view reports')
                     <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools']) ? 'active' : '' }}">
                         <i class="fas fa-chart-bar"></i> Laporan
@@ -1859,17 +1813,14 @@
             @php
                 $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*', 'supabase-sync.*']);
             @endphp
-            <div class="nav-section" x-data="{ open: {{ $isAdminActive ? 'true' : 'false' }} }">
+            <div class="nav-section" x-data="{ open: true }">
                 <div class="nav-section-header" @click="open = !open" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 4px; user-select: none;">
                     <div class="nav-section-label" style="padding: 0; margin-bottom: 0;">Admin Sistem</div>
                     <i class="fas fa-chevron-down" style="font-size: 10px; color: rgba(255,255,255,0.5); transition: transform 0.2s;" :style="open ? 'transform: rotate(0deg)' : 'transform: rotate(-90deg)'"></i>
                 </div>
-                <div x-show="open" style="{{ $isAdminActive ? '' : 'display: none;' }}">
+                <div x-show="open">
                     <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
                         <i class="fas fa-users"></i> Pengguna & Akun
-                    </a>
-                    <a href="{{ route('roles.index') }}" class="nav-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                        <i class="fas fa-id-badge"></i> Jabatan & Hak Akses
                     </a>
                     <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
                         <i class="fas fa-warehouse"></i> Gudang & Proyek
@@ -1954,6 +1905,7 @@
         });
 
         // Auto-dismiss alerts
+
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(el => {
                 el.style.transition = 'opacity 0.4s';
@@ -2003,8 +1955,11 @@
         });
     </script>
 
-    <!-- Toast Container -->
-    <div class="notif-toast-container" id="notifToastContainer"></div>
+    <!-- Liquid Glass (iOS 26 Style) Notification Stack -->
+    <x-notification.glass-stack />
+
+    <!-- Legacy Toast Container (Fallback) -->
+    <div class="notif-toast-container" id="notifToastContainer" style="display:none;"></div>
 
     <script>
         // Web Audio Chime Sound (Two-tone harmony)
@@ -2144,8 +2099,15 @@
         let lastNotifId = document.body.dataset.notifLastId || '';
 
         function showNotificationToast(data) {
+            // Priority: Pass to Liquid Glass (iOS 26 Style) Notification Stack
+            if (window.showGlassNotification) {
+                window.showGlassNotification(data);
+                return;
+            }
+
             const container = document.getElementById('notifToastContainer');
             if (!container) return;
+            container.style.display = 'flex';
 
             const soundType = (data.sound_type || data.type || '').toLowerCase();
             let themeClass = 'toast-info';
