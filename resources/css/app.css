@@ -1,3 +1,141 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    /* ========================================================
+       LIQUID GLASS (iOS 26 Style) DESIGN SYSTEM FOR NOTIFICATIONS
+       ======================================================== */
+    .glass {
+        position: relative;
+        border-radius: 28px;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(255,255,255,.38), rgba(255,255,255,.14));
+        -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.08);
+        backdrop-filter: blur(24px) saturate(180%) brightness(1.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.75),
+            inset 0 -1px 0 rgba(255,255,255,.2),
+            inset 0 0 24px rgba(255,255,255,.10),
+            0 12px 40px rgba(0,0,0,.18);
+    }
+
+    /* Rim specular: terang di kiri-atas dan kanan-bawah */
+    .glass::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(160deg,
+            rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 35%,
+            rgba(255,255,255,0) 65%, rgba(255,255,255,.55) 100%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .glass-title   { color: rgba(15,23,42,.92); }
+    .glass-body    { color: rgba(15,23,42,.72); }
+    .glass-divider { border-color: rgba(255,255,255,.35); }
+    .glass-row:hover { background: rgba(255,255,255,.18); }
+
+    /* Dark Mode Variant */
+    .dark .glass {
+        background: linear-gradient(135deg, rgba(30,32,40,.55), rgba(20,24,33,.45));
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.25),
+            inset 0 -1px 0 rgba(255,255,255,.08),
+            inset 0 0 24px rgba(255,255,255,.04),
+            0 12px 40px rgba(0,0,0,.45);
+    }
+
+    .dark .glass::before {
+        background: linear-gradient(160deg,
+            rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 35%,
+            rgba(255,255,255,0) 65%, rgba(255,255,255,.25) 100%);
+    }
+
+    .dark .glass-title   { color: rgba(248,250,252,.95); }
+    .dark .glass-body    { color: rgba(226,232,240,.78); }
+    .dark .glass-divider { border-color: rgba(255,255,255,.12); }
+    .dark .glass-row:hover { background: rgba(255,255,255,.08); }
+
+    /* Legacy compatibility for glass-material & tint variants */
+    .glass-material {
+        position: relative;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.14) 100%);
+        backdrop-filter: blur(24px) saturate(180%) brightness(1.08);
+        -webkit-backdrop-filter: blur(24px) saturate(180%) brightness(1.08);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.14),
+                    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.85);
+    }
+
+    .glass-tint-info {
+        background: linear-gradient(135deg, rgba(224, 242, 254, 0.45) 0%, rgba(186, 230, 253, 0.22) 100%);
+        border-color: rgba(186, 230, 253, 0.6);
+    }
+
+    .glass-tint-success {
+        background: linear-gradient(135deg, rgba(209, 250, 229, 0.45) 0%, rgba(167, 243, 208, 0.22) 100%);
+        border-color: rgba(167, 243, 208, 0.6);
+    }
+
+    .glass-tint-warning {
+        background: linear-gradient(135deg, rgba(254, 243, 199, 0.48) 0%, rgba(253, 230, 138, 0.25) 100%);
+        border-color: rgba(253, 230, 138, 0.65);
+    }
+
+    .glass-tint-danger {
+        background: linear-gradient(135deg, rgba(254, 205, 211, 0.48) 0%, rgba(251, 113, 133, 0.22) 100%);
+        border-color: rgba(254, 205, 211, 0.65);
+    }
+
+    /* Fallback: Reduced transparency & unsupported backdrop-filter */
+    @media (prefers-reduced-transparency: reduce) {
+        .glass,
+        .glass-material,
+        .glass-tint-info,
+        .glass-tint-success,
+        .glass-tint-warning,
+        .glass-tint-danger {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: rgb(245, 246, 248) !important;
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .dark .glass,
+        .dark .glass-material {
+            background: rgb(30, 34, 45) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+    }
+
+    @supports not (backdrop-filter: blur(10px)) {
+        .glass,
+        .glass-material,
+        .glass-tint-info,
+        .glass-tint-success,
+        .glass-tint-warning,
+        .glass-tint-danger {
+            background: rgba(255, 255, 255, 0.96) !important;
+            border-color: #cbd5e1 !important;
+        }
+    }
+
+    /* Fallback: Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .glass-anim-in,
+        .glass-anim-out,
+        .glass-pill {
+            transition: opacity 0.15s ease-out !important;
+            transform: none !important;
+            animation: none !important;
+        }
+    }
+}
