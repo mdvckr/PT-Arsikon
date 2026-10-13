@@ -21,21 +21,30 @@
 
     body {
         font-family: 'Inter', sans-serif;
-        background: #f1f5f9;
+        background: radial-gradient(circle at 50% 12%, rgba(234, 88, 12, 0.38) 0%, transparent 60%),
+                    radial-gradient(circle at 50% 88%, rgba(29, 78, 216, 0.42) 0%, transparent 65%),
+                    linear-gradient(180deg, #090d16 0%, #111827 50%, #080c14 100%);
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 20px;
+        position: relative;
+        overflow-x: hidden;
     }
 
     .login-card {
-        background: #fff;
-        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.84) 100%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        backdrop-filter: blur(28px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 28px;
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
         padding: 40px 36px 32px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.9);
+        position: relative;
+        z-index: 10;
     }
 
     .login-card .brand {
