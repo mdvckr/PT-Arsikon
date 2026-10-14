@@ -1,68 +1,43 @@
 <x-guest-layout>
     <style>
-        /* ===== iOS 26 LIQUID GLASS LOGIN ERROR MODAL ===== */
+        /* ===== CLEAN ERROR MODAL ===== */
         .login-modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(circle at 50% 18%, rgba(234, 88, 12, 0.45) 0%, transparent 60%),
-                        radial-gradient(circle at 50% 85%, rgba(29, 78, 216, 0.55) 0%, transparent 65%),
-                        rgba(9, 13, 22, 0.75);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            backdrop-filter: blur(24px) saturate(180%);
+            background: rgba(15, 23, 42, 0.45);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
             z-index: 99999;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px 20px;
-            animation: fadeInOverlay 0.28s ease-out;
+            animation: fadeInOverlay 0.2s ease-out;
         }
 
         .login-modal-box {
             position: relative;
             width: 100%;
-            max-width: 440px;
-            border-radius: 32px;
-            padding: 34px 28px 28px;
+            max-width: 420px;
+            border-radius: 24px;
+            padding: 32px 28px 26px;
             text-align: center;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
-            -webkit-backdrop-filter: blur(36px) saturate(190%) brightness(1.08);
-            backdrop-filter: blur(36px) saturate(190%) brightness(1.08);
-            box-shadow: 
-                inset 0 1px 0 rgba(255, 255, 255, 0.75),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.15),
-                inset 0 0 28px rgba(255, 255, 255, 0.06),
-                0 32px 70px -15px rgba(0, 0, 0, 0.65);
-            animation: popInModal 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            background: #ffffff;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+            animation: popInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             overflow: hidden;
-        }
-
-        /* Specular rim: terang di kiri-atas dan kanan-bawah */
-        .login-modal-box::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            padding: 1px;
-            background: linear-gradient(155deg,
-                rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.08) 35%,
-                rgba(255, 255, 255, 0.05) 65%, rgba(255, 255, 255, 0.55) 100%);
-            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-            z-index: 2;
         }
 
         .login-modal-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 18px;
+            right: 18px;
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: rgba(255, 255, 255, 0.75);
+            background: #f1f5f9;
+            border: none;
+            color: #64748b;
             font-size: 13px;
             cursor: pointer;
             display: flex;
@@ -72,44 +47,27 @@
             z-index: 10;
         }
         .login-modal-close:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-            transform: scale(1.06);
+            background: #e2e8f0;
+            color: #0f172a;
         }
 
         .login-modal-icon-wrap {
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
-        /* 3D Glossy Sphere Badge */
         .login-modal-icon-circle {
-            width: 76px;
-            height: 76px;
+            width: 68px;
+            height: 68px;
             border-radius: 50%;
-            background: radial-gradient(circle at 35% 30%, #ff6b6b 0%, #ef4444 32%, #dc2626 65%, #991b1b 100%);
-            box-shadow: 
-                0 14px 30px -4px rgba(220, 38, 38, 0.65),
-                0 6px 14px rgba(0, 0, 0, 0.45),
-                inset 0 3px 6px rgba(255, 255, 255, 0.75),
-                inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+            background: #fee2e2;
+            border: 2px solid #fecaca;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
-            font-size: 28px;
-            position: relative;
-            animation: iconPulse 2.5s infinite ease-in-out;
-        }
-
-        .login-modal-icon-circle i {
-            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
-        }
-
-        @keyframes iconPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); }
+            color: #dc2626;
+            font-size: 26px;
         }
 
         @keyframes fadeInOverlay {
@@ -118,46 +76,44 @@
         }
 
         @keyframes popInModal {
-            from { opacity: 0; transform: scale(0.92) translateY(16px); }
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .login-modal-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #ffffff;
-            margin: 0 0 10px 0;
-            letter-spacing: -0.02em;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.01em;
         }
 
         .login-modal-desc {
             font-size: 13.5px;
-            color: rgba(255, 255, 255, 0.82);
+            color: #64748b;
             line-height: 1.55;
-            margin: 0 0 22px 0;
-            padding: 0 6px;
+            margin: 0 0 20px 0;
+            padding: 0 4px;
         }
 
         .login-modal-tips {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 20px;
-            padding: 16px 18px;
-            margin-bottom: 24px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 22px;
             text-align: left;
             font-size: 12.5px;
-            color: rgba(255, 255, 255, 0.88);
+            color: #475569;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.08);
+            gap: 10px;
         }
 
         .login-modal-tip-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             line-height: 1.45;
         }
 
@@ -172,47 +128,37 @@
             flex-shrink: 0;
         }
         .tip-icon-warning {
-            background: rgba(245, 158, 11, 0.22);
-            border: 1px solid rgba(245, 158, 11, 0.45);
-            color: #fbbf24;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #d97706;
         }
         .tip-icon-success {
-            background: rgba(16, 185, 129, 0.22);
-            border: 1px solid rgba(16, 185, 129, 0.45);
-            color: #34d399;
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+            color: #059669;
         }
 
         .btn-try-again {
             width: 100%;
-            height: 52px;
+            height: 46px;
             padding: 0 20px;
-            border-radius: 26px;
-            background: linear-gradient(180deg, #f97316 0%, #ea580c 55%, #c2410c 100%);
+            border-radius: 12px;
+            background: #bd3a13;
             color: #ffffff;
-            font-size: 14.5px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             border: none;
             cursor: pointer;
-            box-shadow: 
-                0 10px 24px -2px rgba(234, 88, 12, 0.55),
-                inset 0 1.5px 2px rgba(255, 255, 255, 0.5),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 4px 12px rgba(189, 58, 19, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s ease;
         }
 
         .btn-try-again:hover {
-            transform: translateY(-1.5px);
-            box-shadow: 
-                0 14px 30px -2px rgba(234, 88, 12, 0.65),
-                inset 0 1.5px 2px rgba(255, 255, 255, 0.6);
-        }
-        .btn-try-again:active {
-            transform: translateY(0.5px);
-            box-shadow: 0 6px 14px rgba(234, 88, 12, 0.45);
+            background: #a8320e;
         }
     </style>
 
@@ -229,9 +175,9 @@
         <!-- Email Address -->
         <div class="field">
             <label class="form-label" for="email">Email</label>
-            <div class="input-wrap">
+            <div class="input-wrap @error('email') has-error @enderror">
                 <i class="fas fa-envelope"></i>
-                <input id="email" class="form-control @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email') }}" placeholder="nama@perusahaan.com" required autofocus autocomplete="username">
+                <input id="email" class="form-control @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
             </div>
             @error('email')
                 <div class="invalid-feedback">{{ $message }}</div>
@@ -241,9 +187,9 @@
         <!-- Password -->
         <div class="field">
             <label class="form-label" for="password">Password</label>
-            <div class="input-wrap">
+            <div class="input-wrap @error('password') has-error @enderror">
                 <i class="fas fa-lock"></i>
-                <input id="password" class="form-control @error('password') is-invalid @enderror" type="password" name="password" placeholder="Masukkan password" required autocomplete="current-password" style="padding-right:44px;">
+                <input id="password" class="form-control @error('password') is-invalid @enderror" type="password" name="password" required autocomplete="current-password" style="padding-right:44px;">
                 <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1" aria-label="Tampilkan password">
                     <i id="toggle-icon" class="fas fa-eye"></i>
                 </button>
@@ -253,11 +199,11 @@
             @enderror
         </div>
 
-        <!-- Remember Me -->
+        <!-- Remember Me & Forgot Password -->
         <div class="form-row">
             <label for="remember_me">
                 <input id="remember_me" type="checkbox" name="remember">
-                Ingat saya
+                Ingat Saya
             </label>
 
             @if (Route::has('password.request'))
@@ -274,7 +220,7 @@
         &copy; {{ date('Y') }} PT ARSIKON CIPTA KARYA
     </div>
 
-    {{-- Error Modal Popup saat Login Gagal / Kata Sandi Salah (iOS 26 Liquid Glass Style) --}}
+    {{-- Error Modal Popup saat Login Gagal / Kata Sandi Salah --}}
     @push('modals')
     @if ($errors->any() || request()->has('preview_error'))
     <div id="loginErrorModal" class="login-modal-overlay" onclick="if(event.target === this) closeLoginErrorModal()">
@@ -300,7 +246,7 @@
                     <div class="tip-icon-pill tip-icon-warning">
                         <i class="fas fa-keyboard"></i>
                     </div>
-                    <span>Periksa tombol <strong style="color:#ffffff;font-weight:700;">Caps Lock</strong> pada keyboard Anda.</span>
+                    <span>Periksa tombol <strong style="color:#0f172a;font-weight:700;">Caps Lock</strong> pada keyboard Anda.</span>
                 </div>
                 <div class="login-modal-tip-item">
                     <div class="tip-icon-pill tip-icon-success">

@@ -295,7 +295,7 @@ class RoleAndPermissionSeeder extends Seeder
             ['email' => 'admin.proyek1@arsikon.co.id'],
             [
                 'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'c')),
             ]
         );
         $adminProyek1->syncRoles([$adminProyekRole]);

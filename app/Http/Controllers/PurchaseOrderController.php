@@ -474,7 +474,8 @@ class PurchaseOrderController extends Controller
         });
 
         return redirect()->route('purchase-orders.show', $po)
-            ->with('success', "PO #{$po->po_number} berhasil dibuat.");
+            ->with('success', "PO #{$po->po_number} berhasil dibuat.")
+            ->with('show_print_prompt', true);
     }
 
     public function show(PurchaseOrder $purchaseOrder)
@@ -494,6 +495,22 @@ class PurchaseOrderController extends Controller
         $allTemplates  = \App\Models\PrintTemplate::latest()->get();
         return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates'));
     }
+
+    public function print(PurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->load([
+            'supplier',
+            'creator',
+            'approver',
+            'deliveryWarehouse.project',
+            'items.material.unit',
+            'items.tool',
+        ]);
+
+        $po = $purchaseOrder;
+        return view('purchase-orders.print', compact('po'));
+    }
+
 
     public function approve(PurchaseOrder $purchaseOrder)
     {

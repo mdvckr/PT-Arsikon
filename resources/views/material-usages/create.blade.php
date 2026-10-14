@@ -272,134 +272,14 @@
 
     <form method="POST" action="{{ route('material-usages.store') }}" id="usageForm" onsubmit="return validateBeforeSubmit(this)">
         @csrf
-        <input type="hidden" name="input_mode" id="inputMode" value="mr">
+        <input type="hidden" name="input_mode" id="inputMode" value="manual">
 
         <div class="material-usage-layout mb-3">
 
             {{-- ── Kiri: Metode MR + Tabel Material ── --}}
             <div style="display:flex; flex-direction:column; gap:16px;">
 
-                {{-- ==================== SECTION 1: METODE & SURAT PERMINTAAN (MR) ==================== --}}
-                <div class="card" style="border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
-                    <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <i class="fas fa-file-invoice text-primary" style="font-size:13px;"></i>
-                            <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Metode & Surat PO Lapangan</span>
-                        </div>
-                        <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10.5px; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe; font-weight:600;">
-                            Gudang: {{ $selectedWarehouse?->name ?? '-' }}
-                        </span>
-                    </div>
-                    <div class="card-body" style="padding:14px;">
-                        {{-- Mode Selector Cards --}}
-                        <div class="mode-grid mb-2">
-                            <!-- Mode MR -->
-                            <div class="mode-select-box active" id="modeCardMR" onclick="switchMode('mr')">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-file-shield text-primary" style="font-size: 13px;"></i>
-                                        <strong style="font-size: 12.5px; color: #0f172a;">Tarik dari PO Lapangan (MR)</strong>
-                                    </div>
-                                    <span class="mode-radio"></span>
-                                </div>
-                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.35; color:#64748b;">
-                                    Pengeluaran terkontrol sesuai kuota MR yang telah disetujui. Sisa kuota diperbarui otomatis.
-                                </p>
-                            </div>
-
-                            <!-- Mode Manual -->
-                            <div class="mode-select-box" id="modeCardManual" onclick="switchMode('manual')">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="flex items-center gap-2">
-                                        <i class="fas fa-pen-to-square text-warning" style="font-size: 13px;"></i>
-                                        <strong style="font-size: 12.5px; color: #0f172a;">Input Bebas / Insidentil</strong>
-                                    </div>
-                                    <span class="mode-radio"></span>
-                                </div>
-                                <p class="text-muted mb-0" style="font-size: 11px; line-height: 1.35; color:#64748b;">
-                                    Pengeluaran langsung tanpa surat MR untuk kebutuhan mendesak lapangan.
-                                </p>
-                            </div>
-                        </div>
-
-                        {{-- Dropdown MR --}}
-                        <div id="mrPickerWrapper">
-                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                                <label class="form-label mb-0" style="font-size:11.5px; font-weight:600; color:#334155; display:flex; align-items:center; gap:6px;">
-                                    <i class="fas fa-file-signature text-primary" style="font-size:12px;"></i>
-                                    Pilih Nomor PO Lapangan (MR) <span class="text-danger">*</span>
-                                </label>
-                                @if($approvedMRs->isNotEmpty())
-                                <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px; border:1px solid #bfdbfe;">
-                                    {{ $approvedMRs->count() }} Siap Dikeluarkan
-                                </span>
-                                @endif
-                            </div>
-
-                            <select name="material_request_id" id="mrSelect" class="form-control" onchange="loadMRDetails(this.value)">
-                                <option value="">— Pilih Nomor MR yang Telah Disetujui —</option>
-                                @foreach($approvedMRs as $mr)
-                                <option value="{{ $mr->id }}" {{ old('material_request_id') == $mr->id ? 'selected' : '' }}>
-                                    #{{ $mr->request_number }} • {{ $mr->items->count() }} Jenis Item | Pemohon: {{ $mr->requestedBy?->name ?? 'User' }} [{{ $mr->status === 'partially_fulfilled' ? 'Terkirim Sebagian' : 'Disetujui' }}]
-                                </option>
-                                @endforeach
-                            </select>
-
-                            @if($approvedMRs->isEmpty())
-                            <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding:9px 12px; border-radius:6px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; font-size:11.5px;">
-                                <i class="fas fa-circle-info" style="font-size:13px; color:#d97706; flex-shrink:0;"></i>
-                                <span>Tidak ditemukan MR berstatus <strong>Disetujui / Terkirim Sebagian</strong> pada gudang ini. Anda dapat menggunakan mode <em>Input Bebas / Insidentil</em> di atas.</span>
-                            </div>
-                            @endif
-
-                            <!-- Summary Box MR Terpilih -->
-                            <div id="mrDetailPanel" class="mr-detail-card" style="display: none;">
-                                <div style="padding: 8px 12px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <div style="width:24px; height:24px; border-radius:6px; background:#2563eb; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:11px;">
-                                            <i class="fas fa-file-lines"></i>
-                                        </div>
-                                        <strong id="panelMrNumber" style="font-size: 12.5px; color:#1e40af; font-weight:700;">#REQ-...</strong>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span class="badge" id="panelMrStatus" style="font-size: 10.5px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; border-radius:12px; padding:2px 8px; font-weight:600;">Disetujui</span>
-                                        <button type="button" onclick="clearSelectedMR()" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:11px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;" title="Reset / Ganti MR">
-                                            <i class="fas fa-xmark"></i> Batal
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="panel-mr-grid" style="padding: 10px 14px; font-size: 11.5px; background:#ffffff;">
-                                    <div>
-                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Pemohon:</span>
-                                        <strong id="panelMrRequester" style="color: #0f172a;">-</strong>
-                                    </div>
-                                    <div>
-                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Penyetuju (SM):</span>
-                                        <strong id="panelMrApprover" style="color: #0f172a;">-</strong>
-                                    </div>
-                                    <div>
-                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Tgl Pengajuan:</span>
-                                        <span id="panelMrDate" style="font-weight: 600; color: #0f172a;">-</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-muted" style="font-size: 10.5px; display: block; margin-bottom:1px;">Total Item:</span>
-                                        <span id="panelMrItemCount" class="badge" style="font-size: 10.5px; background:#eff6ff; color:#2563eb; font-weight:700; padding:1px 7px; border-radius:4px; border:1px solid #bfdbfe;">-</span>
-                                    </div>
-                                </div>
-                                <div id="panelMrNotesWrapper" style="display: none; padding: 8px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #334155;">
-                                    <i class="fas fa-quote-left text-muted me-1" style="font-size:10px;"></i>
-                                    <strong>Catatan:</strong> <span id="panelMrNotes"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Warning Mode Manual --}}
-                        <div id="manualModeAlert" style="display: none; padding: 8px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; font-size: 11.5px; color: #92400e;">
-                            <i class="fas fa-triangle-exclamation me-1 text-warning"></i>
-                            <strong>Perhatian:</strong> Pengeluaran manual tidak terikat dengan surat MR. Khusus kebutuhan mendesak lapangan.
-                        </div>
-                    </div>
-                </div>
+                {{-- ==================== SECTION 1: METODE PENGELUARAN ==================== --}}
 
                 {{-- ==================== SECTION 2: RINCIAN MATERIAL YANG DIKELUARKAN ==================== --}}
                 <div class="card" style="border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
@@ -600,10 +480,8 @@
         const availableMaterials = @json($materialsData);
         const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};
-        let currentMode = 'mr';
+        let currentMode = 'manual';
         let rowIndex = 0;
-        let mrItemsCache = [];
-        let isLoadingMR = false;
 
         function scrollToBonForm() {
             const sidebar = document.getElementById('bonSidebarCard');
@@ -614,66 +492,7 @@
             }
         }
 
-        function switchMode(mode) {
-            currentMode = mode;
-            document.getElementById('inputMode').value = mode;
 
-            const cardMR = document.getElementById('modeCardMR');
-            const cardManual = document.getElementById('modeCardManual');
-            const mrPicker = document.getElementById('mrPickerWrapper');
-            const manualAlert = document.getElementById('manualModeAlert');
-            const manualButtonsGroup = document.getElementById('manualButtonsGroup');
-            const mrQuickActions = document.getElementById('mrQuickActions');
-            const mrCols = document.querySelectorAll('.col-mr-only');
-            const mrSelect = document.getElementById('mrSelect');
-            const emptyState = document.getElementById('mrEmptyState');
-
-            if (mode === 'mr') {
-                cardMR.classList.add('active');
-                cardManual.classList.remove('active');
-
-                mrPicker.style.display = 'block';
-                manualAlert.style.display = 'none';
-                if (manualButtonsGroup) manualButtonsGroup.style.display = 'none';
-                mrCols.forEach(el => el.style.display = '');
-
-                if (mrSelect.value) {
-                    mrQuickActions.style.display = 'flex';
-                    emptyState.style.display = 'none';
-                    loadMRDetails(mrSelect.value);
-                } else {
-                    mrQuickActions.style.display = 'none';
-                    document.getElementById('itemsBody').innerHTML = '';
-                    emptyState.style.display = 'block';
-                }
-            } else {
-                cardManual.classList.add('active');
-                cardMR.classList.remove('active');
-
-                mrPicker.style.display = 'none';
-                manualAlert.style.display = 'block';
-                if (manualButtonsGroup) manualButtonsGroup.style.display = 'inline-flex';
-                mrQuickActions.style.display = 'none';
-                emptyState.style.display = 'none';
-                mrCols.forEach(el => el.style.display = 'none');
-
-                mrSelect.value = '';
-                document.getElementById('mrDetailPanel').style.display = 'none';
-
-                const tbody = document.getElementById('itemsBody');
-                tbody.innerHTML = '';
-                addManualRow();
-            }
-            updateTableSummary();
-        }
-
-        function clearSelectedMR() {
-            const mrSelect = document.getElementById('mrSelect');
-            if (mrSelect) {
-                mrSelect.value = '';
-                loadMRDetails('');
-            }
-        }
 
         function toggleWarehouseSwitch() {
             const wrapper = document.getElementById('warehouseSwitchWrapper');
@@ -1538,7 +1357,16 @@
 
         // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
-            switchMode('mr');
+            const manualButtonsGroup = document.getElementById('manualButtonsGroup');
+            const mrQuickActions = document.getElementById('mrQuickActions');
+            const mrCols = document.querySelectorAll('.col-mr-only');
+            const emptyState = document.getElementById('mrEmptyState');
+            if (manualButtonsGroup) manualButtonsGroup.style.display = 'inline-flex';
+            if (mrQuickActions) mrQuickActions.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'none';
+            mrCols.forEach(el => el.style.display = 'none');
+            addManualRow();
+            updateTableSummary();
         });
     </script>
     @endpush

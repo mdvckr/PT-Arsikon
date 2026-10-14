@@ -17,6 +17,11 @@
         </div>
 
         <div class="flex gap-2 items-center">
+            <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" target="_blank"
+               class="btn" style="background:#0f766e;color:#fff;font-weight:600;">
+                <i class="fas fa-print me-1"></i> Print PO
+            </a>
+
             <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Catat Nota Harian Baru
             </a>
@@ -82,6 +87,25 @@
     @if(session('success'))
         <div class="alert alert-success mb-4" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
             <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('show_print_prompt'))
+        <div style="background:#eff6ff;border:1.5px solid #3b82f6;color:#1e40af;padding:14px 18px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+                <i class="fas fa-print me-2"></i>
+                <strong>PO berhasil dibuat!</strong> Apakah Anda ingin mencetak atau menyimpan dokumen Purchase Order ini?
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+                <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" target="_blank"
+                   style="background:#1d4ed8;color:#fff;padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">
+                    <i class="fas fa-print me-1"></i> Cetak / Simpan PDF
+                </a>
+                <button onclick="this.parentElement.parentElement.remove()"
+                        style="background:transparent;border:1px solid #93c5fd;color:#1d4ed8;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;">
+                    Lewati
+                </button>
+            </div>
         </div>
     @endif
 

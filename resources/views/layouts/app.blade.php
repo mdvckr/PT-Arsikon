@@ -1659,7 +1659,7 @@
 
                     @can('view materials')
                     <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
-                        <i class="fas fa-boxes-stacked"></i> Data Material
+                        <i class="fas fa-boxes-stacked"></i> Material
                     </a>
                     @endcan
 
@@ -1671,7 +1671,7 @@
 
                     @can('view tools')
                     <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
-                        <i class="fas fa-screwdriver-wrench"></i> Data Alat
+                        <i class="fas fa-screwdriver-wrench"></i> Alat
                     </a>
                     @endcan
 

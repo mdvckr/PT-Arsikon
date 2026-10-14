@@ -289,9 +289,16 @@
                                 <td style="padding:8px 10px;text-align:center;color:#94a3b8;font-size:11.5px;">{{ $idx + 1 }}</td>
                                 <td style="padding:8px 12px;">
                                     <div class="fw-700" style="color:#0f172a;font-size:12.5px;">{{ $item->tool?->name ?? 'Alat tidak ditemukan' }}</div>
-                                    @if($item->tool?->code)
-                                    <code style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#475569;margin-top:2px;display:inline-block;">{{ $item->tool->code }}</code>
-                                    @endif
+                                    <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
+                                        @if($item->tool?->code)
+                                        <code style="font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#475569;display:inline-block;">{{ $item->tool->code }}</code>
+                                        @endif
+                                        @if($item->tool?->isOwnedByCentral())
+                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">Milik Pusat</span>
+                                        @else
+                                        <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">Milik Proyek</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td style="padding:8px 10px;font-size:11.5px;color:#475569;">
                                     {{ $item->tool?->category?->name ?? '-' }}

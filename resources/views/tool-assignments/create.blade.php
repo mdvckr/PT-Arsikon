@@ -206,9 +206,14 @@
                                 <tr class="tool-row cat-rows {{ $groupKey }}" id="row-{{ $tool->id }}" style="transition:background-color .2s;border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 10px 6px 22px;" class="tool-table-cell">
                                         <div class="fw-600 tool-name-text" style="font-size:12.5px;color:#0f172a;">{{ $tool->name }}</div>
-                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
+                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;flex-wrap:wrap;">
                                             @if($tool->code)
                                             <code style="font-size:10px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:#475569;">{{ $tool->code }}</code>
+                                            @endif
+                                            @if($tool->isOwnedByCentral())
+                                            <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9px;padding:0 4px;border-radius:3px;font-weight:600;" title="Aset milik pusat (perlu persetujuan pusat)">Milik Pusat</span>
+                                            @else
+                                            <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:9px;padding:0 4px;border-radius:3px;font-weight:600;" title="Aset milik proyek sendiri (langsung aktif)">Milik Proyek</span>
                                             @endif
                                             @if($tool->serial_number)
                                             <span class="text-muted mobile-hide-sn" style="font-size:10.5px;">S/N: {{ $tool->serial_number }}</span>
@@ -260,9 +265,14 @@
                                 <tr class="tool-row cat-rows cat-uncategorized" id="row-{{ $tool->id }}" style="transition:background-color .2s;border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 10px 6px 22px;" class="tool-table-cell">
                                         <div class="fw-600 tool-name-text" style="font-size:12.5px;color:#0f172a;">{{ $tool->name }}</div>
-                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;">
+                                        <div style="display:flex;align-items:center;gap:4px;margin-top:1px;flex-wrap:wrap;">
                                             @if($tool->code)
                                             <code style="font-size:10px;background:#f1f5f9;padding:1px 4px;border-radius:3px;color:#475569;">{{ $tool->code }}</code>
+                                            @endif
+                                            @if($tool->isOwnedByCentral())
+                                            <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9px;padding:0 4px;border-radius:3px;font-weight:600;" title="Aset milik pusat (perlu persetujuan pusat)">Milik Pusat</span>
+                                            @else
+                                            <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:9px;padding:0 4px;border-radius:3px;font-weight:600;" title="Aset milik proyek sendiri (langsung aktif)">Milik Proyek</span>
                                             @endif
                                             @if($tool->serial_number)
                                             <span class="text-muted mobile-hide-sn" style="font-size:10.5px;">S/N: {{ $tool->serial_number }}</span>

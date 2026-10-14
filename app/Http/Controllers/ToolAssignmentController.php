@@ -153,22 +153,49 @@ class ToolAssignmentController extends Controller
             $borrowerInfoNotes .= " | " . $validated['purpose'];
         }
 
+        // Cek apakah seluruh alat yang dipinjam merupakan aset milik gudang proyek sendiri (bukan milik pusat)
+        $isProjectWarehouse = $warehouse && !$warehouse->is_central;
+        $isAdminProyek = $assignedBy->hasRole('Admin Gudang Proyek') || (!$assignedBy->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && $warehouse && $assignedBy->hasAccessToWarehouse($warehouse));
+
+        $allToolsOwnedByProject = true;
+        $validToolCount = 0;
+
+        foreach ($validated['quantities'] as $toolId => $qty) {
+            $qty = (int) $qty;
+            if ($qty <= 0) continue;
+
+            $tool = Tool::find($toolId);
+            if (!$tool) continue;
+
+            $validToolCount++;
+            $isOwnTool = (!$tool->isOwnedByCentral() || ($tool->owner_warehouse_id && (int) $tool->owner_warehouse_id === (int) $warehouse->id));
+            if (!$isOwnTool) {
+                $allToolsOwnedByProject = false;
+            }
+        }
+
+        // Peminjaman oleh Admin Proyek untuk alat milik proyek sendiri langsung aktif (tanpa perlu persetujuan pusat)
+        $autoApprove = $isProjectWarehouse && $isAdminProyek && $allToolsOwnedByProject && ($validToolCount > 0);
+        $initialStatus = $autoApprove ? 'active' : 'pending';
+
         $totalAssignedCount = 0;
         $toolLoan = null;
 
-        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, &$totalAssignedCount, &$toolLoan) {
+        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, $autoApprove, $initialStatus, &$totalAssignedCount, &$toolLoan) {
             $loanNumber = ToolLoan::generateLoanNumber();
 
             $toolLoan = ToolLoan::create([
                 'loan_number'         => $loanNumber,
                 'from_warehouse_id'   => $warehouse->id,
                 'assigned_by_user_id' => $assignedBy->id,
+                'approved_by_user_id' => $autoApprove ? $assignedBy->id : null,
+                'approved_at'         => $autoApprove ? now() : null,
                 'borrower_name'       => $validated['borrower_name'],
                 'borrower_phone'      => $validated['borrower_phone'] ?? null,
                 'location_name'       => $validated['location_name'],
                 'assigned_at'         => $validated['assigned_at'],
                 'expected_return_at'  => $validated['expected_return_at'] ?? null,
-                'status'              => 'pending',
+                'status'              => $initialStatus,
                 'notes'               => $borrowerInfoNotes,
             ]);
 
@@ -196,14 +223,21 @@ class ToolAssignmentController extends Controller
                     'quantity'            => $qty,
                     'from_warehouse_id'   => $warehouse->id,
                     'assigned_by_user_id' => $assignedBy->id,
+                    'approved_by_user_id' => $autoApprove ? $assignedBy->id : null,
+                    'approved_at'         => $autoApprove ? now() : null,
                     'borrower_name'       => $validated['borrower_name'],
                     'borrower_phone'      => $validated['borrower_phone'] ?? null,
                     'location_name'       => $validated['location_name'],
                     'assigned_at'         => $validated['assigned_at'],
                     'expected_return_at'  => $validated['expected_return_at'] ?? null,
-                    'status'              => 'pending',
+                    'status'              => $initialStatus,
                     'notes'               => $borrowerInfoNotes,
                 ]);
+
+                // Jika auto-approve (alat milik proyek sendiri), kurangi stok tersedia langsung
+                if ($autoApprove) {
+                    $this->toolInvService->borrow($warehouse, $tool, (int) $qty);
+                }
 
                 $totalAssignedCount += $qty;
             }
@@ -217,7 +251,12 @@ class ToolAssignmentController extends Controller
             return back()->withInput()->withErrors(['quantities' => 'Silakan masukkan jumlah min. 1 pada alat yang ingin dipinjam.']);
         }
 
-        // Notifikasi ke Approvers (Owner, Admin, Admin Gudang Pusat, dan Admin Gudang Proyek terkait)
+        if ($autoApprove) {
+            return redirect()->route('tool-assignments.index')
+                ->with('success', "Peminjaman #{$toolLoan->loan_number} ({$totalAssignedCount} unit alat milik proyek) berhasil dicatat dan langsung aktif tanpa memerlukan persetujuan Admin Pusat.");
+        }
+
+        // Notifikasi ke Approvers (Owner, Admin, Admin Gudang Pusat, dan Admin Gudang Proyek terkait) jika ada aset milik pusat
         \App\Services\NotificationHelper::notifyApprovers(
             "Pengajuan Peminjaman Alat: #{$toolLoan->loan_number}",
             "{$assignedBy->name} mengajukan peminjaman {$totalAssignedCount} unit alat untuk {$validated['borrower_name']} ({$validated['location_name']}).",

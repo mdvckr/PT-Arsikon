@@ -130,9 +130,7 @@
         $matsDataJson    = $materialsData ?? collect([]);
         $toolsGroupedJson= $toolsGrouped ?? collect([]);
         $toolsDataJson   = $toolsData ?? collect([]);
-        $mrsJson         = $mrsFormatted ?? collect([]);
         $tasJson         = $tasFormatted ?? collect([]);
-        $initialMrId     = $selectedMrId ?? old('material_request_id');
         $initialLoanId   = $selectedLoanId ?? old('tool_loan_id');
     @endphp
 
@@ -140,62 +138,12 @@
         @csrf
 
         {{-- Hidden fields for tracking source --}}
-        <input type="hidden" name="material_request_id" id="hidden_material_request_id" value="{{ $initialMrId }}">
         <div id="hidden_tool_assignment_ids_container"></div>
 
         <div class="distribution-create-layout mb-4">
 
             <div style="display:flex;flex-direction:column;gap:20px;">
 
-                {{-- CARD 1: Sumber Permintaan Disetujui --}}
-                <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 4px 12px -2px rgba(0,0,0,0.04);overflow:hidden;">
-                    <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="fas fa-file-invoice text-primary" style="font-size:15px;"></i>
-                            <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Pilih Sumber Permintaan</span>
-                        </div>
-                        <div id="source-active-indicator" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <span id="badge-mr-connected" class="badge" style="display:none;font-size:11.5px;padding:4px 10px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;align-items:center;gap:6px;border-radius:6px;font-weight:600;">
-                                MR: <strong id="mr-active-name">-</strong>
-                                <button type="button" onclick="clearMrSource()" style="background:none;border:none;color:#64748b;cursor:pointer;padding:0 2px;margin-left:4px;" title="Batalkan MR ini">
-                                    <i class="fas fa-xmark"></i>
-                                </button>
-                            </span>
-
-                            <button type="button" class="btn btn-sm btn-light border text-danger" onclick="clearSelectedSource()" style="height:28px;padding:2px 10px;font-size:11.5px;font-weight:600;border-radius:6px;" title="Batalkan semua sumber">
-                                <i class="fas fa-xmark"></i> Reset
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding:18px;">
-                        <p class="text-muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;color:#64748b;">
-                            Pilih dokumen PO Lapangan (MR) dari gudang pemohon/penerima untuk mengisi rute dan daftar barang otomatis:
-                        </p>
-
-                        <div class="source-selection-grid">
-                            {{-- Dropdown MR --}}
-                            <div>
-                                <label class="form-label" style="font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">
-                                    PO Lapangan (MR dari Peminta/Penerima)
-                                </label>
-                                <select id="select-source-mr" class="form-control" style="font-size:12.5px;height:38px;border-radius:8px;font-weight:500;border-color:#cbd5e1;" onchange="onSourceMrSelected(this.value)">
-                                    <option value="">— Pilih PO Lapangan —</option>
-                                    @foreach($mrsJson as $mr)
-                                    <option value="{{ $mr['id'] }}" {{ $initialMrId == $mr['id'] ? 'selected' : '' }}>
-                                        #{{ $mr['number'] }} &bull; Peminta: {{ $mr['to_warehouse'] }} ({{ $mr['requester'] }}) &bull; Sumber: {{ $mr['from_warehouse'] }} [{{ $mr['status_label'] }}]
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @if(empty($mrsJson) || count($mrsJson) === 0)
-                                <div class="text-muted" style="font-size:11px;margin-top:4px;color:#94a3b8;">
-                                    Tidak ada antrean PO Lapangan dari gudang peminta yang menunggu pengiriman.
-                                </div>
-                                @endif
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
 
                 {{-- CARD 2: Daftar Barang / Alat yang Dikirim --}}
                 <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 4px 12px -2px rgba(0,0,0,0.04);overflow:hidden;">
@@ -397,9 +345,6 @@
                                     {{ ($originWarehouse?->is_central ?? true) ? 'Pusat' : 'Proyek' }}
                                 </span>
                             </div>
-                            <div id="mr-route-lock-note" style="display:none;font-size:11px;color:#2563eb;margin-top:4px;font-weight:600;">
-                                <i class="fas fa-link me-1"></i> Asal pengiriman ditentukan dari PO Lapangan
-                            </div>
                         </div>
 
                         {{-- 2. Gudang Tujuan Node --}}
@@ -431,9 +376,6 @@
                                 @endforeach
                                 @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
                             </select>
-                            <div id="mr-to-lock-note" style="display:none;font-size:11px;color:#16a34a;margin-top:4px;font-weight:600;">
-                                <i class="fas fa-check-circle me-1"></i> Tujuan otomatis dari gudang yang minta (MR)
-                            </div>
                         </div>
                     </div>
 
@@ -470,9 +412,7 @@
         const materialsData    = @json($matsDataJson);
         const toolsGrouped    = @json($toolsGroupedJson);
         const toolsData       = @json($toolsDataJson);
-        const mrs             = @json($mrsJson);
         const tas             = @json($tasJson);
-        const initialMrId     = @json($initialMrId);
         const initialLoanId   = @json($initialLoanId);
 
         const itemsBody            = document.getElementById('itemsBody');
@@ -482,11 +422,7 @@
         const manualQty            = document.getElementById('manual-qty');
         const manualHint           = document.getElementById('manual-hint');
         const manualWarning        = document.getElementById('manual-warning');
-        const sourceMrSelect       = document.getElementById('select-source-mr');
         const sourceTaSelect       = document.getElementById('select-source-ta');
-        const sourceIndicator      = document.getElementById('source-active-indicator');
-        const sourceActiveName     = document.getElementById('source-active-name');
-        const hiddenMrId           = document.getElementById('hidden_material_request_id');
         const hiddenTaContainer    = document.getElementById('hidden_tool_assignment_ids_container');
         const notesInput           = document.getElementById('notesInput');
 
@@ -524,188 +460,10 @@
 
         // ==================== AUTO-FILL DARI SUMBER PERMINTAAN ====================
 
-        function updateSourceIndicator() {
-            const hasMr = !!(hiddenMrId && hiddenMrId.value);
-            const hasTa = !!(hiddenTaContainer && hiddenTaContainer.children.length > 0);
-            const badgeMr = document.getElementById('badge-mr-connected');
-            const badgeTa = document.getElementById('badge-ta-connected');
-
-            if (badgeMr) badgeMr.style.display = hasMr ? 'inline-flex' : 'none';
-            if (badgeTa) badgeTa.style.display = hasTa ? 'inline-flex' : 'none';
-
-            if (sourceIndicator) {
-                sourceIndicator.style.display = (hasMr || hasTa) ? 'inline-flex' : 'none';
-            }
-        }
-
-        function clearMrSource() {
-            if (sourceMrSelect) sourceMrSelect.value = '';
-            if (hiddenMrId) hiddenMrId.value = '';
-            itemsBody.querySelectorAll('tr[data-source="mr"]').forEach(r => r.remove());
-
-            // Reset Gudang Asal ke default origin
-            const defaultOriginWh = whs.find(w => w.is_central) || whs[0];
-            if (defaultOriginWh) {
-                fromSelect.value = defaultOriginWh.id;
-                const fromNameEl = document.getElementById('display-from-warehouse-name');
-                const fromBadgeEl = document.getElementById('display-from-warehouse-badge');
-                if (fromNameEl) fromNameEl.textContent = defaultOriginWh.name;
-                if (fromBadgeEl) {
-                    fromBadgeEl.textContent = defaultOriginWh.is_central ? 'Pusat' : 'Proyek';
-                    fromBadgeEl.style.background = '#e0f2fe';
-                    fromBadgeEl.style.color = '#0369a1';
-                }
-            }
-            if (toSelect) toSelect.value = '';
-
-            const routeLockNote = document.getElementById('mr-route-lock-note');
-            if (routeLockNote) routeLockNote.style.display = 'none';
-
-            const toLockNote = document.getElementById('mr-to-lock-note');
-            if (toLockNote) toLockNote.style.display = 'none';
-
-            const routeTypeText = document.getElementById('route-type-text');
-            if (routeTypeText) routeTypeText.innerHTML = `Pusat &rarr; Proyek`;
-
-            fromSelect.dispatchEvent(new Event('change'));
-
-            updateSourceIndicator();
-            updateBadge();
-            updateManualSelect();
-        }
-
         function clearTaSource() {
             if (sourceTaSelect) sourceTaSelect.value = '';
             if (hiddenTaContainer) hiddenTaContainer.innerHTML = '';
             itemsBody.querySelectorAll('tr[data-source="ta"]').forEach(r => r.remove());
-            updateSourceIndicator();
-            updateBadge();
-            updateManualSelect();
-        }
-
-        function clearSelectedSource() {
-            clearMrSource();
-            clearTaSource();
-        }
-
-        function onSourceMrSelected(mrId) {
-            if (!mrId) {
-                clearMrSource();
-                return;
-            }
-
-            const mr = mrs.find(m => m.id === Number(mrId));
-            if (!mr) return;
-
-            // Set hidden MR ID tanpa mereset Alat
-            hiddenMrId.value = mr.id;
-
-            const mrActiveName = document.getElementById('mr-active-name');
-            if (mrActiveName) mrActiveName.textContent = `#${mr.number} (Peminta: ${mr.to_warehouse})`;
-
-            // Auto-fill Gudang Rute Pengiriman (Asal = Sumber MR, Tujuan = Gudang yang minta MR)
-            if (mr.from_warehouse_id) {
-                fromSelect.value = mr.from_warehouse_id;
-                const fromNameEl = document.getElementById('display-from-warehouse-name');
-                const fromBadgeEl = document.getElementById('display-from-warehouse-badge');
-                if (fromNameEl) fromNameEl.textContent = mr.from_warehouse;
-                if (fromBadgeEl) {
-                    fromBadgeEl.textContent = mr.from_is_central ? 'Pusat' : 'Proyek';
-                    fromBadgeEl.style.background = mr.from_is_central ? '#e0f2fe' : '#fef3c7';
-                    fromBadgeEl.style.color = mr.from_is_central ? '#0369a1' : '#92400e';
-                }
-            }
-            if (mr.to_warehouse_id && toSelect) {
-                toSelect.value = String(mr.to_warehouse_id);
-            }
-
-            // Update badge rute & lock note
-            const routeLockNote = document.getElementById('mr-route-lock-note');
-            if (routeLockNote) routeLockNote.style.display = 'block';
-
-            const toLockNote = document.getElementById('mr-to-lock-note');
-            if (toLockNote) toLockNote.style.display = 'block';
-
-            const routeTypeText = document.getElementById('route-type-text');
-            if (routeTypeText) {
-                const fromType = mr.from_is_central ? 'Pusat' : 'Proyek';
-                const toType = mr.to_is_central ? 'Pusat' : 'Proyek';
-                routeTypeText.innerHTML = `${fromType} &rarr; ${toType}`;
-            }
-
-            // Trigger change event to refresh stock contexts
-            fromSelect.dispatchEvent(new Event('change'));
-
-            // Auto-fill Catatan Pengiriman jika masih kosong atau tambahkan
-            if (!notesInput.value) {
-                notesInput.value = `Pengiriman barang pemenuhan PO Lapangan #${mr.number} (${mr.to_warehouse})`;
-            } else if (!notesInput.value.includes(mr.number)) {
-                notesInput.value += ` & MR #${mr.number}`;
-            }
-
-            // Hapus hanya baris lama yang berasal dari MR
-            itemsBody.querySelectorAll('tr[data-source="mr"]').forEach(r => r.remove());
-
-            // Masukkan seluruh item yang disetujui dari MR
-            mr.items.forEach(it => {
-                const tr = document.createElement('tr');
-                const isCustom = it.is_custom || !it.material_id;
-                tr.dataset.kind = isCustom ? 'custom' : 'material';
-                tr.dataset.source = 'mr';
-                tr.dataset.sourceId = mr.id;
-
-                const badgeHtml = isCustom
-                    ? `<span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-pen-nib me-1"></i>Manual</span>`
-                    : `<span class="badge" style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-cube me-1"></i>Material</span>`;
-
-                const hiddenFields = isCustom
-                    ? `
-                        <input type="hidden" name="items[${rowIndex}][type]" value="custom">
-                        <input type="hidden" name="items[${rowIndex}][custom_item_name]" value="${escapeHtml(it.custom_item_name || it.name)}">
-                        <input type="hidden" name="items[${rowIndex}][custom_item_unit]" value="${escapeHtml(it.custom_item_unit || it.unit || 'unit')}">
-                        <input type="hidden" name="items[${rowIndex}][notes]" value="Permintaan #${escapeHtml(mr.number)}">
-                      `
-                    : `
-                        <input type="hidden" name="items[${rowIndex}][type]" value="material">
-                        <input type="hidden" name="items[${rowIndex}][material_id]" value="${it.material_id}">
-                        <input type="hidden" name="items[${rowIndex}][notes]" value="Permintaan #${escapeHtml(mr.number)}">
-                      `;
-
-                const subtext = isCustom
-                    ? `<span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">#${escapeHtml(mr.number)}</span>
-                       <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;">Input Manual</span>
-                       <span>Sisa: <strong>${it.remaining} ${escapeHtml(it.unit)}</strong></span>`
-                    : `${it.code ? `<code style="font-size:11px;background:#f1f5f9;padding:1px 5px;border-radius:4px;color:#475569;">${escapeHtml(it.code)}</code> &bull; ` : ''}
-                       <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">#${escapeHtml(mr.number)}</span>
-                       <span>Sisa: <strong>${it.remaining} ${escapeHtml(it.unit)}</strong></span>`;
-
-                tr.innerHTML = `
-                    <td>${badgeHtml}</td>
-                    <td>
-                        ${hiddenFields}
-                        <div class="fw-600" style="color:#1e293b;font-size:13px;">${escapeHtml(it.name)}</div>
-                        <div class="text-muted" style="font-size:11.5px;display:flex;align-items:center;gap:6px;margin-top:2px;">
-                            ${subtext}
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:6px;">
-                            <input type="number" name="items[${rowIndex}][quantity]" class="form-control qty-input"
-                                value="${it.remaining}" min="0.01" max="${it.remaining}" step="0.01" required style="width:100px;text-align:center;font-weight:700;height:34px;border-radius:6px;font-size:13px;">
-                            <span class="text-muted" style="font-size:12.5px;font-weight:500;">${escapeHtml(it.unit)}</span>
-                        </div>
-                    </td>
-                    <td style="text-align:center;">
-                        <button type="button" class="btn btn-sm btn-light border text-danger" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus item" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;">
-                            <i class="fas fa-trash-can" style="font-size:11px;"></i>
-                        </button>
-                    </td>`;
-
-                itemsBody.appendChild(tr);
-                rowIndex++;
-            });
-
-            updateSourceIndicator();
             updateBadge();
             updateManualSelect();
         }

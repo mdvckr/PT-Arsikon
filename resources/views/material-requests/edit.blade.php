@@ -34,7 +34,7 @@
 
         .mr-doc-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             padding: 18px;
         }
@@ -231,14 +231,6 @@
                     </select>
                 </div>
 
-                {{-- Dibutuhkan Tgl --}}
-                <div class="mr-doc-field">
-                    <label for="needed_at">
-                        Dibutuhkan Tanggal
-                    </label>
-                    <input type="date" name="needed_at" id="needed_at" class="form-control"
-                        value="{{ old('needed_at', $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('Y-m-d') : '') }}">
-                </div>
 
                 {{-- Diajukan Sebagai --}}
                 <div class="mr-doc-field">

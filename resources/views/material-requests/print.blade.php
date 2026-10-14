@@ -263,11 +263,7 @@
                         <span class="hf-colon">:</span>
                         <span class="hf-val">{{ $proyek }}</span>
                     </div>
-                    <div class="hf-row">
-                        <span class="hf-label">Pemohon</span>
-                        <span class="hf-colon">:</span>
-                        <span class="hf-val">{{ $mr->requestedBy?->name ?? '-' }} ({{ $mr->requested_as ?: 'Admin Proyek' }})</span>
-                    </div>
+
                 </div>
                 <div class="hf-right">
                     <div class="hf-row-r">
@@ -280,11 +276,7 @@
                         <span class="hf-colon">:</span>
                         <span class="hf-val-r">{{ $tglOrder }}</span>
                     </div>
-                    <div class="hf-row-r">
-                        <span class="hf-label" style="min-width:110px;text-align:right;">Dibutuhkan Tgl</span>
-                        <span class="hf-colon">:</span>
-                        <span class="hf-val-r">{{ $tglDibutuhkan }}</span>
-                    </div>
+
                 </div>
             </div>
         </div>

@@ -34,7 +34,7 @@
 
         .mr-doc-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             padding: 18px;
         }
@@ -251,17 +251,6 @@
                     @enderror
                 </div>
 
-                {{-- Dibutuhkan Tgl --}}
-                <div class="mr-doc-field">
-                    <label for="needed_at">
-                        Dibutuhkan Tanggal <span class="text-danger">*</span>
-                    </label>
-                    <input type="date" name="needed_at" id="needed_at" class="form-control"
-                        value="{{ old('needed_at') }}" min="{{ date('Y-m-d') }}" required>
-                    @error('needed_at')
-                    <div class="text-danger" style="font-size:11px;margin-top:2px;">{{ $message }}</div>
-                    @enderror
-                </div>
 
                 {{-- Diajukan Sebagai --}}
                 <div class="mr-doc-field">

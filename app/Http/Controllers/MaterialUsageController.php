@@ -83,23 +83,26 @@ class MaterialUsageController extends Controller
         $materialsData = [];
         $materialsGrouped = collect();
         if ($selectedWarehouse) {
-            $stocks = Inventory::where('warehouse_id', $selectedWarehouse->id)
-                ->pluck('quantity', 'material_id')
+            $inventoryItems = Inventory::where('warehouse_id', $selectedWarehouse->id)
+                ->with(['material.unit', 'material.category'])
+                ->get();
+
+            $materialsData = $inventoryItems
+                ->filter(fn($inv) => $inv->material && $inv->material->is_active)
+                ->map(function ($inv) {
+                    $m = $inv->material;
+                    return [
+                        'id'       => $m->id,
+                        'name'     => $m->name,
+                        'code'     => $m->code ?? $m->sku ?? '',
+                        'stock'    => (float) $inv->quantity,
+                        'unit'     => $m->unit?->abbreviation ?? 'unit',
+                        'category' => $m->category?->name ?? 'Umum',
+                    ];
+                })
+                ->sortBy('name')
+                ->values()
                 ->toArray();
-
-            $materials = Material::with(['unit', 'category'])->where('is_active', true)->orderBy('name')->get();
-
-            $materialsData = $materials->map(function ($m) use ($stocks) {
-                $stock = isset($stocks[$m->id]) ? (float) $stocks[$m->id] : 0.0;
-                return [
-                    'id'       => $m->id,
-                    'name'     => $m->name,
-                    'code'     => $m->code ?? $m->sku ?? '',
-                    'stock'    => $stock,
-                    'unit'     => $m->unit?->abbreviation ?? 'unit',
-                    'category' => $m->category?->name ?? 'Umum',
-                ];
-            })->values()->toArray();
 
             $materialsGrouped = collect($materialsData)->groupBy('category')->sortKeys();
         }

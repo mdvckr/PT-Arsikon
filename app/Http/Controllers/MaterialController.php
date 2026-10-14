@@ -288,7 +288,7 @@ class MaterialController extends Controller
                     'qty_balance_after'  => $invQty,
                     'reference_type'     => 'Initial Stock',
                     'created_by_user_id' => auth()->id(),
-                    'notes'              => 'Stok awal saat pendaftaran material' . ($receivedStagesQty > 0 ? ' (dari akumulasi tahap T-masuk)' : ''),
+                    'notes'              => 'Stok awal saat pendaftaran material',
                 ]);
             }
         }
