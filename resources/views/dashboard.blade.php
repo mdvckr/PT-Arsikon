@@ -237,36 +237,119 @@
             border-bottom: 1px solid #f1f5f9 !important;
         }
 
-        /* Tool status summary row */
-        .tool-status-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            padding: 12px 14px;
+        /* Tool Fleet & Operational Readiness */
+        .fleet-overview-wrap {
+            padding: 14px 16px 10px;
         }
 
-        .tool-status-box {
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 10px 12px;
-            background: #f8fafc;
+        .fleet-ratio-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .tool-status-box .val {
-            font-size: 20px;
+        .fleet-ratio-track {
+            height: 7px;
+            border-radius: 9999px;
+            background: #f1f5f9;
+            display: flex;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .fleet-ratio-seg {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .fleet-status-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fleet-status-row {
+            padding: 9px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #f1f5f9;
+            transition: background-color 0.15s ease;
+        }
+
+        .fleet-status-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .fleet-item-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .fleet-lens-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11.5px;
+            flex-shrink: 0;
+        }
+
+        .fleet-item-text .main {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.25;
+        }
+
+        .fleet-item-text .sub {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-top: 1px;
+        }
+
+        .fleet-item-val {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .fleet-item-val .num {
+            font-size: 13.5px;
             font-weight: 800;
             color: #0f172a;
-            line-height: 1;
         }
 
-        .tool-status-box .lbl {
+        .fleet-item-val .unit {
             font-size: 11px;
             font-weight: 600;
             color: #64748b;
-            margin-top: 4px;
+        }
+
+        .fleet-item-val .pct {
+            font-size: 10.5px;
+            font-weight: 700;
+        }
+
+        .fleet-panel-footer {
+            padding: 9px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .fleet-panel-footer a {
+            text-decoration: none;
+            transition: color 0.15s ease;
         }
 
         /* Category Breakdown */
@@ -319,18 +402,8 @@
                 font-size: 11px;
                 height: 34px;
             }
-            .tool-status-row {
-                grid-template-columns: 1fr;
-                gap: 6px;
-            }
-            .tool-status-box {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
+            .fleet-status-row {
                 padding: 8px 12px;
-            }
-            .tool-status-box .lbl {
-                margin-top: 0;
             }
         }
     </style>
@@ -627,7 +700,7 @@
 
     {{-- Tool Fleet & Category Composition --}}
     <div class="dash-grid-2">
-        {{-- Tool Fleet Status --}}
+        {{-- Tool Fleet Status (Human/Enterprise ERP Style) --}}
         <div class="dash-panel">
             <div class="dash-panel-header">
                 <h3 class="dash-panel-title">
@@ -639,44 +712,138 @@
                 </a>
             </div>
 
-            <div class="tool-status-row">
-                {{-- Ready --}}
-                <div class="tool-status-box" style="border-left:3px solid #059669;">
-                    <div class="val" style="color:#059669;">{{ $toolsReady }}</div>
-                    <div class="lbl">
-                        <i class="fas fa-circle-check text-success" style="font-size:10px;"></i>
-                        <span>Siap Pakai</span>
+            @php
+                $totalFleet = $toolsReady + $toolsInUse + $toolsMaintenance;
+                $readyPct = $totalFleet > 0 ? round(($toolsReady / $totalFleet) * 100, 1) : 0;
+                $inUsePct = $totalFleet > 0 ? round(($toolsInUse / $totalFleet) * 100, 1) : 0;
+                $maintPct = $totalFleet > 0 ? round(($toolsMaintenance / $totalFleet) * 100, 1) : 0;
+            @endphp
+
+            <div class="fleet-overview-wrap">
+                <div class="fleet-ratio-header">
+                    <div>
+                        <span style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Total Armada</span>
+                        <div style="font-size:15px;font-weight:800;color:#0f172a;line-height:1.2;">
+                            {{ number_format($totalFleet) }} <span style="font-size:12px;font-weight:600;color:#64748b;">Unit Fisik</span>
+                        </div>
+                    </div>
+                    <div>
+                        @if($totalFleet > 0 && $toolsMaintenance === 0)
+                            <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:3px 8px;">
+                                <i class="fas fa-circle-check me-1"></i> {{ $readyPct }}% Siap Operasi
+                            </span>
+                        @elseif($toolsMaintenance > 0)
+                            <span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;font-size:11px;font-weight:700;padding:3px 8px;">
+                                <i class="fas fa-triangle-exclamation me-1"></i> {{ $toolsMaintenance }} Perlu Servis
+                            </span>
+                        @else
+                            <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;font-size:11px;font-weight:600;padding:3px 8px;">
+                                Belum Ada Unit
+                            </span>
+                        @endif
                     </div>
                 </div>
 
-                {{-- In Use --}}
-                <div class="tool-status-box" style="border-left:3px solid #2563eb;">
-                    <div class="val" style="color:#2563eb;">{{ $toolsInUse }}</div>
-                    <div class="lbl">
-                        <i class="fas fa-user-gear text-primary" style="font-size:10px;"></i>
-                        <span>Di Lapangan</span>
+                {{-- Segmented Readiness Bar --}}
+                <div class="fleet-ratio-track" title="Kesiapan Armada: {{ $toolsReady }} Siap, {{ $toolsInUse }} Di Lapangan, {{ $toolsMaintenance }} Servis">
+                    @if($totalFleet > 0)
+                        @if($toolsReady > 0)
+                            <div class="fleet-ratio-seg" style="background:#059669;width:{{ $readyPct }}%;"></div>
+                        @endif
+                        @if($toolsInUse > 0)
+                            <div class="fleet-ratio-seg" style="background:#2563eb;width:{{ $inUsePct }}%;"></div>
+                        @endif
+                        @if($toolsMaintenance > 0)
+                            <div class="fleet-ratio-seg" style="background:#dc2626;width:{{ $maintPct }}%;"></div>
+                        @endif
+                    @else
+                        <div class="fleet-ratio-seg" style="background:#e2e8f0;width:100%;"></div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Breakdown List (Natural Row Structure) --}}
+            <div class="fleet-status-list">
+                {{-- Row 1: Siap Pakai --}}
+                <div class="fleet-status-row">
+                    <div class="fleet-item-info">
+                        <div class="fleet-lens-icon" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;">
+                            <i class="fas fa-circle-check"></i>
+                        </div>
+                        <div class="fleet-item-text">
+                            <div class="main">Siap Pakai (Tersedia)</div>
+                            <div class="sub">Standby di gudang, siap dipakai</div>
+                        </div>
+                    </div>
+                    <div class="fleet-item-val">
+                        <div>
+                            <span class="num">{{ number_format($toolsReady) }}</span>
+                            <span class="unit">Unit</span>
+                        </div>
+                        <div class="pct" style="color:#059669;">{{ $readyPct }}%</div>
                     </div>
                 </div>
 
-                {{-- Maintenance --}}
-                <div class="tool-status-box" style="border-left:3px solid {{ $toolsMaintenance > 0 ? '#dc2626' : '#cbd5e1' }};">
-                    <div class="val" style="color:{{ $toolsMaintenance > 0 ? '#dc2626' : '#64748b' }};">{{ $toolsMaintenance }}</div>
-                    <div class="lbl">
-                        <i class="fas fa-wrench {{ $toolsMaintenance > 0 ? 'text-danger' : 'text-muted' }}" style="font-size:10px;"></i>
-                        <span>Servis / Rusak</span>
+                {{-- Row 2: Di Lapangan --}}
+                <div class="fleet-status-row">
+                    <div class="fleet-item-info">
+                        <div class="fleet-lens-icon" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">
+                            <i class="fas fa-user-gear"></i>
+                        </div>
+                        <div class="fleet-item-text">
+                            <div class="main">Sedang di Lapangan</div>
+                            <div class="sub">Aktif dipinjam personil / proyek</div>
+                        </div>
+                    </div>
+                    <div class="fleet-item-val">
+                        <div>
+                            <span class="num">{{ number_format($toolsInUse) }}</span>
+                            <span class="unit">Unit</span>
+                        </div>
+                        <div class="pct" style="color:#2563eb;">{{ $inUsePct }}%</div>
+                    </div>
+                </div>
+
+                {{-- Row 3: Servis / Rusak --}}
+                <div class="fleet-status-row">
+                    <div class="fleet-item-info">
+                        <div class="fleet-lens-icon" style="background:{{ $toolsMaintenance > 0 ? '#fef2f2' : '#f8fafc' }};color:{{ $toolsMaintenance > 0 ? '#dc2626' : '#94a3b8' }};border:1px solid {{ $toolsMaintenance > 0 ? '#fecaca' : '#e2e8f0' }};">
+                            <i class="fas fa-wrench"></i>
+                        </div>
+                        <div class="fleet-item-text">
+                            <div class="main">Servis / Perbaikan</div>
+                            <div class="sub">Rusak, kalibrasi, atau perawatan</div>
+                        </div>
+                    </div>
+                    <div class="fleet-item-val">
+                        <div>
+                            <span class="num" style="{{ $toolsMaintenance > 0 ? 'color:#dc2626;' : '' }}">{{ number_format($toolsMaintenance) }}</span>
+                            <span class="unit">Unit</span>
+                        </div>
+                        <div class="pct" style="color:{{ $toolsMaintenance > 0 ? '#dc2626' : '#94a3b8' }};">{{ $maintPct }}%</div>
                     </div>
                 </div>
             </div>
 
             @if($openOpname > 0)
-            <div style="padding:0 14px 14px;">
-                <div class="alert alert-warning mb-0" style="font-size:11.5px;padding:8px 12px;border-radius:6px;">
-                    <div>Ada <strong>{{ $openOpname }}</strong> agenda Stock Opname terbuka.
-                        <a href="{{ route('stock-opnames.index') }}" class="text-warning fw-700"> Selesaikan &rarr;</a>
-                    </div>
+            <div style="padding:10px 16px;">
+                <div class="alert alert-warning mb-0" style="font-size:11px;padding:7px 10px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;">
+                    <div><i class="fas fa-clipboard-check me-1"></i> <strong>{{ $openOpname }}</strong> Stock Opname terbuka</div>
+                    <a href="{{ route('stock-opnames.index') }}" class="text-warning fw-700" style="text-decoration:none;">Periksa &rarr;</a>
                 </div>
             </div>
             @endif
+
+            <div class="fleet-panel-footer">
+                <a href="{{ route('tools.index') }}" style="color:#2563eb;">
+                    <i class="fas fa-boxes-stacked me-1"></i> Katalog Alat
+                </a>
+                @can('create tool assignments')
+                <a href="{{ route('tool-assignments.create') }}" style="color:#0f172a;">
+                    <i class="fas fa-plus text-primary me-1"></i> Pinjamkan Alat
+                </a>
+                @endcan
+            </div>
         </div>
 
         {{-- Inventory Breakdown by Category --}}

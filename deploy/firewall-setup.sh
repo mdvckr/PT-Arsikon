@@ -60,7 +60,7 @@ findtime = 600
 # Maksimal 5 percobaan gagal
 maxretry = 5
 # Kirim notifikasi (opsional, butuh sendmail)
-# destemail = admin@arsikon.co.id
+# destemail = 
 # action = %(action_mwl)s
 
 # =============================================

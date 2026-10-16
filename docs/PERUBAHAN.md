@@ -771,3 +771,233 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - `php artisan test --filter=PurchaseOrderPayableRuleTest`: PASS 100% (7 tests, 36 assertions).
   - `php artisan test --filter=KaryawanRoleTest`: PASS 100% (18 tests, 18 assertions).
   - `php artisan test --filter=MasterDataTest`: PASS 100% (6 tests, 31 assertions).
+
+---
+
+## 12. Perbaikan Duplikasi Notifikasi & Modernisasi UI Liquid Glass (T29)
+- **Konteks & Masalah**:
+  1. **Notifikasi Terduplikasi**: Saat sistem memicu notifikasi (seperti pesan sukses flash session "Penerimaan barang #GR-... berhasil disimpan sebagai draft"), muncul dua kartu banner identik yang menumpuk sekaligus di layar. Hal ini terjadi karena flash session dipicu di dua tempat paralel (`glass-stack.blade.php` via Alpine `x-init` dan `layouts/app.blade.php` via `setTimeout 300ms`), ditambah listener Echo dan polling duplikat antara `app.blade.php` dan `notification-center.js`.
+  2. **UI Belum Seperti Glass Sungguhan**: Tampilan sebelumnya menggunakan bentuk oval kapsul penuh (`!rounded-full`) dengan gradien hijau-putih keruh yang menutupi dan mengaburkan teks di bawahnya tanpa efek pembiasan cahaya (refraksi) kaca asli. Elemen teks "Baru saja" dan tombol tutup terhimpit di sudut lengkungan oval.
+- **Implementasi**:
+  1. **Eliminasi Total Duplikasi Notifikasi**:
+     - Menghapus listener ganda, poller ganda, dan trigger flash session redundan dari [app.blade.php](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/views/layouts/app.blade.php). Seluruh pengelolaan banner terpusat pada `<x-notification.glass-stack />` dan [notification-center.js](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/js/notification-center.js).
+     - Menambahkan mekanisme *cooldown deduplication guard* (jendela 4 detik) dan pengecekan banner aktif/antrean di method `pushBanner()` agar notifikasi dengan judul dan pesan yang sama tidak pernah dapat muncul terduplikasi.
+  2. **Desain Ulang Liquid Glass Asli (Apple iOS / visionOS Frosted Glass)**:
+     - **Form Factor Squircle**: Mengganti kapsul oval dengan bentuk kartu squircle modern (`rounded-[20px]` untuk mode ringkas dan `rounded-[24px]` untuk mode ekspansi) dengan bantalan proporsional (`p-3.5 sm:p-4`).
+     - **Refraksi & Transparansi Kaca Asli**: Mengoptimalkan `backdrop-filter: blur(24px) saturate(190%) contrast(98%)` dengan latar belakang semi-transparan `rgba(255, 255, 255, 0.82)` pada mode terang dan `rgba(15, 23, 42, 0.84)` pada mode gelap, menghasilkan efek kaca buram berkabut (*frosted glass*) yang elegan dan sangat mudah dibaca.
+     - **Specular Rim Highlight**: Menambahkan refleksi pantulan kilauan cahaya 1.5px di bibir atas kaca (`linear-gradient(90deg, transparent, white, transparent)`) dan multi-layer inset specular shadow.
+     - **Jewel Frosted Icon Lens & Progress Bar**: Ikon status dikemas dalam lensa kaca squircle dengan border tipis bercahaya, dilengkapi tombol aksi melingkar semi-kaca serta garis progres penutupan otomatis (*auto-dismiss progress bar*) beranimasi halus di bagian bawah kartu.
+  3. **Penyusunan Ulang Aset Vite**:
+     - Menjalankan `npm run build` untuk mengompilasi CSS dan JS produksi terbaru.
+- **Hasil Pengujian**:
+  - `npm run build`: Berhasil mengompilasi bundel CSS dan JS tanpa error.
+  - `php artisan test --filter=GoodsReceiptTest`: PASS 100% (7 tests, 37 assertions).
+
+---
+
+## 13. Refactor Komponen Notifikasi ke iOS 26 Liquid Glass (3D Thick Refractive Glass) (T30)
+- **Konteks & Masalah**:
+  1. Pengguna menginginkan komponen toast notifikasi direfaktor penuh ke spesifikasi optik kaca tebal 3D (*iOS 26 Liquid Glass*) dengan pembiasan mendalam, pencahayaan specular, dan ambient refraction blob tanpa merusak variabel Blade, session flash, atau fungsi dismiss/close yang sudah berjalan.
+- **Implementasi**:
+  1. **Penambahan Class CSS Optik 3D Kaca Tebal di `resources/css/app.css`**:
+     - `.ios26-liquid-toast`: Menggunakan gradasi `linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.14) 50%, rgba(236,253,245,0.25) 100%)`, `backdrop-filter: blur(28px) saturate(200%) contrast(105%)`, border `rgba(255,255,255,0.65)`, dan 4-layer box-shadow (inset highlights & deep drop shadow).
+     - `.ios26-glass-squircle`: Kaca squircle melengkung dengan `backdrop-filter: blur(16px)` dan ambient green tint.
+     - `.ios26-glass-pill`: Kaca kapsul halus untuk tombol aksi dan badge.
+     - Varian tint status (warning, danger, info) dan dark mode support.
+  2. **Efek Ambient Refraksi di Container Blade (`glass-banner.blade.php`)**:
+     - Menambahkan 2 elemen blob blur ambient (`bg-emerald-400/25` di sudut kiri atas dan `bg-cyan-400/20` di sudut kanan bawah berukuran `w-32 h-32 blur-2xl`) di dalam wadah `overflow-hidden rounded-[28px] max-w-xl`.
+     - Menambahkan layer kilau kaca diagonal `bg-gradient-to-tr from-transparent via-white/25 to-white/55 opacity-60`.
+  3. **Struktur Konten & Kontras Tajam**:
+     - Kotak ikon kiri menggunakan `.ios26-glass-squircle rounded-2xl w-12 h-12` dengan badge centang hijau berpendar `shadow-[0_0_12px_rgba(16,185,129,0.65)]`.
+     - Badge pill status menggunakan `rounded-full bg-emerald-600/85 text-white border border-emerald-400/50 shadow-sm`.
+     - Judul tegas `text-slate-900 font-bold` dan deskripsi `text-slate-700 font-medium`.
+     - Tombol close (X) kaca sirkular `.ios26-glass-squircle rounded-full w-7 h-7`.
+     - Progress bar melayang masuk ke dalam (`bottom-2 left-5 right-5 h-1 rounded-full bg-slate-900/10`) dengan bar aktif `bg-emerald-500 shadow-[0_0_10px_#10b981]`.
+  4. **Kompilasi Aset**:
+     - Menjalankan `npm run build` dengan hasil sukses.
+- **Hasil Pengujian**:
+  - `php artisan test --filter=MaterialRequestViewTest`: PASS 100% (3 tests, 14 assertions).
+  - `php artisan test --filter=KaryawanRoleTest`: PASS 100% (18 tests, 18 assertions).
+
+---
+
+## 14. Refactor Dropdown Pusat Pemberitahuan ke iOS 26 Liquid Glass (T31)
+- **Konteks & Masalah**:
+  1. Pengguna menginginkan panel dropdown pusat notifikasi (yang terbuka saat menekan ikon lonceng pada topbar) menerapkan gaya estetika visual yang sama persis dengan *iOS 26 Liquid Glass (3D Thick Refractive Glass)*.
+  2. Komponen harus tetap mempertahankan seluruh binding AlpineJS (`unreadCount`, `panelItems`, `panelLoading`, `markAllAsRead()`, `markSingleAsRead()`), status kosong (*empty state*), pemuatan (*skeleton loading*), serta link riwayat lengkap.
+- **Implementasi**:
+  1. **Container Dropdown Kaca Cair 3D (`glass-panel.blade.php`)**:
+     - Menggunakan container melengkung halus `rounded-[32px] w-[420px] max-w-[calc(100vw-32px)] overflow-hidden`.
+     - Gradien optik kaca tebal: `bg-gradient-to-br from-slate-900/40 via-white/40 to-white/20`.
+     - Blur & Saturasi ultra dalam: `backdrop-blur-3xl backdrop-saturate-[210%]` dilengkapi class vendor prefix `.ios26-liquid-panel` di [app.css](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/css/app.css).
+     - Multi-layer shadow refraksi: `shadow-[inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-1.5px_2px_rgba(255,255,255,0.25),0_25px_50px_-12px_rgba(0,0,0,0.4)]` dengan border `border-white/60`.
+     - Specular reflection sheen layer: `pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-white/45 opacity-50`.
+  2. **Header Dropdown**:
+     - Judul tegas `text-base font-bold text-slate-900 tracking-tight`.
+     - Badge hitungan notifikasi baru: `bg-rose-500/20 text-rose-800 border border-rose-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)]`.
+     - Tombol interaktif "Tandai Semua" berikon ganda centang dengan hover transisi halus.
+  3. **Item Notifikasi Glass Card & Squircle Lensa**:
+     - Setiap item dibungkus dalam glass card `rounded-2xl p-4 bg-white/35 hover:bg-white/55 backdrop-blur-md border border-white/50 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_4px_12px_rgba(0,0,0,0.04)]`.
+     - Lensa squircle status (`w-11 h-11 rounded-2xl backdrop-blur-md border`) disesuaikan secara dinamis untuk jenis peringatan (*warning* amber, *success* emerald, *danger* rose, *info* sky) dengan ikon SVG presisi tinggi.
+     - Indikator belum dibaca: *Blue Dot Glow* berpendar `w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]`.
+  4. **Footer Panel**:
+     - Footer melayang menyatu kaca `border-t border-white/30 text-center bg-white/10` dengan tautan `route('notifications.index')`.
+  5. **Dukungan Dark Mode**:
+     - Kontras tajam dan adaptif pada latar belakang gelap (`dark:from-slate-900/80 dark:via-slate-800/60 dark:to-slate-900/40`, teks putih/abu-abu terang).
+- **Hasil Pengujian**:
+  - `npm run build`: Berhasil mengompilasi bundel aset Tailwind CSS & JS produksi tanpa error.
+  - `php artisan test --filter=NotificationAndAuditLogTest`: PASS 100% (6 tests, 28 assertions).
+  - `php artisan test --filter=NotificationTest`: PASS 100% (3 tests, 12 assertions).
+
+---
+
+## 15. Penyempurnaan Notifikasi: Tipografi Hitam Pekat (100% Black Text) & Tata Letak Bersih Bebas Bocor Tembus Pandang (T32)
+- **Konteks & Masalah**:
+  1. **Teks Tidak Terbaca (Putih/Abu Faded di Atas Kaca Terang)**: Pada screenshot pengguna, judul notifikasi "PO Lapangan: #REQ-..." berwarna putih (#ffffff) dan pesan berwana abu-abu muda/sian pudar. Hal ini disebabkan Tailwind mengaktifkan class `dark:text-white` secara otomatis karena konfigurasi `darkMode` belum diatur ke `'class'` sehingga Tailwind mendeteksi OS Dark Mode (`prefers-color-scheme: dark`) pengguna.
+  2. **Teks Halaman di Belakang Tembus Bocor (*Double Exposure Mess*)**: Latar belakang kaca terlalu transparan (opasitas 14%–38%), sehingga teks tebal dari halaman di bawahnya ("01", "PEMOHON", "SUMBER MATERIAL (KEPADA)") menembus ke dalam kartu notifikasi dan bertubrukan langsung dengan teks notifikasi.
+  3. **Blob Warna Blur Mengaburkan Kartu**: Kehadiran blob blur besar warna kuning/oranye di sisi kartu menciptakan kabut kuning keruh di tengah teks.
+  4. **Tata Letak Berantakan**: Tombol tutup dan perluas melayang di tengah-kanan secara canggung, progress bar memotong garis tepi bawah, dan badge pill tidak selaras.
+- **Implementasi**:
+  1. **Tipografi 100% Hitam Pekat (Pure Black Text)**:
+     - Judul notifikasi diubah menjadi hitam pekat (`text-black font-black text-sm sm:text-[15px]`).
+     - Isi pesan notifikasi diubah menjadi hitam pekat berbobot tegas (`text-slate-950 font-bold text-xs sm:text-[13px]`).
+     - Timestamp menggunakan teks kontras tegas (`text-slate-600 font-bold text-[11px]`).
+     - Badge status menggunakan pill kontras tinggi dengan teks gelap berbobot tegas (misal badge PERHATIAN: `bg-amber-100 text-amber-950 border-amber-300 font-black`).
+     - Tombol aksi "Buka Dokumen" menggunakan biru tua pekat (`text-blue-800 hover:text-blue-950 font-black`).
+  2. **Kaca Tebal Padat Tanpa Tembus Bocor (*Dense Liquid Glass Surface*)**:
+     - Memperbarui class `.ios26-liquid-toast` dan `.ios26-liquid-panel` di [app.css](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/css/app.css) dengan opasitas 94%–96% (`linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.88) 100%)`).
+     - Menghilangkan blob blur kuning yang membuat kartu keruh dan kotor.
+     - Menjaga efek pembiasan refraksi tepi, specular rim highlight atas, dan drop shadow tebal 3D Apple-grade tanpa membiarkan elemen halaman di bawahnya tembus mengganggu pembacaan.
+  3. **Tata Letak Rapi & Seimbang (*Polished Apple iOS Architecture*)**:
+     - Tombol Tutup (X) dan Perluas disematkan rapi di sudut kanan atas (`top-3.5 right-3.5`), membebaskan area konten tengah agar lapang dan teratur.
+     - Squircle ikon status berukuran 44x44px di sisi kiri atas dengan lensa solid vibrant yang presisi.
+     - Garis progres penutupan otomatis (*progress bar*) disesuaikan menjadi 3px tipis dengan ujung membulat dan margin masuk ke dalam (`bottom-1.5 left-5 right-5`).
+  4. **Pencegahan Override Gelap Otomatis**:
+     - Menambahkan `darkMode: 'class'` pada [tailwind.config.js](file:///d:/XAMPP/htdocs/PT-Arsikon/tailwind.config.js) agar Tailwind tidak memaksakan teks putih saat OS pengguna berada dalam mode gelap.
+  5. **Konsistensi ke Seluruh Komponen**:
+     - Memperbarui [glass-banner.blade.php](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/views/components/notification/glass-banner.blade.php), [glass-panel.blade.php](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/views/components/notification/glass-panel.blade.php), dan [glass-toast.blade.php](file:///d:/XAMPP/htdocs/PT-Arsikon/resources/views/components/notification/glass-toast.blade.php).
+- **Hasil Pengujian**:
+  - `npm run build`: Sukses mengompilasi bundle produksi (CSS 70.59 kB, JS 176.20 kB).
+  - `php artisan test --filter=Notification`: PASS 100% (12 tests, 60 assertions).
+  - `php artisan test --filter=MaterialRequestViewTest`: PASS 100% (3 tests, 14 assertions).
+
+---
+
+## 16. Redesain Halaman Detail PO Lapangan: Menghilangkan Kesan Template AI Menjadi Enterprise Procurement Dossier (T33)
+- **Konteks & Masalah**:
+  1. **Tampilan Mirip Template AI Generik**: Pengguna mengeluhkan bahwa halaman Detail PO Lapangan (`material-requests/show.blade.php`) terlihat kaku seperti template website buatan AI generik:
+     - 5 kotak meta identik berjajar horizontal (`.po-meta-grid`) dengan 5 ikon warna-warni pastel pelangi yang monoton dan menghabiskan ruang layar.
+     - Header dokumen terpisah-pisah tanpa hierarki visual yang jelas.
+     - Tidak adanya pelacak status alur kerja (*lifecycle workflow stepper*) yang lazim pada software pengadaan & ERP konstruksi nyata (seperti Procore, SAP, Stripe Invoicing).
+     - Tabel rincian barang memiliki visual yang steril, teks kecil, spasi renggang tidak seimbang, dan badge peringatan yang terasa kaku.
+- **Implementasi**:
+  1. **Executive Document Header & Title Banner**:
+     - Mengganti header lama dengan banner berkas resmi (*Dossier Banner*) berbingkai halus (`rounded-2xl border border-slate-200 bg-white p-6 shadow-xs`).
+     - Judul tegas: `PO Lapangan #REQ-YYYYMMDD-XXXX` bersanding langsung dengan badge status elegan berindikator dot bercahaya.
+     - Subtitle ringkas mencantumkan nama pemohon, tanggal pembuatan, jam, dan gudang tujuan dalam satu baris hierarki yang rapi.
+     - Toolbar aksi di kanan atas menyatukan tombol aksi utama (Setujui, Tolak, Terima Surat Jalan, Penerimaan GR, Buat PO Vendor, Edit, Cetak PDF) dengan gaya tombol enterprise berkontras tinggi.
+  2. **Workflow Lifecycle Stepper (4 Tahap Operasional)**:
+     - Menambahkan pipeline progres horizontal interaktif 4 tahap:
+       1. *Pengajuan Proyek*: status draft/submitted dengan tanggal pengajuan.
+       2. *Persetujuan*: indikator persetujuan admin/owner dengan stempel waktu, atau status ditolak jika direject.
+       3. *Pengadaan / Kirim*: menghitung jumlah Surat Jalan atau PO Vendor yang aktif/terbit.
+       4. *Tiba di Lapangan*: indikator penerimaan parsial atau lengkap di gudang proyek.
+  3. **Structured Overview Dossier (Tata Letak 2 Kolom Seimbang)**:
+     - Menghapus 5 kotak warna-warni generik, mengonsolidasikannya ke dalam 2 kartu ringkasan terstruktur:
+       - *Kolom Kiri*: Informasi Proyek, Gudang Proyek, Sumber Material (Gudang Pusat vs Vendor Luar), Jadwal Kebutuhan (dengan alert keterlambatan jika overdue), dan Catatan Pemohon.
+       - *Kolom Kanan*: Otoritas Pemohon, Waktu Pengajuan, Penyetuju, dan Tautan Cepat Dokumen Terkait (PO Vendor / Surat Jalan).
+  4. **Data-Dense Enterprise Material Items Table**:
+     - Tabel didesain ulang dengan margin, padding, dan tipografi modern yang berbobot.
+     - Nama material tebal (`text-[13.5px] font-extrabold text-slate-900`), SKU dan Kode Material terformat monospace rapi.
+     - Kuantitas diminta dan disetujui ditampilkan tegas dengan angka besar dan satuan yang jelas.
+     - Kolom ketersediaan stok menampilkan status kuota real-time gudang atau sisa kuota PO dengan tautan PO aktif.
+     - Badge status kedatangan barang menggunakan pill micro-pill terkurasi yang bersih (*Stok Cukup*, *Kurang*, *Lengkap*, *Menunggu*).
+  5. **Dossier Transaksi Terkait yang Rapi**:
+     - Tabel Surat Jalan, Penerimaan Barang (GR), dan Pemakaian Material Proyek (Material Usage) dikemas dalam kartu dossier serasi dengan tombol aksi cepat langsung ke dokumen detail.
+- **Hasil Pengujian**:
+  - `npm run build`: Selesai dikompilasi tanpa error (CSS 58.29 kB, JS 176.20 kB).
+  - `php artisan test --filter=MaterialRequestViewTest`: PASS 100% (3 tests, 14 assertions).
+  - `php artisan test --filter=MaterialRequestTest`: PASS 100% (5 tests, 22 assertions).
+
+---
+
+## 17. Redesain Halaman Pusat Pemberitahuan (Notification Center): Menghilangkan Kesan Template AI Menjadi Enterprise Activity Feed (T34)
+- **Konteks & Masalah**:
+  1. **Tampilan Mirip AI Generik & Kosong Melompong**: Pengguna melampirkan screenshot halaman `/notifications` dengan catatan *"itu juga"* (setelah mengeluhkan UI mirip AI). Pada versi sebelumnya:
+     - Kartu notifikasi membentang penuh (*full-width 100%*) di layar monitor lebar (1920px), sehingga teks judul dan deskripsi terasing di sisi kiri dengan ruang putih kosong sangat luas di tengah dan kanan.
+     - Struktur kartu mirip template CRUD Bootstrap bawaan: tombol aksi berwarna biru polos dan tombol checklist hijau berada di bawah deskripsi dengan layout kaku.
+     - Kontrol filter tab (`Semua`, `Belum Dibaca`, `Sudah Dibaca`) hanya berupa teks dan badge angka statis tanpa pemfilteran instan di sisi klien.
+     - Tidak ada pencarian langsung untuk memfilter notifikasi berdasarkan nomor PO, proyek, atau tipe aktivitas.
+- **Implementasi**:
+  1. **Full-Width Responsive Feed Layout (`width: 100%`)**:
+     - Mengubah kontainer feed menjadi `width: 100%` penuh membentang kiri-ke-kanan mengikuti lebar ruang kerja dashboard, konsisten dengan halaman ERP lainnya tanpa dibatasi box tengah.
+  2. **Executive Header Banner & Quick Clear**:
+     - Header kartu putih elegan dengan ikon lonceng biru berbingkai halus, judul tegas `Pusat Pemberitahuan`, dan deskripsi ringkas.
+     - Tombol `Tandai Semua Dibaca` disatukan di kanan header dengan dialog konfirmasi dan styling tombol primer berbobot.
+  3. **Segmented Control Filter Tabs + Real-Time Live Search**:
+     - Mengubah bar navigasi tab menjadi iOS/macOS styled *Segmented Control Pill* (`Semua`, `Belum Dibaca`, `Sudah Dibaca`) yang dapat diklik untuk memfilter daftar notifikasi secara instan tanpa perlu reload halaman.
+     - Menambahkan kotak pencarian dinamis (*Live Client-Side Search*) dengan ikon kaca pembesar untuk mencari judul notifikasi, kata kunci proyek, atau nomor PO (misal: `#REQ-20261016-0001`) secara langsung via JavaScript.
+  4. **High-Contrast Dark Typography & Optical Lenses**:
+     - Semua judul notifikasi menggunakan warna gelap tegas (`#0f172a`, font-weight 800) dan deskripsi menggunakan teks slate tajam (`#334155`), menjamin keterbacaan 100% tanpa teks abu-abu pudar.
+     - Squircle ikon 44px di sisi kiri kartu memiliki pemetaan warna semantik khusus per jenis notifikasi:
+       - *Persetujuan*: Amber `#d97706` dengan ikon hourglass.
+       - *Surat Jalan*: Biru `#2563eb` dengan ikon truk pengiriman.
+       - *Penerimaan Barang*: Zamrud `#059669` dengan ikon dolly/box.
+       - *Pemakaian Material*: Oranye `#ea580c` dengan ikon file nota.
+       - *Peminjaman Alat*: Ungu `#7c3aed` dengan ikon kunci/perkakas.
+       - *Peringatan Stok*: Merah `#dc2626` dengan ikon segitiga peringatan.
+  5. **Unread Card Indicator & Hover Elevation**:
+     - Notifikasi yang belum dibaca (`is-unread`) memiliki aksen border kiri biru tebal 4px, background sedikit kebiruan (`#fcfdfe`), serta dot indikator biru dengan efek glow `box-shadow: 0 0 6px #2563eb`.
+     - Efek hover kartu memberikan elevasi mikro yang halus (`translateY(-1px)` dan bayangan lembut) tanpa terkesan berlebihan.
+     - Tombol aksi `Buka Berkas` (biru primer) dan `Tandai Dibaca` (ghost button berikon centang hijau) ditempatkan rapi di pojok bawah kartu.
+  6. **Interactive Zero-Inbox & Empty Filter State**:
+     - Saat tidak ada notifikasi sama sekali, ditampilkan ilustrasi *Kotak Masuk Bersih* dengan tombol navigasi kembali ke dashboard.
+     - Saat pencarian/filter tidak menghasilkan kecocokan, muncul peringatan responsif *Tidak Ada Notifikasi Sesuai Filter*.
+- **Hasil Pengujian**:
+  - `npm run build`: Berhasil mengompilasi aset Vite (CSS 58.62 kB, JS 176.20 kB).
+  - `php artisan test --filter=Notification`: PASS 100% (12 tests, 60 assertions).
+
+---
+
+## 18. Redesain Modul Status Kesiapan Unit Alat Kerja di Dashboard (T35)
+- **Konteks & Masalah**:
+  1. **UI Terlihat Seperti Template AI Kaku**: Bagian *Status Kesiapan Unit Alat Kerja* pada dashboard sebelumnya menggunakan 3 kotak abu-abu kaku berjajar dengan garis samping kiri tebal berwarna (*left border*: hijau, biru, abu-abu). Tampilan ini sangat monoton, disorientatif saat bernilai 0, dan tidak mencerminkan data operasional armada peralatan yang hidup layaknya sistem ERP konstruksi nyata.
+- **Implementasi**:
+  1. **Executive Fleet Ratio & Multi-Segment Progress Meter**:
+     - Menghitung rasio armada keseluruhan (`$totalFleet = $toolsReady + $toolsInUse + $toolsMaintenance`).
+     - Menampilkan indikator persentase kesiapan armada operasional (*Operational Readiness Rate*, misal: `100% Siap Operasi`) dengan badge status kontekstual.
+     - Menambahkan bar progres multi-segmen horizontal 7px (*Segmented Distribution Track*) yang memvisualisasikan proporsi unit Siap Pakai (Hijau `#059669`), Di Lapangan (Biru `#2563eb`), dan Dalam Perawatan (Merah `#dc2626`).
+  2. **Structured Operational Breakdown Rows**:
+     - Menggantikan 3 kotak border warna-warni dengan 3 baris list terstruktur yang simetris dengan panel sebelah kanan (*Komposisi Stok Material per Kategori*):
+       - **Siap Pakai (Tersedia)**: Ikon centang hijau dalam squircle 28px, subteks penjelas *"Standby di gudang, siap dipakai"*, jumlah unit fisik tebal, dan persentase ketersediaan.
+       - **Sedang di Lapangan**: Ikon pekerja/proyek biru, subteks *"Aktif dipinjam personil / proyek"*, jumlah unit, dan persentase pemakaian.
+       - **Servis / Perbaikan**: Ikon perkakas/kunci inggris, subteks *"Rusak, kalibrasi, atau perawatan"*, jumlah unit, dan persentase perbaikan.
+  3. **Contextual Operational Footer Actions**:
+     - Menambahkan footer panel bersih dengan tautan cepat ke **Katalog Alat** (`tools.index`) dan tombol aksi **Pinjamkan Alat** (`tool-assignments.create`).
+     - Penempatan alert agenda Stock Opname dibuat lebih rapi dan proporsional.
+- **Hasil Pengujian**:
+  - `npm run build`: Selesai dikompilasi tanpa error (CSS 58.62 kB, JS 176.20 kB).
+  - `php artisan test --filter=SidebarNavigationTest`: PASS 100% (8 tests, 60 assertions).
+
+---
+
+## 19. Redesain 4 Kartu Metrik Inventori Menjadi Human Enterprise Cards (T36)
+- **Konteks & Masalah**:
+  1. **Tampilan Kartu Mirip Template AI Generik**: Pengguna melampirkan screenshot 4 kartu stat teratas pada `/inventory` dengan instruksi *"perbaiki card saja"*:
+     - Terdapat 4 kotak mengambang dengan ikon squircle pastel di sebelah kiri (`.inv-kpi-icon blue`, `amber`, `red/emerald`, `emerald`) yang memakan separuh ruang kartu.
+     - Teks label berupa huruf kapital abu-abu pudar (*all-caps* `MATERIAL KONSTRUKSI`, `ALAT KERJA`, `PERINGATAN STOK`, `CAKUPAN GUDANG`) dengan angka dan subteks kecil.
+     - Kartu ke-4 ("CAKUPAN GUDANG") terpotong kaku dengan elipsis (`Gudang Pusat PT Arsi...`), padahal nama gudang sudah ada di header.
+- **Implementasi**:
+  1. **Human Enterprise Vertical Card Hierarchy**:
+     - Mengubah orientasi kartu menjadi tata letak vertikal seimbang tanpa squircle icon raksasa:
+       - **Header Baris Atas**: Label kategori yang tegas dan kontras (`font-weight: 700; color: #475569;`) bersanding dengan micro-badge status di pojok kanan atas (misal: `7 Varian`, `0 Jenis`, `Terkendali`, `Pusat/Proyek`).
+       - **Baris Angka Utama**: Angka metrik tebal berukuran besar (`font-size: 22px; font-weight: 900; color: #0f172a; tabular-nums;`) dengan unit jelas (`Unit Fisik`, `Unit Siap`, `Item Kritis`).
+       - **Baris Subteks Kontekstual**: Penjelasan operasional yang informatif dengan ikon mikro semantik.
+  2. **Refinemen 4 Kartu**:
+     - *Card 1 (Material Konstruksi)*: Total unit fisik material (`1.250 Unit Fisik`) dengan pill badge jumlah varian aktif.
+     - *Card 2 (Alat Kerja & Peralatan)*: Kesiapan unit alat (`0 Unit Siap`) dengan subteks status peminjaman di proyek.
+     - *Card 3 (Status Level Stok)*: Status ketersediaan kritis dengan badge `Terkendali` (hijau) atau `Perlu Restok` (merah) jika terdapat stok di bawah minimum.
+     - *Card 4 (Lokasi Penyimpanan)*: Nama gudang aktif yang jelas tanpa terpotong kaku, disertai badge penanda tipe gudang (`Pusat` / `Proyek` / `Multi-Gudang`).
+- **Hasil Pengujian**:
+  - `npm run build`: Selesai dikompilasi tanpa error (CSS 59.31 kB, JS 176.20 kB).
+  - `php artisan test --filter="MultiWarehouseIsolationTest|InventoryAndStockTest"`: PASS 100% (8 tests, 20 assertions).

@@ -1,173 +1,371 @@
 <x-app-layout>
-    <x-slot name="title">Detail PO Lapangan: {{ $materialRequest->request_number }}</x-slot>
+    <x-slot name="title">PO Lapangan #{{ $materialRequest->request_number }} — PT Arsikon</x-slot>
 
     @push('styles')
     <style>
-        .po-hero-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
-            overflow: hidden;
-            margin-bottom: 18px;
+        /* ========================================================
+           ENTERPRISE PROCUREMENT DOSSIER (PT ARSIKON)
+           Clean, Human-Crafted, Professional ERP Architecture
+           ======================================================== */
+        
+        .dossier-container {
+            width: 100%;
         }
 
-        .po-hero-header {
-            padding: 16px 20px;
-            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-            border-bottom: 1px solid #e2e8f0;
+        /* Top Action Bar */
+        .dossier-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .po-meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 1px;
-            background: #e2e8f0;
-        }
-
-        .po-meta-item {
-            background: #ffffff;
-            padding: 14px 18px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            transition: background 0.15s ease;
-        }
-
-        .po-meta-item:hover {
-            background: #f8fafc;
-        }
-
-        .po-meta-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .po-meta-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #64748b;
-            margin-bottom: 2px;
-        }
-
-        .po-meta-val {
-            font-size: 13px;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1.35;
-            word-break: break-word;
-        }
-
-        .po-meta-sub {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 2px;
-            font-weight: 500;
-        }
-
-        .table-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05);
-            overflow: hidden;
+            gap: 14px;
             margin-bottom: 20px;
         }
 
-        .table-card-header {
-            padding: 14px 18px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
+        .dossier-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .dossier-breadcrumb a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+
+        .dossier-breadcrumb a:hover {
+            color: #0f172a;
+        }
+
+        /* Hero Document Banner */
+        .dossier-banner {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .dossier-header-title {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
         }
 
-        .mr-item-table th {
-            padding: 10px 12px !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.4px !important;
-            color: #475569 !important;
-            background: #f8fafc !important;
-            border-bottom: 1px solid #cbd5e1 !important;
-            white-space: nowrap !important;
-        }
-
-        .mr-item-table td {
-            padding: 10px 12px !important;
-            vertical-align: middle !important;
-            font-size: 12.5px !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-        }
-
-        .mr-item-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .mr-item-table tbody tr.row-custom {
-            background-color: #fffdf7;
-        }
-
-        .mr-item-table tbody tr.row-custom:hover {
-            background-color: #fffbeb;
-        }
-
-        .badge-status-lg {
-            padding: 5px 12px;
-            border-radius: 20px;
+        .dossier-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 14px;
+            border-radius: 9999px;
             font-size: 12px;
             font-weight: 700;
-            display: inline-flex;
+            letter-spacing: 0.2px;
+        }
+
+        .dossier-badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        /* Lifecycle Progress Stepper */
+        .dossier-stepper {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding-top: 20px;
+        }
+
+        .stepper-step {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            transition: background 0.15s ease;
+        }
+
+        .stepper-step.active {
+            background: #f8fafc;
+        }
+
+        .stepper-icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .stepper-step.completed .stepper-icon-circle {
+            background: #10b981;
+            color: #ffffff;
+            box-shadow: 0 0 0 3px #d1fae5;
+        }
+
+        .stepper-step.active .stepper-icon-circle {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 0 0 3px #dbeafe;
+        }
+
+        .stepper-step.pending .stepper-icon-circle {
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1.5px solid #cbd5e1;
+        }
+
+        .stepper-step.rejected .stepper-icon-circle {
+            background: #ef4444;
+            color: #ffffff;
+            box-shadow: 0 0 0 3px #fee2e2;
+        }
+
+        .stepper-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.25;
+            margin-bottom: 2px;
+        }
+
+        .stepper-sub {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.35;
+        }
+
+        /* Two-Column Overview Dossier */
+        .dossier-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dossier-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .dossier-card-head {
+            padding: 16px 20px;
+            background: #fafbfc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dossier-card-head h3 {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        .dossier-card-body {
+            padding: 20px;
+        }
+
+        .dossier-meta-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .dossier-meta-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            font-size: 13px;
+        }
+
+        .dossier-meta-label {
+            color: #64748b;
+            font-weight: 500;
+            flex-shrink: 0;
+            width: 140px;
+            display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .alert-card-action {
-            border-radius: 10px;
-            padding: 14px 18px;
-            margin-bottom: 18px;
+        .dossier-meta-value {
+            color: #0f172a;
+            font-weight: 700;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        /* Items Table Section */
+        .dossier-table-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            margin-bottom: 24px;
+        }
+
+        .dossier-table-toolbar {
+            padding: 16px 22px;
+            background: #fafbfc;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
             flex-wrap: wrap;
+            gap: 12px;
         }
 
-        @media (max-width: 768px) {
-            .po-hero-header {
-                flex-direction: column;
-                align-items: flex-start !important;
+        .dossier-data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .dossier-data-table th {
+            padding: 12px 16px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .dossier-data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        .dossier-data-table tbody tr:hover {
+            background: #fafbfc;
+        }
+
+        .dossier-data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Action Pill Buttons */
+        .btn-dossier-primary {
+            background: #2563eb;
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .btn-dossier-primary:hover {
+            background: #1d4ed8;
+            color: #ffffff;
+        }
+
+        .btn-dossier-success {
+            background: #10b981;
+            color: #ffffff;
+            border: 1px solid #059669;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .btn-dossier-success:hover {
+            background: #059669;
+            color: #ffffff;
+        }
+
+        .btn-dossier-secondary {
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .btn-dossier-secondary:hover {
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+        @media (max-width: 1024px) {
+            .dossier-stepper {
+                grid-template-columns: repeat(2, 1fr);
             }
-            .po-meta-grid {
+            .dossier-summary-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dossier-stepper {
+                grid-template-columns: 1fr;
+            }
+            .dossier-meta-row {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .dossier-meta-label {
+                width: 100%;
+            }
+            .dossier-meta-value {
+                text-align: left;
             }
         }
     </style>
     @endpush
-
-    {{-- Breadcrumb --}}
-    <div class="breadcrumb mb-3" style="font-size:12.5px;">
-        <a href="{{ route('material-requests.index') }}" style="color:#64748b;text-decoration:none;">PO Lapangan</a>
-        <span class="breadcrumb-sep" style="margin:0 6px;color:#94a3b8;"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-        <span style="font-weight:600;color:#0f172a;">{{ $materialRequest->request_number }}</span>
-    </div>
 
     @php
         $hasPurchaseItems = $materialRequest->items->contains(fn($it) => $it->fulfillment === 'purchase' && ((float)$it->qty_approved - (float)$it->qty_ordered) > 0);
@@ -181,84 +379,144 @@
         $canEdit = in_array($materialRequest->status, ['submitted', 'draft']) &&
             ($materialRequest->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']));
 
-        $statusBadge = match ($materialRequest->status) {
-            'draft'               => '<span class="badge-status-lg" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;"><i class="fas fa-file-lines"></i> Draft</span>',
-            'submitted'           => '<span class="badge-status-lg" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;"><i class="fas fa-hourglass-half"></i> Menunggu Persetujuan</span>',
-            'approved'            => '<span class="badge-status-lg" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;"><i class="fas fa-circle-check"></i> Disetujui</span>',
-            'partially_fulfilled' => '<span class="badge-status-lg" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;"><i class="fas fa-truck-ramp-box"></i> Sebagian Terkirim</span>',
-            'fulfilled'           => '<span class="badge-status-lg" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;"><i class="fas fa-check-double"></i> Terpenuhi</span>',
-            'rejected'            => '<span class="badge-status-lg" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;"><i class="fas fa-circle-xmark"></i> Ditolak</span>',
-            'cancelled'           => '<span class="badge-status-lg" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;"><i class="fas fa-ban"></i> Dibatalkan</span>',
-            default               => '<span class="badge-status-lg" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;">'.$materialRequest->status.'</span>',
+        // Direct & Related Goods Receipts
+        $directGrs = $materialRequest->goodsReceipts ?? collect();
+        $poGrs = $relatedPos->flatMap->goodsReceipts ?? collect();
+        $allGrs = $directGrs->merge($poGrs)->unique('id')->sortByDesc('created_at');
+
+        // Status configuration
+        $statusConfig = match ($materialRequest->status) {
+            'draft' => [
+                'label' => 'Draft Permohonan',
+                'bg' => '#f1f5f9',
+                'text' => '#334155',
+                'border' => '#cbd5e1',
+                'dot' => '#64748b',
+                'icon' => 'fa-file-lines',
+                'stepIndex' => 1,
+            ],
+            'submitted' => [
+                'label' => 'Menunggu Persetujuan',
+                'bg' => '#fffbeb',
+                'text' => '#b45309',
+                'border' => '#fde68a',
+                'dot' => '#f59e0b',
+                'icon' => 'fa-hourglass-half',
+                'stepIndex' => 2,
+            ],
+            'approved' => [
+                'label' => 'Disetujui',
+                'bg' => '#ecfdf5',
+                'text' => '#065f46',
+                'border' => '#a7f3d0',
+                'dot' => '#10b981',
+                'icon' => 'fa-circle-check',
+                'stepIndex' => 3,
+            ],
+            'partially_fulfilled' => [
+                'label' => 'Sebagian Terkirim',
+                'bg' => '#eff6ff',
+                'text' => '#1e40af',
+                'border' => '#bfdbfe',
+                'dot' => '#3b82f6',
+                'icon' => 'fa-truck-ramp-box',
+                'stepIndex' => 3,
+            ],
+            'fulfilled' => [
+                'label' => 'Selesai Terpenuhi',
+                'bg' => '#f5f3ff',
+                'text' => '#5b21b6',
+                'border' => '#ddd6fe',
+                'dot' => '#8b5cf6',
+                'icon' => 'fa-check-double',
+                'stepIndex' => 4,
+            ],
+            'rejected' => [
+                'label' => 'Ditolak',
+                'bg' => '#fef2f2',
+                'text' => '#991b1b',
+                'border' => '#fecaca',
+                'dot' => '#ef4444',
+                'icon' => 'fa-circle-xmark',
+                'stepIndex' => 2,
+            ],
+            'cancelled' => [
+                'label' => 'Dibatalkan',
+                'bg' => '#f8fafc',
+                'text' => '#475569',
+                'border' => '#e2e8f0',
+                'dot' => '#94a3b8',
+                'icon' => 'fa-ban',
+                'stepIndex' => 1,
+            ],
+            default => [
+                'label' => ucfirst($materialRequest->status),
+                'bg' => '#f1f5f9',
+                'text' => '#334155',
+                'border' => '#cbd5e1',
+                'dot' => '#64748b',
+                'icon' => 'fa-circle-info',
+                'stepIndex' => 1,
+            ],
         };
     @endphp
 
-    {{-- Flash Notifications --}}
-    @if (session('success'))
-    <div class="alert alert-success mb-3" style="border-radius:8px;padding:10px 14px;font-size:12.5px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-circle-check text-success"></i> <span>{{ session('success') }}</span>
-    </div>
-    @endif
-
-    @if (session('error'))
-    <div class="alert alert-danger mb-3" style="border-radius:8px;padding:10px 14px;font-size:12.5px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-circle-exclamation text-danger"></i> <span>{{ session('error') }}</span>
-    </div>
-    @endif
-
-    {{-- TOP HERO CARD: Header & Document Metadata Overview --}}
-    <div class="po-hero-card">
-        <div class="po-hero-header">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <a href="{{ route('material-requests.index') }}" class="btn btn-light border btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;color:#475569;font-weight:600;">
-                    <i class="fas fa-arrow-left me-1"></i> Kembali
+    <div class="dossier-container">
+        
+        {{-- TOP ACTION & BREADCRUMB BAR --}}
+        <div class="dossier-topbar">
+            <div class="dossier-breadcrumb">
+                <a href="{{ route('material-requests.index') }}" class="btn-dossier-secondary" style="padding:6px 12px;font-size:12px;">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Daftar PO Lapangan</span>
                 </a>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:12px;color:#64748b;font-weight:600;">PO Lapangan:</span>
-                    <h1 class="fw-800" style="font-size:18px;color:#0f172a;margin:0;letter-spacing:-0.3px;">
-                        {{ $materialRequest->request_number }}
-                    </h1>
-                </div>
-                {!! $statusBadge !!}
+                <span style="color:#cbd5e1;">/</span>
+                <span style="color:#0f172a;font-weight:700;">#{{ $materialRequest->request_number }}</span>
             </div>
 
-            {{-- Action Buttons Toolbar --}}
+            {{-- Operational Action Toolbar --}}
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 {{-- Terima Surat Jalan (Distribusi In-Transit) --}}
                 @if($inTransitDist && $canReceiveDist)
-                    <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn btn-sm btn-success" style="font-size:12px;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:700;box-shadow:0 2px 6px rgba(16,185,129,0.25);">
-                        <i class="fas fa-boxes-packing"></i> Terima Surat Jalan (#{{ $inTransitDist->distribution_number }})
+                    <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn-dossier-success">
+                        <i class="fas fa-boxes-packing"></i>
+                        <span>Terima Surat Jalan (#{{ $inTransitDist->distribution_number }})</span>
                     </a>
                 @endif
 
                 {{-- Terima Barang Masuk (GR) --}}
                 @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $canReceiveGr)
-                    <a href="{{ route('goods-receipts.create', array_filter(['from_mr_id' => $materialRequest->id, 'purchase_order_id' => $sentPo?->id])) }}" class="btn btn-sm btn-primary" style="font-size:12px;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:700;box-shadow:0 2px 6px rgba(37,99,235,0.25);">
-                        <i class="fas fa-dolly"></i> Terima Barang Masuk (GR)
+                    <a href="{{ route('goods-receipts.create', array_filter(['from_mr_id' => $materialRequest->id, 'purchase_order_id' => $sentPo?->id])) }}" class="btn-dossier-primary">
+                        <i class="fas fa-dolly"></i>
+                        <span>Penerimaan Barang (GR)</span>
                     </a>
                 @endif
 
-                {{-- Buat PO ke Vendor / PO Item Manual --}}
+                {{-- Buat PO ke Vendor --}}
                 @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems && $canCreatePo)
-                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border:1px solid #d97706;color:#ffffff;font-size:12px;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:700;box-shadow:0 2px 6px rgba(245,158,11,0.25);">
-                        <i class="fas fa-cart-shopping"></i> Buat PO ke Vendor
+                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
+                        <i class="fas fa-cart-shopping"></i>
+                        <span>Terbitkan PO Vendor</span>
                     </a>
                 @elseif($hasCustomItems && $canCreatePo)
-                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn btn-sm" style="background:#f59e0b;border:1px solid #d97706;color:#ffffff;font-size:12px;padding:6px 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-weight:700;box-shadow:0 2px 6px rgba(245,158,11,0.25);">
-                        <i class="fas fa-cart-shopping"></i> Buat PO (Item Manual)
+                    <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
+                        <i class="fas fa-cart-shopping"></i>
+                        <span>Buat PO Item Manual</span>
                     </a>
                 @endif
 
                 {{-- Edit PO Lapangan --}}
                 @if($canEdit)
-                    <a href="{{ route('material-requests.edit', $materialRequest) }}" class="btn btn-sm btn-outline-primary" style="font-size:12px;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
-                        <i class="fas fa-edit"></i> Edit
+                    <a href="{{ route('material-requests.edit', $materialRequest) }}" class="btn-dossier-secondary">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Edit</span>
                     </a>
                 @endif
 
                 {{-- Print PDF --}}
-                <a href="{{ route('material-requests.show', $materialRequest) }}?print=1" target="_blank" class="btn btn-sm btn-dark" style="font-size:12px;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
-                    <i class="fas fa-print"></i> Cetak PDF
+                <a href="{{ route('material-requests.show', $materialRequest) }}?print=1" target="_blank" class="btn-dossier-secondary">
+                    <i class="fas fa-print"></i>
+                    <span>Cetak PDF</span>
                 </a>
 
                 {{-- Persetujuan (Approve / Reject) --}}
@@ -266,601 +524,779 @@
                     @can('approve material requests')
                     <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn btn-success btn-sm" style="font-size:12px;padding:6px 14px;border-radius:6px;font-weight:700;box-shadow:0 2px 6px rgba(16,185,129,0.25);" onclick="return confirm('Setujui PO Lapangan ini?')">
-                            <i class="fas fa-check me-1"></i> Setujui
+                        <button type="submit" class="btn-dossier-success" onclick="return confirm('Apakah Anda yakin ingin menyetujui PO Lapangan ini?')">
+                            <i class="fas fa-check"></i>
+                            <span>Setujui Permohonan</span>
                         </button>
                     </form>
-                    <button type="button" class="btn btn-sm btn-outline-danger" style="font-size:12px;padding:6px 12px;border-radius:6px;font-weight:600;" onclick="document.getElementById('rejectModal').classList.add('show')">
-                        <i class="fas fa-xmark me-1"></i> Tolak
+                    <button type="button" class="btn-dossier-secondary" style="color:#b91c1c;border-color:#fca5a5;" onclick="document.getElementById('rejectModal').classList.add('show')">
+                        <i class="fas fa-xmark"></i>
+                        <span>Tolak</span>
                     </button>
                     @endcan
                 @endif
             </div>
         </div>
 
-        {{-- Meta Grid: 6 Info Cards --}}
-        <div class="po-meta-grid">
-            {{-- Proyek / Pemohon --}}
-            <div class="po-meta-item">
-                <div class="po-meta-icon" style="background:#eff6ff;color:#2563eb;">
-                    <i class="fas fa-building"></i>
-                </div>
+        {{-- FLASH MESSAGES --}}
+        @if (session('success'))
+        <div class="mb-4 p-4 rounded-xl flex items-center gap-3 border" style="background:#ecfdf5;border-color:#a7f3d0;color:#065f46;">
+            <i class="fas fa-circle-check text-emerald-600 text-lg"></i>
+            <span class="text-sm font-semibold">{{ session('success') }}</span>
+        </div>
+        @endif
+
+        @if (session('error'))
+        <div class="mb-4 p-4 rounded-xl flex items-center gap-3 border" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">
+            <i class="fas fa-circle-exclamation text-rose-600 text-lg"></i>
+            <span class="text-sm font-semibold">{{ session('error') }}</span>
+        </div>
+        @endif
+
+        {{-- HERO DOCUMENT BANNER & PIPELINE STEPPER --}}
+        <div class="dossier-banner">
+            <div class="dossier-header-title">
                 <div>
-                    <div class="po-meta-label">Nama Proyek / Pemohon</div>
-                    <div class="po-meta-val">
-                        {{ $materialRequest->toWarehouse?->project ? $materialRequest->toWarehouse->project->name : ($materialRequest->toWarehouse?->name ?? '-') }}
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#64748b;margin-bottom:4px;">
+                        Berkas Permohonan Lapangan
                     </div>
-                    <div class="po-meta-sub">
-                        Gudang: {{ $materialRequest->toWarehouse?->name ?? '-' }}
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <h1 style="font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;margin:0;">
+                            PO Lapangan #{{ $materialRequest->request_number }}
+                        </h1>
+                        <span class="dossier-badge-pill" style="background:{{ $statusConfig['bg'] }};color:{{ $statusConfig['text'] }};border:1px solid {{ $statusConfig['border'] }};">
+                            <span class="dossier-badge-dot" style="background:{{ $statusConfig['dot'] }};"></span>
+                            <span>{{ $statusConfig['label'] }}</span>
+                        </span>
+                    </div>
+                    <div style="font-size:12.5px;color:#64748b;margin-top:6px;">
+                        Dibuat oleh <strong style="color:#0f172a;">{{ $materialRequest->requestedBy?->name ?? 'Staff' }}</strong> ({{ $materialRequest->requested_as ?? 'Staff Proyek' }}) pada {{ $materialRequest->created_at ? $materialRequest->created_at->format('d M Y, H:i') : '-' }} WIB
+                    </div>
+                </div>
+
+                {{-- Quick Logistics Indicators --}}
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <div style="text-align:right;">
+                        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;">Gudang Proyek Tujuan</div>
+                        <div style="font-size:13.5px;font-weight:800;color:#0f172a;">{{ $materialRequest->toWarehouse?->name ?? '-' }}</div>
                     </div>
                 </div>
             </div>
 
-            {{-- Sumber Material --}}
-            <div class="po-meta-item">
-                <div class="po-meta-icon" style="background:#fffbeb;color:#d97706;">
-                    <i class="fas fa-warehouse"></i>
-                </div>
-                <div>
-                    <div class="po-meta-label">Sumber Material (Kepada)</div>
-                    <div class="po-meta-val">
-                        {{ $materialRequest->fromWarehouse ? $materialRequest->fromWarehouse->name : 'Pengadaan / Beli ke Vendor' }}
+            {{-- 4-Stage Operational Lifecycle Stepper --}}
+            <div class="dossier-stepper">
+                {{-- Tahap 1: Pengajuan --}}
+                <div class="stepper-step completed">
+                    <div class="stepper-icon-circle">
+                        <i class="fas fa-check"></i>
                     </div>
-                    <div class="po-meta-sub">
-                        {{ $materialRequest->fromWarehouse ? ($materialRequest->fromWarehouse->is_central ? 'Gudang Pusat' : 'Gudang Proyek') : 'Jalur Pembelian Supplier' }}
+                    <div>
+                        <div class="stepper-title">1. Pengajuan Proyek</div>
+                        <div class="stepper-sub">
+                            Diajukan: {{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y') : '-' }}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- Pemohon & Role --}}
-            <div class="po-meta-item">
-                <div class="po-meta-icon" style="background:#f1f5f9;color:#475569;">
-                    <i class="fas fa-user-circle"></i>
-                </div>
-                <div>
-                    <div class="po-meta-label">Pemohon</div>
-                    <div class="po-meta-val">
-                        {{ $materialRequest->requestedBy?->name ?? '-' }}
-                    </div>
-                    <div class="po-meta-sub">
-                        Diajukan: <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:1px 6px;border-radius:4px;font-size:10px;">{{ $materialRequest->requested_as ?? 'Staff Proyek' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Tanggal Order & Dibutuhkan --}}
-            <div class="po-meta-item">
-                <div class="po-meta-icon" style="background:#ecfdf5;color:#059669;">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div>
-                    <div class="po-meta-label">Dibutuhkan Tgl (Jadwal Kebutuhan)</div>
-                    <div class="po-meta-val" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                        {{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d/m/Y') : '-' }}
-                        @if($materialRequest->is_overdue)
-                            <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;">
-                                <i class="fas fa-clock me-1"></i>Lewat Tanggal / Terlambat
-                            </span>
-                        @endif
-                    </div>
-                    <div class="po-meta-sub">
-                        Tanggal Order: {{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y') : '-' }}
-                    </div>
-                </div>
-            </div>
-
-            {{-- Diproses Oleh --}}
-            <div class="po-meta-item">
-                <div class="po-meta-icon" style="background:#f5f3ff;color:#7c3aed;">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div>
-                    <div class="po-meta-label">Diproses / Disetujui Oleh</div>
-                    <div class="po-meta-val">
-                        {{ $materialRequest->approvedBy?->name ?? 'Menunggu Persetujuan' }}
-                    </div>
-                    <div class="po-meta-sub">
-                        @if($materialRequest->approved_at)
-                            Pada: {{ \Carbon\Carbon::parse($materialRequest->approved_at)->format('d/m/Y H:i') }}
+                {{-- Tahap 2: Persetujuan --}}
+                @php
+                    $isRejected = $materialRequest->status === 'rejected';
+                    $isApproved = in_array($materialRequest->status, ['approved', 'partially_fulfilled', 'fulfilled']);
+                    $isStep2Active = $materialRequest->status === 'submitted';
+                @endphp
+                <div class="stepper-step {{ $isApproved ? 'completed' : ($isRejected ? 'rejected' : ($isStep2Active ? 'active' : 'pending')) }}">
+                    <div class="stepper-icon-circle">
+                        @if($isApproved)
+                            <i class="fas fa-check"></i>
+                        @elseif($isRejected)
+                            <i class="fas fa-xmark"></i>
                         @else
-                            Status: {{ ucfirst($materialRequest->status) }}
+                            <span>2</span>
                         @endif
+                    </div>
+                    <div>
+                        <div class="stepper-title">2. Persetujuan</div>
+                        <div class="stepper-sub">
+                            @if($isApproved)
+                                Disetujui: {{ $materialRequest->approved_at ? \Carbon\Carbon::parse($materialRequest->approved_at)->format('d/m/Y') : 'Pusat' }}
+                            @elseif($isRejected)
+                                <span style="color:#dc2626;font-weight:700;">Ditolak</span>
+                            @else
+                                Menunggu Review
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tahap 3: Pengadaan / Surat Jalan --}}
+                @php
+                    $hasDistOrPo = ($materialRequest->distributions && $materialRequest->distributions->isNotEmpty()) || $relatedPos->isNotEmpty();
+                    $isStep3Completed = in_array($materialRequest->status, ['partially_fulfilled', 'fulfilled']);
+                    $isStep3Active = $materialRequest->status === 'approved';
+                @endphp
+                <div class="stepper-step {{ $isStep3Completed ? 'completed' : ($isStep3Active ? 'active' : 'pending') }}">
+                    <div class="stepper-icon-circle">
+                        @if($isStep3Completed)
+                            <i class="fas fa-check"></i>
+                        @else
+                            <span>3</span>
+                        @endif
+                    </div>
+                    <div>
+                        <div class="stepper-title">3. Pengadaan / Kirim</div>
+                        <div class="stepper-sub">
+                            @if($materialRequest->distributions && $materialRequest->distributions->isNotEmpty())
+                                {{ $materialRequest->distributions->count() }} Surat Jalan
+                            @elseif($relatedPos->isNotEmpty())
+                                {{ $relatedPos->count() }} PO Vendor
+                            @elseif($isStep3Active)
+                                Siap Diterbitkan
+                            @else
+                                Menunggu Approval
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tahap 4: Penerimaan Barang --}}
+                @php
+                    $isFulfilled = $materialRequest->status === 'fulfilled';
+                    $isPartiallyFulfilled = $materialRequest->status === 'partially_fulfilled';
+                @endphp
+                <div class="stepper-step {{ $isFulfilled ? 'completed' : ($isPartiallyFulfilled ? 'active' : 'pending') }}">
+                    <div class="stepper-icon-circle">
+                        @if($isFulfilled)
+                            <i class="fas fa-check-double"></i>
+                        @elseif($isPartiallyFulfilled)
+                            <i class="fas fa-truck-ramp-box"></i>
+                        @else
+                            <span>4</span>
+                        @endif
+                    </div>
+                    <div>
+                        <div class="stepper-title">4. Tiba di Lapangan</div>
+                        <div class="stepper-sub">
+                            @if($isFulfilled)
+                                <span style="color:#059669;font-weight:700;">Diterima Lengkap</span>
+                            @elseif($isPartiallyFulfilled)
+                                <span style="color:#2563eb;font-weight:700;">Diterima Sebagian</span>
+                            @else
+                                Belum Diterima
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Catatan Pengajuan (Jika Ada) --}}
-        @if($materialRequest->notes)
-        <div style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:flex-start;gap:10px;">
-            <i class="fas fa-comment-dots text-primary" style="margin-top:2px;font-size:13px;"></i>
-            <div style="font-size:12px;color:#334155;">
-                <strong style="color:#0f172a;">Catatan Tambahan Pemohon:</strong> {{ $materialRequest->notes }}
-            </div>
-        </div>
-        @endif
-    </div>
-
-    {{-- Alert In-Transit: Sedang Dikirim dari Gudang Pusat --}}
-    @if($inTransitDist)
-    <div class="alert-card-action" style="background:linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 100%);border:1.5px solid #a7f3d0;box-shadow:0 2px 8px rgba(16,185,129,0.08);">
-        <div style="display:flex;align-items:center;gap:14px;">
-            <div style="width:42px;height:42px;border-radius:10px;background:#10b981;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 6px rgba(16,185,129,0.3);">
-                <i class="fas fa-truck-fast"></i>
-            </div>
-            <div>
-                <div style="font-size:14px;font-weight:700;color:#065f46;">
-                    Material Sedang Dalam Pengiriman dari Gudang Pusat (Surat Jalan #{{ $inTransitDist->distribution_number }})
-                </div>
-                <div style="font-size:12px;color:#047857;margin-top:2px;">
-                    Supir: <strong>{{ $inTransitDist->driver_name ?? '-' }}</strong> (Plat: {{ $inTransitDist->vehicle_number ?? '-' }}) &bull; Tgl Kirim: {{ $inTransitDist->delivery_date ? \Carbon\Carbon::parse($inTransitDist->delivery_date)->format('d/m/Y') : '-' }}
-                </div>
-            </div>
-        </div>
-        @if($canReceiveDist)
-        <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn btn-success" style="padding:8px 18px;font-size:12.5px;font-weight:700;border-radius:8px;box-shadow:0 2px 8px rgba(16,185,129,0.3);">
-            <i class="fas fa-boxes-packing me-1"></i> Terima Barang Sekarang
-        </a>
-        @endif
-    </div>
-    @endif
-
-    {{-- Alert Item Purchase / Item Manual --}}
-    @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
-    <div class="alert-card-action" style="background:linear-gradient(90deg, #fffbeb 0%, #fefce8 100%);border:1.5px solid #fde68a;box-shadow:0 2px 8px rgba(245,158,11,0.08);">
-        <div style="display:flex;align-items:center;gap:14px;">
-            <div style="width:40px;height:40px;border-radius:10px;background:#f59e0b;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
-                <i class="fas fa-cart-shopping"></i>
-            </div>
-            <div>
-                <div style="font-size:13.5px;font-weight:700;color:#92400e;">
-                    PO Lapangan Memerlukan Penerbitan Purchase Order ke Vendor
-                </div>
-                <div style="font-size:12px;color:#b45309;margin-top:2px;">
-                    Terdapat material dengan jalur pembelian vendor yang belum selesai dipesan. Admin PO dapat langsung membuat PO resmi ke supplier tujuan.
-                </div>
-            </div>
-        </div>
-        @if($canCreatePo)
-        <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn" style="background:#f59e0b;border:1px solid #d97706;color:#ffffff;font-size:12px;padding:7px 16px;border-radius:8px;font-weight:700;">
-            <i class="fas fa-cart-plus me-1"></i> Terbitkan PO Vendor
-        </a>
-        @endif
-    </div>
-    @elseif($hasCustomItems)
-    <div class="alert-card-action" style="background:linear-gradient(90deg, #fffbeb 0%, #fefce8 100%);border:1.5px solid #fde68a;box-shadow:0 2px 8px rgba(245,158,11,0.08);">
-        <div style="display:flex;align-items:center;gap:14px;">
-            <div style="width:40px;height:40px;border-radius:10px;background:#f59e0b;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
-                <i class="fas fa-circle-info"></i>
-            </div>
-            <div>
-                <div style="font-size:13.5px;font-weight:700;color:#92400e;">
-                    PO Lapangan Mengandung Item Khusus / Input Manual Proyek
-                </div>
-                <div style="font-size:12px;color:#b45309;margin-top:2px;">
-                    Item ini tidak ada di master katalog Gudang Pusat. Admin PO dapat langsung menerbitkan Purchase Order untuk membelikan barang tersebut.
-                </div>
-            </div>
-        </div>
-        @if($canCreatePo)
-        <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn" style="background:#f59e0b;border:1px solid #d97706;color:#ffffff;font-size:12px;padding:7px 16px;border-radius:8px;font-weight:700;">
-            <i class="fas fa-cart-plus me-1"></i> Buat PO Item Manual
-        </a>
-        @endif
-    </div>
-    @endif
-
-    {{-- Alert Rejection Reason (Bila Ditolak) --}}
-    @if($materialRequest->rejection_reason)
-    <div class="alert-card-action" style="background:#fef2f2;border:1.5px solid #fecaca;box-shadow:0 2px 8px rgba(239,68,68,0.08);">
-        <div style="display:flex;align-items:center;gap:14px;">
-            <div style="width:40px;height:40px;border-radius:10px;background:#ef4444;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
-                <i class="fas fa-circle-xmark"></i>
-            </div>
-            <div>
-                <div style="font-size:13.5px;font-weight:700;color:#991b1b;">
-                    Permintaan PO Lapangan Ditolak
-                </div>
-                <div style="font-size:12.5px;color:#b91c1c;margin-top:2px;">
-                    <strong>Alasan:</strong> {{ $materialRequest->rejection_reason }}
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- MAIN TABLE CARD: Rincian Item PO Lapangan (Full Width) --}}
-    <div class="table-card">
-        <div class="table-card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
-                    <i class="fas fa-boxes-stacked"></i>
-                </div>
-                <div>
-                    <span style="font-size:14px;font-weight:700;color:#0f172a;">Rincian Item PO Lapangan</span>
-                    <span class="text-muted" style="font-size:11.5px;margin-left:6px;">(Daftar barang &amp; alokasi penggunaan)</span>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11.5px;padding:4px 10px;border-radius:12px;border:1px solid #bfdbfe;">
-                    {{ $materialRequest->items->count() }} Item Diminta
-                </span>
-            </div>
-        </div>
-
-        <div class="table-wrap" style="overflow-x:auto;">
-            <table class="data-table mr-item-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:40px;text-align:center;">#</th>
-                        <th style="min-width:200px;">Nama Material</th>
-                        <th style="min-width:120px;">Kategori</th>
-                        <th style="min-width:130px;">Spesifikasi</th>
-                        <th style="text-align:right;width:95px;">Qty Diminta</th>
-                        <th style="text-align:right;width:95px;">Disetujui</th>
-                        <th style="text-align:center;width:75px;">Satuan</th>
-                        <th style="text-align:center;width:105px;">Tgl Pakai</th>
-                        <th style="min-width:130px;">Alokasi / Zona</th>
-                        <th style="min-width:140px;text-align:center;">Stok Tersedia</th>
-                        <th style="text-align:center;width:110px;">Status Tiba</th>
-                        <th style="min-width:130px;">Catatan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($materialRequest->items as $idx => $item)
-                    @php
-                        $approved = (float) $item->qty_approved;
-                        $received = (float) $item->qty_received;
-                        $remaining = max(0, $approved - $received);
-                        $unit = $item->displayUnit();
-                        $isCustom = $item->isCustom();
-                    @endphp
-                    <tr class="{{ $isCustom ? 'row-custom' : '' }}">
-                        <td style="text-align:center;color:#94a3b8;font-weight:600;font-size:11px;">{{ $idx + 1 }}</td>
-                        <td>
-                            <div class="fw-700" style="color:#0f172a;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                                {{ $item->displayName() }}
-                                @if($isCustom)
-                                <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:9.5px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                    <i class="fas fa-tag me-1"></i>Manual
-                                </span>
-                                @endif
-                            </div>
-                            <div class="text-muted" style="font-size:11px;margin-top:2px;">
-                                @if($isCustom)
-                                    <span style="color:#b45309;">Manual &mdash; tidak ada di katalog Pusat</span>
-                                @else
-                                    <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#64748b;">SKU: {{ $item->material?->sku ?? '-' }}</span>
-                                    @if($item->material?->code)
-                                    &bull; Kode: {{ $item->material->code }}
-                                    @endif
-                                @endif
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:10.5px;padding:3px 8px;border-radius:6px;font-weight:600;">
-                                {{ $item->displayCategoryName() }}
-                            </span>
-                            @if($item->custom_item_type || $item->material?->type)
-                                <div style="font-size:10.5px;color:#64748b;margin-top:3px;display:flex;align-items:center;gap:4px;">
-                                    <i class="fas fa-layer-group" style="font-size:9.5px;color:#94a3b8;"></i>
-                                    <span>{{ $item->custom_item_type ?: $item->material?->type }}</span>
-                                </div>
-                            @endif
-                        </td>
-                        <td>
-                            @if($item->specification)
-                                <span style="color:#0f172a;font-weight:500;">{{ $item->specification }}</span>
-                            @else
-                                <span class="text-muted" style="font-size:11px;">-</span>
-                            @endif
-                        </td>
-                        <td class="fw-700" style="text-align:right;color:#0f172a;font-size:13px;">
-                            {{ format_quantity($item->qty_requested) }}
-                        </td>
-                        <td class="fw-800" style="text-align:right;color:#2563eb;font-size:13px;">
-                            {{ in_array($materialRequest->status, ['draft', 'submitted']) ? '-' : format_quantity($approved) }}
-                        </td>
-                        <td style="text-align:center;font-weight:600;color:#475569;">
-                            {{ $unit }}
-                        </td>
-                        <td style="text-align:center;font-size:12px;color:#334155;">
-                            @if($item->usage_date)
-                                <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #e2e8f0;padding:3px 7px;border-radius:4px;">
-                                    <i class="fas fa-calendar-day me-1 text-muted" style="font-size:10px;"></i>{{ \Carbon\Carbon::parse($item->usage_date)->format('d/m/Y') }}
-                                </span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($item->usage_location)
-                                <span style="color:#334155;font-weight:500;"><i class="fas fa-location-dot me-1 text-primary" style="font-size:10px;"></i>{{ $item->usage_location }}</span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td style="text-align:center;">
-                            @if($item->fulfillment === 'purchase')
-                                @php
-                                    $approvedQty = (float) $item->qty_approved;
-                                    $orderedQty  = (float) $item->qty_ordered;
-                                    $remainingOrder = max(0, $approvedQty - $orderedQty);
-                                    $relatedPos = $item->purchaseOrderItems ? $item->purchaseOrderItems->map->purchaseOrder->filter()->unique('id') : collect();
-                                @endphp
-                                <div style="font-weight:700;color:#d97706;font-size:11.5px;">
-                                    Sisa dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
-                                </div>
-                                @if($relatedPos->isNotEmpty())
-                                    <div style="font-size:10.5px;margin-top:3px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
-                                        @foreach($relatedPos as $po)
-                                            <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;text-decoration:none;" title="Lihat PO">
-                                                <i class="fas fa-file-invoice me-1" style="font-size:9px;"></i>{{ $po->po_number }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            @elseif($item->material_id)
-                                @php
-                                    $inv = isset($sourceInventories) ? $sourceInventories->get($item->material_id) : null;
-                                    $qtyOnHand = $inv ? (float) $inv->quantity : 0;
-                                    $qtyAllocated = $inv ? (float) ($inv->qty_allocated ?? 0) : 0;
-                                    $availableStock = max(0, $qtyOnHand - $qtyAllocated);
-                                    $targetQty = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
-                                    $isSufficient = $availableStock >= $targetQty && $targetQty > 0;
-                                @endphp
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                                    <span style="font-weight:700;color:#0f172a;font-size:12px;">
-                                        {{ format_quantity($availableStock) }} {{ $unit }}
-                                    </span>
-                                    @if($isSufficient)
-                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
-                                            <i class="fas fa-check me-1" style="font-size:8.5px;"></i>Cukup
-                                        </span>
-                                    @else
-                                        <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">
-                                            <i class="fas fa-triangle-exclamation me-1" style="font-size:8.5px;"></i>Kurang
-                                        </span>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-muted" style="font-size:11px;">-</span>
-                            @endif
-                        </td>
-                        <td style="text-align:center;">
-                            @if(in_array($materialRequest->status, ['draft', 'submitted']))
-                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:600;">Menunggu</span>
-                            @elseif($received >= $approved && $approved > 0)
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:700;"><i class="fas fa-check" style="font-size:9px;"></i> Tiba Lengkap</span>
-                            @elseif($received > 0)
-                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:600;">Tiba ({{ format_quantity($received) }})</span>
-                            @else
-                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:600;">Belum Tiba</span>
-                            @endif
-                        </td>
-                        <td style="font-size:12px;color:#475569;">
-                            {{ $item->notes ?: '-' }}
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- SECTION RIWAYAT TRANSAKSI TERKAIT --}}
-    @php
-        $directGrs = $materialRequest->goodsReceipts ?? collect();
-        $poGrs = $relatedPos->flatMap->goodsReceipts ?? collect();
-        $allGrs = $directGrs->merge($poGrs)->unique('id')->sortByDesc('created_at');
-    @endphp
-
-    {{-- 1. Riwayat Surat Jalan (Distribusi) --}}
-    @if($materialRequest->distributions && $materialRequest->distributions->isNotEmpty())
-    <div class="table-card">
-        <div class="table-card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:28px;height:28px;border-radius:6px;background:#ecfdf5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:13px;">
+        {{-- ACTIONABLE ALERTS --}}
+        {{-- 1. Surat Jalan Sedang Dikirim --}}
+        @if($inTransitDist)
+        <div class="mb-4 p-4 rounded-xl border flex items-center justify-between gap-4 flex-wrap" style="background:#ecfdf5;border-color:#6ee7b7;">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
                     <i class="fas fa-truck-fast"></i>
                 </div>
                 <div>
-                    <span style="font-size:14px;font-weight:700;color:#0f172a;">Riwayat Pengiriman Surat Jalan</span>
-                    <span class="text-muted" style="font-size:11.5px;margin-left:6px;">(Distribusi logistik antar gudang/proyek)</span>
+                    <h4 class="text-sm font-bold text-emerald-950 m-0">
+                        Material Sedang Dalam Pengiriman dari Gudang Pusat (Surat Jalan #{{ $inTransitDist->distribution_number }})
+                    </h4>
+                    <p class="text-xs text-emerald-800 m-0 mt-0.5">
+                        Supir: <strong>{{ $inTransitDist->driver_name ?? '-' }}</strong> &bull; Kendaraan: <strong>{{ $inTransitDist->vehicle_number ?? '-' }}</strong> &bull; Tgl Kirim: {{ $inTransitDist->delivery_date ? \Carbon\Carbon::parse($inTransitDist->delivery_date)->format('d/m/Y') : '-' }}
+                    </p>
                 </div>
             </div>
-            <span class="badge" style="background:#ecfdf5;color:#047857;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #a7f3d0;">
-                {{ $materialRequest->distributions->count() }} Surat Jalan
-            </span>
+            @if($canReceiveDist)
+            <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn-dossier-success">
+                <i class="fas fa-boxes-packing"></i>
+                <span>Konfirmasi Penerimaan Barang</span>
+            </a>
+            @endif
         </div>
-        <div class="table-wrap" style="overflow-x:auto;">
-            <table class="data-table mr-item-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="padding:8px 12px;">No. Surat Jalan</th>
-                        <th>Tgl Kirim</th>
-                        <th>Gudang Asal</th>
-                        <th>Gudang Tujuan</th>
-                        <th>Supir / Kendaraan</th>
-                        <th style="text-align:center;">Status</th>
-                        <th style="text-align:center;width:80px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($materialRequest->distributions as $dist)
-                    @php
-                        $distBadge = match($dist->status) {
-                            'draft'      => '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:600;">Draft</span>',
-                            'in_transit' => '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:700;"><i class="fas fa-truck me-1"></i> Dalam Pengiriman</span>',
-                            'completed'  => '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:700;"><i class="fas fa-check me-1"></i> Diterima</span>',
-                            'cancelled'  => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:600;">Dibatalkan</span>',
-                            default      => '<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:600;">'.$dist->status.'</span>',
-                        };
-                    @endphp
-                    <tr>
-                        <td>
-                            <a href="{{ route('distributions.show', $dist) }}" class="fw-700 text-primary" style="font-size:12.5px;text-decoration:none;">
-                                {{ $dist->distribution_number }}
-                            </a>
-                        </td>
-                        <td>{{ $dist->delivery_date ? \Carbon\Carbon::parse($dist->delivery_date)->format('d/m/Y') : '-' }}</td>
-                        <td>{{ $dist->fromWarehouse?->name ?? '-' }}</td>
-                        <td>{{ $dist->toWarehouse?->name ?? '-' }}</td>
-                        <td>
-                            <strong style="font-size:12px;color:#0f172a;">{{ $dist->driver_name ?? '-' }}</strong>
-                            @if($dist->vehicle_number)
-                                <span class="text-muted" style="font-size:11px;">({{ $dist->vehicle_number }})</span>
-                            @endif
-                        </td>
-                        <td style="text-align:center;">{!! $distBadge !!}</td>
-                        <td style="text-align:center;">
-                            <a href="{{ route('distributions.show', $dist) }}" class="btn btn-sm btn-light border" title="Lihat Rincian Surat Jalan" style="padding:4px 10px;border-radius:6px;font-size:11.5px;color:#2563eb;font-weight:600;">
-                                <i class="fas fa-eye me-1"></i> Buka
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
+        @endif
 
-    {{-- 2. Riwayat Penerimaan Barang Masuk (Goods Receipts) --}}
-    @if($allGrs->isNotEmpty())
-    <div class="table-card">
-        <div class="table-card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
-                    <i class="fas fa-dolly"></i>
+        {{-- 2. Butuh PO ke Vendor --}}
+        @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
+        <div class="mb-4 p-4 rounded-xl border flex items-center justify-between gap-4 flex-wrap" style="background:#fffbeb;border-color:#fcd34d;">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
+                    <i class="fas fa-cart-shopping"></i>
                 </div>
                 <div>
-                    <span style="font-size:14px;font-weight:700;color:#0f172a;">Riwayat Penerimaan Barang Masuk (GR)</span>
-                    <span class="text-muted" style="font-size:11.5px;margin-left:6px;">(Penerimaan material di gudang proyek)</span>
+                    <h4 class="text-sm font-bold text-amber-950 m-0">
+                        PO Lapangan Memerlukan Penerbitan Purchase Order ke Vendor
+                    </h4>
+                    <p class="text-xs text-amber-800 m-0 mt-0.5">
+                        Terdapat item barang dengan jalur pembelian vendor yang kuotanya belum selesai dipesan.
+                    </p>
                 </div>
             </div>
-            <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #bfdbfe;">
-                {{ $allGrs->count() }} Dokumen GR
-            </span>
+            @if($canCreatePo)
+            <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
+                <i class="fas fa-cart-plus"></i>
+                <span>Terbitkan PO Vendor Sekarang</span>
+            </a>
+            @endif
         </div>
-        <div class="table-wrap" style="overflow-x:auto;">
-            <table class="data-table mr-item-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="padding:8px 12px;">No. Dokumen GR</th>
-                        <th>Tgl Terima</th>
-                        <th>Gudang Penerima</th>
-                        <th>Pemasok / Referensi PO</th>
-                        <th>Penerima</th>
-                        <th style="text-align:center;">Status</th>
-                        <th style="text-align:center;width:80px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($allGrs as $gr)
-                    <tr>
-                        <td>
-                            <a href="{{ route('goods-receipts.show', $gr) }}" class="fw-700 text-primary" style="font-size:12.5px;text-decoration:none;">
-                                {{ $gr->receipt_number }}
-                            </a>
-                        </td>
-                        <td>{{ $gr->receipt_date ? \Carbon\Carbon::parse($gr->receipt_date)->format('d/m/Y') : '-' }}</td>
-                        <td>{{ $gr->warehouse?->name ?? '-' }}</td>
-                        <td>
-                            <span style="font-weight:600;color:#334155;">{{ $gr->supplier?->name ?? ($gr->supplier_name ?? '-') }}</span>
-                            @if($gr->purchaseOrder)
-                                <div style="font-size:11px;color:#2563eb;">(PO: {{ $gr->purchaseOrder->po_number }})</div>
-                            @endif
-                        </td>
-                        <td><strong style="font-size:12px;color:#0f172a;">{{ $gr->received_by_name ?? ($gr->receivedBy?->name ?? '-') }}</strong></td>
-                        <td style="text-align:center;">
-                            @if($gr->status === 'confirmed')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:700;"><i class="fas fa-check me-1"></i> Dikonfirmasi</span>
-                            @else
-                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:600;">Draft</span>
-                            @endif
-                        </td>
-                        <td style="text-align:center;">
-                            <a href="{{ route('goods-receipts.show', $gr) }}" class="btn btn-sm btn-light border" title="Lihat Rincian GR" style="padding:4px 10px;border-radius:6px;font-size:11.5px;color:#2563eb;font-weight:600;">
-                                <i class="fas fa-eye me-1"></i> Buka
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
+        @endif
 
-    {{-- 3. Riwayat Pengeluaran Material di Lapangan (Material Usages) --}}
-    @if($materialRequest->materialUsages && $materialRequest->materialUsages->isNotEmpty())
-    <div class="table-card">
-        <div class="table-card-header">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:28px;height:28px;border-radius:6px;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:13px;">
-                    <i class="fas fa-clipboard-check"></i>
+        {{-- 3. Alasan Penolakan --}}
+        @if($materialRequest->rejection_reason)
+        <div class="mb-4 p-4 rounded-xl border flex items-center gap-3.5" style="background:#fef2f2;border-color:#fca5a5;">
+            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
+                <i class="fas fa-circle-xmark"></i>
+            </div>
+            <div>
+                <h4 class="text-sm font-bold text-rose-950 m-0">Permohonan PO Lapangan Ditolak</h4>
+                <p class="text-xs text-rose-800 m-0 mt-0.5"><strong>Alasan:</strong> {{ $materialRequest->rejection_reason }}</p>
+            </div>
+        </div>
+        @endif
+
+        {{-- TWO-COLUMN STRUCTURED DOSSIER --}}
+        <div class="dossier-summary-grid">
+            
+            {{-- Kartu Kiri: Rincian Logistik & Lokasi --}}
+            <div class="dossier-card">
+                <div class="dossier-card-head">
+                    <h3>
+                        <i class="fas fa-location-dot text-blue-600"></i>
+                        <span>Informasi Proyek &amp; Jalur Logistik</span>
+                    </h3>
                 </div>
-                <div>
-                    <span style="font-size:14px;font-weight:700;color:#0f172a;">Riwayat Pengeluaran Material Proyek</span>
-                    <span class="text-muted" style="font-size:11.5px;margin-left:6px;">(Pemakaian material terpakai di lapangan)</span>
+                <div class="dossier-card-body">
+                    <div class="dossier-meta-list">
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-building text-slate-400"></i> Proyek Pemohon
+                            </span>
+                            <span class="dossier-meta-value">
+                                {{ $materialRequest->toWarehouse?->project ? $materialRequest->toWarehouse->project->name : ($materialRequest->toWarehouse?->name ?? '-') }}
+                            </span>
+                        </div>
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-warehouse text-slate-400"></i> Gudang Proyek
+                            </span>
+                            <span class="dossier-meta-value">
+                                {{ $materialRequest->toWarehouse?->name ?? '-' }}
+                            </span>
+                        </div>
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-dolly text-slate-400"></i> Sumber Material
+                            </span>
+                            <span class="dossier-meta-value">
+                                @if($materialRequest->fromWarehouse)
+                                    <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:3px 8px;border-radius:6px;">
+                                        {{ $materialRequest->fromWarehouse->name }} ({{ $materialRequest->fromWarehouse->is_central ? 'Gudang Pusat' : 'Gudang Proyek' }})
+                                    </span>
+                                @else
+                                    <span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;padding:3px 8px;border-radius:6px;">
+                                        Pengadaan / Beli ke Vendor (Supplier)
+                                    </span>
+                                @endif
+                            </span>
+                        </div>
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-calendar-day text-slate-400"></i> Tgl Dibutuhkan
+                            </span>
+                            <span class="dossier-meta-value">
+                                {{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d F Y') : '-' }}
+                                @if($materialRequest->is_overdue)
+                                    <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:2px 7px;border-radius:6px;font-size:10.5px;margin-left:4px;">
+                                        <i class="fas fa-clock me-1"></i>Terlambat
+                                    </span>
+                                @endif
+                            </span>
+                        </div>
+                        @if($materialRequest->notes)
+                        <div style="margin-top:6px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:3px;">
+                                <i class="fas fa-quote-left text-slate-400 me-1"></i> Catatan Tambahan Pemohon
+                            </div>
+                            <div style="font-size:12.5px;color:#0f172a;font-weight:500;line-height:1.4;">
+                                {{ $materialRequest->notes }}
+                            </div>
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
-            <span class="badge" style="background:#f5f3ff;color:#6d28d9;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #ddd6fe;">
-                {{ $materialRequest->materialUsages->count() }} Pengeluaran
-            </span>
-        </div>
-        <div class="table-wrap" style="overflow-x:auto;">
-            <table class="data-table mr-item-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="padding:8px 12px;">No. Bukti Pengeluaran</th>
-                        <th>Tanggal</th>
-                        <th>Gudang</th>
-                        <th>Penerima / Mandor</th>
-                        <th>Bagian / Zona</th>
-                        <th style="text-align:center;">Status</th>
-                        <th style="text-align:center;width:80px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($materialRequest->materialUsages as $usage)
-                    <tr>
-                        <td>
-                            <a href="{{ route('material-usages.show', $usage) }}" class="fw-700 text-primary" style="font-size:12.5px;text-decoration:none;">
-                                {{ $usage->usage_number }}
-                            </a>
-                        </td>
-                        <td>{{ \Carbon\Carbon::parse($usage->usage_date)->format('d/m/Y') }}</td>
-                        <td>{{ $usage->warehouse?->name ?? '-' }}</td>
-                        <td><strong style="font-size:12px;color:#0f172a;">{{ $usage->recipient_name }}</strong></td>
-                        <td style="color:#475569;">{{ $usage->job_section ?? '-' }}</td>
-                        <td style="text-align:center;">
-                            @if($usage->status === 'completed')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:700;"><i class="fas fa-check me-1"></i> Selesai</span>
-                            @else
-                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:3px 7px;border-radius:10px;font-weight:600;">Dibatalkan</span>
-                            @endif
-                        </td>
-                        <td style="text-align:center;">
-                            <a href="{{ route('material-usages.show', $usage) }}" class="btn btn-sm btn-light border" title="Lihat Rincian Pengeluaran" style="padding:4px 10px;border-radius:6px;font-size:11.5px;color:#2563eb;font-weight:600;">
-                                <i class="fas fa-eye me-1"></i> Buka
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
 
-    {{-- Reject Modal --}}
-    <div class="modal-overlay" id="rejectModal">
-        <div class="modal-box" style="border-radius:12px;overflow:hidden;max-width:480px;">
-            <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:14px 18px;">
+            {{-- Kartu Kanan: Otoritas & Verifikasi --}}
+            <div class="dossier-card">
+                <div class="dossier-card-head">
+                    <h3>
+                        <i class="fas fa-user-shield text-indigo-600"></i>
+                        <span>Otoritas &amp; Dokumen Terkait</span>
+                    </h3>
+                </div>
+                <div class="dossier-card-body">
+                    <div class="dossier-meta-list">
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-user text-slate-400"></i> Pemohon
+                            </span>
+                            <span class="dossier-meta-value">
+                                {{ $materialRequest->requestedBy?->name ?? '-' }}
+                                <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:1px 6px;border-radius:4px;font-size:10.5px;margin-left:4px;">
+                                    {{ $materialRequest->requested_as ?? 'Staff Proyek' }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-clock text-slate-400"></i> Waktu Pengajuan
+                            </span>
+                            <span class="dossier-meta-value">
+                                {{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y H:i') : '-' }} WIB
+                            </span>
+                        </div>
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-signature text-slate-400"></i> Disetujui Oleh
+                            </span>
+                            <span class="dossier-meta-value">
+                                @if($materialRequest->approvedBy)
+                                    <strong style="color:#0f172a;">{{ $materialRequest->approvedBy->name }}</strong>
+                                    <div style="font-size:11px;color:#64748b;font-weight:500;">
+                                        Pada {{ \Carbon\Carbon::parse($materialRequest->approved_at)->format('d/m/Y H:i') }} WIB
+                                    </div>
+                                @else
+                                    <span style="color:#b45309;font-weight:600;">Menunggu Persetujuan</span>
+                                @endif
+                            </span>
+                        </div>
+
+                        {{-- Dokumen Pengadaan Terhubung --}}
+                        <div class="dossier-meta-row">
+                            <span class="dossier-meta-label">
+                                <i class="fas fa-file-invoice text-slate-400"></i> Dokumen Terhubung
+                            </span>
+                            <span class="dossier-meta-value">
+                                @if($relatedPos->isNotEmpty())
+                                    <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;">
+                                        @foreach($relatedPos as $po)
+                                            <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;text-decoration:none;" title="Buka Purchase Order">
+                                                <i class="fas fa-file-lines me-1"></i>{{ $po->po_number }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @elseif($materialRequest->distributions && $materialRequest->distributions->isNotEmpty())
+                                    <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;">
+                                        @foreach($materialRequest->distributions as $dst)
+                                            <a href="{{ route('distributions.show', $dst) }}" class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;text-decoration:none;" title="Buka Surat Jalan">
+                                                <i class="fas fa-truck me-1"></i>{{ $dst->distribution_number }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span style="color:#94a3b8;font-weight:500;">Belum ada dokumen turunan</span>
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- MAIN TABLE CARD: Rincian Item PO Lapangan --}}
+        <div class="dossier-table-card">
+            <div class="dossier-table-toolbar">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:14px;">
+                        <i class="fas fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.2px;">
+                            Rincian Item PO Lapangan
+                            <span style="font-size:12px;color:#64748b;font-weight:500;margin-left:6px;">(Daftar Kebutuhan Material &amp; Alokasi)</span>
+                        </h3>
+                        <p style="font-size:12px;color:#64748b;margin:0;">
+                            Rincian kuantitas, spesifikasi teknis, stok sumber, dan status kedatangan material
+                        </p>
+                    </div>
+                </div>
+
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-circle-xmark text-danger" style="font-size:16px;"></i>
-                    <span class="modal-title" style="font-size:14px;font-weight:700;color:#991b1b;">Tolak PO Lapangan</span>
+                    <span class="badge" style="background:#f1f5f9;color:#0f172a;font-weight:800;font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #cbd5e1;">
+                        Total {{ $materialRequest->items->count() }} Jenis Item
+                    </span>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="dossier-data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:44px;text-align:center;">#</th>
+                            <th style="min-width:240px;">Material &amp; Spesifikasi</th>
+                            <th style="min-width:130px;">Kategori</th>
+                            <th style="text-align:right;width:100px;">Diminta</th>
+                            <th style="text-align:right;width:100px;">Disetujui</th>
+                            <th style="text-align:center;width:80px;">Satuan</th>
+                            <th style="text-align:center;width:110px;">Tgl Pakai</th>
+                            <th style="min-width:140px;">Alokasi / Zona</th>
+                            <th style="min-width:140px;text-align:center;">Ketersediaan Stok</th>
+                            <th style="text-align:center;width:120px;">Status Tiba</th>
+                            <th style="min-width:120px;">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($materialRequest->items as $idx => $item)
+                        @php
+                            $approved = (float) $item->qty_approved;
+                            $received = (float) $item->qty_received;
+                            $unit = $item->displayUnit();
+                            $isCustom = $item->isCustom();
+                        @endphp
+                        <tr style="{{ $isCustom ? 'background:#fffdfa;' : '' }}">
+                            <td style="text-align:center;font-weight:700;color:#94a3b8;font-size:11.5px;">
+                                {{ $idx + 1 }}
+                            </td>
+                            <td>
+                                <div style="font-size:13.5px;font-weight:800;color:#0f172a;line-height:1.35;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                    {{ $item->displayName() }}
+                                    @if($isCustom)
+                                        <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">
+                                            <i class="fas fa-tag me-1"></i>Input Manual
+                                        </span>
+                                    @endif
+                                </div>
+                                <div style="font-size:11.5px;color:#64748b;margin-top:2px;">
+                                    @if($isCustom)
+                                        <span style="color:#b45309;">Material khusus non-katalog pusat</span>
+                                    @else
+                                        <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">SKU: {{ $item->material?->sku ?? '-' }}</span>
+                                        @if($item->material?->code)
+                                            &bull; Kode: {{ $item->material->code }}
+                                        @endif
+                                    @endif
+                                    @if($item->specification)
+                                        <div style="color:#334155;margin-top:2px;font-weight:500;">
+                                            <i class="fas fa-info-circle me-1 text-slate-400"></i>{{ $item->specification }}
+                                        </div>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:700;">
+                                    {{ $item->displayCategoryName() }}
+                                </span>
+                                @if($item->custom_item_type || $item->material?->type)
+                                    <div style="font-size:11px;color:#64748b;margin-top:3px;">
+                                        {{ $item->custom_item_type ?: $item->material?->type }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td style="text-align:right;font-weight:800;color:#0f172a;font-size:13.5px;">
+                                {{ format_quantity($item->qty_requested) }}
+                            </td>
+                            <td style="text-align:right;font-weight:900;color:#2563eb;font-size:13.5px;">
+                                {{ in_array($materialRequest->status, ['draft', 'submitted']) ? '—' : format_quantity($approved) }}
+                            </td>
+                            <td style="text-align:center;font-weight:700;color:#475569;font-size:12px;">
+                                {{ $unit }}
+                            </td>
+                            <td style="text-align:center;font-size:12px;">
+                                @if($item->usage_date)
+                                    <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #e2e8f0;padding:4px 8px;border-radius:6px;font-weight:600;">
+                                        <i class="fas fa-calendar-day me-1 text-slate-400"></i>{{ \Carbon\Carbon::parse($item->usage_date)->format('d/m/Y') }}
+                                    </span>
+                                @else
+                                    <span style="color:#94a3b8;">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($item->usage_location)
+                                    <span style="font-weight:600;color:#0f172a;">
+                                        <i class="fas fa-location-dot me-1 text-blue-500"></i>{{ $item->usage_location }}
+                                    </span>
+                                @else
+                                    <span style="color:#94a3b8;">—</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                @if($item->fulfillment === 'purchase')
+                                    @php
+                                        $approvedQty = (float) $item->qty_approved;
+                                        $orderedQty  = (float) $item->qty_ordered;
+                                        $remainingOrder = max(0, $approvedQty - $orderedQty);
+                                        $itemPos = $item->purchaseOrderItems ? $item->purchaseOrderItems->map->purchaseOrder->filter()->unique('id') : collect();
+                                    @endphp
+                                    <div style="font-weight:700;color:#d97706;font-size:11.5px;">
+                                        Sisa Dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
+                                    </div>
+                                    @if($itemPos->isNotEmpty())
+                                        <div style="font-size:10.5px;margin-top:3px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                                            @foreach($itemPos as $po)
+                                                <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;text-decoration:none;">
+                                                    {{ $po->po_number }}
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                @elseif($item->material_id)
+                                    @php
+                                        $inv = isset($sourceInventories) ? $sourceInventories->get($item->material_id) : null;
+                                        $qtyOnHand = $inv ? (float) $inv->quantity : 0;
+                                        $qtyAllocated = $inv ? (float) ($inv->qty_allocated ?? 0) : 0;
+                                        $availableStock = max(0, $qtyOnHand - $qtyAllocated);
+                                        $targetQty = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+                                        $isSufficient = $availableStock >= $targetQty && $targetQty > 0;
+                                    @endphp
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                                        <span style="font-weight:800;color:#0f172a;font-size:12px;">
+                                            {{ format_quantity($availableStock) }} {{ $unit }}
+                                        </span>
+                                        @if($isSufficient)
+                                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
+                                                <i class="fas fa-check me-1"></i>Stok Cukup
+                                            </span>
+                                        @else
+                                            <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
+                                                <i class="fas fa-triangle-exclamation me-1"></i>Kurang
+                                            </span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span style="color:#94a3b8;">—</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                @if(in_array($materialRequest->status, ['draft', 'submitted']))
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:700;">
+                                        Menunggu
+                                    </span>
+                                @elseif($received >= $approved && $approved > 0)
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:800;">
+                                        <i class="fas fa-check me-1"></i>Lengkap
+                                    </span>
+                                @elseif($received > 0)
+                                    <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:700;">
+                                        {{ format_quantity($received) }}/{{ format_quantity($approved) }}
+                                    </span>
+                                @else
+                                    <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:600;">
+                                        Belum Tiba
+                                    </span>
+                                @endif
+                            </td>
+                            <td style="font-size:12px;color:#475569;">
+                                {{ $item->notes ?: '—' }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- RIWAYAT OPERASIONAL LOGISTIK TERHUBUNG --}}
+        {{-- 1. Riwayat Surat Jalan (Distribusi) --}}
+        @if($materialRequest->distributions && $materialRequest->distributions->isNotEmpty())
+        <div class="dossier-card mb-4">
+            <div class="dossier-card-head">
+                <h3>
+                    <i class="fas fa-truck-fast text-emerald-600"></i>
+                    <span>Riwayat Pengiriman Surat Jalan (Distribusi Antar Gudang)</span>
+                </h3>
+                <span class="badge" style="background:#ecfdf5;color:#047857;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #a7f3d0;">
+                    {{ $materialRequest->distributions->count() }} Surat Jalan
+                </span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="dossier-data-table">
+                    <thead>
+                        <tr>
+                            <th>No. Surat Jalan</th>
+                            <th>Tgl Kirim</th>
+                            <th>Gudang Asal</th>
+                            <th>Gudang Tujuan</th>
+                            <th>Supir / Plat</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;width:90px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($materialRequest->distributions as $dist)
+                        @php
+                            $distBadge = match($dist->status) {
+                                'draft'      => '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Draft</span>',
+                                'in_transit' => '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-truck me-1"></i> Dalam Pengiriman</span>',
+                                'completed'  => '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Selesai Diterima</span>',
+                                'cancelled'  => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Dibatalkan</span>',
+                                default      => '<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">'.$dist->status.'</span>',
+                            };
+                        @endphp
+                        <tr>
+                            <td>
+                                <a href="{{ route('distributions.show', $dist) }}" style="font-weight:700;color:#2563eb;text-decoration:none;">
+                                    {{ $dist->distribution_number }}
+                                </a>
+                            </td>
+                            <td>{{ $dist->delivery_date ? \Carbon\Carbon::parse($dist->delivery_date)->format('d/m/Y') : '-' }}</td>
+                            <td>{{ $dist->fromWarehouse?->name ?? '-' }}</td>
+                            <td>{{ $dist->toWarehouse?->name ?? '-' }}</td>
+                            <td>
+                                <strong style="color:#0f172a;">{{ $dist->driver_name ?? '-' }}</strong>
+                                @if($dist->vehicle_number)
+                                    <span style="color:#64748b;font-size:11px;">({{ $dist->vehicle_number }})</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">{!! $distBadge !!}</td>
+                            <td style="text-align:center;">
+                                <a href="{{ route('distributions.show', $dist) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
+                                    <span>Buka</span>
+                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- 2. Riwayat Penerimaan Barang Masuk (Goods Receipts) --}}
+        @if($allGrs->isNotEmpty())
+        <div class="dossier-card mb-4">
+            <div class="dossier-card-head">
+                <h3>
+                    <i class="fas fa-dolly text-blue-600"></i>
+                    <span>Riwayat Penerimaan Barang Masuk (Goods Receipts / GR)</span>
+                </h3>
+                <span class="badge" style="background:#eff6ff;color:#1e40af;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #bfdbfe;">
+                    {{ $allGrs->count() }} Dokumen GR
+                </span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="dossier-data-table">
+                    <thead>
+                        <tr>
+                            <th>No. Dokumen GR</th>
+                            <th>Tgl Terima</th>
+                            <th>Gudang Penerima</th>
+                            <th>Pemasok / Referensi PO</th>
+                            <th>Penerima</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;width:90px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($allGrs as $gr)
+                        <tr>
+                            <td>
+                                <a href="{{ route('goods-receipts.show', $gr) }}" style="font-weight:700;color:#2563eb;text-decoration:none;">
+                                    {{ $gr->receipt_number }}
+                                </a>
+                            </td>
+                            <td>{{ $gr->receipt_date ? \Carbon\Carbon::parse($gr->receipt_date)->format('d/m/Y') : '-' }}</td>
+                            <td>{{ $gr->warehouse?->name ?? '-' }}</td>
+                            <td>
+                                <span style="font-weight:600;color:#0f172a;">{{ $gr->supplier?->name ?? ($gr->supplier_name ?? '-') }}</span>
+                                @if($gr->purchaseOrder)
+                                    <div style="font-size:11px;color:#2563eb;">(PO: {{ $gr->purchaseOrder->po_number }})</div>
+                                @endif
+                            </td>
+                            <td><strong style="color:#0f172a;">{{ $gr->received_by_name ?? ($gr->receivedBy?->name ?? '-') }}</strong></td>
+                            <td style="text-align:center;">
+                                @if($gr->status === 'confirmed')
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Dikonfirmasi</span>
+                                @else
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Draft</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                <a href="{{ route('goods-receipts.show', $gr) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
+                                    <span>Buka</span>
+                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+        {{-- 3. Riwayat Pengeluaran Material di Lapangan (Material Usages) --}}
+        @if($materialRequest->materialUsages && $materialRequest->materialUsages->isNotEmpty())
+        <div class="dossier-card mb-4">
+            <div class="dossier-card-head">
+                <h3>
+                    <i class="fas fa-clipboard-check text-purple-600"></i>
+                    <span>Riwayat Pemakaian Material di Lapangan (Material Usage)</span>
+                </h3>
+                <span class="badge" style="background:#f5f3ff;color:#5b21b6;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #ddd6fe;">
+                    {{ $materialRequest->materialUsages->count() }} Pengeluaran
+                </span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="dossier-data-table">
+                    <thead>
+                        <tr>
+                            <th>No. Bukti Pemakaian</th>
+                            <th>Tanggal</th>
+                            <th>Gudang</th>
+                            <th>Penerima / Mandor</th>
+                            <th>Bagian / Zona</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;width:90px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($materialRequest->materialUsages as $usage)
+                        <tr>
+                            <td>
+                                <a href="{{ route('material-usages.show', $usage) }}" style="font-weight:700;color:#2563eb;text-decoration:none;">
+                                    {{ $usage->usage_number }}
+                                </a>
+                            </td>
+                            <td>{{ \Carbon\Carbon::parse($usage->usage_date)->format('d/m/Y') }}</td>
+                            <td>{{ $usage->warehouse?->name ?? '-' }}</td>
+                            <td><strong style="color:#0f172a;">{{ $usage->recipient_name }}</strong></td>
+                            <td style="color:#475569;">{{ $usage->job_section ?? '-' }}</td>
+                            <td style="text-align:center;">
+                                @if($usage->status === 'completed')
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Selesai</span>
+                                @else
+                                    <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Dibatalkan</span>
+                                @endif
+                            </td>
+                            <td style="text-align:center;">
+                                <a href="{{ route('material-usages.show', $usage) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
+                                    <span>Buka</span>
+                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+    </div>
+
+    {{-- REJECT MODAL --}}
+    <div class="modal-overlay" id="rejectModal">
+        <div class="modal-box" style="border-radius:16px;overflow:hidden;max-width:500px;box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:16px 20px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:16px;">
+                        <i class="fas fa-circle-xmark"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size:15px;font-weight:800;color:#991b1b;margin:0;">Tolak PO Lapangan</h4>
+                        <p style="font-size:11.5px;color:#b91c1c;margin:0;">Permohonan akan dikembalikan dengan status ditolak</p>
+                    </div>
                 </div>
                 <button class="btn-close-modal" onclick="document.getElementById('rejectModal').classList.remove('show')">
                     <i class="fas fa-times"></i>
@@ -868,18 +1304,18 @@
             </div>
             <form method="POST" action="{{ route('material-requests.reject', $materialRequest) }}">
                 @csrf
-                <div class="modal-body" style="padding:18px;">
-                    <label class="form-label" style="font-weight:600;font-size:12px;color:#334155;margin-bottom:6px;">
+                <div class="modal-body" style="padding:20px;">
+                    <label class="form-label" style="font-weight:700;font-size:12.5px;color:#0f172a;margin-bottom:6px;">
                         Alasan Penolakan <span class="text-danger">*</span>
                     </label>
                     <textarea name="rejection_reason" class="form-control" rows="4"
-                        placeholder="Tuliskan alasan penolakan secara jelas agar dapat ditindaklanjuti pemohon..." required style="font-size:12.5px;border-radius:8px;"></textarea>
+                        placeholder="Tuliskan alasan penolakan secara jelas dan rinci agar dapat ditindaklanjuti pemohon..." required style="font-size:13px;border-radius:10px;border-color:#cbd5e1;padding:10px 12px;"></textarea>
                 </div>
-                <div class="modal-footer" style="background:#f8fafc;padding:12px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
-                    <button type="button" class="btn btn-light border btn-sm"
-                        onclick="document.getElementById('rejectModal').classList.remove('show')" style="border-radius:6px;padding:6px 12px;font-weight:600;">Batal</button>
-                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius:6px;padding:6px 14px;font-weight:700;">
-                        <i class="fas fa-xmark me-1"></i> Tolak PO Lapangan
+                <div class="modal-footer" style="background:#f8fafc;padding:14px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" class="btn-dossier-secondary"
+                        onclick="document.getElementById('rejectModal').classList.remove('show')">Batal</button>
+                    <button type="submit" class="btn-dossier-secondary" style="background:#dc2626;color:#ffffff;border-color:#b91c1c;font-weight:700;">
+                        <i class="fas fa-xmark me-1"></i> Tolak Permohonan
                     </button>
                 </div>
             </form>

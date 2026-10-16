@@ -1498,6 +1498,14 @@
             }
         }
     </style>
+    <script>
+        (function(){
+            var h=document.documentElement;
+            var s=localStorage.getItem('arsikon_theme');
+            var p=window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if(s==='dark'||(!s&&p))h.classList.add('dark');else h.classList.remove('dark');
+        })();
+    </script>
 </head>
 
 <body
@@ -1546,6 +1554,9 @@
         </div>
 
         <div class="topbar-actions">
+           <!-- <button type="button" class="topbar-circle-btn" id="themeToggle" title="Mode Gelap/Terang" onclick="toggleTheme()">
+                <i class="fas fa-moon" id="themeIcon"></i> 
+            </button>-->
             <!-- Liquid Glass Notification Bell with Dropdown Panel -->
             <div class="relative" id="glass-notification-bell">
                 <button 
@@ -1894,6 +1905,16 @@
             }
         });
 
+        function toggleTheme() {
+            var html = document.documentElement;
+            var on = html.classList.toggle('dark');
+            var icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.className = on ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            localStorage.setItem('arsikon_theme', on ? 'dark' : 'light');
+        }
+
         window.addEventListener('resize', function() {
             if (window.innerWidth > 1024) {
                 const sidebar = document.getElementById('sidebar');
@@ -1954,12 +1975,8 @@
             });
         });
     </script>
-
-    <!-- Liquid Glass (iOS 26 Style) Notification Stack -->
+    
     <x-notification.glass-stack />
-
-    <!-- Legacy Toast Container (Fallback) -->
-    <div class="notif-toast-container" id="notifToastContainer" style="display:none;"></div>
 
     <script>
         // Web Audio Chime Sound (Two-tone harmony)
@@ -2003,7 +2020,6 @@
 
                     // 1. APPROVAL REQUEST CHIME (Triple Crisp Tone - Ping-Ping-Ding!)
                     if (isApproval) {
-                        // Nada 1: G5 (783.99 Hz)
                         const o1 = ctx.createOscillator();
                         const g1 = ctx.createGain();
                         o1.type = 'sine';
@@ -2013,7 +2029,6 @@
                         o1.connect(g1); g1.connect(ctx.destination);
                         o1.start(now); o1.stop(now + 0.15);
 
-                        // Nada 2: A5 (880.00 Hz)
                         const o2 = ctx.createOscillator();
                         const g2 = ctx.createGain();
                         o2.type = 'sine';
@@ -2023,7 +2038,6 @@
                         o2.connect(g2); g2.connect(ctx.destination);
                         o2.start(now + 0.12); o2.stop(now + 0.30);
 
-                        // Nada 3: C6 (1046.50 Hz) - resonan panjang
                         const o3 = ctx.createOscillator();
                         const g3 = ctx.createGain();
                         o3.type = 'sine';
@@ -2040,8 +2054,8 @@
                         const osc = ctx.createOscillator();
                         const gain = ctx.createGain();
                         osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(440.0, now);          // A4
-                        osc.frequency.exponentialRampToValueAtTime(164.81, now + 0.38); // -> E3
+                        osc.frequency.setValueAtTime(440.0, now);
+                        osc.frequency.exponentialRampToValueAtTime(164.81, now + 0.38);
                         gain.gain.setValueAtTime(0.32, now);
                         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
                         osc.connect(gain); gain.connect(ctx.destination);
@@ -2063,11 +2077,11 @@
                         return;
                     }
 
-                    // 4. GENERAL INFO CHIME (Standard 2-tone chime ℹ️)
+                    // 4. GENERAL INFO CHIME (Standard 2-tone chime)
                     const osc1 = ctx.createOscillator();
                     const gain1 = ctx.createGain();
                     osc1.type = 'sine';
-                    osc1.frequency.setValueAtTime(587.33, now); // D5
+                    osc1.frequency.setValueAtTime(587.33, now);
                     gain1.gain.setValueAtTime(0.3, now);
                     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
                     osc1.connect(gain1); gain1.connect(ctx.destination);
@@ -2076,7 +2090,7 @@
                     const osc2 = ctx.createOscillator();
                     const gain2 = ctx.createGain();
                     osc2.type = 'sine';
-                    osc2.frequency.setValueAtTime(880.0, now + 0.12); // A5
+                    osc2.frequency.setValueAtTime(880.0, now + 0.12);
                     gain2.gain.setValueAtTime(0.32, now + 0.12);
                     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                     osc2.connect(gain2); gain2.connect(ctx.destination);
@@ -2093,274 +2107,34 @@
             }
         }
 
-        // Realtime Notification Poller & Toast State
-        let isPollerInitialized = false;
-        let lastNotifCount = parseInt(document.body.dataset.notifCount || '0', 10);
-        let lastNotifId = document.body.dataset.notifLastId || '';
-
+        // Global notification bridge for external callers (e.g. Supabase settings, AJAX)
         function showNotificationToast(data) {
-            // Priority: Pass to Liquid Glass (iOS 26 Style) Notification Stack
             if (window.showGlassNotification) {
                 window.showGlassNotification(data);
                 return;
             }
-
-            const container = document.getElementById('notifToastContainer');
-            if (!container) return;
-            container.style.display = 'flex';
-
-            const soundType = (data.sound_type || data.type || '').toLowerCase();
-            let themeClass = 'toast-info';
-            let iconClass = 'fas fa-bell';
-            let badgeText = 'Informasi';
-
-            if (soundType.includes('approval') || soundType.includes('urgent')) {
-                themeClass = 'toast-approval';
-                iconClass = 'fas fa-clipboard-check';
-                badgeText = 'Persetujuan';
-            } else if (soundType.includes('approved') || soundType.includes('success')) {
-                themeClass = 'toast-success';
-                iconClass = 'fas fa-check-circle';
-                badgeText = 'Berhasil';
-            } else if (soundType.includes('rejected') || soundType.includes('cancelled') || soundType.includes('warning') || soundType.includes('danger')) {
-                themeClass = 'toast-warning';
-                iconClass = 'fas fa-exclamation-triangle';
-                badgeText = 'Peringatan';
+            if (window.notificationCenter && typeof window.notificationCenter.pushBanner === 'function') {
+                window.notificationCenter.pushBanner(data);
+                return;
             }
-
-            const targetUrl = data.url || data.link || document.body.dataset.notifUrl || '#';
-            const toast = document.createElement('div');
-            toast.className = `notif-toast ${themeClass}`;
-            toast.innerHTML = `
-                <div class="toast-icon">
-                    <i class="${iconClass}"></i>
-                </div>
-                <div class="toast-content">
-                    <div class="toast-header">
-                        <span class="toast-badge">${badgeText}</span>
-                        <span class="toast-time">${escapeHtml(data.created_at_human || 'Baru saja')}</span>
-                    </div>
-                    <div class="toast-title">${escapeHtml(data.title || 'Notifikasi Baru')}</div>
-                    <div class="toast-desc">${escapeHtml(data.message || '')}</div>
-                    <div class="toast-footer">
-                        <a href="${escapeHtml(targetUrl)}" class="toast-link">
-                            <span>Buka Detail</span>
-                            <i class="fas fa-arrow-right" style="font-size:10px;"></i>
-                        </a>
-                    </div>
-                </div>
-                <button class="toast-close" type="button" title="Tutup">&times;</button>
-                <div class="toast-progress"></div>
-            `;
-
-            toast.onclick = function(e) {
-                if (e.target.closest('.toast-close')) {
-                    toast.classList.add('toast-out');
-                    setTimeout(() => toast.remove(), 300);
-                    return;
-                }
-                if (targetUrl && targetUrl !== '#') {
-                    window.location.href = targetUrl;
-                }
-            };
-
-            container.appendChild(toast);
-
             setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.add('toast-out');
-                    setTimeout(() => toast.remove(), 300);
+                if (window.showGlassNotification) {
+                    window.showGlassNotification(data);
+                } else if (window.notificationCenter && typeof window.notificationCenter.pushBanner === 'function') {
+                    window.notificationCenter.pushBanner(data);
                 }
-            }, 7000);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
+            }, 300);
         }
 
         function updateNotifBadge(count) {
-            const bell = document.querySelector('.topbar-circle-btn[href*="notifications"]');
-            if (bell) {
-                let badge = bell.querySelector('.notif-badge');
-                if (count > 0) {
-                    if (!badge) {
-                        badge = document.createElement('span');
-                        badge.className = 'notif-badge';
-                        bell.appendChild(badge);
-                    }
-                    badge.textContent = count > 99 ? '99+' : count;
-                } else if (badge) {
-                    badge.remove();
-                }
+            if (window.notificationCenter) {
+                window.notificationCenter.unreadCount = count;
             }
         }
 
-        function pollNotifications() {
-            if (!document.body.dataset.notifFetchUrl) return;
-            fetch(document.body.dataset.notifFetchUrl, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(res => {
-                const count = res.count || 0;
-                updateNotifBadge(count);
-
-                if (!isPollerInitialized) {
-                    isPollerInitialized = true;
-                    if (!lastNotifId && res.latest && res.latest.id) {
-                        lastNotifId = res.latest.id;
-                    }
-                    lastNotifCount = count;
-                    return;
-                }
-
-                // If new notification detected (by unique ID change or count increase)
-                const isNewId = res.latest && res.latest.id && res.latest.id !== lastNotifId;
-                const isCountIncreased = count > lastNotifCount;
-
-                if (res.latest && (isNewId || isCountIncreased)) {
-                    playNotificationChime(res.latest.sound_type || res.latest.type);
-                    showNotificationToast(res.latest);
-                    lastNotifId = res.latest.id;
-                }
-
-                lastNotifCount = count;
-            })
-            .catch(() => {});
-        }
-
-        // ===== LARAVEL REVERB WEBSOCKET REAL-TIME LISTENER =====
-        function setupRealtimeEcho() {
-            if (!window.Echo) {
-                // Retry if Vite bundle is still parsing
-                setTimeout(setupRealtimeEcho, 500);
-                return;
-            }
-
-            const userId = document.body.dataset.userId;
-            const isAdminPusat = document.body.dataset.isAdminPusat === '1';
-            const isOwner = document.body.dataset.isOwner === '1';
-
-            // 1. Channel notifikasi user individual
-            if (userId) {
-                try {
-                    window.Echo.private(`App.Models.User.${userId}`)
-                        .notification((notification) => {
-                            lastNotifCount = (lastNotifCount || 0) + 1;
-                            updateNotifBadge(lastNotifCount);
-                            playNotificationChime(notification.sound_type || notification.type || 'info');
-                            showNotificationToast({
-                                title: notification.title || 'Notifikasi Baru',
-                                message: notification.message || '',
-                                sound_type: notification.sound_type || notification.type,
-                                type: notification.type || 'info',
-                                url: notification.url || document.body.dataset.notifUrl,
-                                created_at_human: 'Baru saja'
-                            });
-                        });
-                } catch (e) {
-                    console.warn('[Echo] Error connecting to user channel:', e);
-                }
-            }
-
-            // Handler seragam untuk alur permohonan baru
-            function handleIncomingRequest(data) {
-                lastNotifCount = (lastNotifCount || 0) + 1;
-                updateNotifBadge(lastNotifCount);
-                playNotificationChime(data.sound_type || 'approval');
-                showNotificationToast({
-                    title: data.title || 'Pengajuan Baru',
-                    message: data.message || '',
-                    sound_type: data.sound_type || 'approval',
-                    type: data.type || 'approval_needed',
-                    url: data.url || document.body.dataset.notifUrl,
-                    created_at_human: 'Baru saja'
-                });
-            }
-
-            // 2. Private channel khusus Admin Pusat (Approval & Sistem)
-            if (isAdminPusat) {
-                try {
-                    window.Echo.private('admin-pusat')
-                        .listen('.RequestSubmitted', handleIncomingRequest)
-                        .listen('RequestSubmitted', handleIncomingRequest);
-                } catch (e) {
-                    console.warn('[Echo] Error connecting to admin-pusat channel:', e);
-                }
-            }
-
-            // 3. Private channel khusus Owner (Pemantauan Laporan Real-Time)
-            if (isOwner) {
-                try {
-                    window.Echo.private('owner-monitoring')
-                        .listen('.RequestSubmitted', handleIncomingRequest)
-                        .listen('RequestSubmitted', handleIncomingRequest);
-                } catch (e) {
-                    console.warn('[Echo] Error connecting to owner-monitoring channel:', e);
-                }
-            }
-        }
-
-        // Jalankan inisialisasi Echo
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupRealtimeEcho);
-        } else {
-            setupRealtimeEcho();
-        }
-
-        // Expose globally
         window.playNotificationChime = playNotificationChime;
         window.showNotificationToast = showNotificationToast;
         window.updateNotifBadge = updateNotifBadge;
-
-        // Auto-trigger Toast & Chime for Session Flash messages
-        @if(session('success'))
-            setTimeout(() => {
-                showNotificationToast({
-                    title: 'Berhasil',
-                    message: {!! json_encode(session('success')) !!},
-                    sound_type: 'success',
-                    type: 'success',
-                    created_at_human: 'Baru saja'
-                });
-                playNotificationChime('success');
-            }, 300);
-        @endif
-
-        @if(session('error'))
-            setTimeout(() => {
-                showNotificationToast({
-                    title: 'Gagal / Perhatian',
-                    message: {!! json_encode(session('error')) !!},
-                    sound_type: 'warning',
-                    type: 'danger',
-                    created_at_human: 'Baru saja'
-                });
-                playNotificationChime('warning');
-            }, 300);
-        @endif
-
-        @if(session('warning'))
-            setTimeout(() => {
-                showNotificationToast({
-                    title: 'Peringatan Sistem',
-                    message: {!! json_encode(session('warning')) !!},
-                    sound_type: 'warning',
-                    type: 'warning',
-                    created_at_human: 'Baru saja'
-                });
-                playNotificationChime('warning');
-            }, 300);
-        @endif
-
-        // Polling sebagai jaring pengaman (fallback) jika koneksi WebSocket terputus
-        setTimeout(pollNotifications, 1500);
-        setInterval(pollNotifications, 8000);
 
         // Preserve Sidebar Scroll Position
         (function() {

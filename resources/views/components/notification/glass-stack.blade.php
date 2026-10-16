@@ -1,6 +1,6 @@
 <div 
     id="glass-notification-stack"
-    class="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100vw-24px)] max-w-[430px] pointer-events-none flex flex-col items-center gap-2.5 transition-all duration-300"
+    class="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100vw-24px)] max-w-xl pointer-events-none flex flex-col items-center gap-2.5 transition-all duration-300"
     x-init="
         @if(session('success'))
             $nextTick(() => pushBanner({
@@ -24,6 +24,14 @@
                 message: {{ json_encode(session('warning')) }},
                 type: 'warning',
                 sound_type: 'warning'
+            }));
+        @endif
+        @if(session('info'))
+            $nextTick(() => pushBanner({
+                title: 'Informasi',
+                message: {{ json_encode(session('info')) }},
+                type: 'info',
+                sound_type: 'info'
             }));
         @endif
     "

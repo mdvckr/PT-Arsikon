@@ -145,6 +145,36 @@ export function notificationCenter() {
         },
 
         pushBanner(item) {
+            if (!item) return;
+
+            const title = (item.title || 'Notifikasi').trim();
+            const message = (item.message || '').trim();
+            const dedupeKey = `${title}:::${message}`;
+
+            // 1. Deduplication cooldown guard (4 seconds window)
+            const now = Date.now();
+            if (!this._recentPushes) this._recentPushes = new Map();
+            if (this._recentPushes.has(dedupeKey)) {
+                const lastTime = this._recentPushes.get(dedupeKey);
+                if (now - lastTime < 4000) {
+                    return; // Ignore duplicate within cooldown window
+                }
+            }
+            this._recentPushes.set(dedupeKey, now);
+
+            // Clean old deduplication entries (> 10s)
+            for (const [k, t] of this._recentPushes.entries()) {
+                if (now - t > 10000) this._recentPushes.delete(k);
+            }
+
+            // 2. Active banners & queue check: don't duplicate if already displayed or queued
+            if (this.banners.some(b => b.title === title && b.message === message && !b.isClosing)) {
+                return;
+            }
+            if (this.queue.some(b => b.title === title && b.message === message)) {
+                return;
+            }
+
             const soundType = item.sound_type || item.type || 'info';
             if (typeof window.playNotificationChime === 'function') {
                 window.playNotificationChime(soundType);
@@ -165,10 +195,12 @@ export function notificationCenter() {
                 tint = 'danger';
             }
 
+            const duration = (item.url ? 8000 : 5500);
+
             const banner = {
                 id: item.id || 'banner-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-                title: item.title || 'Notifikasi',
-                message: item.message || '',
+                title: title,
+                message: message,
                 type: tint,
                 url: item.url || item.link || null,
                 time: item.created_at_human || 'Baru saja',
@@ -180,13 +212,9 @@ export function notificationCenter() {
                 currentDeltaX: 0,
                 timer: null,
                 paused: false,
+                duration: duration,
                 hasActions: Boolean(item.url)
             };
-
-            // Auto-hide delay (5s default, 8s if has actions)
-            const duration = banner.hasActions ? 8000 : 5000;
-            banner.duration = duration;
-            banner.expiresAt = Date.now() + duration;
 
             banner.timer = setTimeout(() => {
                 this.dismissBanner(banner.id);

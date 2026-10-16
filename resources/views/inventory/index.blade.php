@@ -11,59 +11,71 @@
         /* KPI Quick Stats Cards */
         .inv-kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             margin-bottom: 22px;
         }
         .inv-kpi-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 16px 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
             display: flex;
-            align-items: center;
-            gap: 14px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 104px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .inv-kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
-        .inv-kpi-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
+        .inv-kpi-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
         }
-        .inv-kpi-icon.blue   { background: #eff6ff; color: #2563eb; }
-        .inv-kpi-icon.amber  { background: #fffbeb; color: #d97706; }
-        .inv-kpi-icon.red    { background: #fef2f2; color: #dc2626; }
-        .inv-kpi-icon.emerald{ background: #f0fdf4; color: #16a34a; }
-
-        .inv-kpi-meta .inv-kpi-num {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1.2;
-            font-variant-numeric: tabular-nums;
-        }
-        .inv-kpi-meta .inv-kpi-title {
+        .inv-kpi-title {
             font-size: 11.5px;
-            font-weight: 600;
-            color: #64748b;
+            font-weight: 700;
+            color: #475569;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            margin-bottom: 2px;
         }
-        .inv-kpi-meta .inv-kpi-sub {
+        .inv-kpi-badge {
             font-size: 11px;
-            color: #94a3b8;
-            margin-top: 2px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            white-space: nowrap;
+        }
+        .inv-kpi-num {
+            font-size: 22px;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        .inv-kpi-sub {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+        @media (max-width: 1024px) {
+            .inv-kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 640px) {
+            .inv-kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
         }
 
         /* Filter Panel */
@@ -526,63 +538,101 @@
         </div>
     </div>
 
-    {{-- KPI Summary Stats Cards --}}
+    {{-- KPI Summary Stats Cards (Human Enterprise Architecture) --}}
     <div class="inv-kpi-grid">
-        {{-- Card 1: Material --}}
+        {{-- Card 1: Material Konstruksi --}}
         <div class="inv-kpi-card">
-            <div class="inv-kpi-icon blue">
-                <i class="fas fa-cubes"></i>
+            <div class="inv-kpi-header">
+                <span class="inv-kpi-title">Material Konstruksi</span>
+                <span class="inv-kpi-badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
+                    {{ number_format($totalMatVariants, 0, ',', '.') }} Varian
+                </span>
             </div>
-            <div class="inv-kpi-meta">
-                <div class="inv-kpi-title">Material Konstruksi</div>
-                <div class="inv-kpi-num">{{ number_format($totalMatVariants, 0, ',', '.') }} <span style="font-size:12px;font-weight:500;color:#64748b;">varian</span></div>
-                <div class="inv-kpi-sub">{{ number_format($totalMatStock, 0, ',', '.') }} total unit tercatat</div>
+            <div>
+                <div class="inv-kpi-num">
+                    {{ number_format($totalMatStock, 0, ',', '.') }}
+                    <span style="font-size:12px;font-weight:600;color:#64748b;letter-spacing:0;">Unit Fisik</span>
+                </div>
+                <div class="inv-kpi-sub">
+                    <i class="fas fa-cubes text-blue-600 me-1"></i> Total persediaan material terdaftar
+                </div>
             </div>
         </div>
 
         {{-- Card 2: Alat Kerja --}}
         <div class="inv-kpi-card">
-            <div class="inv-kpi-icon amber">
-                <i class="fas fa-toolbox"></i>
+            <div class="inv-kpi-header">
+                <span class="inv-kpi-title">Alat Kerja & Peralatan</span>
+                <span class="inv-kpi-badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;">
+                    {{ number_format($totalToolsCount, 0, ',', '.') }} Jenis
+                </span>
             </div>
-            <div class="inv-kpi-meta">
-                <div class="inv-kpi-title">Alat Kerja</div>
-                <div class="inv-kpi-num">{{ number_format($totalToolsCount, 0, ',', '.') }} <span style="font-size:12px;font-weight:500;color:#64748b;">jenis</span></div>
-                <div class="inv-kpi-sub">{{ number_format($totalToolAvailable, 0, ',', '.') }} unit siap pakai ({{ number_format($totalToolBorrowed, 0, ',', '.') }} dipinjam)</div>
+            <div>
+                <div class="inv-kpi-num">
+                    {{ number_format($totalToolAvailable, 0, ',', '.') }}
+                    <span style="font-size:12px;font-weight:600;color:#059669;letter-spacing:0;">Unit Siap</span>
+                </div>
+                <div class="inv-kpi-sub">
+                    <i class="fas fa-toolbox text-amber-600 me-1"></i> {{ number_format($totalToolBorrowed, 0, ',', '.') }} unit aktif dipinjam di proyek
+                </div>
             </div>
         </div>
 
         {{-- Card 3: Alert Stok --}}
-        <div class="inv-kpi-card">
-            <div class="inv-kpi-icon {{ ($totalLowStockMat + $totalToolLow) > 0 ? 'red' : 'emerald' }}">
-                <i class="fas fa-triangle-exclamation"></i>
+        <div class="inv-kpi-card" style="{{ ($totalLowStockMat + $totalToolLow) > 0 ? 'background:#fffafa;border-color:#fecaca;' : '' }}">
+            <div class="inv-kpi-header">
+                <span class="inv-kpi-title">Status Level Stok</span>
+                @if(($totalLowStockMat + $totalToolLow) > 0)
+                    <span class="inv-kpi-badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;">
+                        <i class="fas fa-triangle-exclamation me-1"></i> Perlu Restok
+                    </span>
+                @else
+                    <span class="inv-kpi-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
+                        <i class="fas fa-circle-check me-1"></i> Terkendali
+                    </span>
+                @endif
             </div>
-            <div class="inv-kpi-meta">
-                <div class="inv-kpi-title">Peringatan Stok</div>
-                <div class="inv-kpi-num" style="{{ ($totalLowStockMat + $totalToolLow) > 0 ? 'color:#dc2626;' : 'color:#16a34a;' }}">
-                    {{ number_format($totalLowStockMat + $totalToolLow, 0, ',', '.') }} <span style="font-size:12px;font-weight:500;color:#64748b;">item</span>
+            <div>
+                <div class="inv-kpi-num" style="{{ ($totalLowStockMat + $totalToolLow) > 0 ? 'color:#dc2626;' : 'color:#059669;' }}">
+                    @if(($totalLowStockMat + $totalToolLow) > 0)
+                        {{ number_format($totalLowStockMat + $totalToolLow, 0, ',', '.') }}
+                        <span style="font-size:12px;font-weight:600;color:#dc2626;letter-spacing:0;">Item Kritis</span>
+                    @else
+                        Stok Aman
+                        <span style="font-size:12px;font-weight:600;color:#64748b;letter-spacing:0;">(0 Kritis)</span>
+                    @endif
                 </div>
                 <div class="inv-kpi-sub">
                     @if(($totalLowStockMat + $totalToolLow) > 0)
-                        {{ $totalLowStockMat }} material &bull; {{ $totalToolLow }} alat menipis/habis
+                        <span style="color:#dc2626;"><i class="fas fa-circle-exclamation me-1"></i> {{ $totalLowStockMat }} material &bull; {{ $totalToolLow }} alat menipis/habis</span>
                     @else
-                        Semua level stok aman terkendali
+                        <span style="color:#059669;"><i class="fas fa-shield-check me-1"></i> Semua item di atas batas minimum stok</span>
                     @endif
                 </div>
             </div>
         </div>
 
-        {{-- Card 4: Cakupan Gudang --}}
+        {{-- Card 4: Lokasi Penyimpanan --}}
         <div class="inv-kpi-card">
-            <div class="inv-kpi-icon emerald">
-                <i class="fas fa-warehouse"></i>
+            <div class="inv-kpi-header">
+                <span class="inv-kpi-title">Lokasi Penyimpanan</span>
+                @if($currentWhObj)
+                    <span class="inv-kpi-badge" style="background:#f8fafc;color:#334155;border:1px solid #cbd5e1;">
+                        {{ $currentWhObj->is_central ? 'Pusat' : 'Proyek' }}
+                    </span>
+                @else
+                    <span class="inv-kpi-badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
+                        Multi-Gudang
+                    </span>
+                @endif
             </div>
-            <div class="inv-kpi-meta">
-                <div class="inv-kpi-title">Cakupan Gudang</div>
-                <div class="inv-kpi-num" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;" title="{{ $currentWhObj ? $currentWhObj->name : 'Semua Gudang' }}">
+            <div>
+                <div class="inv-kpi-num" style="font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $currentWhObj ? $currentWhObj->name : 'Semua Gudang (Konsolidasi)' }}">
                     {{ $currentWhObj ? $currentWhObj->name : 'Semua Gudang' }}
                 </div>
-                <div class="inv-kpi-sub">{{ $currentWhObj ? ($currentWhObj->is_central ? 'Gudang Sentral Arsikon' : 'Site Gudang Proyek') : 'Mode Konsolidasi Multi-Gudang' }}</div>
+                <div class="inv-kpi-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    <i class="fas fa-warehouse text-primary me-1"></i> {{ $currentWhObj ? ($currentWhObj->is_central ? 'Gudang Sentral Distribusi' : 'Site Gudang Operasional') : 'Mode konsolidasi multi-site gudang' }}
+                </div>
             </div>
         </div>
     </div>
