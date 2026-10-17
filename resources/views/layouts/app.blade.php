@@ -1676,9 +1676,12 @@
             <!-- 1. GRUP TEKNIS -->
             @php
                 $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
-                $canTeknis = auth()->user()->can('view material requests')
-                    || auth()->user()->can('view distributions');
-                $isTeknisActive = request()->routeIs(['material-requests.*', 'distributions.*']);
+                $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
+                $canTeknis = !$isRoleAdminPO && (
+                    auth()->user()->can('view material requests')
+                    || auth()->user()->can('view distributions')
+                );
+                $isTeknisActive = !$isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']);
             @endphp
             @if($canTeknis)
             <div class="nav-section" x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }">
@@ -1706,47 +1709,93 @@
             @php
                 $canPengadaan = (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
-                    || auth()->user()->can('view payments');
-                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*']);
+                    || auth()->user()->can('view payments')
+                    || ($isRoleAdminPO && (auth()->user()->can('view material requests') || auth()->user()->can('view distributions')));
+                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*'])
+                    || ($isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']));
             @endphp
             @if($canPengadaan)
-            <div class="nav-section" x-data="{ open: {{ $isPengadaanActive ? 'true' : 'false' }} }">
-                <div class="nav-section-header" @click="open = !open">
-                    <span class="nav-section-label">PENGADAAN</span>
-                    <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                @if($isRoleAdminPO)
+                {{-- Khusus Admin Pengadaan (PO): Tampil langsung tanpa dropdown (selalu terbuka tanpa toggle collapse) --}}
+                <div class="nav-section">
+                    <div style="padding: 8px 12px 4px 12px;">
+                        <span class="nav-section-label">PENGADAAN</span>
+                    </div>
+                    <div class="nav-section-body">
+                        @can('view material requests')
+                        <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
+                            <i class="fas fa-file-circle-plus"></i> PO Lapangan
+                        </a>
+                        @endcan
+
+                        @can('view purchase orders')
+                        <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                            <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                        </a>
+                        @endcan
+
+                        @can('view purchase receipts')
+                        <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
+                            <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                        </a>
+                        @endcan
+
+                        @can('view payments')
+                        <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                            <i class="fas fa-money-bill-wave"></i> Pembayaran
+                        </a>
+                        @endcan
+
+                        @can('view distributions')
+                        <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
+                            <i class="fas fa-right-left"></i> Surat Jalan
+                        </a>
+                        @endcan
+
+                        <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
+                            <i class="fas fa-stamp"></i> Template Kop Surat
+                        </a>
+                    </div>
                 </div>
-                <div x-show="open" class="nav-section-body">
+                @else
+                <div class="nav-section" x-data="{ open: {{ $isPengadaanActive ? 'true' : 'false' }} }">
+                    <div class="nav-section-header" @click="open = !open">
+                        <span class="nav-section-label">PENGADAAN</span>
+                        <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                    </div>
+                    <div x-show="open" class="nav-section-body">
+                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']) && auth()->user()->can('view purchase orders'))
+                        <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                            <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                        </a>
+                        @endif
 
-                    @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']) && auth()->user()->can('view purchase orders'))
-                    <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-                        <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
-                    </a>
-                    @endif
+                        @can('view purchase receipts')
+                        <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
+                            <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                        </a>
+                        @endcan
 
-                    @can('view purchase receipts')
-                    <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
-                        <i class="fas fa-receipt"></i> Nota Pembelian Harian
-                    </a>
-                    @endcan
+                        @can('view payments')
+                        <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                            <i class="fas fa-money-bill-wave"></i> Pembayaran
+                        </a>
+                        @endcan
 
-                    @can('view payments')
-                    <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                        <i class="fas fa-money-bill-wave"></i> Pembayaran
-                    </a>
-                    @endcan
-
-                    @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
-                    <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                        <i class="fas fa-stamp"></i> Template Kop Surat
-                    </a>
-                    @endif
+                        @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
+                        <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
+                            <i class="fas fa-stamp"></i> Template Kop Surat
+                        </a>
+                        @endif
+                    </div>
                 </div>
-            </div>
+                @endif
             @endif
 
             <!-- 3. GRUP LOGISTIK -->
             @php
-                $canLogistik = auth()->user()->can('view goods receipts')
+                $canLogistik = !$isRoleAdminPO && (
+                    auth()->user()->can('view goods receipts')
                     || auth()->user()->can('view material usages')
                     || auth()->user()->can('view inventory')
                     || auth()->user()->can('view stock opname')
@@ -1754,8 +1803,11 @@
                     || auth()->user()->can('view returns')
                     || auth()->user()->can('view tools')
                     || auth()->user()->can('view tool assignments')
-                    || $canDailyLog;
-                $isLogistikActive = request()->routeIs(['goods-receipts.*', 'material-usages.*', 'inventory.*', 'stock-opnames.*', 'materials.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']) || request()->routeIs('reports.mutation');
+                    || $canDailyLog
+                );
+                $isLogistikActive = !$isRoleAdminPO && (
+                    request()->routeIs(['goods-receipts.*', 'material-usages.*', 'inventory.*', 'stock-opnames.*', 'materials.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']) || request()->routeIs('reports.mutation')
+                );
             @endphp
             @if($canLogistik)
             <div class="nav-section" x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }">

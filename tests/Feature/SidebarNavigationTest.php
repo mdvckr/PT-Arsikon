@@ -48,9 +48,9 @@ class SidebarNavigationTest extends TestCase
         $content = $response->getContent();
 
         $posDashboard = strpos($content, 'Dashboard');
-        $posTeknis = strpos($content, 'Teknis');
-        $posPengadaan = strpos($content, 'Pengadaan');
-        $posLogistik = strpos($content, 'Logistik');
+        $posTeknis = strpos($content, 'TEKNIS');
+        $posPengadaan = strpos($content, 'PENGADAAN');
+        $posLogistik = strpos($content, 'LOGISTIK');
 
         $this->assertNotFalse($posDashboard);
         $this->assertNotFalse($posTeknis);
@@ -75,13 +75,25 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString($mrRouteUrl, $content);
         $this->assertStringContainsString('PO Lapangan', $content);
 
-        // Pastikan PO Lapangan muncul setelah label Pengadaan dan sebelum label Logistik
-        $posPengadaan = strpos($content, 'Pengadaan');
+        // Pastikan PO Lapangan muncul setelah label Pengadaan
+        $posPengadaan = strpos($content, 'PENGADAAN');
         $posPoLapangan = strpos($content, 'PO Lapangan');
-        $posLogistik = strpos($content, 'Logistik');
 
+        $this->assertNotFalse($posPengadaan);
+        $this->assertNotFalse($posPoLapangan);
         $this->assertTrue($posPengadaan < $posPoLapangan, 'PO Lapangan harus berada di dalam grup Pengadaan');
-        $this->assertTrue($posPoLapangan < $posLogistik, 'PO Lapangan harus muncul sebelum grup Logistik');
+
+        // Untuk Admin PO, grup Teknis dan Logistik dihapus/disembunyikan dari sidebar
+        $this->assertStringNotContainsString('nav-section-label">TEKNIS', $content);
+        $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $content);
+    }
+
+    private function getSidebarContent(string $html): string
+    {
+        if (preg_match('/<aside class="sidebar"[^>]*>(.*?)<\/aside>/s', $html, $matches)) {
+            return $matches[1];
+        }
+        return $html;
     }
 
     public function test_admin_po_sidebar_visibility_and_restrictions(): void
@@ -89,18 +101,23 @@ class SidebarNavigationTest extends TestCase
         $response = $this->actingAs($this->adminPO)->get(route('dashboard'));
         $response->assertOk();
 
-        // Boleh muncul:
-        $response->assertSee('PO Lapangan');
-        $response->assertSee('Purchase Order (PO)');
-        $response->assertSee('Nota Pembelian Harian');
-        $response->assertSee('Pembayaran');
-        $response->assertSee('Surat Jalan (Distribusi)');
-        $response->assertSee('Inventori');
+        $sidebar = $this->getSidebarContent($response->getContent());
 
-        // Tidak boleh muncul (Permintaan Pengadaan disatukan ke PO Lapangan, tidak ada akses GR, tidak ada Admin Sistem):
-        $response->assertDontSee('Permintaan Pengadaan');
-        $response->assertDontSee('Penerimaan Barang (GR)');
-        $response->assertDontSee('Admin Sistem');
+        // Boleh muncul di bawah Pengadaan:
+        $this->assertStringContainsString('PO Lapangan', $sidebar);
+        $this->assertStringContainsString('Purchase Order (PO)', $sidebar);
+        $this->assertStringContainsString('Nota Pembelian Harian', $sidebar);
+        $this->assertStringContainsString('Pembayaran', $sidebar);
+        $this->assertStringContainsString('Surat Jalan', $sidebar);
+        $this->assertStringContainsString('Template Kop Surat', $sidebar);
+
+        // Tidak boleh muncul di sidebar (Logistik dihapus untuk Admin PO, Teknis disatukan ke Pengadaan, tidak ada GR, tidak ada Admin Sistem, tidak ada dropdown chevron):
+        $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
+        $this->assertStringNotContainsString('nav-section-chevron', $sidebar);
+        $this->assertStringNotContainsString('Inventori', $sidebar);
+        $this->assertStringNotContainsString('Penerimaan Barang', $sidebar);
+        $this->assertStringNotContainsString('Admin Sistem', $sidebar);
     }
 
     public function test_admin_gudang_proyek_sidebar_visibility_and_restrictions(): void
@@ -108,19 +125,21 @@ class SidebarNavigationTest extends TestCase
         $response = $this->actingAs($this->adminProyek)->get(route('dashboard'));
         $response->assertOk();
 
+        $sidebar = $this->getSidebarContent($response->getContent());
+
         // Boleh muncul:
-        $response->assertSee('Penerimaan Barang (GR)');
-        $response->assertSee('Surat Jalan (Distribusi)');
-        $response->assertSee('Pemakaian Material');
-        $response->assertSee('Retur Material');
-        $response->assertSee('PO Lapangan');
-        $response->assertSee('Nota Pembelian Harian');
+        $this->assertStringContainsString('Penerimaan Barang', $sidebar);
+        $this->assertStringContainsString('Surat Jalan', $sidebar);
+        $this->assertStringContainsString('Pemakaian Material', $sidebar);
+        $this->assertStringContainsString('Retur Material', $sidebar);
+        $this->assertStringContainsString('PO Lapangan', $sidebar);
+        $this->assertStringContainsString('Nota Pembelian Harian', $sidebar);
 
         // Tidak boleh muncul:
         // Admin Gudang Proyek tidak boleh akses Purchase Order (PO), Pembayaran, Admin Sistem
-        $response->assertDontSee('Purchase Order (PO)');
-        $response->assertDontSee('Pembayaran');
-        $response->assertDontSee('Admin Sistem');
+        $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
+        $this->assertStringNotContainsString('Pembayaran', $sidebar);
+        $this->assertStringNotContainsString('Admin Sistem', $sidebar);
     }
 
     public function test_karyawan_sidebar_visibility_and_restrictions(): void
@@ -128,22 +147,24 @@ class SidebarNavigationTest extends TestCase
         $response = $this->actingAs($this->karyawan)->get(route('dashboard'));
         $response->assertOk();
 
-        // Karyawan boleh: PO Lapangan, Pemakaian Material, Peminjaman Alat, Surat Jalan
-        $response->assertSee('PO Lapangan');
-        $response->assertSee('Pemakaian Material');
-        $response->assertSee('Peminjaman Alat');
-        $response->assertSee('Surat Jalan (Distribusi)');
+        $sidebar = $this->getSidebarContent($response->getContent());
 
-        // Karyawan DILARANG:
-        $response->assertDontSee('Purchase Order (PO)');
-        $response->assertDontSee('Permintaan Pengadaan');
-        $response->assertDontSee('Nota Pembelian Harian');
-        $response->assertDontSee('Pembayaran');
-        $response->assertDontSee('Penerimaan Barang (GR)');
-        $response->assertDontSee('Retur Material');
-        $response->assertDontSee('Log Harian Proyek');
-        $response->assertDontSee('Laporan & Audit');
-        $response->assertDontSee('Admin Sistem');
+        // Karyawan boleh: PO Lapangan, Pemakaian Material, Peminjaman Alat, Surat Jalan
+        $this->assertStringContainsString('PO Lapangan', $sidebar);
+        $this->assertStringContainsString('Pemakaian Material', $sidebar);
+        $this->assertStringContainsString('Peminjaman Alat', $sidebar);
+        $this->assertStringContainsString('Surat Jalan', $sidebar);
+
+        // Karyawan DILARANG di sidebar:
+        $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
+        $this->assertStringNotContainsString('Permintaan Pengadaan', $sidebar);
+        $this->assertStringNotContainsString('Nota Pembelian Harian', $sidebar);
+        $this->assertStringNotContainsString('Pembayaran', $sidebar);
+        $this->assertStringNotContainsString('Penerimaan Barang', $sidebar);
+        $this->assertStringNotContainsString('Retur Material', $sidebar);
+        $this->assertStringNotContainsString('Log Harian Proyek', $sidebar);
+        $this->assertStringNotContainsString('Laporan & Audit', $sidebar);
+        $this->assertStringNotContainsString('Admin Sistem', $sidebar);
     }
 
     public function test_empty_group_is_not_rendered_when_user_has_no_permissions(): void
@@ -171,8 +192,8 @@ class SidebarNavigationTest extends TestCase
 
     public function test_active_route_opens_group_automatically(): void
     {
-        // Kunjungi halaman di dalam grup Pengadaan (PO Lapangan)
-        $response = $this->actingAs($this->adminPO)->get(route('material-requests.index'));
+        // Kunjungi halaman di dalam grup Pengadaan (Purchase Order) sebagai Owner (yang menggunakan dropdown accordion)
+        $response = $this->actingAs($this->owner)->get(route('purchase-orders.index'));
         $response->assertOk();
 
         $content = $response->getContent();
