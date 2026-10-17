@@ -236,7 +236,7 @@
         $items    = $mr->items;
         $docNo    = substr($mr->request_number, strrpos($mr->request_number, '-') + 1);
         $proyek   = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name ?? '-';
-        $kepada        = $mr->fromWarehouse ? $mr->fromWarehouse->name : 'Pengadaan / Beli ke Vendor';
+        $kepada        = $mr->fromWarehouse ? $mr->fromWarehouse->name : 'Pengadaan';
         $tglOrder      = $mr->created_at ? $mr->created_at->format('d/m/y') : '-';
         $tglDibutuhkan = $mr->needed_at ? \Carbon\Carbon::parse($mr->needed_at)->format('d/m/y') : '-';
         $minRows  = 12;

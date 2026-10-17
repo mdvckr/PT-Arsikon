@@ -45,45 +45,13 @@ class PurchaseReceiptAdminProyekTest extends TestCase
         ]);
     }
 
-    public function test_admin_gudang_proyek_can_access_purchase_receipts_index_and_create(): void
+    public function test_admin_gudang_proyek_cannot_access_purchase_receipts(): void
     {
         $responseIndex = $this->actingAs($this->adminProyek)->get(route('purchase-receipts.index'));
-        $responseIndex->assertOk();
-        $responseIndex->assertSee('Nota Pembelian Harian');
+        $responseIndex->assertForbidden();
 
         $responseCreate = $this->actingAs($this->adminProyek)->get(route('purchase-receipts.create'));
-        $responseCreate->assertOk();
-        $responseCreate->assertSee('Catat Nota Pembelian Harian');
-    }
-
-    public function test_admin_gudang_proyek_can_store_purchase_receipt(): void
-    {
-        $payload = [
-            'project_name'   => 'Proyek Uji Coba Lapangan',
-            'supplier_name'  => 'Toko Material Sentosa Jaya',
-            'receipt_number' => 'NOTA-SITE-001',
-            'receipt_date'   => now()->toDateString(),
-            'payment_status' => 'paid',
-            'notes'          => 'Pembelian semen darurat di toko lokal',
-            'items'          => [
-                [
-                    'material_id' => $this->material->id,
-                    'item_name'   => $this->material->name,
-                    'quantity'    => 5,
-                    'unit_price'  => 65000,
-                    'notes'       => 'Urgent lantai 1',
-                ],
-            ],
-        ];
-
-        $response = $this->actingAs($this->adminProyek)->post(route('purchase-receipts.store'), $payload);
-
-        $receipt = PurchaseReceipt::where('receipt_number', 'NOTA-SITE-001')->first();
-        $this->assertNotNull($receipt);
-        $this->assertEquals(325000, (float) $receipt->total_amount);
-        $this->assertEquals($this->adminProyek->id, $receipt->created_by);
-
-        $response->assertRedirect(route('purchase-receipts.show', $receipt));
+        $responseCreate->assertForbidden();
     }
 
     public function test_karyawan_cannot_access_purchase_receipts(): void

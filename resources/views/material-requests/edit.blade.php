@@ -383,24 +383,29 @@
             </div>
 
             <div style="padding:14px 18px;">
-                <div class="text-muted mb-3" style="font-size:12px;line-height:1.4;">
-                    Gunakan tabel ini untuk barang yang <strong>belum terdaftar pada katalog Gudang Pusat</strong> namun sangat dibutuhkan di lapangan.
+                <div class="flex justify-between items-center mb-2" style="flex-wrap:wrap;gap:8px;">
+                    <div class="text-muted" style="font-size:12px;line-height:1.4;">
+                        Gunakan tabel ini untuk barang yang <strong>belum terdaftar pada katalog Gudang Pusat</strong> namun sangat dibutuhkan di lapangan.
+                    </div>
+                    <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:600;font-size:10.5px;white-space:nowrap;padding:3px 8px;">
+                        <i class="fas fa-arrows-left-right me-1"></i> Geser tabel jika layar terbatas
+                    </span>
                 </div>
 
-                <div class="table-wrap" style="border:1px solid #fde68a;border-radius:8px;overflow-x:auto;background:#ffffff;">
-                    <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;">
+                <div class="table-wrap custom-table-wrap" style="border:1px solid #fde68a;border-radius:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:#ffffff;box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);">
+                    <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;width:100%;min-width:1020px;">
                         <thead>
                             <tr style="background:#fef3c7;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:#92400e;">
-                                <th style="min-width:180px;padding:8px 10px;">Nama Barang (Manual) <span class="text-danger">*</span></th>
-                                <th style="min-width:110px;padding:8px 10px;">Spesifikasi</th>
-                                <th style="min-width:150px;padding:8px 10px;">Kategori</th>
-                                <th style="min-width:160px;padding:8px 10px;">Kelompok</th>
-                                <th style="width:75px;text-align:center;padding:8px 10px;">Satuan</th>
-                                <th style="width:85px;text-align:center;padding:8px 10px;">Jumlah <span class="text-danger">*</span></th>
-                                <th style="width:115px;text-align:center;padding:8px 10px;">Tgl Pakai</th>
-                                <th style="min-width:120px;padding:8px 10px;">Alokasi / Zona</th>
-                                <th style="min-width:130px;padding:8px 10px;">Catatan</th>
-                                <th style="width:40px;text-align:center;padding:8px 6px;"></th>
+                                <th style="min-width:160px;padding:8px 8px;white-space:nowrap;">Nama Barang (Manual) <span class="text-danger">*</span></th>
+                                <th style="min-width:110px;padding:8px 8px;white-space:nowrap;">Spesifikasi</th>
+                                <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kategori</th>
+                                <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kelompok</th>
+                                <th style="width:65px;text-align:center;padding:8px 6px;white-space:nowrap;">Satuan</th>
+                                <th style="width:75px;text-align:center;padding:8px 6px;white-space:nowrap;">Jumlah <span class="text-danger">*</span></th>
+                                <th style="width:120px;text-align:center;padding:8px 6px;white-space:nowrap;">Tgl Pakai</th>
+                                <th style="min-width:130px;padding:8px 8px;white-space:nowrap;">Alokasi / Zona</th>
+                                <th style="min-width:120px;padding:8px 8px;white-space:nowrap;">Catatan</th>
+                                <th style="width:40px;text-align:center;padding:8px 4px;"></th>
                             </tr>
                         </thead>
                         <tbody id="customRequestBody">
@@ -412,30 +417,30 @@
                             </tr>
                             @foreach($customItems as $cIdx => $cItem)
                             <tr style="border-bottom: 1px solid #fef3c7;">
-                                <td style="padding:6px 8px;">
-                                    <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ old("custom_items.{$cIdx}.name", $cItem->custom_item_name) }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ old("custom_items.{$cIdx}.name", $cItem->custom_item_name) }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 8px;">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ old("custom_items.{$cIdx}.spec", $cItem->specification) }}" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ old("custom_items.{$cIdx}.spec", $cItem->specification) }}" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                <td style="padding:6px 6px;">
+                                    <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
                                         <option value="">Material Khusus (Otomatis)</option>
                                         @foreach($materialCategories as $cat)
                                             <option value="{{ $cat->id }}" {{ old("custom_items.{$cIdx}.category_id", $cItem->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <div class="custom-type-group-wrap" data-index="{{ $cIdx }}">
+                                <td style="padding:6px 6px;">
+                                    <div class="custom-type-group-wrap" data-index="{{ $cIdx }}" style="width:100%;">
                                         <div class="type-select-wrap">
-                                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;">
                                                 <option value="">— Pilih Kelompok —</option>
                                                 <option value="__new__">✚ Ketik Kelompok Baru...</option>
                                             </select>
                                         </div>
                                         <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
-                                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;padding:4px 6px;flex:1;min-width:0;">
                                             <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
                                                 <i class="fas fa-list"></i>
                                             </button>
@@ -443,22 +448,22 @@
                                         <input type="hidden" name="custom_items[{{ $cIdx }}][type]" class="custom-type-hidden" value="{{ old("custom_items.{$cIdx}.type", $cItem->custom_item_type) }}">
                                     </div>
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ old("custom_items.{$cIdx}.unit", $cItem->custom_item_unit ?: 'unit') }}" placeholder="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ old("custom_items.{$cIdx}.unit", $cItem->custom_item_unit ?: 'unit') }}" placeholder="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 4px;">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="number" name="custom_items[{{ $cIdx }}][qty]" class="form-control qty-input custom-qty-input" min="0.01" step="0.01" value="{{ old("custom_items.{$cIdx}.qty", (float) $cItem->qty_requested) }}" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;" oninput="calculateTotal()">
+                                <td style="padding:6px 6px;">
+                                    <input type="number" name="custom_items[{{ $cIdx }}][qty]" class="form-control qty-input custom-qty-input" min="0.01" step="0.01" value="{{ old("custom_items.{$cIdx}.qty", (float) $cItem->qty_requested) }}" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;border-radius:6px;padding:4px 4px;" oninput="calculateTotal()">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="date" name="custom_items[{{ $cIdx }}][date]" class="form-control" value="{{ old("custom_items.{$cIdx}.date", $cItem->usage_date ? \Carbon\Carbon::parse($cItem->usage_date)->format('Y-m-d') : '') }}" style="font-size:11.5px;height:32px;border-radius:6px;padding:2px 6px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="date" name="custom_items[{{ $cIdx }}][date]" class="form-control" value="{{ old("custom_items.{$cIdx}.date", $cItem->usage_date ? \Carbon\Carbon::parse($cItem->usage_date)->format('Y-m-d') : '') }}" style="font-size:11px;height:32px;border-radius:6px;padding:2px 4px;width:100%;">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="text" name="custom_items[{{ $cIdx }}][location]" class="form-control" value="{{ old("custom_items.{$cIdx}.location", $cItem->usage_location) }}" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="text" name="custom_items[{{ $cIdx }}][location]" class="form-control" value="{{ old("custom_items.{$cIdx}.location", $cItem->usage_location) }}" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                                 </td>
-                                <td style="padding:6px 8px;">
-                                    <input type="text" name="custom_items[{{ $cIdx }}][notes]" class="form-control" value="{{ old("custom_items.{$cIdx}.notes", $cItem->notes) }}" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                                <td style="padding:6px 6px;">
+                                    <input type="text" name="custom_items[{{ $cIdx }}][notes]" class="form-control" value="{{ old("custom_items.{$cIdx}.notes", $cItem->notes) }}" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                                 </td>
-                                <td style="text-align:center;padding:6px 6px;">
+                                <td style="text-align:center;padding:6px 4px;">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:28px;height:28px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;">
                                         <i class="fas fa-trash" style="font-size:10px;"></i>
                                     </button>
@@ -623,27 +628,27 @@
             @endforeach
 
             tr.innerHTML = `
-                <td style="padding:6px 8px;">
-                    <input type="text" name="custom_items[${customIdx}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;">
+                <td style="padding:6px 6px;">
+                    <input type="text" name="custom_items[${customIdx}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 8px;">
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="text" name="custom_items[${customIdx}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                <td style="padding:6px 6px;">
+                    <input type="text" name="custom_items[${customIdx}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                 </td>
-                <td style="padding:6px 8px;">
-                    <select name="custom_items[${customIdx}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                <td style="padding:6px 6px;">
+                    <select name="custom_items[${customIdx}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
                         ${categoryOptions}
                     </select>
                 </td>
-                <td style="padding:6px 8px;">
-                    <div class="custom-type-group-wrap" data-index="${customIdx}">
+                <td style="padding:6px 6px;">
+                    <div class="custom-type-group-wrap" data-index="${customIdx}" style="width:100%;">
                         <div class="type-select-wrap">
-                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;">
                                 <option value="">— Pilih Kelompok —</option>
                                 <option value="__new__">✚ Ketik Kelompok Baru...</option>
                             </select>
                         </div>
                         <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
-                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;">
+                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;padding:4px 6px;flex:1;min-width:0;">
                             <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
                                 <i class="fas fa-list"></i>
                             </button>
@@ -651,22 +656,22 @@
                         <input type="hidden" name="custom_items[${customIdx}][type]" class="custom-type-hidden" value="">
                     </div>
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="text" name="custom_items[${customIdx}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;">
+                <td style="padding:6px 6px;">
+                    <input type="text" name="custom_items[${customIdx}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 4px;">
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="number" name="custom_items[${customIdx}][qty]" class="form-control qty-input custom-qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;" oninput="calculateTotal()">
+                <td style="padding:6px 6px;">
+                    <input type="number" name="custom_items[${customIdx}][qty]" class="form-control qty-input custom-qty-input" min="0.01" step="0.01" placeholder="0" required style="text-align:center;height:32px;font-size:12px;width:100%;border-radius:6px;padding:4px 4px;" oninput="calculateTotal()">
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="date" name="custom_items[${customIdx}][date]" class="form-control" style="font-size:11.5px;height:32px;border-radius:6px;padding:2px 6px;">
+                <td style="padding:6px 6px;">
+                    <input type="date" name="custom_items[${customIdx}][date]" class="form-control" style="font-size:11px;height:32px;border-radius:6px;padding:2px 4px;width:100%;">
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="text" name="custom_items[${customIdx}][location]" class="form-control" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                <td style="padding:6px 6px;">
+                    <input type="text" name="custom_items[${customIdx}][location]" class="form-control" placeholder="mis. Lantai 2 / Cor TC" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                 </td>
-                <td style="padding:6px 8px;">
-                    <input type="text" name="custom_items[${customIdx}][notes]" class="form-control" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:2px 8px;">
+                <td style="padding:6px 6px;">
+                    <input type="text" name="custom_items[${customIdx}][notes]" class="form-control" placeholder="Catatan..." style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                 </td>
-                <td style="text-align:center;padding:6px 6px;">
+                <td style="text-align:center;padding:6px 4px;">
                     <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); checkCustomEmpty(); calculateTotal();" style="width:28px;height:28px;padding:0;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;">
                         <i class="fas fa-trash" style="font-size:10px;"></i>
                     </button>

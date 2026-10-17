@@ -133,13 +133,15 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString('Pemakaian Material', $sidebar);
         $this->assertStringContainsString('Retur Material', $sidebar);
         $this->assertStringContainsString('PO Lapangan', $sidebar);
-        $this->assertStringContainsString('Nota Pembelian Harian', $sidebar);
 
         // Tidak boleh muncul:
-        // Admin Gudang Proyek tidak boleh akses Purchase Order (PO), Pembayaran, Admin Sistem
+        // Admin Gudang Proyek tidak boleh akses Pengadaan (termasuk Nota Pembelian Harian, Purchase Order, Pembayaran), Admin Sistem, dan sidebar tanpa dropdown chevron
+        $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
+        $this->assertStringNotContainsString('Nota Pembelian Harian', $sidebar);
         $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
         $this->assertStringNotContainsString('Pembayaran', $sidebar);
         $this->assertStringNotContainsString('Admin Sistem', $sidebar);
+        $this->assertStringNotContainsString('nav-section-chevron', $sidebar);
     }
 
     public function test_karyawan_sidebar_visibility_and_restrictions(): void

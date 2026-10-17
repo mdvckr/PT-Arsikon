@@ -132,21 +132,8 @@
                 </div>
 
                 <div>
-                    <label class="form-label font-semibold">Penanggung Risiko Pengiriman</label>
-                    <select name="risk_bearer" class="form-control">
-                        <option value="vendor" {{ old('risk_bearer', 'vendor') === 'vendor' ? 'selected' : '' }}>Vendor / Supplier</option>
-                        <option value="buyer" {{ old('risk_bearer') === 'buyer' ? 'selected' : '' }}>Pembeli (PT Arsikon)</option>
-                    </select>
-                </div>
-
-                <div>
                     <label class="form-label font-semibold">Target Pengiriman</label>
                     <input type="date" name="expected_delivery" value="{{ old('expected_delivery') }}" class="form-control">
-                </div>
-
-                <div>
-                    <label class="form-label font-semibold">Ketentuan / Terms</label>
-                    <input type="text" name="terms" value="{{ old('terms', 'Net 30 Hari') }}" class="form-control" placeholder="Contoh: Net 30, COD...">
                 </div>
 
                 <div>

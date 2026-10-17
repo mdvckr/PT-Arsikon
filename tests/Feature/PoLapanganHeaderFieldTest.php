@@ -125,11 +125,10 @@ class PoLapanganHeaderFieldTest extends TestCase
         $this->assertNotNull($mr);
         $this->assertEquals($targetDate, $mr->needed_at ? \Carbon\Carbon::parse($mr->needed_at)->format('Y-m-d') : null);
 
-        // Halaman detail harus memuat label Tanggal Order dan Dibutuhkan Pada secara terpisah
+        // Halaman detail harus memuat label Tgl Dibutuhkan
         $showRes = $this->actingAs($this->adminProyek)->get(route('material-requests.show', $mr));
         $showRes->assertStatus(200);
-        $showRes->assertSee('Tanggal Order');
-        $showRes->assertSee('Dibutuhkan Tgl');
+        $showRes->assertSee('Tgl Dibutuhkan');
     }
 
     public function test_overdue_indicator_is_computed_on_display_when_needed_date_passed(): void
@@ -156,13 +155,13 @@ class PoLapanganHeaderFieldTest extends TestCase
         );
     }
 
-    public function test_create_page_defaults_kepada_to_pengadaan_vendor(): void
+    public function test_create_page_defaults_kepada_to_pengadaan(): void
     {
         $response = $this->actingAs($this->adminProyek)->get(route('material-requests.create'));
         $response->assertStatus(200);
 
-        // Opsi '— Pengadaan / Beli ke Vendor —' harus terpilih secara default
-        $response->assertSee('<option value="" selected>— Pengadaan / Beli ke Vendor —</option>', false);
+        // Opsi '— Pengadaan —' harus terpilih secara default
+        $response->assertSee('<option value="" selected>— Pengadaan —</option>', false);
     }
 
     public function test_can_submit_material_request_to_pengadaan_without_source_warehouse(): void
@@ -171,7 +170,7 @@ class PoLapanganHeaderFieldTest extends TestCase
 
         $response = $this->actingAs($this->adminProyek)->post(route('material-requests.store'), [
             'warehouse_id'        => $this->projectWh1->id,
-            'source_warehouse_id' => '', // Pengadaan / Beli ke Vendor
+            'source_warehouse_id' => '', // Pengadaan
             'needed_at'           => $targetDate,
             'quantities'          => [$this->material->id => 12],
         ]);
@@ -180,5 +179,23 @@ class PoLapanganHeaderFieldTest extends TestCase
         $mr = MaterialRequest::latest()->first();
         $this->assertNotNull($mr);
         $this->assertNull($mr->from_warehouse_id);
+    }
+
+    public function test_print_pdf_kepada_shows_pengadaan_without_beli_ke_vendor(): void
+    {
+        $mr = MaterialRequest::create([
+            'request_number'       => 'MR-PRINT-01',
+            'from_warehouse_id'    => null, // Pengadaan
+            'to_warehouse_id'      => $this->projectWh1->id,
+            'requested_by_user_id' => $this->adminProyek->id,
+            'status'               => 'submitted',
+            'needed_at'            => now()->addDays(3)->format('Y-m-d'),
+        ]);
+
+        $response = $this->actingAs($this->adminProyek)->get(route('material-requests.show', $mr) . '?print=1');
+        $response->assertStatus(200);
+        $response->assertSee('<span class="hf-val">Pengadaan</span>', false);
+        $response->assertDontSee('Pengadaan / Beli ke Vendor');
+        $response->assertDontSee('Beli ke Vendor');
     }
 }

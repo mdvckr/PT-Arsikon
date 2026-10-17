@@ -1677,6 +1677,7 @@
             @php
                 $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
                 $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
+                $isRoleAdminProyek = auth()->user()->hasAnyRole(['Admin Gudang Proyek', 'Admin Proyek']);
                 $canTeknis = !$isRoleAdminPO && (
                     auth()->user()->can('view material requests')
                     || auth()->user()->can('view distributions')
@@ -1684,12 +1685,18 @@
                 $isTeknisActive = !$isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']);
             @endphp
             @if($canTeknis)
-            <div class="nav-section" x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }">
+            <div class="nav-section" @if(!$isRoleAdminProyek) x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }" @endif>
+                @if($isRoleAdminProyek)
+                <div style="padding: 8px 12px 4px 12px;">
+                    <span class="nav-section-label">TEKNIS</span>
+                </div>
+                @else
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">TEKNIS</span>
                     <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
                 </div>
-                <div x-show="open" class="nav-section-body">
+                @endif
+                <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
                     @can('view material requests')
                     <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                         <i class="fas fa-file-circle-plus"></i> PO Lapangan
@@ -1707,10 +1714,12 @@
 
             <!-- 2. GRUP PENGADAAN -->
             @php
-                $canPengadaan = (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
+                $canPengadaan = !$isRoleAdminProyek && (
+                    (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
-                    || ($isRoleAdminPO && (auth()->user()->can('view material requests') || auth()->user()->can('view distributions')));
+                    || ($isRoleAdminPO && (auth()->user()->can('view material requests') || auth()->user()->can('view distributions')))
+                );
                 $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*'])
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']));
             @endphp
@@ -1810,12 +1819,18 @@
                 );
             @endphp
             @if($canLogistik)
-            <div class="nav-section" x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }">
+            <div class="nav-section" @if(!$isRoleAdminProyek) x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }" @endif>
+                @if($isRoleAdminProyek)
+                <div style="padding: 8px 12px 4px 12px;">
+                    <span class="nav-section-label">LOGISTIK</span>
+                </div>
+                @else
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">LOGISTIK</span>
                     <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
                 </div>
-                <div x-show="open" class="nav-section-body">
+                @endif
+                <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
                     @can('view tools')
                     <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
                         <i class="fas fa-screwdriver-wrench"></i> Alat

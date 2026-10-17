@@ -141,9 +141,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view stock opname', 'create stock opname',
             // Inventory
             'view inventory', 'delete inventory',
-            // Procurement & Purchase Receipts (Nota Pembelian Harian)
-            'view procurement', 'create procurement',
-            'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             // Returns
             'view returns', 'create returns', 'receive returns',
             // Transit Losses
