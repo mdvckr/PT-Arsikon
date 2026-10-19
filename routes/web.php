@@ -159,6 +159,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Nota Pembelian Harian / Purchase Receipts
+    Route::patch('/purchase-receipts/{purchaseReceipt}/update-status', [PurchaseReceiptController::class, 'updateStatus'])->name('purchase-receipts.update-status');
     Route::resource('purchase-receipts', PurchaseReceiptController::class);
 
     // Payments

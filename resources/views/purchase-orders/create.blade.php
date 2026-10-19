@@ -137,8 +137,14 @@
                 </div>
 
                 <div>
+                    <label class="form-label font-semibold">Contact Person (CP) Print</label>
+                    <input type="text" name="contact_person" value="{{ old('contact_person', auth()->user()->name ?? '') }}" class="form-control" placeholder="Contoh: Bpk. Bambang (0812xxxx) / Admin Purchasing">
+                    <small class="text-muted block mt-1" style="font-size:11px;">Input bebas nama/kontak untuk bagian "CP :" di lembar cetak PDF PO.</small>
+                </div>
+
+                <div class="md:col-span-3">
                     <label class="form-label font-semibold">Catatan</label>
-                    <input type="text" name="notes" value="{{ old('notes') }}" class="form-control" placeholder="Catatan khusus...">
+                    <input type="text" name="notes" value="{{ old('notes') }}" class="form-control" placeholder="Catatan khusus / instruksi pengiriman...">
                 </div>
             </div>
         </div>

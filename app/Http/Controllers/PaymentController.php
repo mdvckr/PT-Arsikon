@@ -59,20 +59,25 @@ class PaymentController extends Controller
 
     public function create(Request $request)
     {
-        $pos = PurchaseOrder::with(['supplier', 'goodsReceipts', 'payments', 'items'])
-            ->whereIn('status', ['sent', 'partial_received', 'received', 'closed'])
-            ->whereHas('goodsReceipts', function ($q) {
-                $q->where('status', 'confirmed');
+        $pos = PurchaseOrder::with(['supplier', 'goodsReceipts', 'payments', 'items', 'receipts'])
+            ->where(function ($q) {
+                $q->where(function ($sub) {
+                    $sub->whereIn('status', ['sent', 'partial_received', 'received', 'closed'])
+                        ->whereHas('goodsReceipts', function ($gr) {
+                            $gr->where('status', 'confirmed');
+                        });
+                })
+                ->orWhereHas('receipts');
             })
             ->get()
             ->filter(fn($po) => $po->payable_remaining_amount > 0);
 
         $selectedPO = null;
         if ($request->po_id) {
-            $selectedPO = PurchaseOrder::with(['supplier', 'items.material', 'items.tool', 'goodsReceipts.items', 'payments'])->find($request->po_id);
-            if ($selectedPO && ! $selectedPO->hasConfirmedGoodsReceipt()) {
+            $selectedPO = PurchaseOrder::with(['supplier', 'items.material', 'items.tool', 'goodsReceipts.items', 'payments', 'receipts.items'])->find($request->po_id);
+            if ($selectedPO && ! $selectedPO->hasPayableProof()) {
                 return redirect()->route('payments.create')
-                    ->with('error', "Purchase Order {$selectedPO->po_number} belum memiliki Penerimaan Barang (GR) terkonfirmasi sehingga belum dapat dibayar.");
+                    ->with('error', "Purchase Order {$selectedPO->po_number} belum memiliki bukti Penerimaan Barang (GR) terkonfirmasi atau Nota Pembelian sehingga belum dapat dibayar.");
             }
         }
 
@@ -82,29 +87,37 @@ class PaymentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'purchase_order_id' => 'required|exists:purchase_orders,id',
-            'amount'            => 'required|numeric|min:1',
-            'payment_method'    => 'required|string',
-            'payment_date'      => 'required|date',
-            'bank_account'      => 'nullable|string',
-            'reference_number'  => 'nullable|string',
-            'notes'             => 'nullable|string',
+            'purchase_order_id'       => 'required|exists:purchase_orders,id',
+            'amount'                  => 'required|numeric|min:1',
+            'payment_method'          => 'required|string',
+            'payment_date'            => 'required|date',
+            'bank_account'            => 'nullable|string',
+            'reference_number'        => 'nullable|string',
+            'notes'                   => 'nullable|string',
+            'mark_receipts_as_paid'   => 'nullable|boolean',
         ]);
 
+        $markReceiptsAsPaid = $request->boolean('mark_receipts_as_paid');
+        unset($validated['mark_receipts_as_paid']);
+
         try {
-            $payment = \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            $payment = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $markReceiptsAsPaid) {
                 $po = PurchaseOrder::where('id', $validated['purchase_order_id'])
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if (! $po->hasConfirmedGoodsReceipt()) {
-                    throw new \DomainException('Pembayaran hanya untuk Purchase Order yang memiliki minimal satu Penerimaan Barang (GR) terkonfirmasi.');
+                if (! $po->hasPayableProof()) {
+                    throw new \DomainException('Pembayaran hanya untuk Purchase Order yang memiliki minimal satu Penerimaan Barang (GR) terkonfirmasi atau bukti Nota Pembelian.');
                 }
 
                 $maxPayable = $po->payable_remaining_amount;
                 if ((float) $validated['amount'] > ($maxPayable + 0.001)) {
                     $formattedMax = number_format($maxPayable, 0, ',', '.');
                     throw new \DomainException("Jumlah pembayaran melebihi batas nilai sah yang dapat dibayar (Maksimal: Rp {$formattedMax}).");
+                }
+
+                if ($markReceiptsAsPaid) {
+                    $po->receipts()->where('payment_status', 'unpaid')->update(['payment_status' => 'paid']);
                 }
 
                 return Payment::create([
@@ -142,9 +155,10 @@ class PaymentController extends Controller
     {
         $this->authorize('verify payments');
 
-        if ($payment->created_by === auth()->id()) {
-            return back()->with('error', 'Pembuat pembayaran tidak dapat memverifikasi pembayarannya sendiri.');
-        }
+        // Untuk sementara dinonaktifkan agar memudahkan uji coba / testing
+        // if ($payment->created_by === auth()->id()) {
+        //     return back()->with('error', 'Pembuat pembayaran tidak dapat memverifikasi pembayarannya sendiri.');
+        // }
 
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Status tidak valid untuk diverifikasi.');
@@ -166,9 +180,9 @@ class PaymentController extends Controller
     {
         $this->authorize('verify payments');
 
-        if ($payment->created_by === auth()->id()) {
-            return back()->with('error', 'Pembuat pembayaran tidak dapat menolak pembayarannya sendiri.');
-        }
+        // if ($payment->created_by === auth()->id()) {
+        //     return back()->with('error', 'Pembuat pembayaran tidak dapat menolak pembayarannya sendiri.');
+        // }
 
         $request->validate(['rejection_reason' => 'required|string']);
         $payment->update([

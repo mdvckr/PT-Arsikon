@@ -149,6 +149,28 @@
             font-weight: 700;
             white-space: nowrap;
         }
+
+        .po-group-header {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease;
+        }
+
+        .po-group-header:hover {
+            background: #e2e8f0 !important;
+        }
+
+        .group-toggle-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .po-child-row {
+            transition: background 0.15s ease;
+        }
+
+        .po-child-row:hover {
+            background: #f8fafc !important;
+        }
     </style>
     @endpush
 
@@ -361,12 +383,22 @@
     {{-- ==================== Data Table Card ==================== --}}
     <div class="payment-table-card">
         <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <i class="fas fa-list-check text-primary" style="font-size:14px;"></i>
                 <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Daftar Transaksi Pembayaran</span>
                 <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">
                     {{ $payments->total() }} Data
                 </span>
+
+                {{-- Global Expand / Collapse All Buttons --}}
+                <div style="display:inline-flex;align-items:center;gap:5px;margin-left:8px;">
+                    <button type="button" onclick="toggleAllPoGroups(true)" class="btn btn-light border" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:#ffffff;color:#2563eb;line-height:1.4;" title="Buka semua dropdown pembayaran">
+                        <i class="fas fa-angles-down me-1"></i> Buka Semua
+                    </button>
+                    <button type="button" onclick="toggleAllPoGroups(false)" class="btn btn-light border" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:#ffffff;color:#64748b;line-height:1.4;" title="Tutup semua dropdown pembayaran">
+                        <i class="fas fa-angles-up me-1"></i> Tutup Semua
+                    </button>
+                </div>
             </div>
             <div class="text-muted" style="font-size:11.5px;">
                 Halaman {{ $payments->currentPage() }} dari {{ max(1, $payments->lastPage()) }}
@@ -379,8 +411,8 @@
                     <tr>
                         <th style="width:40px;text-align:center;">#</th>
                         <th style="min-width:160px;">No. Pembayaran</th>
-                        <th style="min-width:160px;">Purchase Order (PO)</th>
-                        <th style="min-width:160px;">Supplier</th>
+                        <th style="min-width:140px;">Tahapan (Termin)</th>
+                        <th style="min-width:150px;">Catatan / Keterangan</th>
                         <th style="min-width:150px;">Metode & Rekening</th>
                         <th style="min-width:150px;text-align:right;">Nominal Bayar</th>
                         <th style="min-width:115px;text-align:center;">Tgl Bayar</th>
@@ -389,147 +421,215 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($payments as $index => $p)
-                    <tr>
-                        {{-- 1. Index --}}
-                        <td style="text-align:center;color:#94a3b8;font-size:11.5px;">
-                            {{ $payments->firstItem() + $index }}
-                        </td>
+                    @php
+                        $groupedPayments = $payments->getCollection()->groupBy(function($item) {
+                            return $item->purchase_order_id ?? 0;
+                        });
+                        $rowCounter = 0;
+                    @endphp
 
-                        {{-- 2. No Pembayaran --}}
-                        <td>
-                            <div style="display:flex;flex-direction:column;gap:2px;">
-                                <a href="{{ route('payments.show', $p) }}" style="font-size:13px;font-weight:700;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                    <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
-                                    {{ $p->payment_number }}
-                                </a>
-                                <span class="text-muted" style="font-size:10.5px;">
-                                    Oleh: <strong>{{ $p->creator?->name ?? 'Sistem' }}</strong>
-                                </span>
-                            </div>
-                        </td>
+                    @forelse($groupedPayments as $poId => $poItems)
+                        @php
+                            $firstItem = $poItems->first();
+                            $po = $firstItem->purchaseOrder;
+                            $poTotal = (float) ($po?->total_amount ?? 0);
+                            $poPaidVerified = (float) $poItems->where('status', 'verified')->sum('amount');
+                            $poPaidPending = (float) $poItems->where('status', 'pending')->sum('amount');
+                            $isPoLunas = ($poTotal > 0 && $poPaidVerified >= $poTotal);
+                        @endphp
 
-                        {{-- 3. Purchase Order --}}
-                        <td>
-                            @if($p->purchaseOrder)
+                        {{-- Group Header Row per Purchase Order (Clickable to Collapse/Expand) --}}
+                        <tr class="po-group-header" 
+                            data-group-id="{{ $poId }}" 
+                            onclick="togglePoGroup('{{ $poId }}', this)" 
+                            title="Klik untuk membuka/menutup riwayat pembayaran PO ini"
+                            style="background:#f1f5f9;border-top:2px solid #cbd5e1;border-bottom:1.5px solid #cbd5e1;">
+                            <td colspan="9" style="padding:10px 14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                        {{-- Toggle Icon Indicator --}}
+                                        <span class="group-toggle-btn" style="width:26px;height:26px;border-radius:6px;background:#ffffff;border:1px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;color:#334155;font-size:11px;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                                            <i class="fas fa-chevron-down group-toggle-icon" id="icon-group-{{ $poId }}"></i>
+                                        </span>
+
+                                        @if($po)
+                                            <a href="{{ route('purchase-orders.show', $po) }}" onclick="event.stopPropagation()" style="text-decoration:none;" title="Lihat Detail PO">
+                                                <span class="badge" style="background:#2563eb;color:#ffffff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;">
+                                                    <i class="fas fa-receipt"></i> {{ $po->po_number }}
+                                                </span>
+                                            </a>
+                                            <span style="font-size:13px;font-weight:700;color:#0f172a;">
+                                                <i class="fas fa-truck-field text-muted me-1"></i> {{ $po->supplier?->name ?? '-' }}
+                                            </span>
+                                            <span class="text-muted" style="font-size:12px;">
+                                                (Total Nilai PO: <strong>Rp {{ number_format($poTotal, 0, ',', '.') }}</strong>)
+                                            </span>
+                                        @else
+                                            <span class="badge" style="background:#64748b;color:#ffffff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;">
+                                                <i class="fas fa-file-invoice"></i> Pembayaran Mandiri / Tanpa PO
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                        <div style="font-size:12px;color:#334155;">
+                                            Total Terverifikasi: <strong style="color:#059669;">Rp {{ number_format($poPaidVerified, 0, ',', '.') }}</strong>
+                                            @if($poPaidPending > 0)
+                                                <span class="text-muted ms-1">(+ Pending: Rp {{ number_format($poPaidPending, 0, ',', '.') }})</span>
+                                            @endif
+                                        </div>
+
+                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;border:1px solid #bfdbfe;padding:4px 8px;">
+                                            <i class="fas fa-layer-group me-1"></i> {{ $poItems->count() }}x Pembayaran
+                                        </span>
+
+                                        @if($isPoLunas)
+                                            <span class="badge" style="background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;border:1px solid #a7f3d0;padding:4px 8px;">
+                                                <i class="fas fa-check-double me-1"></i> Tagihan Lunas
+                                            </span>
+                                        @endif
+
+                                        <span style="font-size:11.5px;color:#64748b;font-weight:600;display:inline-flex;align-items:center;gap:4px;background:#ffffff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0;">
+                                            <span id="text-group-{{ $poId }}">Tutup</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {{-- Child Payment Rows under this PO --}}
+                        @foreach($poItems->sortBy('id') as $terminIndex => $p)
+                        @php
+                            $rowCounter++;
+                            $terminNumber = $terminIndex + 1;
+                        @endphp
+                        <tr class="po-child-row po-child-{{ $poId }}" style="background:#ffffff;">
+                            {{-- 1. Index --}}
+                            <td style="text-align:center;color:#94a3b8;font-size:11.5px;">
+                                {{ $rowCounter }}
+                            </td>
+
+                            {{-- 2. No Pembayaran --}}
+                            <td>
                                 <div style="display:flex;flex-direction:column;gap:2px;">
-                                    <a href="{{ route('purchase-orders.show', $p->purchaseOrder) }}" style="color:#0f172a;font-weight:700;text-decoration:none;font-size:12.5px;display:inline-flex;align-items:center;gap:4px;">
-                                        <i class="fas fa-receipt text-muted" style="font-size:11px;"></i>
-                                        {{ $p->purchaseOrder->po_number }}
+                                    <a href="{{ route('payments.show', $p) }}" style="font-size:13px;font-weight:700;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                                        <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
+                                        {{ $p->payment_number }}
                                     </a>
-                                    <span class="text-muted" style="font-size:11px;">
-                                        Total PO: Rp {{ number_format($p->purchaseOrder->total_amount, 0, ',', '.') }}
+                                    <span class="text-muted" style="font-size:10.5px;">
+                                        Oleh: <strong>{{ $p->creator?->name ?? 'Sistem' }}</strong>
                                     </span>
                                 </div>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
+                            </td>
 
-                        {{-- 4. Supplier --}}
-                        <td>
-                            <div style="font-weight:600;color:#0f172a;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-truck-field text-muted" style="font-size:11px;"></i>
-                                {{ $p->purchaseOrder?->supplier?->name ?? '-' }}
-                            </div>
-                            @if($p->purchaseOrder?->supplier?->phone)
-                                <div class="text-muted" style="font-size:10.5px;margin-top:2px;">
-                                    <i class="fas fa-phone" style="font-size:9px;"></i> {{ $p->purchaseOrder->supplier->phone }}
+                            {{-- 3. Tahapan (Termin) --}}
+                            <td>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:700;">
+                                        ↳ Pembayaran ke-{{ $terminNumber }}
+                                    </span>
                                 </div>
-                            @endif
-                        </td>
+                            </td>
 
-                        {{-- 5. Metode & Rekening --}}
-                        <td>
-                            @php
-                                $method = strtolower($p->payment_method ?? 'bank_transfer');
-                                $methodLabel = match($method) {
-                                    'cash' => 'Tunai / Cash',
-                                    'cheque' => 'Cek / Giro',
-                                    default => 'Bank Transfer'
-                                };
-                                $methodIcon = match($method) {
-                                    'cash' => 'fa-money-bill-wave',
-                                    'cheque' => 'fa-money-check',
-                                    default => 'fa-building-columns'
-                                };
-                            @endphp
-                            <div style="display:flex;flex-direction:column;gap:3px;">
-                                <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:10.5px;font-weight:700;width:fit-content;display:inline-flex;align-items:center;gap:4px;">
-                                    <i class="fas {{ $methodIcon }}" style="font-size:10px;"></i>
-                                    {{ $methodLabel }}
-                                </span>
-                                @if($p->bank_account)
-                                    <span style="font-size:11px;color:#64748b;font-weight:500;">
-                                        {{ $p->bank_account }}
+                            {{-- 4. Catatan / Keterangan --}}
+                            <td>
+                                @if($p->notes)
+                                    <div style="font-size:12px;color:#334155;font-weight:500;">
+                                        "{{ $p->notes }}"
+                                    </div>
+                                @else
+                                    <span class="text-muted" style="font-size:11.5px;">-</span>
+                                @endif
+                            </td>
+
+                            {{-- 5. Metode & Rekening --}}
+                            <td>
+                                @php
+                                    $method = strtolower($p->payment_method ?? 'bank_transfer');
+                                    $methodLabel = match($method) {
+                                        'cash' => 'Tunai / Cash',
+                                        'cheque' => 'Cek / Giro',
+                                        default => 'Bank Transfer'
+                                    };
+                                    $methodIcon = match($method) {
+                                        'cash' => 'fa-money-bill-wave',
+                                        'cheque' => 'fa-money-check',
+                                        default => 'fa-building-columns'
+                                    };
+                                @endphp
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:10.5px;font-weight:700;width:fit-content;display:inline-flex;align-items:center;gap:4px;">
+                                        <i class="fas {{ $methodIcon }}" style="font-size:10px;"></i>
+                                        {{ $methodLabel }}
+                                    </span>
+                                    @if($p->bank_account)
+                                        <span style="font-size:11px;color:#64748b;font-weight:500;">
+                                            {{ $p->bank_account }}
+                                        </span>
+                                    @endif
+                                    @if($p->reference_number)
+                                        <span style="font-size:10.5px;color:#94a3b8;font-family:monospace;">
+                                            Ref: {{ $p->reference_number }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+
+                            {{-- 6. Nominal Bayar --}}
+                            <td style="text-align:right;">
+                                <div style="font-size:14px;font-weight:800;color:#047857;letter-spacing:-0.2px;">
+                                    Rp {{ number_format($p->amount, 0, ',', '.') }}
+                                </div>
+                            </td>
+
+                            {{-- 7. Tgl Bayar --}}
+                            <td style="text-align:center;font-size:12px;color:#334155;white-space:nowrap;">
+                                @if($p->payment_date)
+                                    <div style="font-weight:600;">{{ $p->payment_date->format('d/m/Y') }}</div>
+                                    <div class="text-muted" style="font-size:10px;">{{ $p->payment_date->diffForHumans() }}</div>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+
+                            {{-- 8. Status --}}
+                            <td style="text-align:center;">
+                                @if($p->status === 'verified')
+                                    <span class="payment-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">
+                                        <i class="fas fa-circle-check"></i> Terverifikasi
+                                    </span>
+                                    @if($p->verified_at)
+                                    <div class="text-muted" style="font-size:9.5px;margin-top:2px;">
+                                        {{ $p->verified_at->format('d/m/y H:i') }}
+                                    </div>
+                                    @endif
+                                @elseif($p->status === 'pending')
+                                    <span class="payment-badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;">
+                                        <i class="fas fa-clock"></i> Menunggu Verifikasi
+                                    </span>
+                                @elseif($p->status === 'rejected')
+                                    <span class="payment-badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">
+                                        <i class="fas fa-circle-xmark"></i> Ditolak
+                                    </span>
+                                @else
+                                    <span class="payment-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;">
+                                        {{ $p->status_label }}
                                     </span>
                                 @endif
-                                @if($p->reference_number)
-                                    <span style="font-size:10.5px;color:#94a3b8;font-family:monospace;">
-                                        Ref: {{ $p->reference_number }}
-                                    </span>
-                                @endif
-                            </div>
-                        </td>
+                            </td>
 
-                        {{-- 6. Nominal Bayar --}}
-                        <td style="text-align:right;">
-                            <div style="font-size:14px;font-weight:800;color:#047857;letter-spacing:-0.2px;">
-                                Rp {{ number_format($p->amount, 0, ',', '.') }}
-                            </div>
-                            @if($p->notes)
-                                <div class="text-muted" style="font-size:10.5px;max-width:180px;margin-left:auto;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;" title="{{ $p->notes }}">
-                                    "{{ $p->notes }}"
-                                </div>
-                            @endif
-                        </td>
+                            {{-- 9. Aksi --}}
+                            <td style="text-align:center;">
+                                <a href="{{ route('payments.show', $p) }}" 
+                                   class="btn btn-sm btn-light border" 
+                                   style="font-size:11.5px;padding:5px 10px;border-radius:6px;color:#2563eb;background:#ffffff;font-weight:600;display:inline-flex;align-items:center;gap:4px;"
+                                   title="Lihat Detail Pembayaran">
+                                    <i class="fas fa-eye" style="font-size:11px;"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
 
-                        {{-- 7. Tgl Bayar --}}
-                        <td style="text-align:center;font-size:12px;color:#334155;white-space:nowrap;">
-                            @if($p->payment_date)
-                                <div style="font-weight:600;">{{ $p->payment_date->format('d/m/Y') }}</div>
-                                <div class="text-muted" style="font-size:10px;">{{ $p->payment_date->diffForHumans() }}</div>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-
-                        {{-- 8. Status --}}
-                        <td style="text-align:center;">
-                            @if($p->status === 'verified')
-                                <span class="payment-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">
-                                    <i class="fas fa-circle-check"></i> Terverifikasi
-                                </span>
-                                @if($p->verified_at)
-                                <div class="text-muted" style="font-size:9.5px;margin-top:2px;">
-                                    {{ $p->verified_at->format('d/m/y H:i') }}
-                                </div>
-                                @endif
-                            @elseif($p->status === 'pending')
-                                <span class="payment-badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;">
-                                    <i class="fas fa-clock"></i> Menunggu Verifikasi
-                                </span>
-                            @elseif($p->status === 'rejected')
-                                <span class="payment-badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">
-                                    <i class="fas fa-circle-xmark"></i> Ditolak
-                                </span>
-                            @else
-                                <span class="payment-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;">
-                                    {{ $p->status_label }}
-                                </span>
-                            @endif
-                        </td>
-
-                        {{-- 9. Aksi --}}
-                        <td style="text-align:center;">
-                            <a href="{{ route('payments.show', $p) }}" 
-                               class="btn btn-sm btn-light border" 
-                               style="font-size:11.5px;padding:5px 10px;border-radius:6px;color:#2563eb;background:#ffffff;font-weight:600;display:inline-flex;align-items:center;gap:4px;"
-                               title="Lihat Detail Pembayaran">
-                                <i class="fas fa-eye" style="font-size:11px;"></i> Detail
-                            </a>
-                        </td>
-                    </tr>
                     @empty
                     <tr>
                         <td colspan="9" style="text-align:center;padding:48px 16px;background:#ffffff;">
@@ -569,4 +669,48 @@
         </div>
         @endif
     </div>
+
+    @push('scripts')
+    <script>
+        function togglePoGroup(groupId, headerEl) {
+            const rows = document.querySelectorAll('.po-child-' + groupId);
+            const icon = document.getElementById('icon-group-' + groupId);
+            const textEl = document.getElementById('text-group-' + groupId);
+            if (rows.length === 0) return;
+
+            const isCurrentlyHidden = (rows[0].style.display === 'none');
+
+            rows.forEach(r => {
+                r.style.display = isCurrentlyHidden ? '' : 'none';
+            });
+
+            if (icon) {
+                icon.style.transform = isCurrentlyHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            }
+            if (textEl) {
+                textEl.textContent = isCurrentlyHidden ? 'Tutup' : 'Buka';
+            }
+        }
+
+        function toggleAllPoGroups(expand) {
+            document.querySelectorAll('.po-group-header').forEach(header => {
+                const groupId = header.getAttribute('data-group-id');
+                const rows = document.querySelectorAll('.po-child-' + groupId);
+                const icon = document.getElementById('icon-group-' + groupId);
+                const textEl = document.getElementById('text-group-' + groupId);
+
+                rows.forEach(r => {
+                    r.style.display = expand ? '' : 'none';
+                });
+
+                if (icon) {
+                    icon.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+                }
+                if (textEl) {
+                    textEl.textContent = expand ? 'Tutup' : 'Buka';
+                }
+            });
+        }
+    </script>
+    @endpush
 </x-app-layout>

@@ -57,6 +57,7 @@ return new class extends Migration
             $table->foreignId('material_request_id')->nullable()->constrained('material_requests')->nullOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('cascade');
             $table->string('supplier_name')->nullable();
+            $table->string('contact_person')->nullable();
             $table->foreignId('delivery_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();

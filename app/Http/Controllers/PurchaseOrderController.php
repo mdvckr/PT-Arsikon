@@ -10,6 +10,7 @@ use App\Models\MaterialRequestItem;
 use App\Models\GoodsReceipt;
 use App\Models\Supplier;
 use App\Models\Material;
+use App\Models\PurchaseReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -185,6 +186,7 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'supplier_id'                      => 'nullable|exists:suppliers,id',
             'supplier_name'                    => 'nullable|string|max:255',
+            'contact_person'                   => 'nullable|string|max:255',
             'material_request_id'              => 'nullable|exists:material_requests,id',
             'procurement_request_id'           => 'nullable|exists:procurement_requests,id',
             'delivery_warehouse_id'            => 'nullable|exists:warehouses,id',
@@ -365,6 +367,7 @@ class PurchaseOrderController extends Controller
             $po = PurchaseOrder::create([
                 'supplier_id'           => $supplierId,
                 'supplier_name'         => $supplierName,
+                'contact_person'        => !empty(trim($validated['contact_person'] ?? '')) ? trim($validated['contact_person']) : null,
                 'material_request_id'   => $materialRequestId,
                 'procurement_request_id'=> $validated['procurement_request_id'] ?? null,
                 'delivery_warehouse_id' => $deliveryWarehouseId,
@@ -623,6 +626,9 @@ class PurchaseOrderController extends Controller
                     }
                 }
             }
+
+            // Batalkan juga nota pembelian yang belum dibayar terkait PO ini
+            $po->receipts()->where('payment_status', 'unpaid')->update(['payment_status' => 'cancelled']);
 
             $po->update(['status' => 'cancelled']);
 

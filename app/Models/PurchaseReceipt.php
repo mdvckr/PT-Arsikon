@@ -35,18 +35,20 @@ class PurchaseReceipt extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->payment_status) {
-            'paid'   => 'Sudah Dibayar',
-            'unpaid' => 'Belum Dibayar',
-            default  => 'Belum Dibayar',
+            'paid'      => 'Sudah Dibayar',
+            'unpaid'    => 'Belum Dibayar',
+            'cancelled' => 'Dibatalkan',
+            default     => 'Belum Dibayar',
         };
     }
 
     public function getStatusColorAttribute(): string
     {
         return match($this->payment_status) {
-            'paid'   => 'success',
-            'unpaid' => 'warning',
-            default  => 'warning',
+            'paid'      => 'success',
+            'unpaid'    => 'warning',
+            'cancelled' => 'danger',
+            default     => 'warning',
         };
     }
 

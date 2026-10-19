@@ -67,13 +67,19 @@
                                 style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
                             <option value="">-- Pilih Purchase Order yang Memiliki Sisa Tagihan --</option>
                             @foreach($pos as $po)
+                                @php
+                                    $unpaidCount = $po->receipts ? $po->receipts->where('payment_status', 'unpaid')->count() : 0;
+                                @endphp
                                 <option value="{{ $po->id }}" {{ (old('purchase_order_id', $selectedPO?->id) == $po->id) ? 'selected' : '' }}>
                                     {{ $po->po_number }} &mdash; {{ $po->supplier?->name }} (Sisa Boleh Dibayar: Rp {{ number_format($po->payable_remaining_amount, 0, ',', '.') }})
+                                    @if($unpaidCount > 0)
+                                        &bull; [⚠️ {{ $unpaidCount }} Nota Belum Dibayar]
+                                    @endif
                                 </option>
                             @endforeach
                         </select>
                         <span class="text-muted" style="font-size:11.5px;margin-top:4px;display:block;">
-                            Hanya menampilkan PO yang memiliki minimal satu Penerimaan Barang (GR) terkonfirmasi dan memiliki sisa nilai sah.
+                            Menampilkan PO yang memiliki bukti Penerimaan Barang (GR) terkonfirmasi atau Nota Pembelian fisik dengan sisa tagihan.
                         </span>
                     </div>
 
@@ -87,7 +93,8 @@
                         $poPayableRemaining = (float) $selectedPO->payable_remaining_amount;
                         $withheldData = $selectedPO->withheld_summary;
                         $poWithheld = (float) $withheldData['total_withheld'];
-                        $pct = $poNilaiSah > 0 ? min(100, round(($poVerified / $poNilaiSah) * 100)) : 0;
+                        $pct = $poNilaiSah > 0 ? min(100, round(($poVerified / $poNilaiSah) * 100)) : ($poTotal > 0 ? min(100, round(($poVerified / $poTotal) * 100)) : 0);
+                        $displayNilaiSah = $poNilaiSah > 0 ? $poNilaiSah : ($selectedPO->receipts ? min($poTotal ?: 999999999, (float)$selectedPO->receipts->sum('total_amount')) : 0);
                     @endphp
                     <div style="background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:10px;padding:16px;margin-bottom:20px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -98,7 +105,7 @@
                                 <span class="text-muted ms-2" style="font-size:11px;">({{ $selectedPO->po_number }})</span>
                             </div>
                             <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;">
-                                Terbayar {{ $pct }}% dari Nilai Sah
+                                Terbayar {{ $pct }}% dari Nilai Bukti Sah
                             </span>
                         </div>
 
@@ -114,9 +121,9 @@
                                 </div>
                             </div>
                             <div style="background:#eff6ff;padding:10px;border-radius:6px;border:1px solid #bfdbfe;">
-                                <div style="font-size:10px;font-weight:700;color:#1e40af;">NILAI SAH SAAT INI</div>
+                                <div style="font-size:10px;font-weight:700;color:#1e40af;">NILAI SAH / BUKTI NOTA</div>
                                 <div style="font-size:13.5px;font-weight:800;color:#1d4ed8;margin-top:2px;">
-                                    Rp {{ number_format($poNilaiSah, 0, ',', '.') }}
+                                    Rp {{ number_format($displayNilaiSah, 0, ',', '.') }}
                                 </div>
                             </div>
                             <div style="background:#f0fdf4;padding:10px;border-radius:6px;border:1px solid #bbf7d0;">
@@ -150,6 +157,58 @@
                                     <strong style="margin-left:8px;">Rp {{ number_format($wh['value'], 0, ',', '.') }}</strong>
                                 </div>
                             @endforeach
+                        </div>
+                        @endif
+
+                        {{-- Rincian Nota Fisik Terkait PO --}}
+                        @if($selectedPO->receipts && $selectedPO->receipts->count() > 0)
+                        @php
+                            $unpaidTotal = $selectedPO->receipts->where('payment_status', 'unpaid')->sum('total_amount');
+                            $unpaidCount = $selectedPO->receipts->where('payment_status', 'unpaid')->count();
+                        @endphp
+                        <div style="margin-top:14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;padding:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <span style="font-size:12px;font-weight:700;color:#1e293b;">
+                                    <i class="fas fa-receipt text-primary me-1"></i> Nota Pembelian Harian Terkait PO ({{ $selectedPO->receipts->count() }} Nota)
+                                </span>
+                                @if($unpaidCount > 0)
+                                    <span class="badge" style="background:#fef3c7;color:#b45309;font-weight:700;font-size:11px;">
+                                        ⚠️ {{ $unpaidCount }} Nota Belum Dibayar (Rp {{ number_format($unpaidTotal, 0, ',', '.') }})
+                                    </span>
+                                @else
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;font-weight:700;font-size:11px;">
+                                        ✅ Semua Nota Fisik Lunas
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding-right:4px;">
+                                @foreach($selectedPO->receipts as $rc)
+                                <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px;">
+                                    <div>
+                                        <strong>{{ $rc->receipt_number ? 'Nota #'.$rc->receipt_number : 'Nota ID #'.$rc->id }}</strong>
+                                        <span class="text-muted ms-2">{{ $rc->receipt_date ? $rc->receipt_date->format('d/m/Y') : '-' }}</span>
+                                        <span class="text-muted ms-2">({{ $rc->items->count() }} item)</span>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <strong style="color:#0f172a;">Rp {{ number_format($rc->total_amount, 0, ',', '.') }}</strong>
+                                        <span class="badge badge-{{ $rc->status_color }}" style="font-size:10.5px;">{{ $rc->status_label }}</span>
+                                        <a href="{{ route('purchase-receipts.show', $rc) }}" target="_blank" class="text-primary text-xs" title="Lihat Detail Nota">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+
+                            @if($unpaidCount > 0)
+                            <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #cbd5e1;">
+                                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#1e293b;cursor:pointer;font-weight:600;">
+                                    <input type="checkbox" name="mark_receipts_as_paid" value="1" checked style="width:16px;height:16px;accent-color:#2563eb;">
+                                    <span>Tandai otomatis {{ $unpaidCount }} nota fisik di atas sebagai <strong>Sudah Dibayar</strong> saat pengajuan pembayaran ini</span>
+                                </label>
+                            </div>
+                            @endif
                         </div>
                         @endif
 

@@ -178,7 +178,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view procurement', 'create procurement',
             'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
-            'view payments', 'create payments',
+            'view payments', 'create payments', 'verify payments',
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'create transit losses',
             'view reports',

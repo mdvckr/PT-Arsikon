@@ -168,7 +168,10 @@
         </table>
 
         {{-- ===== CATATAN / FOOTER NOTES ===== --}}
-        @if($po->notes || $tglKirim || $po->creator)
+        @php
+            $cpText = !empty($po->contact_person) ? $po->contact_person : ($po->creator?->name ?? null);
+        @endphp
+        @if($po->notes || $tglKirim || $cpText)
         <div class="po-footer-notes">
             @if($tglKirim)
                 <div>Dikirim {{ $tglKirim }}{{ $po->terms ? ', '.$po->terms : '' }}</div>
@@ -176,8 +179,8 @@
             @if($po->notes)
                 <div style="margin-top:2px; white-space: pre-line;">{{ $po->notes }}</div>
             @endif
-            @if($po->creator)
-                <div style="margin-top:4px;">CP : {{ $po->creator->name }}</div>
+            @if($cpText)
+                <div style="margin-top:4px;">CP : {{ $cpText }}</div>
             @endif
         </div>
         @endif

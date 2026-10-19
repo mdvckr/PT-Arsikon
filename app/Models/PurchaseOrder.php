@@ -15,6 +15,7 @@ class PurchaseOrder extends Model
         'procurement_request_id',
         'supplier_id',
         'supplier_name',
+        'contact_person',
         'delivery_warehouse_id',
         'risk_bearer',
         'created_by',
@@ -67,6 +68,11 @@ class PurchaseOrder extends Model
         return $this->goodsReceipts()->where('status', 'confirmed')->exists();
     }
 
+    public function hasPayableProof(): bool
+    {
+        return $this->hasConfirmedGoodsReceipt() || $this->receipts()->exists();
+    }
+
     public function getNilaiSahAttribute(): float
     {
         $items = $this->relationLoaded('items') ? $this->items : $this->items()->get();
@@ -106,11 +112,21 @@ class PurchaseOrder extends Model
 
     public function getPayableRemainingAmountAttribute(): float
     {
-        if (! $this->hasConfirmedGoodsReceipt()) {
+        $validAmount = $this->nilai_sah;
+
+        // Jika nilai_sah dari GR formal 0, namun memiliki bukti nota pembelian fisik (bon belanja lapangan)
+        if ($validAmount <= 0 && $this->receipts()->exists()) {
+            $validAmount = (float) $this->receipts()->sum('total_amount');
+            if ((float) $this->total_amount > 0) {
+                $validAmount = min($validAmount, (float) $this->total_amount);
+            }
+        }
+
+        if ($validAmount <= 0) {
             return 0.0;
         }
 
-        return max(0.0, round($this->nilai_sah - $this->committed_payment_amount, 2));
+        return max(0.0, round($validAmount - $this->committed_payment_amount, 2));
     }
 
     public function getWithheldSummaryAttribute(): array

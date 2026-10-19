@@ -94,10 +94,33 @@
                             @endif
                         </td>
                         <td class="text-muted" style="font-size:12px;">{{ $receipt->creator?->name ?? '-' }}</td>
-                        <td>
-                            <a href="{{ route('purchase-receipts.show', $receipt) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail Nota">
-                                <i class="fas fa-eye"></i>
-                            </a>
+                        <td class="text-nowrap">
+                            <div class="flex items-center gap-1">
+                                <a href="{{ route('purchase-receipts.show', $receipt) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail Nota">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @can('create purchase receipts')
+                                    @if($receipt->payment_status === 'unpaid')
+                                        <form action="{{ route('purchase-receipts.update-status', $receipt) }}" method="POST" class="inline" onsubmit="return confirm('Tandai nota {{ $receipt->receipt_number ?? '#'.$receipt->id }} sebagai SUDAH DIBAYAR?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="payment_status" value="paid">
+                                            <button type="submit" class="btn btn-sm btn-success btn-icon" title="Tandai Sudah Dibayar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('purchase-receipts.update-status', $receipt) }}" method="POST" class="inline" onsubmit="return confirm('Kembalikan status nota {{ $receipt->receipt_number ?? '#'.$receipt->id }} menjadi BELUM DIBAYAR?')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="payment_status" value="unpaid">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning btn-icon" title="Ubah ke Belum Dibayar">
+                                                <i class="fas fa-undo"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endcan
+                            </div>
                         </td>
                     </tr>
                     @empty

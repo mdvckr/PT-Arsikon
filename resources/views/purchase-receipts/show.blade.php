@@ -11,7 +11,29 @@
             </h2>
             <p class="text-muted" style="font-size:13px;">Tanggal Nota: {{ $purchaseReceipt->receipt_date ? $purchaseReceipt->receipt_date->format('d F Y') : '-' }}</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center flex-wrap">
+            @can('create purchase receipts')
+                @if($purchaseReceipt->payment_status === 'unpaid')
+                    <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Tandai nota ini sebagai SUDAH DIBAYAR?')">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="payment_status" value="paid">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-check-circle me-1"></i> Tandai Sudah Dibayar
+                        </button>
+                    </form>
+                @else
+                    <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Kembalikan status nota menjadi BELUM DIBAYAR?')">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="payment_status" value="unpaid">
+                        <button type="submit" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-undo me-1"></i> Kembalikan ke Belum Dibayar
+                        </button>
+                    </form>
+                @endif
+            @endcan
+
             @if($purchaseReceipt->purchaseOrder)
                 <a href="{{ route('purchase-orders.show', $purchaseReceipt->purchaseOrder) }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-file-invoice me-1"></i> Lihat PO terkait ({{ $purchaseReceipt->purchaseOrder->po_number }})
@@ -47,7 +69,30 @@
                 </div>
                 <div>
                     <span class="text-muted block text-xs">Status Pembayaran:</span>
-                    <span class="badge badge-{{ $purchaseReceipt->status_color }}">{{ $purchaseReceipt->status_label }}</span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="badge badge-{{ $purchaseReceipt->status_color }}">{{ $purchaseReceipt->status_label }}</span>
+                        @can('create purchase receipts')
+                            @if($purchaseReceipt->payment_status === 'unpaid')
+                                <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" class="inline" onsubmit="return confirm('Tandai nota ini sebagai SUDAH DIBAYAR?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="payment_status" value="paid">
+                                    <button type="submit" class="btn btn-success btn-xs" style="font-size:11px;padding:2px 8px;">
+                                        <i class="fas fa-check me-1"></i> Set Sudah Bayar
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" class="inline" onsubmit="return confirm('Kembalikan status nota menjadi BELUM DIBAYAR?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="payment_status" value="unpaid">
+                                    <button type="submit" class="btn btn-outline-warning btn-xs" style="font-size:11px;padding:2px 8px;">
+                                        <i class="fas fa-undo me-1"></i> Ubah Belum Bayar
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
+                    </div>
                 </div>
                 <div>
                     <span class="text-muted block text-xs">Supplier / Toko Pembelian:</span>
@@ -116,6 +161,115 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    <!-- SECTION FINANSIAL & RIWAYAT PEMBAYARAN NOTA -->
+    @php
+        $receiptTotal = (float) $purchaseReceipt->total_amount;
+        $po = $purchaseReceipt->purchaseOrder;
+        $payments = $po ? $po->payments : collect();
+        $verifiedPayments = $payments->where('status', 'verified');
+        $pendingPayments = $payments->where('status', 'pending');
+        
+        $verifiedAmount = (float) $verifiedPayments->sum('amount');
+        $pendingAmount = (float) $pendingPayments->sum('amount');
+        
+        $isPaid = ($purchaseReceipt->payment_status === 'paid');
+        $paidAmount = $isPaid ? ($verifiedAmount > 0 ? $verifiedAmount : $receiptTotal) : $verifiedAmount;
+        $remainingAmount = max(0.0, round($receiptTotal - $paidAmount, 2));
+    @endphp
+    <div class="card mb-4" style="padding:20px; border:1.5px solid #cbd5e1; background:#ffffff;">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h3 style="font-size:16px; font-weight:700; color:#0f172a;" class="flex items-center gap-2">
+                    <i class="fas fa-coins text-primary"></i> Ringkasan Finansial & Pembayaran Nota
+                </h3>
+                <p class="text-muted" style="font-size:12.5px; margin-top:2px;">
+                    Rincian status pelunasan dan bukti transaksi pembayaran untuk nota pembelian ini.
+                </p>
+            </div>
+            <div>
+                @if($isPaid || $remainingAmount <= 0)
+                    <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11.5px; padding:6px 12px; border:1px solid #bbf7d0;">
+                        <i class="fas fa-check-double me-1"></i> Tagihan Nota Lunas
+                    </span>
+                @elseif($po)
+                    <a href="{{ route('payments.create', ['po_id' => $po->id]) }}" class="btn btn-primary btn-sm" style="font-size:12px; font-weight:700; padding:6px 12px;">
+                        <i class="fas fa-credit-card me-1"></i> Bayar Tagihan Nota Ini
+                    </a>
+                @endif
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase;">TOTAL NILAI NOTA</div>
+                <div style="font-size:15px; font-weight:800; color:#0f172a; margin-top:4px;">
+                    Rp {{ number_format($receiptTotal, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#f0fdf4; padding:12px; border-radius:8px; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#166534; text-transform:uppercase;">SUDAH DIBAYAR</div>
+                <div style="font-size:15px; font-weight:800; color:#15803d; margin-top:4px;">
+                    Rp {{ number_format($paidAmount, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#fffbeb; padding:12px; border-radius:8px; border:1px solid #fde68a; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#b45309; text-transform:uppercase;">PENDING VERIFIKASI</div>
+                <div style="font-size:15px; font-weight:800; color:#d97706; margin-top:4px;">
+                    Rp {{ number_format($pendingAmount, 0, ',', '.') }}
+                </div>
+            </div>
+            <div style="background:#ecfdf5; padding:12px; border-radius:8px; border:1px solid #a7f3d0; text-align:center;">
+                <div style="font-size:10.5px; font-weight:700; color:#065f46; text-transform:uppercase;">SISA TAGIHAN</div>
+                <div style="font-size:15px; font-weight:800; color:#059669; margin-top:4px;">
+                    Rp {{ number_format($remainingAmount, 0, ',', '.') }}
+                </div>
+            </div>
+        </div>
+
+        {{-- Riwayat Pembayaran --}}
+        @if($payments && $payments->count() > 0)
+            <div class="mt-4 pt-3" style="border-top:1px solid #e2e8f0;">
+                <h4 style="font-size:13.5px; font-weight:700; color:#334155; margin-bottom:10px;">
+                    <i class="fas fa-history me-1"></i> Riwayat Pembayaran Nota:
+                </h4>
+                <div class="table-wrap">
+                    <table class="data-table" style="background:#fff; font-size:12px;">
+                        <thead>
+                            <tr>
+                                <th>No. Pembayaran</th>
+                                <th>Tanggal</th>
+                                <th>Nominal</th>
+                                <th>Metode</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($payments as $pmt)
+                                <tr>
+                                    <td><code>{{ $pmt->payment_number }}</code></td>
+                                    <td>{{ $pmt->payment_date ? $pmt->payment_date->format('d/m/Y') : '-' }}</td>
+                                    <td><strong>Rp {{ number_format($pmt->amount, 0, ',', '.') }}</strong></td>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $pmt->payment_method)) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $pmt->status_color }}">
+                                            {{ $pmt->status_label }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('payments.show', $pmt) }}" class="btn btn-xs btn-secondary">
+                                            <i class="fas fa-eye"></i> Detail
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- Table Rincian Item Nota -->

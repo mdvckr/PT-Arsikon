@@ -155,6 +155,10 @@
                 <span class="text-muted block text-xs">Dibuat Oleh:</span>
                 <span>{{ $purchaseOrder->creator?->name ?? '-' }}</span>
             </div>
+            <div>
+                <span class="text-muted block text-xs">Contact Person (CP):</span>
+                <span>{{ $purchaseOrder->contact_person ?: ($purchaseOrder->creator?->name ?? '-') }}</span>
+            </div>
             @php
                 $linkedMr = $purchaseOrder->materialRequest ?? $purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first();
             @endphp
@@ -170,6 +174,25 @@
         </div>
     </div>
 
+    @if($purchaseOrder->receipts && $purchaseOrder->receipts->count() > 0)
+        {{-- Jika PO terhubung Nota Pembelian, ringkasan finansial & riwayat pembayaran dipindahkan ke halaman Nota Pembelian --}}
+        <div class="card mb-6" style="padding:16px 20px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="font-size:13px; color:#1e293b;">
+                    <i class="fas fa-receipt text-primary me-2"></i>
+                    PO ini terhubung dengan <strong>{{ $purchaseOrder->receipts->count() }} Nota Pembelian Fisik</strong>.
+                    Ringkasan finansial dan riwayat pembayaran ditampilkan langsung pada halaman Nota Pembelian.
+                </div>
+                <div class="flex gap-2">
+                    @foreach($purchaseOrder->receipts as $rc)
+                        <a href="{{ route('purchase-receipts.show', $rc) }}" class="btn btn-sm btn-primary" style="font-size:12px; font-weight:600;">
+                            <i class="fas fa-file-invoice me-1"></i> Buka Nota #{{ $rc->receipt_number ?? $rc->id }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @else
     <!-- SECTION FINANSIAL & PEMBAYARAN PO (Nilai Sah, Nilai Tertahan, Status Bayar) -->
     @php
         $poNilaiSah = (float) $purchaseOrder->nilai_sah;
@@ -179,6 +202,7 @@
         $withheldData = $purchaseOrder->withheld_summary;
         $poTotalWithheld = (float) $withheldData['total_withheld'];
         $hasConfirmedGr = $purchaseOrder->hasConfirmedGoodsReceipt();
+        $hasPayableProof = $purchaseOrder->hasPayableProof();
     @endphp
     <div class="card mb-6" style="padding:20px; border:1.5px solid #cbd5e1; background:#ffffff;">
         <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
@@ -187,21 +211,21 @@
                     <i class="fas fa-coins text-primary"></i> Ringkasan Finansial & Nilai Sah Tagihan PO
                 </h3>
                 <p class="text-muted" style="font-size:12.5px; margin-top:2px;">
-                    Pembayaran tagihan dihitung berdasarkan nilai sah barang yang telah diterima baik di gudang (dan kehilangan tanggungan pembeli).
+                    Pembayaran tagihan dihitung berdasarkan nilai sah barang yang telah diterima di gudang (GR) atau bukti nota fisik lapangan.
                 </p>
             </div>
             <div>
-                @if($hasConfirmedGr && $poPayableRemaining > 0)
+                @if($hasPayableProof && $poPayableRemaining > 0)
                     <a href="{{ route('payments.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary" style="font-size:12.5px; font-weight:700; padding:7px 14px; border-radius:6px;">
                         <i class="fas fa-credit-card me-1"></i> Ajukan Pembayaran
                     </a>
-                @elseif(! $hasConfirmedGr)
+                @elseif(! $hasPayableProof)
                     <span class="badge" style="background:#f1f5f9; color:#64748b; font-size:11.5px; padding:6px 10px; border:1px solid #cbd5e1;">
-                        <i class="fas fa-clock me-1"></i> Belum ada Penerimaan Barang (GR) terkonfirmasi
+                        <i class="fas fa-clock me-1"></i> Belum ada Bukti GR / Nota Pembelian
                     </span>
                 @else
                     <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11.5px; padding:6px 10px; border:1px solid #bbf7d0;">
-                        <i class="fas fa-check-double me-1"></i> Nilai Sah Lunas / Penuh Diajukan
+                        <i class="fas fa-check-double me-1"></i> Nilai Tagihan Lunas / Penuh Diajukan
                     </span>
                 @endif
             </div>
@@ -311,6 +335,7 @@
             </div>
         @endif
     </div>
+    @endif
 
     <!-- Section Barang yang Dipesan -->
     <div class="card mb-6" style="padding:20px;">
