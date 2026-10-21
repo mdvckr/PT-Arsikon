@@ -1,6 +1,10 @@
 <x-app-layout>
     <x-slot name="title">Detail PO: {{ $purchaseOrder->po_number }}</x-slot>
 
+    @php
+        $canViewPrice = $userCanViewPrice ?? (auth()->user() ? auth()->user()->canViewPoPrice() : false);
+    @endphp
+
     <div class="flex justify-between items-center mb-4">
         <div>
             <a href="{{ route('purchase-orders.index') }}" class="text-muted" style="font-size:13px;">
@@ -16,11 +20,23 @@
             </p>
         </div>
 
-        <div class="flex gap-2 items-center">
-            <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" target="_blank"
-               class="btn" style="background:#0f766e;color:#fff;font-weight:600;">
-                <i class="fas fa-print me-1"></i> Print PO
-            </a>
+        <div class="flex gap-2 items-center flex-wrap">
+            @if($canViewPrice)
+                {{-- Opsi Cetak Ganda untuk Admin PO / Admin Pusat / Owner --}}
+                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'official']) }}" target="_blank"
+                   class="btn" style="background:#0f766e;color:#fff;font-weight:600;" title="Cetak PO Resmi dengan harga untuk Supplier / Keuangan">
+                    <i class="fas fa-file-invoice-dollar me-1"></i> Cetak PO Resmi (Harga)
+                </a>
+                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
+                   class="btn" style="background:#475569;color:#fff;font-weight:600;" title="Cetak PO Lapangan / Gudang tanpa harga (Rp 0) untuk bagian penerimaan barang di proyek">
+                    <i class="fas fa-file-shield me-1"></i> Cetak PO Lapangan (Tanpa Harga)
+                </a>
+            @else
+                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
+                   class="btn" style="background:#475569;color:#fff;font-weight:600;" title="Cetak PO Lapangan (Tanpa Harga)">
+                    <i class="fas fa-print me-1"></i> Cetak PO Lapangan
+                </a>
+            @endif
 
             <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Catat Nota Harian Baru
@@ -91,18 +107,29 @@
     @endif
 
     @if(session('show_print_prompt'))
-        <div style="background:#eff6ff;border:1.5px solid #3b82f6;color:#1e40af;padding:14px 18px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="background:#eff6ff;border:1.5px solid #3b82f6;color:#1e40af;padding:14px 18px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div>
                 <i class="fas fa-print me-2"></i>
-                <strong>PO berhasil dibuat!</strong> Apakah Anda ingin mencetak atau menyimpan dokumen Purchase Order ini?
+                <strong>PO berhasil dibuat!</strong> Apakah Anda ingin mencetak dokumen Purchase Order ini?
             </div>
-            <div style="display:flex;gap:8px;flex-shrink:0;">
-                <a href="{{ route('purchase-orders.print', $purchaseOrder) }}" target="_blank"
-                   style="background:#1d4ed8;color:#fff;padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">
-                    <i class="fas fa-print me-1"></i> Cetak / Simpan PDF
-                </a>
+            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+                @if($canViewPrice)
+                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'official']) }}" target="_blank"
+                       style="background:#0f766e;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                        <i class="fas fa-file-invoice-dollar"></i> Cetak Resmi (Harga)
+                    </a>
+                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
+                       style="background:#475569;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                        <i class="fas fa-file-shield"></i> Cetak Lapangan (Tanpa Harga)
+                    </a>
+                @else
+                    <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
+                       style="background:#475569;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                        <i class="fas fa-print"></i> Cetak PO Lapangan
+                    </a>
+                @endif
                 <button onclick="this.parentElement.parentElement.remove()"
-                        style="background:transparent;border:1px solid #93c5fd;color:#1d4ed8;padding:7px 12px;border-radius:6px;font-size:13px;cursor:pointer;">
+                        style="background:transparent;border:1px solid #93c5fd;color:#1d4ed8;padding:7px 12px;border-radius:6px;font-size:12.5px;cursor:pointer;">
                     Lewati
                 </button>
             </div>
@@ -129,7 +156,11 @@
             </div>
             <div>
                 <span class="text-muted block text-xs">Total Nilai PO:</span>
-                <strong class="text-primary" style="font-size:16px;">Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}</strong>
+                @if($canViewPrice)
+                    <strong class="text-primary" style="font-size:16px;">Rp {{ number_format($purchaseOrder->total_amount, 0, ',', '.') }}</strong>
+                @else
+                    <strong class="text-muted" style="font-size:16px;">Rp 0 <span style="font-size:11px;font-weight:normal;">(Dirahasiakan)</span></strong>
+                @endif
             </div>
             <div>
                 <span class="text-muted block text-xs">Gudang Tujuan Pengiriman:</span>
@@ -193,6 +224,7 @@
             </div>
         </div>
     @else
+    @if($canViewPrice)
     <!-- SECTION FINANSIAL & PEMBAYARAN PO (Nilai Sah, Nilai Tertahan, Status Bayar) -->
     @php
         $poNilaiSah = (float) $purchaseOrder->nilai_sah;
@@ -336,6 +368,7 @@
         @endif
     </div>
     @endif
+    @endif
 
     <!-- Section Barang yang Dipesan -->
     <div class="card mb-6" style="padding:20px;">
@@ -383,6 +416,12 @@
                                 </div>
                             @endif
 
+                            @if($item->notes)
+                                <div class="mt-1" style="font-size:11.5px;color:#475569;">
+                                    <i class="fas fa-note-sticky text-amber-600 me-1"></i> Catatan: <em>{{ $item->notes }}</em>
+                                </div>
+                            @endif
+
                             @if($item->deliverySchedules && $item->deliverySchedules->count() > 0)
                                 <div class="mt-2" style="font-size:11px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
                                     <span style="color:#475569; font-weight:600;"><i class="fas fa-calendar-days me-1"></i> Jadwal Kedatangan:</span>
@@ -423,8 +462,20 @@
                                 @endif
                             </td>
                         @endif
-                        <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                        <td class="text-end"><strong class="text-primary">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
+                        <td class="text-end">
+                            @if($canViewPrice)
+                                Rp {{ number_format($item->unit_price, 0, ',', '.') }}
+                            @else
+                                <span class="text-muted">Rp 0</span>
+                            @endif
+                        </td>
+                        <td class="text-end">
+                            @if($canViewPrice)
+                                <strong class="text-primary">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong>
+                            @else
+                                <span class="text-muted">Rp 0</span>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>

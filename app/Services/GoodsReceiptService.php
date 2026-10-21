@@ -172,6 +172,102 @@ class GoodsReceiptService
     }
 
     /**
+     * Update GR draft: hapus semua item lama dan buat ulang berdasarkan data baru.
+     * Hanya boleh dilakukan saat status GR masih 'draft' (stok belum diubah).
+     */
+    public function update(GoodsReceipt $receipt, array $validated, int $userId): GoodsReceipt
+    {
+        if ($receipt->status !== 'draft') {
+            throw new Exception('Hanya GR berstatus draft yang dapat diubah.');
+        }
+
+        return DB::transaction(function () use ($receipt, $validated, $userId) {
+            $supplierName = !empty($validated['supplier_name'])
+                ? preg_replace('/\s+/', ' ', trim($validated['supplier_name']))
+                : null;
+
+            $mrId = $validated['material_request_id'] ?? null;
+            if (!$mrId && !empty($validated['purchase_order_id'])) {
+                $po = PurchaseOrder::with('items.materialRequestItem')->find($validated['purchase_order_id']);
+                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first();
+            }
+
+            // Update header GR
+            $receipt->update([
+                'purchase_order_id'   => $validated['purchase_order_id'] ?? null,
+                'material_request_id' => $mrId,
+                'supplier_id'         => $validated['supplier_id'],
+                'supplier_name'       => $supplierName,
+                'warehouse_id'        => $validated['warehouse_id'],
+                'received_by_name'    => $validated['received_by_name'] ?? null,
+                'invoice_number'      => $validated['invoice_number'] ?? null,
+                'receipt_date'        => $validated['received_at'],
+                'notes'               => $validated['notes'] ?? null,
+            ]);
+
+            // Hapus semua item lama
+            $receipt->items()->delete();
+
+            // Buat ulang item baru
+            foreach ($validated['items'] as $item) {
+                $isTool = ($item['item_type'] ?? '') === 'tool' || !empty($item['tool_id']);
+                $poItemId = $item['purchase_order_item_id'] ?? null;
+                $poItem = $poItemId ? PurchaseOrderItem::find($poItemId) : null;
+                if (!$isTool && $poItem && $poItem->isTool()) {
+                    $isTool = true;
+                }
+
+                $mrItemId = $item['material_request_item_id'] ?? ($poItem?->material_request_item_id ?? null);
+
+                $qtyReceived = (float) ($item['qty_received'] ?? $item['quantity'] ?? 0);
+                $qtyDamaged  = (float) ($item['qty_damaged'] ?? 0);
+                $qtyShipped  = (float) ($item['qty_shipped'] ?? ($qtyReceived + $qtyDamaged));
+
+                if ($isTool && (fmod($qtyReceived, 1) != 0 || fmod($qtyDamaged, 1) != 0 || fmod($qtyShipped, 1) != 0)) {
+                    throw new Exception("Kuantitas alat pada penerimaan barang harus berupa bilangan bulat.");
+                }
+
+                if ($qtyReceived + $qtyDamaged > $qtyShipped) {
+                    throw new Exception("Jumlah diterima ({$qtyReceived}) + rusak ({$qtyDamaged}) tidak boleh melebihi jumlah yang dikirim vendor ({$qtyShipped}).");
+                }
+
+                if ($poItem) {
+                    $outstanding = max(0, (float)$poItem->quantity - (float)$poItem->received_qty - (float)$poItem->lost_qty - (float)$poItem->short_closed_qty);
+                    if (($qtyReceived + $qtyDamaged) > $outstanding) {
+                        $itemName = $poItem->displayName();
+                        throw new Exception("Penerimaan barang {$itemName} (" . ($qtyReceived + $qtyDamaged) . ") melebihi sisa outstanding PO ({$outstanding}).");
+                    }
+                }
+
+                $qtyMissing    = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
+                $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
+                $unitPrice     = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
+
+                GoodsReceiptItem::create([
+                    'goods_receipt_id'         => $receipt->id,
+                    'item_type'                => $isTool ? 'tool' : 'material',
+                    'purchase_order_item_id'   => $poItemId,
+                    'material_request_item_id' => $mrItemId,
+                    'po_delivery_schedule_id'  => $item['po_delivery_schedule_id'] ?? null,
+                    'stage_reference'          => $item['stage_reference'] ?? null,
+                    'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
+                    'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'qty_shipped'              => $qtyShipped,
+                    'qty_received'             => $qtyReceived,
+                    'qty_damaged'              => $qtyDamaged,
+                    'qty_missing'              => $qtyMissing,
+                    'missing_status'           => $missingStatus,
+                    'condition'                => $item['condition'] ?? 'good',
+                    'unit_price'               => $unitPrice,
+                    'notes'                    => $item['notes'] ?? null,
+                ]);
+            }
+
+            return $receipt->fresh(['supplier', 'warehouse', 'items.material', 'items.tool']);
+        });
+    }
+
+    /**
      * Konfirmasi GR: validasi items, update stok gudang, update status PO jika ada,
      * serta perbarui status tahapan kedatangan (incoming_stages) menjadi 'received'.
      */

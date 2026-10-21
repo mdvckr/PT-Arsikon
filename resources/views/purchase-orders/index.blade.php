@@ -1,15 +1,16 @@
 <x-app-layout>
     <x-slot name="title">Purchase Order (PO)</x-slot>
 
+    @php
+        $canViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
+    @endphp
+
     <div class="flex justify-between items-center mb-4">
         <div>
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Purchase Order (PO)</h2>
             <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian ke Supplier</p>
         </div>
         <div class="flex gap-2">
-            <a href="{{ route('purchase-receipts.index') }}" class="btn btn-secondary">
-                <i class="fas fa-receipt me-1"></i> Nota Pembelian Harian
-            </a>
             <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Buat PO Baru
             </a>
@@ -102,11 +103,15 @@
                             <div>
                                 <span class="text-muted">Total Nilai:</span>
                                 <strong class="text-primary font-semibold ms-1" style="font-size:13px;">
-                                    Rp {{ number_format($groupTotalAmount, 0, ',', '.') }}
+                                    @if($canViewPrice)
+                                        Rp {{ number_format($groupTotalAmount, 0, ',', '.') }}
+                                    @else
+                                        Rp 0
+                                    @endif
                                 </strong>
                             </div>
 
-                            @if($groupTotalReceipts > 0)
+                            @if($groupTotalReceipts > 0 && $canViewPrice)
                             <div class="hidden md:block">
                                 <span class="text-muted">Nota:</span>
                                 <strong class="text-success font-semibold ms-1">
@@ -195,16 +200,22 @@
                                         {{ $po->expected_delivery ? $po->expected_delivery->format('d M Y') : '-' }}
                                     </td>
                                     <td style="text-align:right;">
-                                        <strong class="text-primary" style="font-size:13px;">
-                                            Rp {{ number_format($po->total_amount, 0, ',', '.') }}
-                                        </strong>
-                                        @php
-                                            $totalNota = $po->receipts ? $po->receipts->sum('total_amount') : 0;
-                                        @endphp
-                                        @if($totalNota > 0)
-                                            <div class="text-success text-xs font-medium">
-                                                Nota: Rp {{ number_format($totalNota, 0, ',', '.') }}
-                                            </div>
+                                        @if($canViewPrice)
+                                            <strong class="text-primary" style="font-size:13px;">
+                                                Rp {{ number_format($po->total_amount, 0, ',', '.') }}
+                                            </strong>
+                                            @php
+                                                $totalNota = $po->receipts ? $po->receipts->sum('total_amount') : 0;
+                                            @endphp
+                                            @if($totalNota > 0)
+                                                <div class="text-success text-xs font-medium">
+                                                    Nota: Rp {{ number_format($totalNota, 0, ',', '.') }}
+                                                </div>
+                                            @endif
+                                        @else
+                                            <strong class="text-muted" style="font-size:13px;" title="Dirahasiakan untuk role lapangan">
+                                                Rp 0
+                                            </strong>
                                         @endif
                                     </td>
                                     <td style="text-align:center;">
@@ -215,6 +226,18 @@
                                             <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail PO">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            @if($canViewPrice)
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'official']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#0f766e;" title="Cetak PO Resmi (Harga)">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'blind']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#475569;" title="Cetak PO Lapangan (Tanpa Harga / Rp 0)">
+                                                    <i class="fas fa-file-shield"></i>
+                                                </a>
+                                            @else
+                                                <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'blind']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#475569;" title="Cetak PO Lapangan">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                            @endif
                                             <a href="{{ route('purchase-receipts.create', ['po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary btn-icon" title="Tambah Nota Harian">
                                                 <i class="fas fa-receipt"></i>
                                             </a>

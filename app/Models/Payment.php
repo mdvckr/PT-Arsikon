@@ -10,12 +10,18 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'payment_number','purchase_order_id','created_by','verified_by','status',
-        'amount','payment_method','payment_date','bank_account','reference_number',
+        'payment_number','purchase_order_id','project_id','created_by','verified_by','status',
+        'payment_type','amount','balance_before','balance_after','payment_method','payment_date','bank_account','reference_number',
         'proof_file','notes','rejection_reason','verified_at',
     ];
 
-    protected $casts = ['payment_date' => 'date', 'verified_at' => 'datetime', 'amount' => 'decimal:2'];
+    protected $casts = [
+        'payment_date'   => 'date',
+        'verified_at'    => 'datetime',
+        'amount'         => 'decimal:2',
+        'balance_before' => 'decimal:2',
+        'balance_after'  => 'decimal:2',
+    ];
 
     protected static function boot()
     {
@@ -42,9 +48,30 @@ class Payment extends Model
     }
 
     public function purchaseOrder() { return $this->belongsTo(PurchaseOrder::class); }
+    public function project()       { return $this->belongsTo(Project::class); }
     public function creator()       { return $this->belongsTo(User::class, 'created_by'); }
     public function verifier()      { return $this->belongsTo(User::class, 'verified_by'); }
     public function items()         { return $this->hasMany(PaymentItem::class); }
+
+    public function isInstant(): bool
+    {
+        return $this->payment_type === 'instant';
+    }
+
+    public function isWaiting(): bool
+    {
+        return $this->payment_type === 'waiting';
+    }
+
+    public function getPaymentTypeLabelAttribute(): string
+    {
+        return $this->isInstant() ? 'Instan (Kas Nota Harian)' : 'PO Proyek (Menunggu Verifikasi)';
+    }
+
+    public function getPaymentTypeColorAttribute(): string
+    {
+        return $this->isInstant() ? 'emerald' : 'blue';
+    }
 
     public function getStatusLabelAttribute(): string
     {

@@ -56,10 +56,21 @@
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
-                    <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                         <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">
                             #{{ $payment->payment_number }}
                         </h2>
+
+                        @if($payment->isInstant())
+                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:3px 9px;border-radius:6px;font-weight:700;">
+                                <i class="fas fa-bolt text-warning me-1"></i> Instan (Kas Proyek)
+                            </span>
+                        @else
+                            <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:11.5px;padding:3px 9px;border-radius:6px;font-weight:700;">
+                                <i class="fas fa-clock text-blue-500 me-1"></i> PO Proyek (Reguler)
+                            </span>
+                        @endif
+
                         @if($payment->status === 'verified')
                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:3px 9px;border-radius:6px;font-weight:700;">
                                 <i class="fas fa-circle-check me-1"></i> Terverifikasi
@@ -146,10 +157,77 @@
                         </div>
                     </div>
 
+                    {{-- Saldo Mutasi Card jika Instant Payment --}}
+                    @if($payment->isInstant() && $payment->balance_before !== null)
+                    <div style="background:#f8fafc;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <span style="font-size:11.5px;font-weight:700;color:#065f46;">
+                                <i class="fas fa-bolt text-warning me-1"></i> Mutasi Saldo Kas Proyek Admin PO
+                            </span>
+                            <span class="badge" style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;">
+                                Kas Operasional
+                            </span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;text-align:center;">
+                            <div style="background:#ffffff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;">
+                                <div style="font-size:10px;font-weight:700;color:#64748b;">SALDO SEBELUM</div>
+                                <div style="font-size:12.5px;font-weight:800;color:#0f172a;margin-top:2px;">
+                                    Rp {{ number_format($payment->balance_before, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            <div style="background:#ffffff;padding:8px;border-radius:6px;border:1px solid #fee2e2;">
+                                <div style="font-size:10px;font-weight:700;color:#b91c1c;">POTONGAN BAYAR</div>
+                                <div style="font-size:12.5px;font-weight:800;color:#dc2626;margin-top:2px;">
+                                    - Rp {{ number_format($payment->amount, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            <div style="background:#ffffff;padding:8px;border-radius:6px;border:1px solid #bbf7d0;">
+                                <div style="font-size:10px;font-weight:700;color:#166534;">SISA SALDO KAS</div>
+                                <div style="font-size:12.5px;font-weight:800;color:#15803d;margin-top:2px;">
+                                    Rp {{ number_format($payment->balance_after, 0, ',', '.') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="info-row">
                         <span class="info-label">Nomor Pembayaran</span>
                         <span class="info-val" style="font-family:monospace;font-size:13px;color:#2563eb;">{{ $payment->payment_number }}</span>
                     </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Jenis Pembayaran</span>
+                        <span class="info-val">
+                            @if($payment->isInstant())
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;font-weight:700;">
+                                    <i class="fas fa-bolt text-warning me-1"></i> Pembayaran Instan (Kas Proyek)
+                                </span>
+                            @else
+                                <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:11px;font-weight:700;">
+                                    <i class="fas fa-clock text-blue-500 me-1"></i> PO Proyek (Menunggu Verifikasi)
+                                </span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Proyek Terkait</span>
+                        <span class="info-val">
+                            @php
+                                $proj = $payment->project ?? $payment->purchaseOrder?->project;
+                            @endphp
+                            @if($proj)
+                                <span style="color:#0f172a;font-weight:700;">
+                                    <i class="fas fa-building text-primary me-1"></i> {{ $proj->name }}
+                                </span>
+                                <span class="text-muted ms-1">({{ $proj->code ?? 'PRJ' }})</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </span>
+                    </div>
+
                     <div class="info-row">
                         <span class="info-label">Tanggal Pelaksanaan Bayar</span>
                         <span class="info-val">{{ $payment->payment_date ? $payment->payment_date->translatedFormat('d F Y') : '-' }}</span>
@@ -250,45 +328,19 @@
                                     Rp {{ number_format($poTotal, 0, ',', '.') }}
                                 </div>
                             </div>
-                            <div style="background:#eff6ff;padding:10px;border-radius:8px;border:1px solid #bfdbfe;">
-                                <div style="font-size:10px;color:#1e40af;font-weight:600;">NILAI SAH</div>
-                                <div style="font-size:13px;font-weight:800;color:#1d4ed8;margin-top:2px;">
-                                    Rp {{ number_format($poNilaiSah, 0, ',', '.') }}
-                                </div>
-                            </div>
                             <div style="background:#f0fdf4;padding:10px;border-radius:8px;border:1px solid #bbf7d0;">
-                                <div style="font-size:10px;color:#166534;font-weight:600;">SUDAH DIBAYAR</div>
+                                <div style="font-size:10px;color:#166534;font-weight:600;">SUDAH TERBAYAR</div>
                                 <div style="font-size:13px;font-weight:800;color:#15803d;margin-top:2px;">
                                     Rp {{ number_format($poPaid, 0, ',', '.') }}
                                 </div>
                             </div>
                             <div style="background:#ecfdf5;padding:10px;border-radius:8px;border:1px solid #a7f3d0;">
-                                <div style="font-size:10px;color:#065f46;font-weight:600;">SISA BISA DIBAYAR</div>
+                                <div style="font-size:10px;color:#065f46;font-weight:600;">SISA TAGIHAN</div>
                                 <div style="font-size:13px;font-weight:800;color:#059669;margin-top:2px;">
                                     Rp {{ number_format($poPayableRemaining, 0, ',', '.') }}
                                 </div>
                             </div>
-                            <div style="background:#fef2f2;padding:10px;border-radius:8px;border:1px solid #fecaca;">
-                                <div style="font-size:10px;color:#991b1b;font-weight:600;">NILAI TERTAHAN</div>
-                                <div style="font-size:13px;font-weight:800;color:#b91c1c;margin-top:2px;">
-                                    Rp {{ number_format($poWithheld, 0, ',', '.') }}
-                                </div>
-                            </div>
                         </div>
-
-                        @if(!empty($withheldData['items']))
-                        <div style="margin-top:12px;background:#fff5f5;border:1px solid #fed7d7;border-radius:6px;padding:10px 12px;font-size:11.5px;">
-                            <div style="font-weight:700;color:#991b1b;margin-bottom:4px;">
-                                <i class="fas fa-circle-exclamation me-1"></i> Rincian Nilai Tertahan:
-                            </div>
-                            @foreach($withheldData['items'] as $wh)
-                                <div style="display:flex;justify-content:space-between;padding:2px 0;color:#7f1d1d;">
-                                    <span>{{ $wh['item_name'] }} ({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }}) &mdash; {{ $wh['reason'] }}</span>
-                                    <strong style="margin-left:8px;">Rp {{ number_format($wh['value'], 0, ',', '.') }}</strong>
-                                </div>
-                            @endforeach
-                        </div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -296,20 +348,38 @@
 
         </div>
 
-        {{-- Right Panel: Verification Action / Status Info --}}
+        {{-- Right: Actions & Audit --}}
         <div style="display:flex;flex-direction:column;gap:16px;">
             
             {{-- Action Verifikasi Card --}}
             <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 16px;display:flex;align-items:center;gap:8px;">
                     <i class="fas fa-shield-halved text-primary" style="font-size:13px;"></i>
-                    <span style="font-size:13px;font-weight:700;color:#0f172a;">Aksi Verifikasi Keuangan</span>
+                    <span style="font-size:13px;font-weight:700;color:#0f172a;">Status & Verifikasi</span>
                 </div>
                 <div class="card-body" style="padding:16px;">
                     
-                    @if($payment->status === 'pending')
+                    @if($payment->isInstant())
+                        {{-- Kasus Pembayaran Instan (Otomatis Terverifikasi via Kas Proyek) --}}
+                        <div style="background:#ecfdf5;border:1.5px solid #86efac;border-radius:8px;padding:14px;color:#065f46;">
+                            <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                <i class="fas fa-bolt text-warning"></i> Terverifikasi Instan Otomatis
+                            </div>
+                            <div style="font-size:12px;line-height:1.4;">
+                                Pembayaran ini menggunakan <strong>Saldo Kas Operasional Proyek (Admin PO)</strong> sehingga langsung otomatis berstatus Terverifikasi saat diajukan, saldo kas proyek telah dipotong, dan nota harian terkait telah berstatus lunas.
+                            </div>
+                            @if($payment->creator)
+                            <div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px dashed #a7f3d0;color:#047857;">
+                                Diproses oleh <strong>{{ $payment->creator->name }}</strong><br>
+                                pada {{ $payment->created_at ? $payment->created_at->format('d/m/Y H:i') : '-' }}
+                            </div>
+                            @endif
+                        </div>
+
+                    @elseif($payment->status === 'pending')
+                        {{-- Kasus PO Reguler Menunggu Verifikasi --}}
                         <p class="text-muted mb-3" style="font-size:12px;line-height:1.4;">
-                            Pembayaran ini telah diajukan dan menunggu verifikasi bagian keuangan sebelum saldo tagihan PO diperbarui secara resmi.
+                            Pembayaran PO ini telah diajukan dan menunggu verifikasi bagian keuangan sebelum saldo tagihan PO diperbarui secara resmi.
                         </p>
 
                         <div style="display:flex;flex-direction:column;gap:8px;">

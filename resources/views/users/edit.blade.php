@@ -180,7 +180,8 @@
                                     'Admin Pusat' => ['icon' => 'fa-building-shield', 'color' => '#d97706', 'bg' => 'rgba(217,119,6,0.1)', 'desc' => 'Kantor Pusat (Full kontrol user, gudang, jabatan, master data & logistik)'],
                                     'Admin Gudang Pusat' => ['icon' => 'fa-warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
                                     'Admin Gudang Proyek' => ['icon' => 'fa-helmet-safety', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
-                                    'Admin PO' => ['icon' => 'fa-file-invoice-dollar', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Divisi Pengadaan & Purchase Order (Pemasok, harga, permohonan beli)'],
+                                    'Admin PO' => ['icon' => 'fa-file-invoice-dollar', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Pengadaan Pusat & Purchase Order (Pemasok, harga resmi, pembayaran vendor)'],
+                                    'Admin PO Proyek' => ['icon' => 'fa-receipt', 'color' => '#0284c7', 'bg' => 'rgba(2,132,199,0.1)', 'desc' => 'Site Proyek - Khusus Pengisian Nota Harian (Bon belanja toko, harga PO dirahasiakan)'],
                                     'Karyawan' => ['icon' => 'fa-user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
                                     default => ['icon' => 'fa-id-card', 'color' => '#64748b', 'bg' => 'rgba(100,116,139,0.1)', 'desc' => 'Hak akses jabatan khusus'],
                                 };

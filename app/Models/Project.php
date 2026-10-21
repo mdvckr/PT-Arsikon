@@ -16,13 +16,15 @@ class Project extends Model
         'name',
         'location',
         'status',
+        'operational_balance',
         'start_date',
         'end_date',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
+        'start_date'          => 'date',
+        'end_date'            => 'date',
+        'operational_balance' => 'decimal:2',
     ];
 
     public function warehouses(): HasMany
@@ -33,5 +35,10 @@ class Project extends Model
     public function warehouse(): HasOne
     {
         return $this->hasOne(Warehouse::class)->where('is_central', false);
+    }
+
+    public function balanceLogs(): HasMany
+    {
+        return $this->hasMany(ProjectBalanceLog::class)->latest('id');
     }
 }

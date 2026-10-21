@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Manajemen Pembayaran PO</x-slot>
+    <x-slot name="title">{{ $isRoleAdminPOProyek ? 'Kas & Saldo Operasional Proyek' : 'Manajemen Pembayaran PO & Kas Proyek' }}</x-slot>
 
     @push('styles')
     <style>
@@ -10,6 +10,29 @@
             flex-wrap: wrap;
             gap: 14px;
             margin-bottom: 20px;
+        }
+
+        .balance-hero-banner {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+            color: #ffffff;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px -2px rgba(6,78,59,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-hero-banner::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: -30px;
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
         }
 
         .payment-kpi-grid {
@@ -72,7 +95,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 7px 14px;
+            padding: 7px 13px;
             border-radius: 8px;
             font-size: 12px;
             font-weight: 700;
@@ -182,23 +205,23 @@
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
                 <div>
-                    <h2 style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;margin:0;">
-                        Pembayaran Faktur & PO
-                    </h2>
-                    <p style="font-size:12.5px;color:#64748b;margin:2px 0 0 0;">
-                        Pencatatan realisasi pelunasan, verifikasi pembayaran supplier, dan audit tagihan pengadaan.
-                    </p>
+                    @if($isRoleAdminPOProyek)
+                        <h2 style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;margin:0;">
+                            Kas & Saldo Operasional Proyek
+                        </h2>
+                        <p style="font-size:12.5px;color:#64748b;margin:2px 0 0 0;">
+                            Pengelolaan saldo kas harian proyek, riwayat mutasi nota harian, dan pengajuan penambahan saldo ke Pusat/Owner.
+                        </p>
+                    @else
+                        <h2 style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;margin:0;">
+                            Pembayaran PO & Saldo Kas Proyek
+                        </h2>
+                        <p style="font-size:12.5px;color:#64748b;margin:2px 0 0 0;">
+                            Manajemen kas harian Admin PO, realisasi pelunasan supplier, dan pembayaran invoice PO.
+                        </p>
+                    @endif
                 </div>
             </div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <a href="{{ route('purchase-orders.index') }}" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;color:#334155;background:#ffffff;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-receipt text-muted"></i> Daftar PO
-            </a>
-            <a href="{{ route('payments.create') }}" class="btn btn-primary" style="font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-plus-circle"></i> Catat Pembayaran Baru
-            </a>
         </div>
     </div>
 
@@ -217,8 +240,341 @@
     </div>
     @endif
 
-    {{-- ==================== KPI Metric Cards (4 Cards) ==================== --}}
-    <div class="payment-kpi-grid">
+    {{-- ==================== Hero Banner: Saldo Kas Proyek Admin PO ==================== --}}
+    <div class="balance-hero-banner">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;position:relative;z-index:2;">
+            <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span class="badge" style="background:rgba(255,255,255,0.22);color:#ffffff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.3px;">
+                        <i class="fas fa-coins me-1"></i> SALDO KAS PROYEK (ADMIN PO)
+                    </span>
+                    <span style="font-size:11.5px;color:#a7f3d0;font-weight:500;">
+                        Petty Cash Operasional Nota Pembelian Harian Lapangan
+                    </span>
+                </div>
+                <div style="font-size:28px;font-weight:800;letter-spacing:-0.5px;line-height:1.2;">
+                    Rp {{ number_format($metrics['total_operational_balance'] ?? 0, 0, ',', '.') }}
+                </div>
+                <div style="font-size:12px;color:#d1fae5;margin-top:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span><i class="fas fa-circle-check text-emerald-300 me-1"></i> Total saldo aktif siap pakai di seluruh proyek</span>
+                    <span>&bull;</span>
+                    <span><strong>{{ $metrics['instant_count'] ?? 0 }}x</strong> Pembayaran Instan Berhasil (Rp {{ number_format($metrics['instant_verified_amount'] ?? 0, 0, ',', '.') }})</span>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:2;">
+                <button type="button" onclick="openBalanceHistoryModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
+                    <i class="fas fa-list-ul me-1"></i> Riwayat Mutasi
+                </button>
+                @if($isRoleAdminPOProyek)
+                    <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
+                        <i class="fas fa-list-check me-1"></i> Status Pengajuan Saldo
+                    </button>
+                    <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                        <i class="fas fa-hand-holding-usd me-1"></i> Minta Top-Up ke Pusat/Owner
+                    </button>
+                @else
+                    <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:{{ $pendingBalanceRequestsCount > 0 ? '#f59e0b' : 'rgba(255,255,255,0.18)' }};color:#ffffff;border:1px solid {{ $pendingBalanceRequestsCount > 0 ? '#d97706' : 'rgba(255,255,255,0.3)' }};font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;box-shadow:{{ $pendingBalanceRequestsCount > 0 ? '0 2px 8px rgba(245,158,11,0.3)' : 'none' }};">
+                        <i class="fas fa-inbox me-1"></i> Permintaan Saldo
+                        @if($pendingBalanceRequestsCount > 0)
+                            <span class="badge" style="background:#dc2626;color:#ffffff;font-size:10.5px;margin-left:4px;padding:2px 6px;border-radius:10px;">{{ $pendingBalanceRequestsCount }}</span>
+                        @endif
+                    </button>
+                    <button type="button" onclick="openTopupModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                        <i class="fas fa-plus-circle me-1"></i> Top-Up Saldo Langsung
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        {{-- Chips Saldo per Proyek --}}
+        @if($projects && $projects->count() > 0)
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.18);display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;position:relative;z-index:2;">
+            @foreach($projects as $prj)
+            <div style="background:rgba(255,255,255,0.12);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.22);border-radius:10px;padding:8px 14px;font-size:12px;min-width:210px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <div style="overflow:hidden;">
+                    <div style="font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;" title="{{ $prj->name }}">
+                        {{ $prj->name }}
+                    </div>
+                    <div style="font-size:10.5px;color:#a7f3d0;font-family:monospace;">{{ $prj->code ?? 'PRJ' }}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-weight:800;color:#ffffff;font-size:12.5px;">
+                        Rp {{ number_format($prj->operational_balance, 0, ',', '.') }}
+                    </div>
+                    @if($isRoleAdminPOProyek)
+                        <button type="button" onclick="openRequestBalanceModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" style="background:none;border:none;color:#6ee7b7;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">
+                            + Minta Saldo
+                        </button>
+                    @else
+                        <button type="button" onclick="openTopupModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" style="background:none;border:none;color:#6ee7b7;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">
+                            + Top-up
+                        </button>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
+    @if($isRoleAdminPOProyek)
+        {{-- ==================== KHUSUS ADMIN PO PROYEK: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
+        
+        {{-- Banner Pintasan Nota Harian --}}
+        <div class="card mb-4" style="background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);border:1.5px solid #86efac;padding:18px 22px;border-radius:12px;">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <div style="width:44px;height:44px;border-radius:10px;background:#10b981;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:20px;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:16px;font-weight:700;color:#065f46;margin:0;">
+                            Pencatatan & Rincian Belanja Nota Harian Proyek
+                        </h3>
+                        <p style="font-size:12.5px;color:#047857;margin:3px 0 0 0;">
+                            Seluruh nota belanja langsung/harian di proyek dikelola terstruktur (per 1 minggu & hari) pada menu <strong>Daftar Nota Harian</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('purchase-receipts.create') }}" class="btn btn-outline-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 14px;">
+                        <i class="fas fa-plus-circle me-1"></i> Catat Nota Baru
+                    </a>
+                    <a href="{{ route('purchase-receipts.index') }}" class="btn btn-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 16px;background:#059669;border-color:#059669;">
+                        <i class="fas fa-arrow-right me-1"></i> Buka Daftar Nota Harian
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Card 1: Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner --}}
+        <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;">
+            <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-hand-holding-usd text-emerald-600" style="font-size:16px;"></i>
+                    <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner</h3>
+                    <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceRequests->count() }} Pengajuan</span>
+                </div>
+                <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm btn-primary" style="font-size:12px;font-weight:700;">
+                    <i class="fas fa-paper-plane me-1"></i> Ajukan Permintaan Saldo Baru
+                </button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table" style="font-size:12.5px;margin:0;">
+                    <thead>
+                        <tr style="background:#ffffff;border-bottom:2px solid #e2e8f0;">
+                            <th style="width:40px;text-align:center;">No</th>
+                            <th>Tgl Diajukan</th>
+                            <th>Proyek</th>
+                            <th class="text-end">Nominal Saldo</th>
+                            <th class="text-center">Tingkat Urgensi</th>
+                            <th>Keperluan Belanja Nota</th>
+                            <th class="text-center">Status Persetujuan</th>
+                            <th>Catatan / Ref Pusat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($balanceRequests as $i => $req)
+                        <tr>
+                            <td class="text-muted text-center">{{ $i + 1 }}</td>
+                            <td>{{ $req->created_at->format('d/m/Y H:i') }}</td>
+                            <td><strong class="text-primary">{{ $req->project?->name ?? '-' }}</strong></td>
+                            <td class="text-end"><strong class="text-success" style="font-size:13.5px;">Rp {{ number_format($req->amount, 0, ',', '.') }}</strong></td>
+                            <td class="text-center">
+                                <span class="badge badge-{{ $req->urgency_badge_color }}">{{ $req->urgency_label }}</span>
+                            </td>
+                            <td>{{ $req->purpose }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-{{ $req->status_badge_color }}" style="font-weight:700;font-size:11px;">
+                                    {{ $req->status_label }}
+                                </span>
+                            </td>
+                            <td>
+                                @if($req->status === 'approved')
+                                    <span class="text-success text-xs font-semibold"><i class="fas fa-check-circle me-1"></i>Disetujui {{ $req->approver?->name }}</span>
+                                    @if($req->reference_number)<div class="text-muted text-xs">Ref: {{ $req->reference_number }}</div>@endif
+                                @elseif($req->status === 'rejected')
+                                    <span class="text-danger text-xs font-semibold"><i class="fas fa-times-circle me-1"></i>Ditolak: {{ $req->rejection_reason }}</span>
+                                @else
+                                    <span class="text-muted text-xs italic">Menunggu verifikasi Pusat / Owner</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-6">
+                                Belum ada pengajuan permintaan saldo kas. Klik tombol "Ajukan Permintaan Saldo Baru" jika saldo operasional kas proyek menipis.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Card 2: Riwayat Mutasi Saldo Kas Proyek (Dikelompokkan per 1 Minggu & di dalamnya Hari) --}}
+        <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+            <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-clock-rotate-left text-primary" style="font-size:16px;"></i>
+                    <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Riwayat Mutasi Saldo Kas Proyek</h3>
+                    <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceLogs->count() }} Transaksi</span>
+                    @if(isset($groupedBalanceWeeks) && $groupedBalanceWeeks->count() > 0)
+                        <div class="flex items-center gap-1 ms-2">
+                            <button type="button" onclick="toggleAllBalanceWeeks(true)" class="btn btn-light btn-xs border" style="font-size:11px;padding:3px 8px;font-weight:600;">
+                                <i class="fas fa-angles-down me-1"></i> Buka Semua
+                            </button>
+                            <button type="button" onclick="toggleAllBalanceWeeks(false)" class="btn btn-light btn-xs border" style="font-size:11px;padding:3px 8px;font-weight:600;">
+                                <i class="fas fa-angles-up me-1"></i> Tutup Semua
+                            </button>
+                        </div>
+                    @endif
+                </div>
+                <span class="text-muted text-xs">Dikelompokkan per 1 minggu &amp; di dalamnya per hari</span>
+            </div>
+
+            <div style="padding:14px 16px;background:#f8fafc;">
+                @forelse($groupedBalanceWeeks as $wIdx => $week)
+                    <div class="card mb-3 balance-week-card" style="border:1.5px solid #cbd5e1;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.04);background:#ffffff;">
+                        
+                        {{-- Header Minggu (Clickable Accordion) --}}
+                        <div onclick="toggleBalanceWeek('{{ $wIdx }}')" 
+                             style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);color:#ffffff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer;user-select:none;">
+                            
+                            <div class="flex items-center gap-3">
+                                <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;">
+                                    <i class="fas fa-calendar-week text-emerald-400"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h4 style="font-size:14.5px;font-weight:700;margin:0;letter-spacing:-0.2px;color:#ffffff;">
+                                            {{ $week->week_label }}
+                                        </h4>
+                                        <span class="badge" style="background:#047857;color:#a7f3d0;border:1px solid #059669;font-size:10.5px;padding:2px 8px;">
+                                            Periode 1 Minggu
+                                        </span>
+                                    </div>
+                                    <span style="font-size:11.5px;color:#94a3b8;">
+                                        Total {{ count($week->days) }} hari transaksi &bull; Klik untuk buka/tutup
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span style="background:rgba(255,255,255,0.12);color:#e2e8f0;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">
+                                    <i class="fas fa-receipt me-1"></i> {{ $week->count }} Mutasi
+                                </span>
+                                @if($week->total_topup > 0)
+                                <span style="background:#10b981;color:#ffffff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">
+                                    + Rp {{ number_format($week->total_topup, 0, ',', '.') }}
+                                </span>
+                                @endif
+                                @if($week->total_deduction > 0)
+                                <span style="background:#ef4444;color:#ffffff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">
+                                    - Rp {{ number_format($week->total_deduction, 0, ',', '.') }}
+                                </span>
+                                @endif
+                                <i class="fas fa-chevron-down balance-week-icon" id="balance-week-icon-{{ $wIdx }}" style="font-size:13px;color:#94a3b8;transition:transform 0.2s;"></i>
+                            </div>
+                        </div>
+
+                        {{-- Isi Minggu: Hari-Hari di Dalam Minggu Tersebut --}}
+                        <div id="balance-week-content-{{ $wIdx }}" class="balance-week-content" style="display:block;">
+                            @foreach($week->days as $dIdx => $day)
+                                <div style="border-bottom:1px solid #e2e8f0;">
+                                    
+                                    {{-- Subheader Hari --}}
+                                    <div style="background:#f1f5f9;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid #e2e8f0;">
+                                        <div class="flex items-center gap-2">
+                                            <i class="far fa-calendar-alt text-emerald-600" style="font-size:15px;"></i>
+                                            <strong style="font-size:13px;color:#0f172a;">📅 Hari: {{ $day->date_label }}</strong>
+                                            <span class="badge badge-secondary" style="font-size:10.5px;padding:2px 7px;">{{ $day->count }} transaksi</span>
+                                        </div>
+                                        <div style="font-size:12px;font-weight:700;color:#334155;display:flex;gap:12px;align-items:center;">
+                                            @if($day->total_topup > 0)
+                                                <span>Top-Up: <strong class="text-success">+Rp {{ number_format($day->total_topup, 0, ',', '.') }}</strong></span>
+                                            @endif
+                                            @if($day->total_deduction > 0)
+                                                <span>Potong Nota: <strong class="text-danger">-Rp {{ number_format($day->total_deduction, 0, ',', '.') }}</strong></span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- Tabel Mutasi Hari Ini --}}
+                                    <div class="table-wrap">
+                                        <table class="data-table" style="font-size:12.5px;margin:0;">
+                                            <thead>
+                                                <tr style="background:#ffffff;border-bottom:2px solid #e2e8f0;">
+                                                    <th style="width:40px;text-align:center;">No</th>
+                                                    <th>Waktu Transaksi</th>
+                                                    <th>Proyek</th>
+                                                    <th>Jenis Mutasi</th>
+                                                    <th class="text-end">Nominal</th>
+                                                    <th class="text-end">Saldo Akhir</th>
+                                                    <th>Keterangan Transaksi</th>
+                                                    <th>Dicatat Oleh</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($day->logs as $idx => $log)
+                                                <tr>
+                                                    <td class="text-muted text-center">{{ $idx + 1 }}</td>
+                                                    <td>
+                                                        <span style="font-weight:600;color:#334155;">{{ $log->created_at ? $log->created_at->format('H:i') . ' WIB' : '-' }}</span>
+                                                        <span class="text-muted text-xs block">{{ $log->created_at ? $log->created_at->format('d/m/Y') : '' }}</span>
+                                                    </td>
+                                                    <td><strong class="text-primary">{{ $log->project?->name ?? '-' }}</strong></td>
+                                                    <td>
+                                                        @if($log->type === 'topup')
+                                                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;font-weight:700;">
+                                                                <i class="fas fa-arrow-down me-1"></i> Top-Up Masuk
+                                                            </span>
+                                                        @elseif($log->type === 'payment_deduction')
+                                                            <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10.5px;font-weight:700;">
+                                                                <i class="fas fa-bolt text-warning me-1"></i> Potong Nota Harian
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-secondary">{{ $log->type_label }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end" style="font-weight:700;color:{{ $log->type === 'topup' ? '#059669' : '#dc2626' }};">
+                                                        {{ $log->type === 'topup' ? '+' : '-' }} Rp {{ number_format($log->amount, 0, ',', '.') }}
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <strong style="color:#0f172a;">Rp {{ number_format($log->balance_after, 0, ',', '.') }}</strong>
+                                                    </td>
+                                                    <td style="max-width:280px;">
+                                                        <div>{{ $log->notes ?: '-' }}</div>
+                                                        @if($log->reference_number)
+                                                            <div class="text-muted text-xs font-mono">Ref: {{ $log->reference_number }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-muted text-xs">{{ $log->user?->name ?? 'Sistem' }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @empty
+                    <div style="text-align:center;padding:36px 16px;color:#64748b;background:#ffffff;border-radius:8px;border:1px dashed #cbd5e1;">
+                        <i class="fas fa-receipt text-gray-300 mb-2" style="font-size:36px;display:block;"></i>
+                        <div style="font-weight:700;font-size:13.5px;color:#1e293b;">Belum Ada Riwayat Mutasi Saldo Kas Proyek</div>
+                        <p style="font-size:12px;margin:4px 0 0 0;color:#64748b;">Transaksi top-up dan pemotongan nota belanja harian akan otomatis dikelompokkan per minggu &amp; hari di sini.</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+    @else
+        {{-- ==================== KHUSUS ADMIN PUSAT, OWNER, ADMIN PO: MANAJEMEN PEMBAYARAN PO ==================== --}}
+
+        {{-- ==================== KPI Metric Cards (4 Cards) ==================== --}}
+        <div class="payment-kpi-grid">
         {{-- 1. Total Terverifikasi (Nominal) --}}
         <div class="payment-kpi-card">
             <div class="payment-kpi-icon" style="background:#ecfdf5;color:#059669;">
@@ -268,7 +624,7 @@
                     {{ $metrics['total_count'] ?? 0 }} <span style="font-size:13px;font-weight:600;color:#64748b;">Transaksi</span>
                 </div>
                 <div class="text-muted" style="font-size:11px;margin-top:2px;">
-                    Semua riwayat pengajuan pembayaran
+                    {{ $metrics['instant_count'] ?? 0 }} Instan &bull; {{ $metrics['waiting_count'] ?? 0 }} Reguler
                 </div>
             </div>
         </div>
@@ -294,31 +650,51 @@
 
     {{-- ==================== Filter & Search Bar ==================== --}}
     <div class="payment-filter-card">
-        {{-- Quick Filter Tabs by Status --}}
+        {{-- Quick Filter Tabs by Status & Payment Type --}}
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f1f5f9;">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                 <span style="font-size:11.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-right:4px;">
-                    <i class="fas fa-filter text-primary me-1"></i> Filter Status:
+                    <i class="fas fa-filter text-primary me-1"></i> Filter:
                 </span>
-                <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), [])) }}" 
-                   class="status-tab-btn {{ !request('status') ? 'active' : '' }}">
+                
+                {{-- Semua --}}
+                <a href="{{ route('payments.index', array_merge(request()->except('status', 'payment_type', 'page'), [])) }}" 
+                   class="status-tab-btn {{ (!request('status') && !request('payment_type')) ? 'active' : '' }}">
                     Semua ({{ $metrics['total_count'] ?? 0 }})
                 </a>
+
+                {{-- Instan Kas Proyek --}}
+                <a href="{{ route('payments.index', array_merge(request()->except('payment_type', 'page'), ['payment_type' => 'instant'])) }}" 
+                   class="status-tab-btn {{ request('payment_type') === 'instant' ? 'active' : '' }}" style="{{ request('payment_type') === 'instant' ? 'background:#059669;border-color:#059669;' : '' }}">
+                    <i class="fas fa-bolt text-warning"></i> ⚡ Instan Kas Proyek ({{ $metrics['instant_count'] ?? 0 }})
+                </a>
+
+                {{-- PO Proyek Reguler --}}
+                <a href="{{ route('payments.index', array_merge(request()->except('payment_type', 'page'), ['payment_type' => 'waiting'])) }}" 
+                   class="status-tab-btn {{ request('payment_type') === 'waiting' ? 'active' : '' }}">
+                    <i class="fas fa-clock text-blue-500"></i> ⏳ PO Proyek Reguler ({{ $metrics['waiting_count'] ?? 0 }})
+                </a>
+
+                {{-- Menunggu Verifikasi --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'pending'])) }}" 
                    class="status-tab-btn {{ request('status') === 'pending' ? 'active' : '' }}">
-                    <i class="fas fa-clock text-warning"></i> Menunggu Verifikasi ({{ $metrics['pending_count'] ?? 0 }})
+                    <i class="fas fa-hourglass-half text-warning"></i> Menunggu Verifikasi ({{ $metrics['pending_count'] ?? 0 }})
                 </a>
+
+                {{-- Terverifikasi --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'verified'])) }}" 
                    class="status-tab-btn {{ request('status') === 'verified' ? 'active' : '' }}">
                     <i class="fas fa-check-circle text-success"></i> Terverifikasi ({{ $metrics['verified_count'] ?? 0 }})
                 </a>
+
+                {{-- Ditolak --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'rejected'])) }}" 
                    class="status-tab-btn {{ request('status') === 'rejected' ? 'active' : '' }}">
                     <i class="fas fa-ban text-danger"></i> Ditolak ({{ $metrics['rejected_count'] ?? 0 }})
                 </a>
             </div>
 
-            @if(request()->hasAny(['search', 'status', 'payment_method', 'start_date', 'end_date']))
+            @if(request()->hasAny(['search', 'status', 'payment_type', 'project_id', 'payment_method', 'start_date', 'end_date']))
             <a href="{{ route('payments.index') }}" class="btn btn-sm btn-light border" style="font-size:11.5px;padding:5px 10px;color:#dc2626;background:#fef2f2;border-color:#fecaca;">
                 <i class="fas fa-xmark me-1"></i> Reset Semua Filter
             </a>
@@ -330,6 +706,9 @@
             @if(request('status'))
                 <input type="hidden" name="status" value="{{ request('status') }}">
             @endif
+            @if(request('payment_type'))
+                <input type="hidden" name="payment_type" value="{{ request('payment_type') }}">
+            @endif
 
             {{-- Input Search --}}
             <div style="flex:2;min-width:240px;position:relative;">
@@ -339,13 +718,25 @@
                 <input type="text" 
                        name="search" 
                        value="{{ request('search') }}" 
-                       placeholder="Cari No. Pembayaran, No. PO, Supplier, atau No. Ref..." 
+                       placeholder="Cari No. Pembayaran, No. PO, Supplier, Proyek, atau No. Ref..." 
                        class="form-control" 
                        style="height:38px;padding-left:34px;font-size:12.5px;border-radius:8px;border-color:#cbd5e1;">
             </div>
 
-            {{-- Filter Metode Pembayaran --}}
+            {{-- Filter Proyek --}}
             <div style="flex:1;min-width:160px;">
+                <select name="project_id" class="form-control" style="height:38px;font-size:12.5px;border-radius:8px;border-color:#cbd5e1;" onchange="this.form.submit()">
+                    <option value="">-- Semua Proyek --</option>
+                    @foreach($projects as $prj)
+                        <option value="{{ $prj->id }}" {{ request('project_id') == $prj->id ? 'selected' : '' }}>
+                            {{ $prj->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filter Metode Pembayaran --}}
+            <div style="flex:1;min-width:150px;">
                 <select name="payment_method" class="form-control" style="height:38px;font-size:12.5px;border-radius:8px;border-color:#cbd5e1;" onchange="this.form.submit()">
                     <option value="">-- Semua Metode --</option>
                     <option value="bank_transfer" {{ request('payment_method') === 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
@@ -355,7 +746,7 @@
             </div>
 
             {{-- Filter Tanggal Mulai --}}
-            <div style="width:145px;">
+            <div style="width:140px;">
                 <input type="date" 
                        name="start_date" 
                        value="{{ request('start_date') }}" 
@@ -365,7 +756,7 @@
             </div>
 
             {{-- Filter Tanggal Selesai --}}
-            <div style="width:145px;">
+            <div style="width:140px;">
                 <input type="date" 
                        name="end_date" 
                        value="{{ request('end_date') }}" 
@@ -410,10 +801,10 @@
                 <thead>
                     <tr>
                         <th style="width:40px;text-align:center;">#</th>
-                        <th style="min-width:160px;">No. Pembayaran</th>
+                        <th style="min-width:180px;">No. Pembayaran & Tipe</th>
                         <th style="min-width:140px;">Tahapan (Termin)</th>
-                        <th style="min-width:150px;">Catatan / Keterangan</th>
-                        <th style="min-width:150px;">Metode & Rekening</th>
+                        <th style="min-width:150px;">Proyek / Gudang</th>
+                        <th style="min-width:140px;">Metode & Rekening</th>
                         <th style="min-width:150px;text-align:right;">Nominal Bayar</th>
                         <th style="min-width:115px;text-align:center;">Tgl Bayar</th>
                         <th style="min-width:130px;text-align:center;">Status</th>
@@ -509,15 +900,31 @@
                                 {{ $rowCounter }}
                             </td>
 
-                            {{-- 2. No Pembayaran --}}
+                            {{-- 2. No Pembayaran & Tipe --}}
                             <td>
-                                <div style="display:flex;flex-direction:column;gap:2px;">
-                                    <a href="{{ route('payments.show', $p) }}" style="font-size:13px;font-weight:700;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                        <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
-                                        {{ $p->payment_number }}
-                                    </a>
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <a href="{{ route('payments.show', $p) }}" style="font-size:13px;font-weight:700;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                                            <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
+                                            {{ $p->payment_number }}
+                                        </a>
+
+                                        @if($p->isInstant())
+                                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">
+                                                <i class="fas fa-bolt text-warning me-1"></i> Instan (Kas Proyek)
+                                            </span>
+                                        @else
+                                            <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">
+                                                <i class="fas fa-clock text-blue-500 me-1"></i> PO Proyek (Reguler)
+                                            </span>
+                                        @endif
+                                    </div>
+
                                     <span class="text-muted" style="font-size:10.5px;">
                                         Oleh: <strong>{{ $p->creator?->name ?? 'Sistem' }}</strong>
+                                        @if($p->notes)
+                                            &bull; <span style="font-style:italic;">"{{ Str::limit($p->notes, 30) }}"</span>
+                                        @endif
                                     </span>
                                 </div>
                             </td>
@@ -531,11 +938,22 @@
                                 </div>
                             </td>
 
-                            {{-- 4. Catatan / Keterangan --}}
+                            {{-- 4. Proyek / Gudang --}}
                             <td>
-                                @if($p->notes)
-                                    <div style="font-size:12px;color:#334155;font-weight:500;">
-                                        "{{ $p->notes }}"
+                                @php
+                                    $proj = $p->project ?? $po?->project;
+                                @endphp
+                                @if($proj)
+                                    <div style="font-size:12px;font-weight:600;color:#0f172a;display:inline-flex;align-items:center;gap:5px;">
+                                        <i class="fas fa-building text-primary" style="font-size:11px;"></i>
+                                        <span>{{ $proj->name }}</span>
+                                    </div>
+                                    <div style="font-size:10.5px;color:#64748b;">
+                                        {{ $proj->code ?? 'Proyek' }}
+                                    </div>
+                                @elseif($po?->deliveryWarehouse)
+                                    <div style="font-size:12px;color:#334155;">
+                                        <i class="fas fa-warehouse text-muted me-1"></i> {{ $po->deliveryWarehouse->name }}
                                     </div>
                                 @else
                                     <span class="text-muted" style="font-size:11.5px;">-</span>
@@ -580,6 +998,11 @@
                                 <div style="font-size:14px;font-weight:800;color:#047857;letter-spacing:-0.2px;">
                                     Rp {{ number_format($p->amount, 0, ',', '.') }}
                                 </div>
+                                @if($p->isInstant() && $p->balance_after !== null)
+                                    <div style="font-size:10px;color:#64748b;margin-top:1px;">
+                                        Sisa Saldo: Rp {{ number_format($p->balance_after, 0, ',', '.') }}
+                                    </div>
+                                @endif
                             </td>
 
                             {{-- 7. Tgl Bayar --}}
@@ -640,13 +1063,13 @@
                                 Belum Ada Data Pembayaran
                             </div>
                             <p class="text-muted" style="font-size:12px;max-width:380px;margin:0 auto 16px auto;">
-                                @if(request()->hasAny(['search', 'status', 'payment_method', 'start_date', 'end_date']))
+                                @if(request()->hasAny(['search', 'status', 'payment_type', 'project_id', 'payment_method', 'start_date', 'end_date']))
                                     Tidak ada pembayaran yang cocok dengan kriteria filter atau pencarian Anda. Silakan coba atur ulang filter.
                                 @else
                                     Belum ada transaksi pembayaran yang dicatat. Klik tombol di bawah untuk mencatat pembayaran PO pertama.
                                 @endif
                             </p>
-                            @if(request()->hasAny(['search', 'status', 'payment_method', 'start_date', 'end_date']))
+                            @if(request()->hasAny(['search', 'status', 'payment_type', 'project_id', 'payment_method', 'start_date', 'end_date']))
                                 <a href="{{ route('payments.index') }}" class="btn btn-sm btn-light border" style="font-size:12px;font-weight:600;">
                                     <i class="fas fa-rotate-left me-1"></i> Reset Filter
                                 </a>
@@ -669,6 +1092,472 @@
         </div>
         @endif
     </div>
+    @endif
+
+    {{-- ==================== MODAL 1: Input / Top-Up Saldo Admin PO ==================== --}}
+    <div id="modalTopupBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:520px;overflow:hidden;animation:fadeIn 0.2s ease;">
+            
+            {{-- Modal Header --}}
+            <div style="background:#064e3b;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;">
+                        <i class="fas fa-wallet text-emerald-200"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Top-Up Saldo Kas Proyek</h3>
+                        <p style="font-size:11px;color:#a7f3d0;margin:2px 0 0 0;">Petty cash operasional Admin PO untuk pembayaran nota harian</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeTopupModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            {{-- Modal Form --}}
+            <form method="POST" action="{{ route('payments.topupBalance') }}">
+                @csrf
+                <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+                    
+                    {{-- 1. Pilih Proyek --}}
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Pilih Proyek Tujuan <span class="text-danger">*</span>
+                        </label>
+                        <select name="project_id" id="topupProjectId" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
+                            <option value="">-- Pilih Proyek yang Dituju --</option>
+                            @foreach($projects as $prj)
+                                <option value="{{ $prj->id }}" data-balance="{{ (float)$prj->operational_balance }}">
+                                    {{ $prj->name }} (Saldo Saat Ini: Rp {{ number_format($prj->operational_balance, 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- 2. Nominal Top-Up --}}
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Nominal Pengisian Saldo (Rp) <span class="text-danger">*</span>
+                        </label>
+                        <div style="position:relative;">
+                            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:#64748b;font-size:13px;">
+                                Rp
+                            </div>
+                            <input type="number" 
+                                   name="amount" 
+                                   id="topupAmountInput" 
+                                   min="1000" 
+                                   step="any" 
+                                   required 
+                                   placeholder="0" 
+                                   oninput="formatRupiahPreview(this.value)"
+                                   class="form-control" 
+                                   style="height:42px;padding-left:40px;font-size:15px;font-weight:800;color:#047857;border-radius:8px;border-color:#cbd5e1;">
+                        </div>
+                        <div id="topupRupiahPreview" style="font-size:11.5px;color:#047857;font-weight:600;margin-top:4px;display:none;">
+                            Preview: Rp 0
+                        </div>
+                    </div>
+
+                    {{-- 3. No Referensi Bukti Kas / Transfer --}}
+                    <div>
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            No. Referensi Transfer / Bukti Kas Kantor Pusat
+                        </label>
+                        <input type="text" 
+                               name="reference_number" 
+                               placeholder="Contoh: TRF-PUSAT-00918 atau BKK-1029" 
+                               class="form-control" 
+                               style="height:38px;font-size:12.5px;border-radius:8px;border-color:#cbd5e1;">
+                    </div>
+
+                    {{-- 4. Catatan Tambahan --}}
+                    <div>
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Catatan / Keterangan
+                        </label>
+                        <textarea name="notes" 
+                                  rows="2" 
+                                  placeholder="Contoh: Saldo petty cash minggu ke-3 untuk Admin PO proyek gedung..." 
+                                  class="form-control" 
+                                  style="font-size:12.5px;padding:8px 12px;border-radius:8px;border-color:#cbd5e1;"></textarea>
+                    </div>
+
+                </div>
+
+                {{-- Modal Footer --}}
+                <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="closeTopupModal()" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:8px;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-success" style="font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;background:#059669;border-color:#059669;box-shadow:0 2px 6px rgba(5,150,105,0.25);display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fas fa-check-circle"></i> Simpan Top-Up Saldo
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    {{-- ==================== MODAL 2: Riwayat Mutasi Saldo Kas Proyek ==================== --}}
+    <div id="modalBalanceHistory" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:860px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+            
+            {{-- Modal Header --}}
+            <div style="background:#0f172a;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:#38bdf8;">
+                        <i class="fas fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Riwayat Mutasi Saldo Kas Proyek</h3>
+                        <p style="font-size:11px;color:#94a3b8;margin:2px 0 0 0;">Audit pencatatan penambahan top-up & pemotongan pembayaran instan</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBalanceHistoryModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            {{-- Modal Body Table (Grouped per 1 Minggu & Hari) --}}
+            <div style="overflow-y:auto;padding:16px 20px;flex:1;">
+                @if(isset($groupedBalanceWeeks) && $groupedBalanceWeeks->count() > 0)
+                    @foreach($groupedBalanceWeeks as $wIdx => $week)
+                        <div class="card mb-3" style="border:1.5px solid #cbd5e1;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.03);background:#ffffff;">
+                            
+                            {{-- Header Minggu Modal --}}
+                            <div onclick="toggleModalBalanceWeek('{{ $wIdx }}')"
+                                 style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);color:#ffffff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none;">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-week text-emerald-400"></i>
+                                    <strong style="font-size:13px;color:#ffffff;">{{ $week->week_label }}</strong>
+                                    <span class="badge" style="background:#047857;color:#a7f3d0;font-size:10px;padding:2px 6px;">1 Minggu</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span style="background:rgba(255,255,255,0.12);color:#e2e8f0;padding:2px 8px;border-radius:4px;font-size:11px;">
+                                        {{ $week->count }} Mutasi
+                                    </span>
+                                    @if($week->total_topup > 0)
+                                        <span style="background:#10b981;color:#ffffff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">
+                                            +Rp {{ number_format($week->total_topup, 0, ',', '.') }}
+                                        </span>
+                                    @endif
+                                    @if($week->total_deduction > 0)
+                                        <span style="background:#ef4444;color:#ffffff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">
+                                            -Rp {{ number_format($week->total_deduction, 0, ',', '.') }}
+                                        </span>
+                                    @endif
+                                    <i class="fas fa-chevron-down modal-balance-icon" id="modal-balance-icon-{{ $wIdx }}" style="font-size:11px;color:#94a3b8;transition:transform 0.2s;"></i>
+                                </div>
+                            </div>
+
+                            {{-- Isi Hari di Modal --}}
+                            <div id="modal-balance-content-{{ $wIdx }}" class="modal-balance-content" style="display:block;">
+                                @foreach($week->days as $dIdx => $day)
+                                    <div style="border-bottom:1px solid #e2e8f0;">
+                                        <div style="background:#f1f5f9;padding:7px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;border-top:1px solid #e2e8f0;font-size:11.5px;">
+                                            <div class="flex items-center gap-2">
+                                                <i class="far fa-calendar-alt text-emerald-600"></i>
+                                                <strong style="color:#0f172a;">📅 Hari: {{ $day->date_label }}</strong>
+                                                <span class="badge badge-secondary" style="font-size:10px;padding:1px 5px;">{{ $day->count }} mutasi</span>
+                                            </div>
+                                            <div style="font-weight:700;color:#334155;display:flex;gap:8px;">
+                                                @if($day->total_topup > 0)
+                                                    <span class="text-success">+Rp {{ number_format($day->total_topup, 0, ',', '.') }}</span>
+                                                @endif
+                                                @if($day->total_deduction > 0)
+                                                    <span class="text-danger">-Rp {{ number_format($day->total_deduction, 0, ',', '.') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <table style="width:100%;border-collapse:collapse;font-size:11.5px;">
+                                            <thead>
+                                                <tr style="background:#ffffff;border-bottom:1.5px solid #e2e8f0;text-align:left;">
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;">WAKTU</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;">PROYEK</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;">TIPE</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;text-align:right;">NOMINAL</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;text-align:right;">SALDO AKHIR</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;">CATATAN</th>
+                                                    <th style="padding:6px 10px;font-size:10.5px;color:#475569;">OLEH</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($day->logs as $log)
+                                                <tr style="border-bottom:1px solid #f1f5f9;">
+                                                    <td style="padding:6px 10px;color:#64748b;white-space:nowrap;">
+                                                        {{ $log->created_at ? $log->created_at->format('H:i') : '-' }}
+                                                    </td>
+                                                    <td style="padding:6px 10px;font-weight:600;color:#0f172a;">
+                                                        {{ $log->project?->name ?? '-' }}
+                                                    </td>
+                                                    <td style="padding:6px 10px;">
+                                                        @if($log->type === 'topup')
+                                                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;font-weight:700;">
+                                                                Top-Up
+                                                            </span>
+                                                        @elseif($log->type === 'payment_deduction')
+                                                            <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:700;">
+                                                                Potong Nota
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-secondary" style="font-size:10px;">{{ $log->type_label }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td style="padding:6px 10px;text-align:right;font-weight:700;white-space:nowrap;color:{{ $log->type === 'topup' ? '#059669' : '#dc2626' }};">
+                                                        {{ $log->type === 'topup' ? '+' : '-' }} Rp {{ number_format($log->amount, 0, ',', '.') }}
+                                                    </td>
+                                                    <td style="padding:6px 10px;text-align:right;font-weight:700;color:#0f172a;white-space:nowrap;">
+                                                        Rp {{ number_format($log->balance_after, 0, ',', '.') }}
+                                                    </td>
+                                                    <td style="padding:6px 10px;color:#475569;font-size:11px;max-width:180px;">
+                                                        <div>{{ $log->notes ?: '-' }}</div>
+                                                        @if($log->reference_number)
+                                                            <div style="font-family:monospace;font-size:9.5px;color:#94a3b8;">Ref: {{ $log->reference_number }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td style="padding:6px 10px;color:#64748b;font-size:10.5px;white-space:nowrap;">
+                                                        {{ $log->user?->name ?? 'Sistem' }}
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div style="text-align:center;padding:36px 16px;color:#64748b;">
+                        <i class="fas fa-history" style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:block;"></i>
+                        <div style="font-weight:700;font-size:13px;color:#1e293b;">Belum Ada Riwayat Mutasi Saldo</div>
+                        <p style="font-size:12px;margin:4px 0 0 0;">Transaksi top-up dan pemotongan pembayaran instan akan tercatat otomatis di sini.</p>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Modal Footer --}}
+            <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+                <button type="button" onclick="closeBalanceHistoryModal()" class="btn btn-secondary" style="font-size:12px;font-weight:600;padding:6px 16px;border-radius:6px;">
+                    Tutup
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- ==================== MODAL 3: Formulir Pengajuan Permintaan Saldo Kas (Admin PO Proyek ke Pusat/Owner) ==================== --}}
+    <div id="modalRequestBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:540px;overflow:hidden;">
+            
+            <div style="background:linear-gradient(135deg, #065f46 0%, #047857 100%);color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">
+                        <i class="fas fa-hand-holding-usd text-amber-300"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Minta Saldo Kas ke Pusat / Owner</h3>
+                        <p style="font-size:11px;color:#a7f3d0;margin:2px 0 0 0;">Pengajuan dana operasional nota harian proyek</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRequestBalanceModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('payments.requestBalance') }}">
+                @csrf
+                <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Proyek Tujuan <span class="text-danger">*</span>
+                        </label>
+                        <select name="project_id" id="reqProjectId" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
+                            <option value="">-- Pilih Proyek yang Dituju --</option>
+                            @foreach($projects as $prj)
+                                <option value="{{ $prj->id }}">
+                                    {{ $prj->name }} (Saldo Saat Ini: Rp {{ number_format($prj->operational_balance, 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Nominal Saldo yang Diminta (Rp) <span class="text-danger">*</span>
+                        </label>
+                        <div style="position:relative;">
+                            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:#64748b;font-size:13px;">
+                                Rp
+                            </div>
+                            <input type="number" 
+                                   name="amount" 
+                                   id="reqAmountInput" 
+                                   min="1000" 
+                                   step="any" 
+                                   required 
+                                   placeholder="0" 
+                                   oninput="formatRequestRupiahPreview(this.value)"
+                                   class="form-control" 
+                                   style="height:42px;padding-left:40px;font-size:15px;font-weight:800;color:#047857;border-radius:8px;border-color:#cbd5e1;">
+                        </div>
+                        <div id="reqRupiahPreview" style="font-size:11.5px;color:#047857;font-weight:600;margin-top:4px;display:none;">
+                            Preview: Rp 0
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Tingkat Urgensi <span class="text-danger">*</span>
+                        </label>
+                        <select name="urgency" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
+                            <option value="normal">Normal (Kebutuhan Rutin Harian)</option>
+                            <option value="urgent">🚨 Mendesak (Saldo Menipis / Perlu Belanja Segera)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
+                            Keperluan / Rencana Belanja Nota Harian <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="purpose" 
+                                  rows="3" 
+                                  required
+                                  placeholder="Contoh: Pembelian paku, kawat bendrat, semen darurat minggu ke-4..." 
+                                  class="form-control" 
+                                  style="font-size:12.5px;padding:8px 12px;border-radius:8px;border-color:#cbd5e1;"></textarea>
+                    </div>
+                </div>
+
+                <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="closeRequestBalanceModal()" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:8px;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-success" style="font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fas fa-paper-plane"></i> Kirim Permintaan ke Pusat/Owner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ==================== MODAL 4: Daftar Permintaan Saldo Kas Proyek ==================== --}}
+    <div id="modalBalanceRequests" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:960px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+            
+            <div style="background:#0f172a;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:#f59e0b;">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Daftar Permintaan Saldo Kas Operasional Proyek</h3>
+                        <p style="font-size:11px;color:#94a3b8;margin:2px 0 0 0;">Pengajuan penambahan kas dari Admin PO Proyek untuk diverifikasi Pusat / Owner</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBalanceRequestsModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div style="overflow-y:auto;padding:16px 20px;flex:1;">
+                @if(isset($balanceRequests) && $balanceRequests->count() > 0)
+                <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e2e8f0;background:#f8fafc;color:#475569;text-transform:uppercase;font-size:10.5px;letter-spacing:0.5px;font-weight:700;">
+                            <th style="padding:10px 12px;text-align:left;">Tgl / Pemohon</th>
+                            <th style="padding:10px 12px;text-align:left;">Proyek</th>
+                            <th style="padding:10px 12px;text-align:right;">Nominal Diminta</th>
+                            <th style="padding:10px 12px;text-align:left;">Keperluan</th>
+                            <th style="padding:10px 12px;text-align:center;">Urgensi</th>
+                            <th style="padding:10px 12px;text-align:center;">Status</th>
+                            <th style="padding:10px 12px;text-align:center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($balanceRequests as $reqItem)
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:10px 12px;font-size:11.5px;color:#334155;">
+                                <strong>{{ $reqItem->created_at->format('d/m/Y H:i') }}</strong>
+                                <div class="text-muted">{{ $reqItem->requester?->name ?? 'Admin PO Proyek' }}</div>
+                            </td>
+                            <td style="padding:10px 12px;">
+                                <strong class="text-primary">{{ $reqItem->project?->name ?? '-' }}</strong>
+                                <div class="text-muted text-xs">Saldo Saat Ini: Rp {{ number_format($reqItem->project?->operational_balance ?? 0, 0, ',', '.') }}</div>
+                            </td>
+                            <td style="padding:10px 12px;text-align:right;font-weight:800;color:#047857;font-size:13.5px;white-space:nowrap;">
+                                Rp {{ number_format($reqItem->amount, 0, ',', '.') }}
+                            </td>
+                            <td style="padding:10px 12px;font-size:12px;color:#475569;max-width:220px;">
+                                <div>{{ $reqItem->purpose }}</div>
+                                @if($reqItem->status === 'rejected' && $reqItem->rejection_reason)
+                                    <div class="text-danger text-xs mt-1"><strong>Alasan Tolak:</strong> {{ $reqItem->rejection_reason }}</div>
+                                @elseif($reqItem->status === 'approved' && $reqItem->reference_number)
+                                    <div class="text-success text-xs mt-1"><strong>Ref Kas:</strong> {{ $reqItem->reference_number }}</div>
+                                @endif
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
+                                <span class="badge badge-{{ $reqItem->urgency_badge_color }}" style="font-size:10.5px;">
+                                    {{ $reqItem->urgency_label }}
+                                </span>
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
+                                <span class="badge badge-{{ $reqItem->status_badge_color }}" style="font-size:11px;font-weight:700;">
+                                    {{ $reqItem->status_label }}
+                                </span>
+                            </td>
+                            <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
+                                @if($reqItem->status === 'pending')
+                                    @if(!$isRoleAdminPOProyek)
+                                        <div class="flex items-center justify-center gap-1">
+                                            <form action="{{ route('payments.approveBalanceRequest', $reqItem) }}" method="POST" class="inline" onsubmit="return confirm('Setujui permintaan saldo Rp {{ number_format($reqItem->amount, 0, ',', '.') }} untuk {{ $reqItem->project?->name }}?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-xs btn-success" title="Setujui & Top-Up Saldo">
+                                                    <i class="fas fa-check me-1"></i> Setujui
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-xs btn-outline-danger" onclick="promptRejectRequest({{ $reqItem->id }}, '{{ addslashes($reqItem->project?->name) }}')">
+                                                <i class="fas fa-times me-1"></i> Tolak
+                                            </button>
+                                        </div>
+                                    @else
+                                        <span class="text-muted text-xs italic">Menunggu Pusat</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted text-xs">
+                                        {{ $reqItem->approver?->name ?? 'Pusat' }} ({{ $reqItem->updated_at->format('d/m/Y') }})
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @else
+                <div style="text-align:center;padding:36px 16px;color:#64748b;">
+                    <i class="fas fa-inbox" style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:block;"></i>
+                    <div style="font-weight:700;font-size:13px;color:#1e293b;">Belum Ada Permintaan Saldo Kas</div>
+                    <p style="font-size:12px;margin:4px 0 0 0;">Permintaan saldo kas dari Admin PO Proyek ke Pusat/Owner akan tampil di sini.</p>
+                </div>
+                @endif
+            </div>
+
+            <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+                <button type="button" onclick="closeBalanceRequestsModal()" class="btn btn-secondary" style="font-size:12px;font-weight:600;padding:6px 16px;border-radius:6px;">
+                    Tutup
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- Form Hidden untuk Penolakan Request --}}
+    <form id="rejectRequestForm" method="POST" style="display:none;">
+        @csrf
+        <input type="hidden" name="rejection_reason" id="rejectReasonInput">
+    </form>
 
     @push('scripts')
     <script>
@@ -711,6 +1600,125 @@
                 }
             });
         }
+
+        function openTopupModal(projectId = null, projectName = null) {
+            const modal = document.getElementById('modalTopupBalance');
+            if (projectId) {
+                const select = document.getElementById('topupProjectId');
+                if (select) select.value = projectId;
+            }
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeTopupModal() {
+            const modal = document.getElementById('modalTopupBalance');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openRequestBalanceModal(projectId = null, projectName = null) {
+            const modal = document.getElementById('modalRequestBalance');
+            if (projectId) {
+                const select = document.getElementById('reqProjectId');
+                if (select) select.value = projectId;
+            }
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeRequestBalanceModal() {
+            const modal = document.getElementById('modalRequestBalance');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openBalanceRequestsModal() {
+            const modal = document.getElementById('modalBalanceRequests');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeBalanceRequestsModal() {
+            const modal = document.getElementById('modalBalanceRequests');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function promptRejectRequest(requestId, projectName) {
+            const reason = prompt('Masukkan alasan penolakan permintaan saldo kas untuk proyek ' + projectName + ':');
+            if (reason !== null && reason.trim() !== '') {
+                const form = document.getElementById('rejectRequestForm');
+                form.action = '/payments/balance-requests/' + requestId + '/reject';
+                document.getElementById('rejectReasonInput').value = reason.trim();
+                form.submit();
+            }
+        }
+
+        function toggleBalanceWeek(idx) {
+            const content = document.getElementById('balance-week-content-' + idx);
+            const icon = document.getElementById('balance-week-icon-' + idx);
+            if (!content) return;
+            const isHidden = (content.style.display === 'none');
+            content.style.display = isHidden ? 'block' : 'none';
+            if (icon) {
+                icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            }
+        }
+
+        function toggleAllBalanceWeeks(expand) {
+            document.querySelectorAll('.balance-week-content').forEach(c => {
+                c.style.display = expand ? 'block' : 'none';
+            });
+            document.querySelectorAll('.balance-week-icon').forEach(icon => {
+                icon.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+            });
+        }
+
+        function toggleModalBalanceWeek(idx) {
+            const content = document.getElementById('modal-balance-content-' + idx);
+            const icon = document.getElementById('modal-balance-icon-' + idx);
+            if (!content) return;
+            const isHidden = (content.style.display === 'none');
+            content.style.display = isHidden ? 'block' : 'none';
+            if (icon) {
+                icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+            }
+        }
+
+        function openBalanceHistoryModal() {
+            const modal = document.getElementById('modalBalanceHistory');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeBalanceHistoryModal() {
+            const modal = document.getElementById('modalBalanceHistory');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function formatRupiahPreview(val) {
+            const previewEl = document.getElementById('topupRupiahPreview');
+            if (!val || isNaN(val) || Number(val) <= 0) {
+                previewEl.style.display = 'none';
+                return;
+            }
+            previewEl.style.display = 'block';
+            previewEl.textContent = 'Preview: Rp ' + new Intl.NumberFormat('id-ID').format(val);
+        }
+
+        function formatRequestRupiahPreview(val) {
+            const previewEl = document.getElementById('reqRupiahPreview');
+            if (!val || isNaN(val) || Number(val) <= 0) {
+                previewEl.style.display = 'none';
+                return;
+            }
+            previewEl.style.display = 'block';
+            previewEl.textContent = 'Preview: Rp ' + new Intl.NumberFormat('id-ID').format(val);
+        }
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTopupModal();
+                closeBalanceHistoryModal();
+                closeRequestBalanceModal();
+                closeBalanceRequestsModal();
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

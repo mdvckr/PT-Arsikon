@@ -164,7 +164,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view distributions',
         ]);
 
-        // --- Admin PO: fokus pengadaan & pembelian ---
+        // --- Admin PO (Pusat): fokus pengadaan pusat, PO resmi & pembayaran vendor ---
         $adminPORole = Role::firstOrCreate(['name' => 'Admin PO']);
         $adminPORole->syncPermissions([
             'view suppliers', 'create suppliers', 'edit suppliers',
@@ -183,6 +183,17 @@ class RoleAndPermissionSeeder extends Seeder
             'create transit losses',
             'view reports',
             'view audit logs',
+        ]);
+
+        // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & payment proyek ---
+        $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
+        $adminPOProyekRole->syncPermissions([
+            'view purchase receipts',
+            'create purchase receipts',
+            'view materials',
+            'view suppliers',
+            'view payments',
+            'create payments',
         ]);
 
         // ==========================================================
@@ -331,5 +342,16 @@ class RoleAndPermissionSeeder extends Seeder
         );
         $karyawanUser->syncRoles([$karyawanRole]);
         $karyawanUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
+
+        // 8. Admin PO Proyek (Khusus Nota Harian di Proyek FK Teknik)
+        $adminPOProyekUser = User::firstOrCreate(
+            ['email' => 'po.proyek@arsikon.co.id'],
+            [
+                'name'     => 'Admin PO Proyek (Nota Harian)',
+                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
+            ]
+        );
+        $adminPOProyekUser->syncRoles([$adminPOProyekRole]);
+        $adminPOProyekUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
     }
 }

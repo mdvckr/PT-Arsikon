@@ -1,5 +1,36 @@
 <x-app-layout>
-    <x-slot name="title">Catat Pembayaran PO Baru</x-slot>
+    <x-slot name="title">Catat Pembayaran PO & Kas Proyek</x-slot>
+
+    @push('styles')
+    <style>
+        .payment-type-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .payment-type-card:hover {
+            border-color: #93c5fd;
+            background: #f8fafc;
+        }
+
+        .payment-type-card.active-waiting {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+        }
+
+        .payment-type-card.active-instant {
+            border-color: #059669;
+            background: #ecfdf5;
+            box-shadow: 0 2px 8px rgba(5,150,105,0.12);
+        }
+    </style>
+    @endpush
 
     {{-- Breadcrumb & Header --}}
     <div style="margin-bottom:20px;">
@@ -19,18 +50,30 @@
                         Catat Pembayaran PO
                     </h2>
                     <p style="font-size:12.5px;color:#64748b;margin:2px 0 0 0;">
-                        Formulir pencatatan bukti pelunasan atau cicilan tagihan Purchase Order kepada supplier.
+                        Pilih antara PO Proyek reguler (menunggu verifikasi) atau Pembayaran Instan (potong saldo kas nota harian).
                     </p>
                 </div>
             </div>
 
-            <a href="{{ route('payments.index') }}" class="btn btn-secondary" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;">
-                Kembali ke Daftar
-            </a>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-success" style="background:#059669;border-color:#059669;color:#ffffff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:6px;">
+                    <i class="fas fa-wallet me-1"></i> + Top-Up Saldo Kas
+                </button>
+                <a href="{{ route('payments.index') }}" class="btn btn-secondary" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;">
+                    Kembali
+                </a>
+            </div>
         </div>
     </div>
 
-    @if($errors->any())
+    @if(session('success'))
+    <div class="alert alert-success mb-3" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-check-circle" style="font-size:16px;"></i>
+        <span style="font-size:13px;font-weight:600;">{{ session('success') }}</span>
+    </div>
+    @endif
+
+    @if(isset($errors) && $errors->any())
     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 16px;border-radius:8px;">
         <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:4px;">
             <i class="fas fa-circle-exclamation"></i> Terjadi Kesalahan Pengisian:
@@ -43,18 +86,73 @@
     </div>
     @endif
 
-    <div style="max-width: 820px; margin: 0 auto;">
+    <div style="max-width: 860px; margin: 0 auto;">
         <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 2px 8px -2px rgba(0,0,0,0.05);overflow:hidden;">
-            <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 20px;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-credit-card text-primary" style="font-size:15px;"></i>
-                <span style="font-size:14px;font-weight:700;color:#0f172a;">Formulir Pengajuan Pembayaran</span>
+            <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-credit-card text-primary" style="font-size:15px;"></i>
+                    <span style="font-size:14px;font-weight:700;color:#0f172a;">Formulir Pengajuan Pembayaran</span>
+                </div>
+                <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700;padding:3px 9px;">
+                    2 Tipe: Reguler vs Instan
+                </span>
             </div>
 
             <div class="card-body" style="padding:22px 24px;">
-                <form method="POST" action="{{ route('payments.store') }}">
+                <form method="POST" action="{{ route('payments.store') }}" id="paymentForm">
                     @csrf
                     
-                    {{-- 1. Pilih PO --}}
+                    {{-- 1. PILIHAN JENIS PEMBAYARAN (RADIO CARD SELECTOR) --}}
+                    <div class="mb-4">
+                        <label class="form-label required" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:8px;">
+                            Pilih Jenis Pembayaran <span class="text-danger">*</span>
+                        </label>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                            {{-- Option 1: PO Proyek Reguler (Menunggu Verifikasi) --}}
+                            <label class="payment-type-card {{ old('payment_type', 'waiting') === 'waiting' ? 'active-waiting' : '' }}" id="cardWaiting" onclick="selectPaymentType('waiting')">
+                                <div style="display:flex;align-items:flex-start;gap:10px;">
+                                    <input type="radio" 
+                                           name="payment_type" 
+                                           id="typeWaiting" 
+                                           value="waiting" 
+                                           {{ old('payment_type', 'waiting') === 'waiting' ? 'checked' : '' }} 
+                                           style="margin-top:3px;accent-color:#2563eb;">
+                                    <div>
+                                        <div style="font-weight:800;font-size:13.5px;color:#1e3a8a;display:flex;align-items:center;gap:6px;">
+                                            <span>⏳ PO Proyek (Menunggu)</span>
+                                        </div>
+                                        <div style="font-size:11.5px;color:#475569;margin-top:3px;line-height:1.4;">
+                                            Pengadaan vendor reguler pusat. Berstatus <strong>pending</strong> & harus menunggu persetujuan verifikasi bagian keuangan. Tidak memotong kas proyek.
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            {{-- Option 2: Pembayaran Instan (Saldo Kas Proyek / Nota Harian) --}}
+                            <label class="payment-type-card {{ old('payment_type') === 'instant' ? 'active-instant' : '' }}" id="cardInstant" onclick="selectPaymentType('instant')">
+                                <div style="display:flex;align-items:flex-start;gap:10px;">
+                                    <input type="radio" 
+                                           name="payment_type" 
+                                           id="typeInstant" 
+                                           value="instant" 
+                                           {{ old('payment_type') === 'instant' ? 'checked' : '' }} 
+                                           style="margin-top:3px;accent-color:#059669;">
+                                    <div>
+                                        <div style="font-weight:800;font-size:13.5px;color:#065f46;display:flex;align-items:center;gap:6px;">
+                                            <span>⚡ Pembayaran Instan (Kas Proyek)</span>
+                                            <span class="badge" style="background:#059669;color:#ffffff;font-size:9.5px;padding:1px 6px;border-radius:4px;">Auto Verified</span>
+                                        </div>
+                                        <div style="font-size:11.5px;color:#065f46;margin-top:3px;line-height:1.4;">
+                                            Khusus saldo nota pembelian harian proyek (Admin PO). Langsung <strong>terverifikasi</strong>, memotong saldo kas proyek, & nota harian otomatis lunas.
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- 2. Pilih PO --}}
                     <div class="mb-4">
                         <label class="form-label required" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
                             Pilih Purchase Order (PO) <span class="text-danger">*</span>
@@ -69,9 +167,13 @@
                             @foreach($pos as $po)
                                 @php
                                     $unpaidCount = $po->receipts ? $po->receipts->where('payment_status', 'unpaid')->count() : 0;
+                                    $poProjectName = $po->project?->name;
                                 @endphp
                                 <option value="{{ $po->id }}" {{ (old('purchase_order_id', $selectedPO?->id) == $po->id) ? 'selected' : '' }}>
                                     {{ $po->po_number }} &mdash; {{ $po->supplier?->name }} (Sisa Boleh Dibayar: Rp {{ number_format($po->payable_remaining_amount, 0, ',', '.') }})
+                                    @if($poProjectName)
+                                        [{{ $poProjectName }}]
+                                    @endif
                                     @if($unpaidCount > 0)
                                         &bull; [⚠️ {{ $unpaidCount }} Nota Belum Dibayar]
                                     @endif
@@ -83,7 +185,7 @@
                         </span>
                     </div>
 
-                    {{-- 2. Box Preview Status Finansial PO --}}
+                    {{-- 3. Box Preview Status Finansial PO --}}
                     @if($selectedPO)
                     @php
                         $poTotal = (float) $selectedPO->total_amount;
@@ -103,6 +205,11 @@
                                     <i class="fas fa-truck-field text-primary me-1"></i> Supplier: {{ $selectedPO->supplier?->name ?? '-' }}
                                 </span>
                                 <span class="text-muted ms-2" style="font-size:11px;">({{ $selectedPO->po_number }})</span>
+                                @if($detectedProject)
+                                    <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;margin-left:6px;">
+                                        <i class="fas fa-building me-1"></i> {{ $detectedProject->name }}
+                                    </span>
+                                @endif
                             </div>
                             <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:11px;">
                                 Terbayar {{ $pct }}% dari Nilai Bukti Sah
@@ -145,20 +252,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @if(!empty($withheldData['items']))
-                        <div style="margin-top:12px;background:#fff5f5;border:1px solid #fed7d7;border-radius:6px;padding:10px 12px;font-size:11.5px;">
-                            <div style="font-weight:700;color:#991b1b;margin-bottom:4px;">
-                                <i class="fas fa-circle-exclamation me-1"></i> Rincian Nilai Tertahan:
-                            </div>
-                            @foreach($withheldData['items'] as $wh)
-                                <div style="display:flex;justify-content:space-between;padding:2px 0;color:#7f1d1d;">
-                                    <span>{{ $wh['item_name'] }} ({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }}) &mdash; {{ $wh['reason'] }}</span>
-                                    <strong style="margin-left:8px;">Rp {{ number_format($wh['value'], 0, ',', '.') }}</strong>
-                                </div>
-                            @endforeach
-                        </div>
-                        @endif
 
                         {{-- Rincian Nota Fisik Terkait PO --}}
                         @if($selectedPO->receipts && $selectedPO->receipts->count() > 0)
@@ -214,16 +307,99 @@
 
                         <div style="margin-top:10px;display:flex;justify-content:flex-end;">
                             <button type="button" 
-                                    onclick="document.getElementById('inputAmount').value = '{{ (int) $poPayableRemaining }}'" 
+                                    onclick="setPaymentAmount('{{ (int) $poPayableRemaining }}')" 
                                     class="btn btn-sm btn-light border" 
-                                    style="font-size:11.5px;font-weight:600;padding:3px 9px;color:#2563eb;background:#ffffff;">
+                                    style="font-size:11.5px;font-weight:600;padding:4px 10px;color:#2563eb;background:#ffffff;">
                                 <i class="fas fa-check-double me-1"></i> Bayar Maksimal Nilai Sah (Rp {{ number_format($poPayableRemaining, 0, ',', '.') }})
                             </button>
                         </div>
                     </div>
                     @endif
 
-                    {{-- 3. Nominal & Tanggal --}}
+                    {{-- 4. PROYEK & KOTAK SALDO KAS KECIL (INTERAKTIF & LIVE) --}}
+                    <div class="mb-4" id="projectBalanceSection">
+                        <label class="form-label required" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
+                            Proyek Terkait (Pemilik Kas Operasional) <span class="text-danger">*</span>
+                        </label>
+
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <div style="flex:1;">
+                                <select name="project_id" 
+                                        id="projectSelect" 
+                                        class="form-control" 
+                                        required 
+                                        onchange="updateBalanceCalculations()" 
+                                        style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
+                                    <option value="">-- Pilih Proyek Terkait --</option>
+                                    @foreach($projects as $prj)
+                                        @php
+                                            $isSel = (old('project_id', $detectedProject?->id) == $prj->id);
+                                        @endphp
+                                        <option value="{{ $prj->id }}" 
+                                                data-balance="{{ (float)$prj->operational_balance }}" 
+                                                data-name="{{ $prj->name }}"
+                                                {{ $isSel ? 'selected' : '' }}>
+                                            {{ $prj->name }} &mdash; Saldo Kas Tersedia: Rp {{ number_format($prj->operational_balance, 0, ',', '.') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-light border" style="height:40px;padding:0 12px;font-size:12px;font-weight:600;color:#065f46;background:#f0fdf4;border-color:#86efac;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;">
+                                <i class="fas fa-plus-circle"></i> Top-Up Saldo
+                            </button>
+                        </div>
+
+                        {{-- Card Live Kalkulasi Saldo Kas Proyek (Tampil khusus saat mode Instant dipilih) --}}
+                        <div id="instantBalanceBox" style="margin-top:12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px 16px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span class="badge" style="background:#059669;color:#ffffff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">
+                                        ⚡ Kas Operasional Admin PO
+                                    </span>
+                                    <span style="font-size:12px;font-weight:700;color:#065f46;" id="instantProjectNameDisplay">
+                                        {{ $detectedProject?->name ?? 'Pilih Proyek' }}
+                                    </span>
+                                </div>
+                                <span id="balanceStatusBadge" class="badge" style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;">
+                                    Siap Dihitung
+                                </span>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">
+                                <div style="background:#ffffff;padding:8px 10px;border-radius:6px;border:1px solid #bbf7d0;">
+                                    <div style="font-size:10px;font-weight:700;color:#166534;">SALDO KAS TERSEDIA</div>
+                                    <div style="font-size:13.5px;font-weight:800;color:#047857;margin-top:2px;" id="dispCurrentBalance">
+                                        Rp 0
+                                    </div>
+                                </div>
+                                <div style="background:#ffffff;padding:8px 10px;border-radius:6px;border:1px solid #bbf7d0;">
+                                    <div style="font-size:10px;font-weight:700;color:#1e3a8a;">NOMINAL PEMBAYARAN</div>
+                                    <div style="font-size:13.5px;font-weight:800;color:#1d4ed8;margin-top:2px;" id="dispPayAmount">
+                                        Rp 0
+                                    </div>
+                                </div>
+                                <div style="background:#ffffff;padding:8px 10px;border-radius:6px;border:1px solid #bbf7d0;" id="remainingBalanceBox">
+                                    <div style="font-size:10px;font-weight:700;color:#065f46;">SISA SALDO SESUDAH</div>
+                                    <div style="font-size:13.5px;font-weight:800;color:#059669;margin-top:2px;" id="dispRemainingBalance">
+                                        Rp 0
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Alert jika saldo kurang --}}
+                            <div id="insufficientBalanceAlert" style="display:none;margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;color:#991b1b;font-size:11.5px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-triangle-exclamation" style="font-size:14px;"></i>
+                                    <span>Saldo kas proyek tidak mencukupi! Silakan top-up saldo terlebih dahulu atau alihkan ke opsi <strong>PO Proyek (Menunggu)</strong>.</span>
+                                </div>
+                                <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-danger" style="font-size:11px;font-weight:700;padding:3px 8px;">
+                                    + Top-Up Sekarang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- 5. Nominal & Tanggal --}}
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label class="form-label required" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
@@ -243,6 +419,7 @@
                                        step="any" 
                                        placeholder="0"
                                        required
+                                       oninput="updateBalanceCalculations()"
                                        style="height:40px;padding-left:38px;font-size:14px;font-weight:700;color:#047857;border-radius:8px;border-color:#cbd5e1;">
                             </div>
                             <span class="text-muted" style="font-size:11px;margin-top:3px;display:block;">
@@ -263,46 +440,47 @@
                         </div>
                     </div>
 
-                    {{-- 4. Metode & Rekening Bank --}}
+                    {{-- 6. Metode & Rekening Bank --}}
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label class="form-label required" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
                                 Metode Pembayaran <span class="text-danger">*</span>
                             </label>
-                            <select name="payment_method" class="form-control" required style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
-                                <option value="bank_transfer" {{ old('payment_method')=='bank_transfer' ? 'selected':'' }}>Bank Transfer</option>
-                                <option value="cash" {{ old('payment_method')=='cash' ? 'selected':'' }}>Tunai / Cash</option>
+                            <select name="payment_method" id="paymentMethodSelect" class="form-control" required style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
+                                <option value="cash" {{ old('payment_method')=='cash' ? 'selected':'' }}>Tunai / Cash (Kas Operasional Proyek)</option>
+                                <option value="bank_transfer" {{ old('payment_method', 'bank_transfer')=='bank_transfer' ? 'selected':'' }}>Bank Transfer</option>
                                 <option value="cheque" {{ old('payment_method')=='cheque' ? 'selected':'' }}>Cek / Giro</option>
                             </select>
                         </div>
 
                         <div>
                             <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
-                                Rekening Bank / Catatan Bank
+                                Rekening Bank / Catatan Kas Sumber
                             </label>
                             <input type="text" 
                                    name="bank_account" 
+                                   id="inputBankAccount"
                                    value="{{ old('bank_account') }}" 
-                                   placeholder="Contoh: BCA 1234567890 a/n PT Arsikon" 
+                                   placeholder="Contoh: Kas Kecil Proyek / BCA 1234567890" 
                                    class="form-control"
                                    style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
                         </div>
                     </div>
 
-                    {{-- 5. No Referensi --}}
+                    {{-- 7. No Referensi Bukti --}}
                     <div class="mb-3">
                         <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
-                            Nomor Referensi Transaksi / Bukti Transfer
+                            Nomor Referensi Transaksi / Bukti Pembayaran
                         </label>
                         <input type="text" 
                                name="reference_number" 
                                value="{{ old('reference_number') }}" 
-                               placeholder="Contoh: TRX-202610-99238 atau No. Kwitansi" 
+                               placeholder="Contoh: NOTA-HARIAN-001 / Kwitansi / No Ref Transfer" 
                                class="form-control"
                                style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
                     </div>
 
-                    {{-- 6. Catatan --}}
+                    {{-- 8. Catatan Tambahan --}}
                     <div class="mb-4">
                         <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:6px;">
                             Catatan Tambahan
@@ -310,7 +488,7 @@
                         <textarea name="notes" 
                                   class="form-control" 
                                   rows="2" 
-                                  placeholder="Keterangan peruntukan pembayaran, termin ke-berapa, atau memo lainnya..." 
+                                  placeholder="Keterangan peruntukan pembayaran nota harian, termin ke-berapa, atau memo lainnya..." 
                                   style="padding:10px 12px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">{{ old('notes') }}</textarea>
                     </div>
 
@@ -319,8 +497,8 @@
                         <a href="{{ route('payments.index') }}" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:8px 18px;border-radius:8px;">
                             Batal
                         </a>
-                        <button type="submit" class="btn btn-primary" style="font-size:12.5px;font-weight:700;padding:8px 22px;border-radius:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fas fa-paper-plane"></i> Simpan & Ajukan Pembayaran
+                        <button type="submit" id="btnSubmitPayment" class="btn btn-primary" style="font-size:12.5px;font-weight:700;padding:8px 22px;border-radius:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fas fa-paper-plane"></i> <span id="btnSubmitText">Simpan & Ajukan Pembayaran</span>
                         </button>
                     </div>
 
@@ -328,4 +506,197 @@
             </div>
         </div>
     </div>
+
+    {{-- MODAL TOP-UP SALDO CEPAT DI HALAMAN INI --}}
+    <div id="modalTopupBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);width:100%;max-width:500px;overflow:hidden;">
+            <div style="background:#064e3b;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-wallet text-emerald-200" style="font-size:18px;"></i>
+                    <h3 style="font-size:15px;font-weight:800;margin:0;">Top-Up Saldo Kas Proyek</h3>
+                </div>
+                <button type="button" onclick="closeTopupModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('payments.topupBalance') }}">
+                @csrf
+                <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:5px;display:block;">
+                            Proyek Tujuan <span class="text-danger">*</span>
+                        </label>
+                        <select name="project_id" id="modalTopupProjectId" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;">
+                            @foreach($projects as $prj)
+                                <option value="{{ $prj->id }}" {{ (old('project_id', $detectedProject?->id) == $prj->id) ? 'selected' : '' }}>
+                                    {{ $prj->name }} (Saldo: Rp {{ number_format($prj->operational_balance, 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:5px;display:block;">
+                            Nominal Pengisian Saldo (Rp) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" name="amount" min="1000" step="any" required placeholder="0" class="form-control" style="height:40px;font-size:14px;font-weight:700;border-radius:8px;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:5px;display:block;">
+                            No. Referensi / Bukti Transfer
+                        </label>
+                        <input type="text" name="reference_number" placeholder="Contoh: TRF-PUSAT-0192" class="form-control" style="height:38px;font-size:12.5px;border-radius:8px;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:5px;display:block;">
+                            Catatan Tambahan
+                        </label>
+                        <textarea name="notes" rows="2" placeholder="Catatan pengisian saldo..." class="form-control" style="font-size:12.5px;border-radius:8px;"></textarea>
+                    </div>
+                </div>
+                <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="closeTopupModal()" class="btn btn-light border" style="font-size:12px;font-weight:600;">Batal</button>
+                    <button type="submit" class="btn btn-success" style="font-size:12px;font-weight:700;background:#059669;border-color:#059669;">Simpan Top-Up Saldo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        function selectPaymentType(type) {
+            const cardWaiting = document.getElementById('cardWaiting');
+            const cardInstant = document.getElementById('cardInstant');
+            const radioWaiting = document.getElementById('typeWaiting');
+            const radioInstant = document.getElementById('typeInstant');
+            const btnSubmitText = document.getElementById('btnSubmitText');
+            const instantBox = document.getElementById('instantBalanceBox');
+            const methodSelect = document.getElementById('paymentMethodSelect');
+            const bankAccountInput = document.getElementById('inputBankAccount');
+
+            if (type === 'instant') {
+                radioInstant.checked = true;
+                cardInstant.classList.add('active-instant');
+                cardWaiting.classList.remove('active-waiting');
+                btnSubmitText.textContent = '⚡ Proses Pembayaran Instan (Potong Kas Proyek)';
+                instantBox.style.display = 'block';
+
+                if (methodSelect && !methodSelect.value) {
+                    methodSelect.value = 'cash';
+                }
+                if (bankAccountInput && !bankAccountInput.value) {
+                    bankAccountInput.value = 'Kas Kecil Proyek / Petty Cash';
+                }
+            } else {
+                radioWaiting.checked = true;
+                cardWaiting.classList.add('active-waiting');
+                cardInstant.classList.remove('active-instant');
+                btnSubmitText.textContent = '⏳ Simpan & Ajukan Pembayaran (Menunggu Approval)';
+                instantBox.style.display = 'none';
+            }
+
+            updateBalanceCalculations();
+        }
+
+        function setPaymentAmount(amount) {
+            const input = document.getElementById('inputAmount');
+            if (input) {
+                input.value = amount;
+                updateBalanceCalculations();
+            }
+        }
+
+        function updateBalanceCalculations() {
+            const projectSelect = document.getElementById('projectSelect');
+            const amountInput = document.getElementById('inputAmount');
+            const typeInstant = document.getElementById('typeInstant');
+            const dispCurrent = document.getElementById('dispCurrentBalance');
+            const dispPay = document.getElementById('dispPayAmount');
+            const dispRemaining = document.getElementById('dispRemainingBalance');
+            const statusBadge = document.getElementById('balanceStatusBadge');
+            const alertBox = document.getElementById('insufficientBalanceAlert');
+            const btnSubmit = document.getElementById('btnSubmitPayment');
+            const nameDisplay = document.getElementById('instantProjectNameDisplay');
+
+            if (!projectSelect) return;
+
+            const selectedOpt = projectSelect.options[projectSelect.selectedIndex];
+            const currentBalance = selectedOpt ? parseFloat(selectedOpt.getAttribute('data-balance') || 0) : 0;
+            const projectName = selectedOpt ? selectedOpt.getAttribute('data-name') : 'Pilih Proyek';
+            const payAmount = parseFloat(amountInput ? amountInput.value : 0) || 0;
+            const remainingBalance = currentBalance - payAmount;
+            const isInstant = typeInstant && typeInstant.checked;
+
+            if (nameDisplay) {
+                nameDisplay.textContent = projectName || 'Pilih Proyek';
+            }
+
+            if (dispCurrent) {
+                dispCurrent.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(currentBalance);
+            }
+            if (dispPay) {
+                dispPay.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(payAmount);
+            }
+            if (dispRemaining) {
+                dispRemaining.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(remainingBalance);
+                dispRemaining.style.color = (remainingBalance < 0) ? '#dc2626' : '#059669';
+            }
+
+            if (isInstant) {
+                if (payAmount > 0 && currentBalance < payAmount) {
+                    // Saldo kurang
+                    if (statusBadge) {
+                        statusBadge.textContent = '❌ Saldo Kurang';
+                        statusBadge.style.background = '#fee2e2';
+                        statusBadge.style.color = '#991b1b';
+                    }
+                    if (alertBox) alertBox.style.display = 'flex';
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.style.opacity = '0.6';
+                        btnSubmit.title = 'Saldo kas operasional proyek tidak mencukupi untuk melakukan pembayaran instan!';
+                    }
+                } else {
+                    // Saldo cukup
+                    if (statusBadge) {
+                        statusBadge.textContent = '✅ Saldo Cukup';
+                        statusBadge.style.background = '#dcfce7';
+                        statusBadge.style.color = '#15803d';
+                    }
+                    if (alertBox) alertBox.style.display = 'none';
+                    if (btnSubmit) {
+                        btnSubmit.disabled = false;
+                        btnSubmit.style.opacity = '1';
+                        btnSubmit.removeAttribute('title');
+                    }
+                }
+            } else {
+                // Mode waiting (tidak tergantung saldo kas proyek)
+                if (alertBox) alertBox.style.display = 'none';
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.style.opacity = '1';
+                    btnSubmit.removeAttribute('title');
+                }
+            }
+        }
+
+        function openTopupModal() {
+            const projectSelect = document.getElementById('projectSelect');
+            const modalSelect = document.getElementById('modalTopupProjectId');
+            if (projectSelect && modalSelect && projectSelect.value) {
+                modalSelect.value = projectSelect.value;
+            }
+            document.getElementById('modalTopupBalance').style.display = 'flex';
+        }
+
+        function closeTopupModal() {
+            document.getElementById('modalTopupBalance').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const initialType = "{{ old('payment_type', 'waiting') }}";
+            selectPaymentType(initialType);
+        });
+    </script>
+    @endpush
 </x-app-layout>

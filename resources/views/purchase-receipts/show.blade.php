@@ -12,38 +12,16 @@
             <p class="text-muted" style="font-size:13px;">Tanggal Nota: {{ $purchaseReceipt->receipt_date ? $purchaseReceipt->receipt_date->format('d F Y') : '-' }}</p>
         </div>
         <div class="flex gap-2 items-center flex-wrap">
-            @can('create purchase receipts')
-                @if($purchaseReceipt->payment_status === 'unpaid')
-                    <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Tandai nota ini sebagai SUDAH DIBAYAR?')">
-                        @csrf
-                        @method('PATCH')
-                        <input type="hidden" name="payment_status" value="paid">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="fas fa-check-circle me-1"></i> Tandai Sudah Dibayar
-                        </button>
-                    </form>
-                @else
-                    <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Kembalikan status nota menjadi BELUM DIBAYAR?')">
-                        @csrf
-                        @method('PATCH')
-                        <input type="hidden" name="payment_status" value="unpaid">
-                        <button type="submit" class="btn btn-outline-warning btn-sm">
-                            <i class="fas fa-undo me-1"></i> Kembalikan ke Belum Dibayar
-                        </button>
-                    </form>
-                @endif
-            @endcan
-
             @if($purchaseReceipt->purchaseOrder)
                 <a href="{{ route('purchase-orders.show', $purchaseReceipt->purchaseOrder) }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-file-invoice me-1"></i> Lihat PO terkait ({{ $purchaseReceipt->purchaseOrder->po_number }})
                 </a>
             @endif
-            <form action="{{ route('purchase-receipts.destroy', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus nota pembelian harian ini?')">
+            <form action="{{ route('purchase-receipts.destroy', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus nota pembelian harian ini? Saldo kas operasional proyek akan otomatis dikembalikan (refund).')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-outline-danger btn-sm">
-                    <i class="fas fa-trash me-1"></i> Hapus Nota
+                    <i class="fas fa-trash me-1"></i> Hapus Nota (Refund Saldo)
                 </button>
             </form>
         </div>
@@ -70,48 +48,31 @@
                 <div>
                     <span class="text-muted block text-xs">Status Pembayaran:</span>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="badge badge-{{ $purchaseReceipt->status_color }}">{{ $purchaseReceipt->status_label }}</span>
-                        @can('create purchase receipts')
-                            @if($purchaseReceipt->payment_status === 'unpaid')
-                                <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" class="inline" onsubmit="return confirm('Tandai nota ini sebagai SUDAH DIBAYAR?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="payment_status" value="paid">
-                                    <button type="submit" class="btn btn-success btn-xs" style="font-size:11px;padding:2px 8px;">
-                                        <i class="fas fa-check me-1"></i> Set Sudah Bayar
-                                    </button>
-                                </form>
-                            @else
-                                <form action="{{ route('purchase-receipts.update-status', $purchaseReceipt) }}" method="POST" class="inline" onsubmit="return confirm('Kembalikan status nota menjadi BELUM DIBAYAR?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="payment_status" value="unpaid">
-                                    <button type="submit" class="btn btn-outline-warning btn-xs" style="font-size:11px;padding:2px 8px;">
-                                        <i class="fas fa-undo me-1"></i> Ubah Belum Bayar
-                                    </button>
-                                </form>
-                            @endif
-                        @endcan
+                        @if($purchaseReceipt->payment_status === 'paid')
+                            <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;">
+                                <i class="fas fa-bolt me-1"></i> Lunas (Instan - Kas Proyek)
+                            </span>
+                        @else
+                            <span class="badge badge-{{ $purchaseReceipt->status_color }}">{{ $purchaseReceipt->status_label }}</span>
+                        @endif
                     </div>
                 </div>
                 <div>
                     <span class="text-muted block text-xs">Supplier / Toko Pembelian:</span>
-                    <strong>{{ $purchaseReceipt->supplier_name ?? $purchaseReceipt->supplier?->name ?? $purchaseReceipt->purchaseOrder?->supplier?->name ?? '-' }}</strong>
+                    <strong>{{ $purchaseReceipt->supplier_name ?? $purchaseReceipt->supplier?->name ?? '-' }}</strong>
                 </div>
+                <div>
+                    <span class="text-muted block text-xs">Proyek / Sumber Kas:</span>
+                    <strong class="text-primary">{{ $purchaseReceipt->project?->name ?? $purchaseReceipt->project_name ?? '-' }}</strong>
+                </div>
+                @if($purchaseReceipt->purchaseOrder)
                 <div>
                     <span class="text-muted block text-xs">Terkait PO:</span>
-                    @if($purchaseReceipt->purchaseOrder)
-                        <a href="{{ route('purchase-orders.show', $purchaseReceipt->purchaseOrder) }}" class="text-primary font-bold">
-                            {{ $purchaseReceipt->purchaseOrder->po_number }}
-                        </a>
-                    @else
-                        <span class="text-muted">-</span>
-                    @endif
+                    <a href="{{ route('purchase-orders.show', $purchaseReceipt->purchaseOrder) }}" class="text-primary font-bold">
+                        {{ $purchaseReceipt->purchaseOrder->po_number }}
+                    </a>
                 </div>
-                <div>
-                    <span class="text-muted block text-xs">Proyek:</span>
-                    <span>{{ $purchaseReceipt->project_name ?? $purchaseReceipt->project?->name ?? '-' }}</span>
-                </div>
+                @endif
                 <div>
                     <span class="text-muted block text-xs">Dicatat Oleh:</span>
                     <span>{{ $purchaseReceipt->creator?->name ?? '-' }} ({{ $purchaseReceipt->created_at->format('d M Y H:i') }})</span>
@@ -227,6 +188,12 @@
                 </div>
             </div>
         </div>
+
+        @if(!$po && $purchaseReceipt->project)
+            <div style="background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:13px;border-radius:8px;padding:12px 16px;">
+                <i class="fas fa-bolt me-1 text-warning"></i> Pembayaran nota harian ini dilakukan secara <strong>instan</strong> menggunakan <strong>Saldo Kas Operasional Proyek ({{ $purchaseReceipt->project->name }})</strong>. Total belanja sebesar <strong>Rp {{ number_format($receiptTotal, 0, ',', '.') }}</strong> telah otomatis dipotong dari saldo kas proyek saat nota dicatat.
+            </div>
+        @endif
 
         {{-- Riwayat Pembayaran --}}
         @if($payments && $payments->count() > 0)

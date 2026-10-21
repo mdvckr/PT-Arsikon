@@ -1001,3 +1001,91 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
 - **Hasil Pengujian**:
   - `npm run build`: Selesai dikompilasi tanpa error (CSS 59.31 kB, JS 176.20 kB).
   - `php artisan test --filter="MultiWarehouseIsolationTest|InventoryAndStockTest"`: PASS 100% (8 tests, 20 assertions).
+
+---
+
+## 20. Pemisahan Peran Admin PO (Pusat vs Proyek), Kas Nota Harian, Permintaan Saldo ke Pusat/Owner, dan Pengelompokan Mingguan-Harian (T37)
+- **Konteks & Latar Belakang Masalah**:
+  1. **Tumpang Tindih Peran Admin PO**: Sebelumnya, peran Admin PO menggabungkan dua alur yang sangat berbeda: pembuatan Purchase Order (PO) formal kantor pusat ke supplier vendor besar dan pencatatan belanja fisik material harian (nota toko kecil/lokal) di lapangan proyek. Hal ini membingungkan bagi personil lapangan yang seharusnya hanya berfokus pada nota belanja harian tanpa perlu melihat PO pusat.
+  2. **Alur Nota Harian & Pemotongan Saldo Kas**: Nota pembelian harian di proyek dibeli secara instan (*petty cash*), sehingga tidak masuk akal jika dikaitkan dengan PO pusat atau berstatus "belum dibayar". Saldo kas operasional proyek harus otomatis terpotong saat nota dicatat, dan dikembalikan (*refund*) bila nota dibatalkan/dihapus.
+  3. **Keamanan Top-Up Saldo**: Admin PO Proyek di lapangan tidak boleh mengisi saldo kasnya sendiri sesuka hati. Penambahan saldo harus melalui pengajuan permintaan dana (*balance request*) ke kantor pusat (Admin Pusat / Owner) untuk diverifikasi dan disetujui.
+  4. **Struktur Visual Nota Harian & Mutasi Kas**: Daftar nota pembelian harian dan riwayat mutasi kas sebelumnya ditampilkan dalam bentuk tabel datar (*flat table*), sehingga sulit dipantau secara periodik. Pengguna meminta data dikelompokkan per 1 minggu (Senin — Minggu), dan di dalam setiap minggu dirinci per hari belanja.
+  5. **Kerahasiaan Harga PO (Blind PO Print)**: Bagian penerimaan barang/gudang proyek tidak boleh mengetahui margin harga satuan dan total nominal pembelian PO supplier, sehingga diperlukan opsi cetak PO tanpa harga (*Blind PO / Rp 0*).
+
+- **Perubahan & Implementasi**:
+  1. **Pemisahan Role & Hak Akses (`Admin PO` vs `Admin PO Proyek`)**:
+     - `database/seeders/RoleAndPermissionSeeder.php`:
+       - Menambahkan role baru `Admin PO Proyek` dan permission `view purchase receipts`, `create purchase receipts`, `delete purchase receipts`, `view payments`.
+       - Role `Admin PO Proyek` dibatasi hanya dapat mencatat dan melihat nota harian serta kas proyek di wilayah proyek yang ditugaskan kepadanya.
+     - `resources/views/layouts/app.blade.php`:
+       - Sidebar menu khusus untuk `Admin PO Proyek` diberi seksi tersendiri bertajuk **`NOTA & KAS PROYEK`** dengan sub-menu:
+         - **Catat Nota Baru** (`purchase-receipts.create`)
+         - **Daftar Nota Harian** (`purchase-receipts.index`)
+         - **Kas & Saldo Proyek** (`payments.index`)
+       - Menu PO pusat, permohonan material, dan surat jalan tidak ditampilkan untuk personil proyek.
+  2. **Model & Migrasi Permintaan Saldo Kas Proyek**:
+     - `database/migrations/2026_01_02_000003_create_project_balance_requests_table.php`:
+       - Membuat tabel `project_balance_requests` dengan kolom: `project_id`, `requested_by`, `amount`, `urgency` (`low`, `medium`, `high`, `urgent`), `notes`, `status` (`pending`, `approved`, `rejected`), `approved_by`, `approved_at`, `rejection_reason`.
+     - `app/Models/ProjectBalanceRequest.php`:
+       - Model Eloquent dengan relasi `project()`, `requester()`, dan `approver()`, serta helper badge status dan urgency.
+     - `app/Models/ProjectBalanceLog.php` & `database/migrations/2026_01_02_000002_add_operational_balance_and_instant_payment.php`:
+       - Menambahkan kolom `operational_balance` pada tabel `projects`.
+       - Tabel `project_balance_logs` untuk audit log mutasi kas (`topup` / `payment_deduction`).
+  3. **Alur Pengajuan & Persetujuan Saldo Kas di Controller & Routes**:
+     - `routes/web.php`:
+       - `POST /payments/request-balance` (`payments.requestBalance`): Pengajuan saldo oleh Admin PO Proyek.
+       - `POST /payments/balance-requests/{balanceRequest}/approve` (`payments.approveBalanceRequest`): Persetujuan oleh Admin Pusat / Owner.
+       - `POST /payments/balance-requests/{balanceRequest}/reject` (`payments.rejectBalanceRequest`): Penolakan pengajuan disertai alasan.
+     - `app/Http/Controllers/PaymentController.php`:
+       - `topupBalance()`: Memproteksi top-up langsung agar hanya dapat dieksekusi oleh `Admin Pusat`, `Owner`, atau `Super Admin`.
+       - `requestBalance()`: Menyimpan tiket permintaan dana dari Admin PO Proyek.
+       - `approveBalanceRequest()`: Menambah saldo `operational_balance` proyek, membuat mutasi log `topup`, dan memperbarui status request menjadi `approved`.
+       - `rejectBalanceRequest()`: Memperbarui status request menjadi `rejected` dengan alasan penolakan.
+  4. **Pencatatan Nota Pembelian Harian Instan**:
+     - `resources/views/purchase-receipts/create.blade.php`:
+       - Menghapus input pilihan PO formal.
+       - Menampilkan indikator saldo kas operasional proyek secara real-time di bawah pilihan proyek.
+       - Validasi saldo kas proyek mencukupi sebelum nota disimpan.
+     - `app/Http/Controllers/PurchaseReceiptController.php`:
+       - `store()`: Otomatis menetapkan status nota `paid` (Lunas / Instan) dan memotong saldo operasional proyek dengan log mutasi `payment_deduction`.
+       - `destroy()`: Jika nota dihapus, saldo dikembalikan (*refund*) ke kas proyek dengan log mutasi `topup`.
+  5. **Pengelompokan Mingguan & Harian pada Daftar Nota Harian (`/purchase-receipts`)**:
+     - `app/Http/Controllers/PurchaseReceiptController.php`:
+       - Mengelompokkan `$receipts` per periode 1 minggu ISO (Senin — Minggu) dengan label `Minggu ke-XX (Tgl Mulai — Tgl Akhir)`.
+       - Di dalam tiap minggu, mengelompokkan per hari (`Y-m-d`) dengan label hari/tanggal berbahasa Indonesia (`📅 Hari: [Hari, Tanggal Bulan Tahun]`).
+       - Menghitung total belanja mingguan, jumlah nota mingguan, serta subtotal belanja harian.
+     - `resources/views/purchase-receipts/index.blade.php`:
+       - Header kartu mingguan bergaya *dark gradient* (`#0f172a` ke `#1e293b`) dengan badge *Periode 1 Minggu*, rekap total, dan chevron indikator buka/tutup (*accordion*).
+       - Sub-header harian dengan ikon kalender, badge jumlah nota, dan subtotal belanja harian.
+       - Tabel nota belanja di dalam hari (No, No. Nota Fisik, Proyek, Toko, Item, Status Lunas Instan, Total Belanja, Bukti Foto, Dicatat Oleh, dan Aksi).
+       - Tombol cepat *Buka Semua* dan *Tutup Semua* minggu.
+  6. **Pembersihan Halaman `/payments` Khusus Admin PO Proyek**:
+     - `resources/views/payments/index.blade.php`:
+       - Menggunakan kondisional `@if($isRoleAdminPOProyek)`:
+         - **Menghapus Tabel "Daftar Transaksi Pembayaran PO"**: Agar tidak membingungkan personil proyek, tabel transaksi invoice PO vendor disembunyikan bagi Admin PO Proyek (hanya tampil untuk Admin Pusat/Owner/Admin PO pengadaan).
+         - **Banner Akses Cepat**: Menambahkan tautan langsung ke *Catat Nota Baru* dan *Daftar Nota Harian*.
+         - **Card Status Pengajuan Permintaan Saldo**: Menampilkan tabel riwayat pengajuan saldo kas ke pusat beserta status persetujuannya.
+         - **Card Riwayat Mutasi Saldo Kas Proyek**: Menampilkan seluruh mutasi saldo kas proyek.
+  7. **Pengelompokan Mingguan & Harian pada Riwayat Mutasi Saldo Kas Proyek**:
+     - `app/Http/Controllers/PaymentController.php`:
+       - Mengelompokkan `$balanceLogs` ke dalam `$groupedBalanceWeeks` dengan struktur per 1 minggu (Senin — Minggu) dan di dalamnya per hari.
+       - Menghitung total mutasi masuk (*top-up*) dan total mutasi keluar (*potong belanja nota*) per minggu dan per hari.
+     - `resources/views/payments/index.blade.php`:
+       - Card 2 (*Riwayat Mutasi Saldo Kas Proyek*) diubah dari flat table menjadi accordion mingguan dan harian persis seperti tampilan Daftar Nota Harian.
+       - Header kartu minggu menampilkan label `Minggu ke-XX (Rentang Tanggal)`, badge *Periode 1 Minggu*, total mutasi, total top-up masuk `+Rp`, total potongan nota `-Rp`, dan toggle buka/tutup.
+       - Sub-header harian menampilkan `📅 Hari: [Hari, Tanggal Bulan Tahun]`, badge jumlah mutasi, dan subtotal harian.
+       - Tabel rincian mutasi harian memuat: No, Waktu Transaksi (Jam & Tgl), Proyek, Jenis Mutasi, Nominal (`+` / `-`), Saldo Akhir, Keterangan Transaksi & No. Ref/Nota, serta Dicatat Oleh.
+       - Tampilan modal popup *Riwayat Mutasi Saldo Kas Proyek* (`modalBalanceHistory`) juga diperbarui menggunakan format pengelompokan mingguan & harian yang sama demi konsistensi visual.
+  8. **Fitur Cetak PO Tanpa Harga (Blind PO Print)**:
+     - `resources/views/purchase-orders/print.blade.php`:
+       - Menambahkan parameter request `?blind=1` atau `?hide_price=1`.
+       - Jika opsi cetak lapangan aktif atau role pengguna bukan Admin Pusat/Admin PO, nominal harga satuan, subtotal, PPN, dan grand total otomatis disembunyikan / dikonversi menjadi `Rp 0`.
+       - Opsi dropdown ganda di view PO show (`purchase-orders/show.blade.php`):
+         1. *Cetak PO Resmi (Dengan Harga)*
+         2. *Cetak PO Lapangan / Gudang (Tanpa Harga / Rp 0)*
+
+- **Hasil Pengujian & Verifikasi**:
+  - `php artisan view:clear`: Sukses membersihkan cache template Blade.
+  - Simulasi rendering view:
+    - User 65 (`Admin PO Proyek`): Halaman `/purchase-receipts` dan `/payments` ter-render sempurna (HTTP 200, bebas error, seluruh kartu grouping mingguan-harian tampil dengan rapi).
+    - User 59 (`Admin Pusat`) & User 58 (`Owner`): Berhasil mengakses dasbor verifikasi PO, verifikasi permohonan saldo kas, dan riwayat mutasi kas.

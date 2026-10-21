@@ -1650,6 +1650,12 @@
                 $roleIcon = 'fa-helmet-safety';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'PO Lapangan & alat proyek';
+            } elseif ($authUser->hasRole('Admin PO Proyek')) {
+                $roleLabel = 'Admin PO Proyek';
+                $roleBadge = 'PO Proyek';
+                $roleIcon = 'fa-receipt';
+                $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
+                $subDesc = 'Pencatatan nota pembelian harian';
             } elseif ($authUser->hasRole('Admin PO')) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
@@ -1677,12 +1683,13 @@
             @php
                 $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
                 $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
+                $isRoleAdminPOProyek = auth()->user()->hasRole('Admin PO Proyek');
                 $isRoleAdminProyek = auth()->user()->hasAnyRole(['Admin Gudang Proyek', 'Admin Proyek']);
-                $canTeknis = !$isRoleAdminPO && (
+                $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     auth()->user()->can('view material requests')
                     || auth()->user()->can('view distributions')
                 );
-                $isTeknisActive = !$isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']);
+                $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && request()->routeIs(['material-requests.*', 'distributions.*']);
             @endphp
             @if($canTeknis)
             <div class="nav-section" @if(!$isRoleAdminProyek) x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }" @endif>
@@ -1714,7 +1721,7 @@
 
             <!-- 2. GRUP PENGADAAN -->
             @php
-                $canPengadaan = !$isRoleAdminProyek && (
+                $canPengadaan = !$isRoleAdminProyek && !$isRoleAdminPOProyek && (
                     (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
@@ -1723,7 +1730,25 @@
                 $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*'])
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']));
             @endphp
-            @if($canPengadaan)
+            @if($isRoleAdminPOProyek)
+                {{-- Khusus Admin PO Proyek: Nota Harian & Kas Pembayaran Proyek --}}
+                <div class="nav-section">
+                    <div style="padding: 8px 12px 4px 12px;">
+                        <span class="nav-section-label">NOTA & KAS PROYEK</span>
+                    </div>
+                    <div class="nav-section-body">
+                        <a href="{{ route('purchase-receipts.create') }}" class="nav-item {{ request()->routeIs('purchase-receipts.create') ? 'active' : '' }}">
+                            <i class="fas fa-circle-plus"></i> Catat Nota Baru
+                        </a>
+                        <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.index') || request()->routeIs('purchase-receipts.show') ? 'active' : '' }}">
+                            <i class="fas fa-receipt"></i> Daftar Nota Harian
+                        </a>
+                        <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                            <i class="fas fa-wallet"></i> Kas & Saldo Proyek
+                        </a>
+                    </div>
+                </div>
+            @elseif($canPengadaan)
                 @if($isRoleAdminPO)
                 {{-- Khusus Admin Pengadaan (PO): Tampil langsung tanpa dropdown (selalu terbuka tanpa toggle collapse) --}}
                 <div class="nav-section">
@@ -1803,7 +1828,7 @@
 
             <!-- 3. GRUP LOGISTIK -->
             @php
-                $canLogistik = !$isRoleAdminPO && (
+                $canLogistik = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     auth()->user()->can('view goods receipts')
                     || auth()->user()->can('view material usages')
                     || auth()->user()->can('view inventory')
@@ -1814,7 +1839,7 @@
                     || auth()->user()->can('view tool assignments')
                     || $canDailyLog
                 );
-                $isLogistikActive = !$isRoleAdminPO && (
+                $isLogistikActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     request()->routeIs(['goods-receipts.*', 'material-usages.*', 'inventory.*', 'stock-opnames.*', 'materials.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']) || request()->routeIs('reports.mutation')
                 );
             @endphp

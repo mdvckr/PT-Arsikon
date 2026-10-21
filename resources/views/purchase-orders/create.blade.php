@@ -120,15 +120,30 @@
                 </div>
 
                 <div>
-                    <label class="form-label font-semibold">Gudang Tujuan Pengiriman <span class="text-danger">*</span></label>
-                    <select name="delivery_warehouse_id" class="form-control" required>
-                        <option value="">-- Pilih Gudang Tujuan --</option>
+                    <label class="form-label font-semibold">
+                        <i class="fas fa-location-dot text-danger me-1"></i> Alamat Pengiriman (Tujuan Proyek / Gudang) <span class="text-danger">*</span>
+                    </label>
+                    <select name="delivery_warehouse_id" id="delivery_warehouse_select" class="form-control" onchange="updateDeliveryAddressInfo(this)" required>
+                        <option value="">-- Pilih Tujuan Pengiriman --</option>
                         @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ (old('delivery_warehouse_id', $selectedMR?->to_warehouse_id ?? '') == $wh->id) ? 'selected' : '' }}>
-                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                            @php
+                                $proj = $wh->project;
+                                $whAddr = $wh->address ?: ($proj?->location ?: 'Alamat belum diatur');
+                                $fullLabel = $wh->name . ($proj ? ' — Proyek: ' . $proj->name . ' (' . $whAddr . ')' : ' — ' . $whAddr);
+                            @endphp
+                            <option value="{{ $wh->id }}"
+                                data-address="{{ $wh->address ?? '' }}"
+                                data-warehouse-name="{{ $wh->name }}"
+                                data-project-name="{{ $proj?->name ?? '' }}"
+                                data-project-location="{{ $proj?->location ?? '' }}"
+                                {{ (old('delivery_warehouse_id', $selectedMR?->to_warehouse_id ?? '') == $wh->id) ? 'selected' : '' }}>
+                                {{ $fullLabel }}
                             </option>
                         @endforeach
                     </select>
+                    <div id="delivery_address_preview" class="mt-2" style="font-size:11.5px;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;color:#0369a1;display:none;line-height:1.5;">
+                        <i class="fas fa-truck-ramp-box me-1"></i> <span id="delivery_address_text"></span>
+                    </div>
                 </div>
 
                 <div>
@@ -164,10 +179,11 @@
                 <table class="data-table" id="po-items-table">
                     <thead>
                         <tr>
-                            <th style="width: 42%;">Material / Barang <span class="text-danger">*</span></th>
-                            <th style="width: 18%;">Jumlah & Satuan <span class="text-danger">*</span></th>
-                            <th style="width: 18%;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
-                            <th style="width: 17%;">Subtotal (Rp)</th>
+                            <th style="width: 30%;">Material / Barang <span class="text-danger">*</span></th>
+                            <th style="width: 15%;">Jumlah & Satuan <span class="text-danger">*</span></th>
+                            <th style="width: 16%;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
+                            <th style="width: 15%;">Subtotal (Rp)</th>
+                            <th style="width: 19%;">Catatan / Keterangan</th>
                             <th style="width: 5%; text-align:center;">Hapus</th>
                         </tr>
                     </thead>
@@ -222,6 +238,9 @@
                                 <td>
                                     <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
                                 </td>
+                                <td>
+                                    <input type="text" name="items[{{ $idx }}][notes]" value="{{ old('items.'.$idx.'.notes', $prItem->notes ?? '') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
+                                </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
                                 </td>
@@ -266,6 +285,9 @@
                                 </td>
                                 <td>
                                     <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                                </td>
+                                <td>
+                                    <input type="text" name="items[{{ $idx }}][notes]" value="{{ old('items.'.$idx.'.notes', $mrItem->notes ?? '') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
@@ -322,6 +344,9 @@
                                 </td>
                                 <td>
                                     <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                                </td>
+                                <td>
+                                    <input type="text" name="items[0][notes]" value="{{ old('items.0.notes') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
@@ -402,6 +427,7 @@
             // 1. Auto-pilih Gudang Tujuan Pengiriman ke Proyek pemohon
             if (mrData.to_warehouse_id && warehouseSelect) {
                 warehouseSelect.value = mrData.to_warehouse_id;
+                updateDeliveryAddressInfo(warehouseSelect);
             }
 
             // 2. Tampilkan banner PO Lapangan
@@ -413,7 +439,7 @@
                             <div>
                                 <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #${mrData.request_number}</strong>
                                 <span style="font-size:11.5px;color:#b45309;">
-                                    Gudang Tujuan Pengiriman: <strong>${mrData.project_name}</strong>.
+                                    Tujuan Pengiriman: <strong>${mrData.project_name}</strong>.
                                     Item dengan jalur pembelian vendor dimuat otomatis ke daftar pesanan di bawah.
                                 </span>
                             </div>
@@ -440,6 +466,7 @@
             }
 
             items.forEach(function(item, idx) {
+                const safeNotes = (item.notes || '').replace(/"/g, '&quot;');
                 const row = document.createElement('tr');
                 row.className = 'po-item-row';
                 row.innerHTML = `
@@ -457,7 +484,7 @@
                         </div>
                         <div style="font-size:11px;color:#64748b;margin-top:2px;">
                             <i class="fas fa-link me-1"></i> Dari PO Lapangan <strong>#${mrNum}</strong> (${projName})
-                            ${item.notes ? '<span class="text-muted ms-1">| Catatan: ' + item.notes + '</span>' : ''}
+                            ${item.notes ? '<span class="text-muted ms-1">| Catatan MR: ' + item.notes + '</span>' : ''}
                         </div>
                     </td>
                     <td>
@@ -472,6 +499,9 @@
                     </td>
                     <td>
                         <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                    </td>
+                    <td>
+                        <input type="text" name="items[${idx}][notes]" value="${safeNotes}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
@@ -629,6 +659,9 @@
                 <td>
                     <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
                 </td>
+                <td>
+                    <input type="text" name="items[${poRowIdx}][notes]" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
+                </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
                 </td>
@@ -641,6 +674,35 @@
             const tbody = document.getElementById('po-items-tbody');
             if (tbody.querySelectorAll('.po-item-row').length > 1) {
                 btn.closest('tr').remove();
+            }
+        }
+
+        function updateDeliveryAddressInfo(sel) {
+            const preview = document.getElementById('delivery_address_preview');
+            const text = document.getElementById('delivery_address_text');
+            if (!preview || !text) return;
+            if (sel && sel.value) {
+                const opt = sel.options[sel.selectedIndex];
+                const addr = opt.getAttribute('data-address') || '';
+                const projName = opt.getAttribute('data-project-name') || '';
+                const projLoc = opt.getAttribute('data-project-location') || '';
+                const whName = opt.getAttribute('data-warehouse-name') || opt.text;
+                
+                let desc = 'Tujuan: <strong>' + whName + '</strong>';
+                if (projName) {
+                    desc += ' &bull; Proyek: <strong>' + projName + '</strong>';
+                }
+                if (addr) {
+                    desc += ' &bull; Alamat Pengiriman: <em>' + addr + '</em>';
+                }
+                if (projLoc && (!addr || !addr.toLowerCase().includes(projLoc.toLowerCase()))) {
+                    desc += ' (' + projLoc + ')';
+                }
+                text.innerHTML = desc;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+                text.innerHTML = '';
             }
         }
 
@@ -670,6 +732,12 @@
 
         // Initialize any initial rows if needed
         document.addEventListener('DOMContentLoaded', function () {
+            // Delivery address init
+            const whSelect = document.getElementById('delivery_warehouse_select');
+            if (whSelect) {
+                updateDeliveryAddressInfo(whSelect);
+            }
+
             // Supplier init
             const supSelect = document.getElementById('supplier_select');
             const hiddenSupId = document.getElementById('hidden_supplier_id');

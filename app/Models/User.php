@@ -137,4 +137,22 @@ class User extends Authenticatable
         // Karyawan, User, dll: hanya warehouse yang ditugaskan
         return $this->warehouses()->pluck('warehouses.id')->toArray();
     }
+
+    /**
+     * Menentukan apakah user berhak melihat nominal harga satuan, subtotal, dan total nilai pada PO.
+     * Hanya role Admin Pusat dan Admin PO (serta Owner) yang berhak melihat harga PO.
+     */
+    public function canViewPoPrice(): bool
+    {
+        return $this->hasAnyRole([
+            'Admin Pusat',
+            'Admin PO',
+            'Owner',
+            'Super Admin',
+            'admin_pusat',
+            'admin_po',
+            'owner',
+            'super_admin'
+        ]) || $this->can('view po prices');
+    }
 }

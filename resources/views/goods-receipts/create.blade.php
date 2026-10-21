@@ -532,11 +532,12 @@
 
             .receipt-items-table tr.item-row {
                 display: grid !important;
-                grid-template-columns: 1fr auto !important;
+                grid-template-columns: 1fr 1fr auto !important;
                 grid-template-areas:
-                    "type   action"
-                    "item   item"
-                    "qty    unit";
+                    "type    type    action"
+                    "item    item    item"
+                    "shipped qty     missing"
+                    "unit    notes   notes";
                 gap: 10px 12px !important;
                 padding: 14px !important;
                 background: #ffffff !important;
@@ -597,6 +598,12 @@
                 background-color: #ffffff !important;
             }
 
+            .receipt-items-table td.col-shipped {
+                grid-area: shipped;
+                padding: 0 !important;
+                border: none !important;
+            }
+
             .receipt-items-table td.col-qty {
                 grid-area: qty;
                 padding: 0 !important;
@@ -613,6 +620,12 @@
                 border: 1.5px solid #cbd5e1 !important;
             }
 
+            .receipt-items-table td.col-missing {
+                grid-area: missing;
+                padding: 0 !important;
+                border: none !important;
+            }
+
             .receipt-items-table td.col-unit {
                 grid-area: unit;
                 padding: 0 !important;
@@ -621,6 +634,12 @@
                 flex-direction: column !important;
                 justify-content: flex-end !important;
                 min-width: 85px !important;
+            }
+
+            .receipt-items-table td.col-notes {
+                grid-area: notes;
+                padding: 0 !important;
+                border: none !important;
             }
 
             .receipt-items-table td.col-unit .badge {
@@ -841,10 +860,13 @@
                     <table class="data-table receipt-items-table mb-0" id="itemsTable">
                         <thead>
                             <tr>
-                                <th style="width:110px;">Tipe</th>
-                                <th>Nama Barang / Item <span class="text-danger">*</span></th>
-                                <th style="width:130px;text-align:center;">Qty Masuk <span class="text-danger">*</span></th>
-                                <th style="width:90px;text-align:center;">Satuan</th>
+                                <th style="width:105px;">Tipe</th>
+                                <th style="min-width:220px;">Nama Barang / Item &amp; Referensi <span class="text-danger">*</span></th>
+                                <th style="width:115px;text-align:center;" title="Kuantitas yang dipesan pada Purchase Order / PO Lapangan">Qty Target (PO)</th>
+                                <th style="width:125px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Qty Masuk (Stok) <span class="text-danger">*</span></th>
+                                <th style="width:110px;text-align:center;" title="Selisih jika barang tidak sesuai PO (misal PO 100, selisih 5, maka stok update 95)">Selisih</th>
+                                <th style="width:80px;text-align:center;">Satuan</th>
+                                <th style="width:170px;">Catatan / Keterangan</th>
                                 <th style="width:45px;text-align:center;"></th>
                             </tr>
                         </thead>
@@ -1011,7 +1033,7 @@
                                 </label>
                                 <div class="input-icon-wrap">
                                     <i class="fas fa-file-contract input-icon"></i>
-                                    <select id="poSelect" name="purchase_order_id" class="form-control" onchange="loadPoItems(this.value)">
+                                    <select id="poSelect" name="purchase_order_id" class="form-control" onchange="onPoSelectChange(this.value)">
                                         <option value="">— Tanpa PO (Pembelian Langsung) —</option>
                                         @foreach($purchaseOrders as $po)
                                         @php

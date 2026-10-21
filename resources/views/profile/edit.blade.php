@@ -476,6 +476,10 @@
                                     <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
                                         <i class="fas fa-truck-ramp-box me-1"></i> Admin PO
                                     </span>
+                                @elseif($role->name === 'Admin PO Proyek')
+                                    <span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
+                                        <i class="fas fa-receipt me-1"></i> Admin PO Proyek
+                                    </span>
                                 @else
                                     <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
                                         <i class="fas fa-id-badge me-1"></i> {{ $role->name }}

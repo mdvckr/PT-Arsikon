@@ -205,6 +205,7 @@ class PurchaseOrderController extends Controller
             'items.*.procurement_request_item_id' => 'nullable|exists:procurement_request_items,id',
             'items.*.quantity'                 => 'required|numeric|min:0.01',
             'items.*.unit_price'               => 'required|numeric|min:0',
+            'items.*.notes'                    => 'nullable|string|max:500',
             'items.*.schedules'                => 'nullable|array',
             'items.*.schedules.*.stage_label'  => 'nullable|string|max:100',
             'items.*.schedules.*.planned_date' => 'nullable|date',
@@ -432,6 +433,7 @@ class PurchaseOrderController extends Controller
                     'unit_price'                  => $item['unit_price'],
                     'subtotal'                    => $subtotal,
                     'unit'                        => $customUnit,
+                    'notes'                       => !empty($item['notes']) ? trim($item['notes']) : null,
                 ]);
 
                 $schedules = $item['schedules'] ?? [];
@@ -496,10 +498,12 @@ class PurchaseOrderController extends Controller
         ]);
         $printTemplate = \App\Models\PrintTemplate::activeForPO();
         $allTemplates  = \App\Models\PrintTemplate::latest()->get();
-        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates'));
+        $userCanViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
+
+        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice'));
     }
 
-    public function print(PurchaseOrder $purchaseOrder)
+    public function print(Request $request, PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load([
             'supplier',
@@ -508,10 +512,25 @@ class PurchaseOrderController extends Controller
             'deliveryWarehouse.project',
             'items.material.unit',
             'items.tool',
+            'items.materialRequestItem.materialRequest.toWarehouse.project',
+            'procurementRequest.project',
         ]);
 
+        $user = auth()->user();
+        $userCanViewPrice = $user ? $user->canViewPoPrice() : false;
+
+        // Opsi mode cetak: 'official' (dengan harga) vs 'blind' (tanpa harga / Rp 0 untuk lapangan)
+        $requestedMode = $request->query('mode', 'official');
+        if ($request->has('blind') || $request->has('hide_price')) {
+            $requestedMode = 'blind';
+        }
+
+        // Aturan: Jika user BUKAN Admin Pusat atau Admin PO (serta Owner), WAJIB dicetak tanpa harga (blind / Rp 0)
+        $isBlind = (!$userCanViewPrice) || ($requestedMode === 'blind');
+        $hidePrice = $isBlind;
+
         $po = $purchaseOrder;
-        return view('purchase-orders.print', compact('po'));
+        return view('purchase-orders.print', compact('po', 'hidePrice', 'isBlind', 'userCanViewPrice'));
     }
 
 

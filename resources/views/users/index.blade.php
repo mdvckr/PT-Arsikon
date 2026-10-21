@@ -96,6 +96,8 @@
                                         <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><i class="fas fa-helmet-safety"></i> Admin Gudang Proyek</span>
                                     @elseif($role->name === 'Admin PO')
                                         <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;"><i class="fas fa-truck-ramp-box"></i> Admin PO</span>
+                                    @elseif($role->name === 'Admin PO Proyek')
+                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;"><i class="fas fa-receipt"></i> Admin PO Proyek</span>
                                     @else
                                         <span class="badge badge-secondary" style="font-size:11px;font-weight:600;">{{ ucfirst($role->name) }}</span>
                                     @endif

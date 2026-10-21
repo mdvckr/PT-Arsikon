@@ -84,7 +84,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/goods-receipts/po-items/{purchaseOrder}', [GoodsReceiptController::class, 'getPoItems'])->name('goods-receipts.poItems');
     Route::get('/goods-receipts/mr-items/{materialRequest}', [GoodsReceiptController::class, 'getMrItems'])->name('goods-receipts.mrItems');
     Route::post('/goods-receipts/{goodsReceipt}/confirm', [GoodsReceiptController::class, 'confirm'])->name('goods-receipts.confirm');
-    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('/goods-receipts/{goodsReceipt}/print', [GoodsReceiptController::class, 'print'])->name('goods-receipts.print');
+    Route::resource('goods-receipts', GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
     // Transit Losses (Kehilangan Barang di Perjalanan)
     Route::get('/transit-losses', [TransitLossController::class, 'index'])->name('transit-losses.index');
@@ -164,6 +165,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Payments
     Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);
+    Route::post('/payments/topup-balance', [PaymentController::class, 'topupBalance'])->name('payments.topupBalance');
+    Route::post('/payments/request-balance', [PaymentController::class, 'requestBalance'])->name('payments.requestBalance');
+    Route::post('/payments/balance-requests/{balanceRequest}/approve', [PaymentController::class, 'approveBalanceRequest'])->name('payments.approveBalanceRequest');
+    Route::post('/payments/balance-requests/{balanceRequest}/reject', [PaymentController::class, 'rejectBalanceRequest'])->name('payments.rejectBalanceRequest');
     Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
     Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
 

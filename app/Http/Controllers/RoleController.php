@@ -19,6 +19,7 @@ class RoleController extends Controller
         'Admin Gudang Pusat',
         'Admin Gudang Proyek',
         'Admin PO',
+        'Admin PO Proyek',
         'Karyawan',
     ];
 
@@ -70,11 +71,18 @@ class RoleController extends Controller
             'description' => 'Logistik lapangan site proyek, penerimaan distribusi, dan pemakaian material proyek.',
         ],
         'Admin PO' => [
-            'category'    => 'Pengadaan & PO',
+            'category'    => 'Pengadaan Pusat',
             'badge_color' => '#5b21b6',
             'badge_bg'    => '#ede9fe',
             'icon'        => 'fa-file-invoice-dollar',
-            'description' => 'Fokus pengadaan, Purchase Order (PO), pengajuan pembayaran, dan supplier.',
+            'description' => 'Pengadaan pusat, Purchase Order (PO) resmi, verifikasi nota, dan pembayaran vendor.',
+        ],
+        'Admin PO Proyek' => [
+            'category'    => 'Site Proyek',
+            'badge_color' => '#0284c7',
+            'badge_bg'    => '#e0f2fe',
+            'icon'        => 'fa-receipt',
+            'description' => 'Khusus pengisian & pencatatan nota pembelian harian bon toko di proyek.',
         ],
         'Karyawan' => [
             'category'    => 'Operasional Lapangan',

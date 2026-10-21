@@ -4,16 +4,42 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\PurchaseOrder;
+use App\Models\Project;
+use App\Models\ProjectBalanceLog;
+use App\Models\ProjectBalanceRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Payment::with(['purchaseOrder.supplier', 'creator']);
+        $this->authorize('view payments');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        $query = Payment::with(['purchaseOrder.supplier', 'purchaseOrder.deliveryWarehouse.project', 'project', 'creator']);
+
+        if ($isRoleAdminPOProyek) {
+            if (!empty($userProjectIds)) {
+                $query->whereIn('project_id', $userProjectIds);
+            } else {
+                $query->where('created_by', $user->id);
+            }
+        }
 
         if ($request->status) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->payment_type) {
+            $query->where('payment_type', $request->payment_type);
+        }
+
+        if ($request->project_id) {
+            $query->where('project_id', $request->project_id);
         }
 
         if ($request->search) {
@@ -27,6 +53,10 @@ class PaymentController extends Controller
                           ->orWhereHas('supplier', function ($supQ) use ($search) {
                               $supQ->where('name', 'like', "%{$search}%");
                           });
+                  })
+                  ->orWhereHas('project', function ($pQ) use ($search) {
+                      $pQ->where('name', 'like', "%{$search}%")
+                         ->orWhere('code', 'like', "%{$search}%");
                   });
             });
         }
@@ -45,21 +75,126 @@ class PaymentController extends Controller
 
         $payments = $query->latest('payment_date')->latest('id')->paginate(15)->withQueryString();
 
+        // Projects & Saldo metrics for Admin PO & Admin PO Proyek
+        if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $projects = Project::whereIn('id', $userProjectIds)->orderBy('name')->get();
+            $totalOperationalBalance = (float) Project::whereIn('id', $userProjectIds)->sum('operational_balance');
+            $baseMetricQuery = Payment::whereIn('project_id', $userProjectIds);
+        } else {
+            $projects = Project::orderBy('name')->get();
+            $totalOperationalBalance = (float) Project::sum('operational_balance');
+            $baseMetricQuery = Payment::query();
+        }
+
+        // Query Balance Logs
+        $balanceLogQuery = ProjectBalanceLog::with(['project', 'user'])->latest('id');
+        if ($isRoleAdminPOProyek) {
+            if (!empty($userProjectIds)) {
+                $balanceLogQuery->whereIn('project_id', $userProjectIds);
+            } else {
+                $balanceLogQuery->where('user_id', $user->id);
+            }
+        }
+        if ($request->project_id) {
+            $balanceLogQuery->where('project_id', $request->project_id);
+        }
+        $balanceLogs = $balanceLogQuery->take(100)->get();
+
+        // Group mutasi saldo per 1 minggu, di dalamnya group per hari (mirip daftar nota harian)
+        $groupedBalanceWeeks = $balanceLogs->groupBy(function ($item) {
+            $date = $item->created_at;
+            if (!$date) return 'no-date';
+            $year = $date->isoWeekYear();
+            $week = str_pad($date->isoWeek(), 2, '0', STR_PAD_LEFT);
+            return "{$year}-W{$week}";
+        })->map(function ($weekItems, $weekKey) {
+            $firstItem = $weekItems->first();
+            $date = $firstItem->created_at;
+
+            if ($date) {
+                $startOfWeek = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+                $endOfWeek   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+                $weekNumber  = $date->isoWeek();
+                $weekLabel   = 'Minggu ke-' . $weekNumber . ' (' . $startOfWeek->translatedFormat('d M Y') . ' — ' . $endOfWeek->translatedFormat('d M Y') . ')';
+                $weekSubLabel = 'Periode 1 Minggu (' . $startOfWeek->format('d M') . ' s/d ' . $endOfWeek->format('d M Y') . ')';
+            } else {
+                $startOfWeek = null;
+                $endOfWeek   = null;
+                $weekNumber  = null;
+                $weekLabel   = 'Tanpa Tanggal';
+                $weekSubLabel = '';
+            }
+
+            // Group by Day (Y-m-d)
+            $days = $weekItems->groupBy(function ($item) {
+                return $item->created_at ? $item->created_at->format('Y-m-d') : 'no-date';
+            })->map(function ($dayItems, $dayKey) {
+                $firstDayItem = $dayItems->first();
+                $dayDate = $firstDayItem->created_at;
+
+                return (object) [
+                    'date_key'        => $dayKey,
+                    'date_label'      => $dayDate ? $dayDate->translatedFormat('l, d F Y') : 'Tanpa Tanggal',
+                    'day_name'        => $dayDate ? $dayDate->translatedFormat('l') : '-',
+                    'total_topup'     => (float) $dayItems->where('type', 'topup')->sum('amount'),
+                    'total_deduction' => (float) $dayItems->where('type', 'payment_deduction')->sum('amount'),
+                    'count'           => $dayItems->count(),
+                    'logs'            => $dayItems,
+                ];
+            });
+
+            return (object) [
+                'week_key'        => $weekKey,
+                'week_number'     => $weekNumber,
+                'week_label'      => $weekLabel,
+                'week_sub_label'  => $weekSubLabel,
+                'start_date'      => $startOfWeek,
+                'end_date'        => $endOfWeek,
+                'total_topup'     => (float) $weekItems->where('type', 'topup')->sum('amount'),
+                'total_deduction' => (float) $weekItems->where('type', 'payment_deduction')->sum('amount'),
+                'count'           => $weekItems->count(),
+                'days'            => $days,
+            ];
+        });
+
         $metrics = [
-            'total_verified_amount' => (float) Payment::where('status', 'verified')->sum('amount'),
-            'verified_count'        => (int) Payment::where('status', 'verified')->count(),
-            'pending_count'         => (int) Payment::where('status', 'pending')->count(),
-            'pending_amount'        => (float) Payment::where('status', 'pending')->sum('amount'),
-            'total_count'           => (int) Payment::count(),
-            'rejected_count'        => (int) Payment::where('status', 'rejected')->count(),
+            'total_verified_amount'     => (float) (clone $baseMetricQuery)->where('status', 'verified')->sum('amount'),
+            'verified_count'            => (int) (clone $baseMetricQuery)->where('status', 'verified')->count(),
+            'pending_count'             => (int) (clone $baseMetricQuery)->where('status', 'pending')->count(),
+            'pending_amount'            => (float) (clone $baseMetricQuery)->where('status', 'pending')->sum('amount'),
+            'total_count'               => (int) (clone $baseMetricQuery)->count(),
+            'rejected_count'            => (int) (clone $baseMetricQuery)->where('status', 'rejected')->count(),
+            'total_operational_balance' => $totalOperationalBalance,
+            'instant_count'             => (int) (clone $baseMetricQuery)->where('payment_type', 'instant')->count(),
+            'waiting_count'             => (int) (clone $baseMetricQuery)->where('payment_type', 'waiting')->count(),
+            'instant_verified_amount'   => (float) (clone $baseMetricQuery)->where('payment_type', 'instant')->where('status', 'verified')->sum('amount'),
         ];
 
-        return view('payments.index', compact('payments', 'metrics'));
+        if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $balanceRequests = ProjectBalanceRequest::whereIn('project_id', $userProjectIds)->with(['project', 'requester', 'approver'])->latest('id')->take(20)->get();
+        } else {
+            $balanceRequests = ProjectBalanceRequest::with(['project', 'requester', 'approver'])->latest('id')->take(20)->get();
+        }
+        $pendingBalanceRequestsCount = ProjectBalanceRequest::where('status', 'pending')->count();
+
+        return view('payments.index', compact('payments', 'metrics', 'projects', 'balanceLogs', 'groupedBalanceWeeks', 'balanceRequests', 'pendingBalanceRequestsCount', 'isRoleAdminPOProyek'));
     }
 
     public function create(Request $request)
     {
-        $pos = PurchaseOrder::with(['supplier', 'goodsReceipts', 'payments', 'items', 'receipts'])
+        $this->authorize('create payments');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $projects = Project::whereIn('id', $userProjectIds)->orderBy('name')->get();
+        } else {
+            $projects = Project::orderBy('name')->get();
+        }
+
+        $posQuery = PurchaseOrder::with(['supplier', 'goodsReceipts', 'payments', 'items', 'receipts.project', 'deliveryWarehouse.project', 'materialRequest.toWarehouse.project'])
             ->where(function ($q) {
                 $q->where(function ($sub) {
                     $sub->whereIn('status', ['sent', 'partial_received', 'received', 'closed'])
@@ -68,40 +203,87 @@ class PaymentController extends Controller
                         });
                 })
                 ->orWhereHas('receipts');
-            })
-            ->get()
-            ->filter(fn($po) => $po->payable_remaining_amount > 0);
+            });
+
+        if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $posQuery->where(function ($q) use ($userProjectIds) {
+                $q->whereHas('deliveryWarehouse', function ($wh) use ($userProjectIds) {
+                    $wh->whereIn('project_id', $userProjectIds);
+                })
+                ->orWhereHas('receipts', function ($rc) use ($userProjectIds) {
+                    $rc->whereIn('project_id', $userProjectIds);
+                });
+            });
+        }
+
+        $pos = $posQuery->get()->filter(fn($po) => $po->payable_remaining_amount > 0);
 
         $selectedPO = null;
+        $detectedProject = null;
+
         if ($request->po_id) {
-            $selectedPO = PurchaseOrder::with(['supplier', 'items.material', 'items.tool', 'goodsReceipts.items', 'payments', 'receipts.items'])->find($request->po_id);
+            $selectedPO = PurchaseOrder::with([
+                'supplier',
+                'items.material',
+                'items.tool',
+                'goodsReceipts.items',
+                'payments',
+                'receipts.items',
+                'deliveryWarehouse.project',
+                'materialRequest.toWarehouse.project'
+            ])->find($request->po_id);
+
             if ($selectedPO && ! $selectedPO->hasPayableProof()) {
                 return redirect()->route('payments.create')
                     ->with('error', "Purchase Order {$selectedPO->po_number} belum memiliki bukti Penerimaan Barang (GR) terkonfirmasi atau Nota Pembelian sehingga belum dapat dibayar.");
             }
+
+            if ($selectedPO) {
+                $detectedProject = $selectedPO->project;
+            }
+        } elseif ($isRoleAdminPOProyek && $projects->count() === 1) {
+            $detectedProject = $projects->first();
         }
 
-        return view('payments.create', compact('pos', 'selectedPO'));
+        return view('payments.create', compact('pos', 'selectedPO', 'projects', 'detectedProject'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create payments');
+
         $validated = $request->validate([
-            'purchase_order_id'       => 'required|exists:purchase_orders,id',
-            'amount'                  => 'required|numeric|min:1',
-            'payment_method'          => 'required|string',
-            'payment_date'            => 'required|date',
-            'bank_account'            => 'nullable|string',
-            'reference_number'        => 'nullable|string',
-            'notes'                   => 'nullable|string',
-            'mark_receipts_as_paid'   => 'nullable|boolean',
+            'purchase_order_id'     => 'required|exists:purchase_orders,id',
+            'payment_type'          => 'required|in:waiting,instant',
+            'project_id'            => 'nullable|exists:projects,id',
+            'amount'                => 'required|numeric|min:1',
+            'payment_method'        => 'required|string',
+            'payment_date'          => 'required|date',
+            'bank_account'          => 'nullable|string',
+            'reference_number'      => 'nullable|string',
+            'notes'                 => 'nullable|string',
+            'mark_receipts_as_paid' => 'nullable|boolean',
         ]);
 
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        if ($isRoleAdminPOProyek) {
+            $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
+            if (!empty($userProjectIds)) {
+                if (empty($validated['project_id'])) {
+                    $validated['project_id'] = $userProjectIds[0];
+                } elseif (!in_array($validated['project_id'], $userProjectIds)) {
+                    return back()->withErrors(['project_id' => 'Anda hanya berwenang memproses pembayaran untuk proyek yang ditugaskan kepada Anda.'])->withInput();
+                }
+            }
+        }
+
         $markReceiptsAsPaid = $request->boolean('mark_receipts_as_paid');
+        $paymentType = $validated['payment_type'];
         unset($validated['mark_receipts_as_paid']);
 
         try {
-            $payment = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $markReceiptsAsPaid) {
+            $payment = DB::transaction(function () use ($validated, $markReceiptsAsPaid, $paymentType) {
                 $po = PurchaseOrder::where('id', $validated['purchase_order_id'])
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -116,34 +298,268 @@ class PaymentController extends Controller
                     throw new \DomainException("Jumlah pembayaran melebihi batas nilai sah yang dapat dibayar (Maksimal: Rp {$formattedMax}).");
                 }
 
-                if ($markReceiptsAsPaid) {
-                    $po->receipts()->where('payment_status', 'unpaid')->update(['payment_status' => 'paid']);
-                }
+                $targetProjectId = $validated['project_id'] ?? $po->project_id;
 
-                return Payment::create([
-                    ...$validated,
-                    'created_by' => auth()->id(),
-                    'status'     => 'pending',
-                ]);
+                if ($paymentType === 'instant') {
+                    if (!$targetProjectId) {
+                        throw new \DomainException('Proyek tidak terdeteksi untuk pemotongan saldo kas. Silakan pilih Proyek pada form pengajuan pembayaran.');
+                    }
+
+                    $project = Project::where('id', $targetProjectId)->lockForUpdate()->firstOrFail();
+                    $amount = (float) $validated['amount'];
+
+                    if ((float) $project->operational_balance < ($amount - 0.001)) {
+                        $curSaldo = number_format($project->operational_balance, 0, ',', '.');
+                        $needSaldo = number_format($amount, 0, ',', '.');
+                        throw new \DomainException("Saldo kas operasional proyek '{$project->name}' tidak mencukupi (Tersedia: Rp {$curSaldo}, Dibutuhkan: Rp {$needSaldo}). Silakan lakukan Top-Up Saldo terlebih dahulu.");
+                    }
+
+                    $balanceBefore = (float) $project->operational_balance;
+                    $balanceAfter = $balanceBefore - $amount;
+                    $project->update(['operational_balance' => $balanceAfter]);
+
+                    // Otomatis tandai nota pembelian harian sebagai sudah dibayar
+                    $po->receipts()->where('payment_status', 'unpaid')->update(['payment_status' => 'paid']);
+
+                    $payment = Payment::create([
+                        ...$validated,
+                        'project_id'     => $project->id,
+                        'payment_type'   => 'instant',
+                        'balance_before' => $balanceBefore,
+                        'balance_after'  => $balanceAfter,
+                        'created_by'     => auth()->id(),
+                        'verified_by'    => auth()->id(),
+                        'verified_at'    => now(),
+                        'status'         => 'verified',
+                    ]);
+
+                    // Catat ke log mutasi saldo proyek
+                    ProjectBalanceLog::create([
+                        'project_id'       => $project->id,
+                        'user_id'          => auth()->id(),
+                        'payment_id'       => $payment->id,
+                        'type'             => 'payment_deduction',
+                        'amount'           => $amount,
+                        'balance_before'   => $balanceBefore,
+                        'balance_after'    => $balanceAfter,
+                        'reference_number' => $validated['reference_number'] ?? $payment->payment_number,
+                        'notes'            => 'Pembayaran Instan (Nota Harian) PO ' . $po->po_number . ($validated['notes'] ? ' - ' . $validated['notes'] : ''),
+                    ]);
+
+                    return $payment;
+                } else {
+                    // Pembayaran PO Proyek Reguler (Menunggu Verifikasi Keuangan)
+                    if ($markReceiptsAsPaid) {
+                        $po->receipts()->where('payment_status', 'unpaid')->update(['payment_status' => 'paid']);
+                    }
+
+                    return Payment::create([
+                        ...$validated,
+                        'project_id'   => $targetProjectId,
+                        'payment_type' => 'waiting',
+                        'created_by'   => auth()->id(),
+                        'status'       => 'pending',
+                    ]);
+                }
             });
 
+            if ($payment->isInstant()) {
+                return redirect()->route('payments.show', $payment)
+                    ->with('success', "⚡ Pembayaran Instan #{$payment->payment_number} berhasil diproses langsung! Saldo kas proyek telah dipotong & status pembayaran langsung terverifikasi.");
+            }
+
             return redirect()->route('payments.show', $payment)
-                ->with('success', "Pembayaran #{$payment->payment_number} berhasil diajukan.");
+                ->with('success', "⏳ Pembayaran #{$payment->payment_number} berhasil diajukan dan menunggu verifikasi bagian keuangan.");
         } catch (\DomainException $e) {
             $msg = $e->getMessage();
-            $field = str_contains($msg, 'GR') ? 'purchase_order_id' : 'amount';
+            $field = str_contains($msg, 'GR') ? 'purchase_order_id' : (str_contains($msg, 'Saldo') ? 'amount' : 'amount');
             return back()->withErrors([$field => $msg])->withInput();
         }
     }
 
+    public function topupBalance(Request $request)
+    {
+        $this->authorize('create payments');
+
+        $validated = $request->validate([
+            'project_id'       => 'required|exists:projects,id',
+            'amount'           => 'required|numeric|min:1000',
+            'reference_number' => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        if ($isRoleAdminPOProyek) {
+            return back()->with('error', 'Admin PO Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Kantor Pusat / Owner.');
+        }
+
+        $validated = $request->validate([
+            'project_id'       => 'required|exists:projects,id',
+            'amount'           => 'required|numeric|min:1000',
+            'reference_number' => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        $project = DB::transaction(function () use ($validated) {
+            $p = Project::where('id', $validated['project_id'])->lockForUpdate()->firstOrFail();
+            $before = (float) $p->operational_balance;
+            $amount = (float) $validated['amount'];
+            $after  = $before + $amount;
+
+            $p->update(['operational_balance' => $after]);
+
+            ProjectBalanceLog::create([
+                'project_id'       => $p->id,
+                'user_id'          => auth()->id(),
+                'type'             => 'topup',
+                'amount'           => $amount,
+                'balance_before'   => $before,
+                'balance_after'    => $after,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'notes'            => $validated['notes'] ?: 'Top-up saldo operasional kas proyek untuk Admin PO',
+            ]);
+
+            return $p;
+        });
+
+        $formattedAmount = number_format($validated['amount'], 0, ',', '.');
+        $formattedAfter  = number_format($project->operational_balance, 0, ',', '.');
+
+        return back()->with('success', "Top-up saldo kas proyek '{$project->name}' sebesar Rp {$formattedAmount} berhasil disimpan! Saldo saat ini: Rp {$formattedAfter}.");
+    }
+
+    public function requestBalance(Request $request)
+    {
+        $this->authorize('create payments');
+
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'amount'     => 'required|numeric|min:1000',
+            'purpose'    => 'required|string|max:1000',
+            'urgency'    => 'required|in:normal,urgent',
+        ]);
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        if ($isRoleAdminPOProyek) {
+            $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
+            if (!empty($userProjectIds) && !in_array($validated['project_id'], $userProjectIds)) {
+                return back()->with('error', 'Anda hanya dapat mengajukan permintaan saldo kas untuk proyek yang ditugaskan kepada Anda.');
+            }
+        }
+
+        $project = Project::findOrFail($validated['project_id']);
+
+        ProjectBalanceRequest::create([
+            'project_id'   => $project->id,
+            'requested_by' => $user->id,
+            'amount'       => (float) $validated['amount'],
+            'purpose'      => $validated['purpose'],
+            'urgency'      => $validated['urgency'],
+            'status'       => 'pending',
+        ]);
+
+        $formattedAmount = number_format($validated['amount'], 0, ',', '.');
+        return back()->with('success', "Permintaan saldo kas sebesar Rp {$formattedAmount} untuk '{$project->name}' berhasil diajukan ke Kantor Pusat / Owner. Menunggu persetujuan.");
+    }
+
+    public function approveBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['Admin Pusat', 'Owner', 'Super Admin', 'Admin PO'])) {
+            abort(403, 'Hanya Admin Pusat atau Owner yang berwenang menyetujui permintaan saldo kas operasional.');
+        }
+
+        if ($balanceRequest->status !== 'pending') {
+            return back()->with('error', 'Permintaan saldo ini sudah diproses sebelumnya.');
+        }
+
+        $validated = $request->validate([
+            'reference_number' => 'nullable|string|max:100',
+            'notes'            => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($balanceRequest, $validated, $user) {
+            $project = Project::where('id', $balanceRequest->project_id)->lockForUpdate()->firstOrFail();
+            $before  = (float) $project->operational_balance;
+            $amount  = (float) $balanceRequest->amount;
+            $after   = $before + $amount;
+
+            $project->update(['operational_balance' => $after]);
+
+            $ref = $validated['reference_number'] ?: "REQ-BAL-{$balanceRequest->id}";
+            $requesterName = $balanceRequest->requester?->name ?? 'Admin PO Proyek';
+
+            ProjectBalanceLog::create([
+                'project_id'       => $project->id,
+                'user_id'          => $user->id,
+                'type'             => 'topup',
+                'amount'           => $amount,
+                'balance_before'   => $before,
+                'balance_after'    => $after,
+                'reference_number' => $ref,
+                'notes'            => "Disetujui dari Permintaan Saldo #{$balanceRequest->id} oleh {$requesterName}: " . ($validated['notes'] ?: $balanceRequest->purpose),
+            ]);
+
+            $balanceRequest->update([
+                'status'           => 'approved',
+                'approved_by'      => $user->id,
+                'approved_at'      => now(),
+                'reference_number' => $ref,
+            ]);
+        });
+
+        $formattedAmount = number_format($balanceRequest->amount, 0, ',', '.');
+        return back()->with('success', "Permintaan saldo kas sebesar Rp {$formattedAmount} berhasil disetujui! Saldo proyek otomatis bertambah.");
+    }
+
+    public function rejectBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
+    {
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['Admin Pusat', 'Owner', 'Super Admin', 'Admin PO'])) {
+            abort(403, 'Hanya Admin Pusat atau Owner yang berwenang menolak permintaan saldo kas.');
+        }
+
+        if ($balanceRequest->status !== 'pending') {
+            return back()->with('error', 'Permintaan saldo ini sudah diproses sebelumnya.');
+        }
+
+        $validated = $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $balanceRequest->update([
+            'status'           => 'rejected',
+            'approved_by'      => $user->id,
+            'approved_at'      => now(),
+            'rejection_reason' => $validated['rejection_reason'],
+        ]);
+
+        return back()->with('success', "Permintaan saldo kas sebesar Rp " . number_format($balanceRequest->amount, 0, ',', '.') . " telah ditolak.");
+    }
+
     public function show(Payment $payment)
     {
+        $this->authorize('view payments');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        if ($isRoleAdminPOProyek) {
+            $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
+            if (!empty($userProjectIds) && !in_array($payment->project_id, $userProjectIds) && $payment->created_by !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses ke data pembayaran proyek lain.');
+            }
+        }
+
         $payment->load([
             'purchaseOrder.supplier',
             'purchaseOrder.items.material',
             'purchaseOrder.items.tool',
             'purchaseOrder.goodsReceipts.items',
             'purchaseOrder.payments',
+            'purchaseOrder.receipts.items',
+            'project.balanceLogs',
             'creator',
             'verifier',
             'items'
@@ -155,23 +571,21 @@ class PaymentController extends Controller
     {
         $this->authorize('verify payments');
 
-        // Untuk sementara dinonaktifkan agar memudahkan uji coba / testing
-        // if ($payment->created_by === auth()->id()) {
-        //     return back()->with('error', 'Pembuat pembayaran tidak dapat memverifikasi pembayarannya sendiri.');
-        // }
-
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Status tidak valid untuk diverifikasi.');
         }
+
         $payment->update([
             'status'      => 'verified',
             'verified_by' => auth()->id(),
             'verified_at' => now(),
         ]);
-        // Update paid_amount on PO
+
         $po = $payment->purchaseOrder;
-        $totalPaid = $po->payments()->where('status','verified')->sum('amount');
-        $po->update(['paid_amount' => $totalPaid]);
+        if ($po) {
+            $totalPaid = $po->payments()->where('status','verified')->sum('amount');
+            $po->update(['paid_amount' => $totalPaid]);
+        }
 
         return back()->with('success', "Pembayaran #{$payment->payment_number} terverifikasi.");
     }
@@ -179,10 +593,6 @@ class PaymentController extends Controller
     public function reject(Request $request, Payment $payment)
     {
         $this->authorize('verify payments');
-
-        // if ($payment->created_by === auth()->id()) {
-        //     return back()->with('error', 'Pembuat pembayaran tidak dapat menolak pembayarannya sendiri.');
-        // }
 
         $request->validate(['rejection_reason' => 'required|string']);
         $payment->update([

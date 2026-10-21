@@ -63,6 +63,36 @@ class PurchaseOrder extends Model
         return (float)$this->total_amount - (float)$this->paid_amount;
     }
 
+    public function getProjectAttribute(): ?Project
+    {
+        if ($this->relationLoaded('receipts')) {
+            $receiptWithProject = $this->receipts->first(fn($r) => !empty($r->project_id));
+            if ($receiptWithProject && $receiptWithProject->project) {
+                return $receiptWithProject->project;
+            }
+        } else {
+            $firstReceipt = $this->receipts()->whereNotNull('project_id')->with('project')->first();
+            if ($firstReceipt && $firstReceipt->project) {
+                return $firstReceipt->project;
+            }
+        }
+
+        if ($this->deliveryWarehouse && $this->deliveryWarehouse->project) {
+            return $this->deliveryWarehouse->project;
+        }
+
+        if ($this->materialRequest && $this->materialRequest->toWarehouse && $this->materialRequest->toWarehouse->project) {
+            return $this->materialRequest->toWarehouse->project;
+        }
+
+        return null;
+    }
+
+    public function getProjectIdAttribute(): ?int
+    {
+        return $this->project?->id;
+    }
+
     public function hasConfirmedGoodsReceipt(): bool
     {
         return $this->goodsReceipts()->where('status', 'confirmed')->exists();
