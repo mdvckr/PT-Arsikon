@@ -62,10 +62,14 @@ return [
     |
     */
     'rate_limits' => [
-        // Percobaan login per kombinasi IP + Email
+        // Jendela penguncian (lockout window) dan jumlah percobaan login (Layer 4.2)
+        'lockout_minutes' => env('SECURITY_LOCKOUT_MINUTES', 15),
+        'login_max_attempts' => env('RATE_LIMIT_LOGIN', 5),
+
+        // Percobaan login per kombinasi IP + Email (5 per 15 menit)
         'login_per_minute' => env('RATE_LIMIT_LOGIN', 5),
 
-        // Percobaan login per IP address (mencegah distributed credential stuffing)
+        // Percobaan login per IP address (15 per 15 menit - mitigasi distributed credential stuffing)
         'login_ip_per_minute' => env('RATE_LIMIT_LOGIN_IP', 15),
 
         // API untuk user yang sudah login (terotentikasi)
@@ -74,7 +78,7 @@ return [
         // API publik atau guest
         'api_guest' => env('RATE_LIMIT_API_GUEST', 30),
 
-        // Aksi sensitif / beban tinggi (reset password, export data, sync Supabase)
+        // Aksi sensitif / beban tinggi (reset password, export data)
         'strict_actions' => env('RATE_LIMIT_STRICT', 10),
     ],
 
@@ -84,20 +88,23 @@ return [
     |--------------------------------------------------------------------------
     |
     | Konfigurasi header keamanan HTTP untuk memitigasi serangan XSS, Clickjacking,
-    | MIME-sniffing, dan injeksi konten berbahaya.
+    | MIME-sniffing, dan injeksi konten berbahaya (Layer 3.4 Master Plan v2).
     |
     */
     'headers' => [
         'remove_x_powered_by' => true,
+        'x_frame_options' => env('SECURITY_X_FRAME_OPTIONS', 'DENY'),
         'hsts_enabled' => env('SECURITY_HSTS_ENABLED', true),
         'hsts_max_age' => 31536000, // 1 tahun
         'hsts_include_subdomains' => true,
-        'hsts_preload' => true,
+        // HSTS preload ditunda hingga semua subdomain terkonfirmasi HTTPS penuh (Layer 3.4)
+        'hsts_preload' => env('SECURITY_HSTS_PRELOAD', false),
 
         'csp' => [
-            'enabled' => env('SECURITY_CSP_ENABLED', false), // dapat diaktifkan jika policy CSP sudah disesuaikan
-            'report_only' => false,
-            'policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https:;",
+            // CSP Report-Only aktif secara default sesuai rekomendasi bertahap Layer 3.4
+            'enabled' => env('SECURITY_CSP_ENABLED', true),
+            'report_only' => env('SECURITY_CSP_REPORT_ONLY', true),
+            'policy' => env('SECURITY_CSP_POLICY', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"),
         ],
     ],
 ];

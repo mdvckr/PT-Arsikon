@@ -21,6 +21,15 @@ class EventServiceProvider extends ServiceProvider
     ];
 
     /**
+     * The subscriber classes to register (Security Hardening Layer 7.1).
+     *
+     * @var array
+     */
+    protected $subscribe = [
+        \App\Listeners\SecurityAuthenticationListener::class,
+    ];
+
+    /**
      * Register any events for your application.
      */
     public function boot(): void

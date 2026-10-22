@@ -495,7 +495,7 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
     1. **Teknis**: Pemakaian Material (`material-usages.*`), Retur Material (`returns.*`), Master Alat (`tools.*`), Peminjaman Alat (`tool-assignments.*`), dan Log Harian Proyek (`daily-log.*`).
     2. **Pengadaan**: PO Lapangan (`material-requests.*`), Permintaan Pengadaan (`procurement.*`), Purchase Order (`purchase-orders.*`), Nota Pembelian Harian (`purchase-receipts.*`), Pembayaran (`payments.*`), dan Template Kop Surat (`print-templates.*`).
     3. **Logistik**: Penerimaan Barang (`goods-receipts.*`), Surat Jalan (`distributions.*`), Penerimaan Surat Jalan (`distributions.index?status=shipped`), Inventori (`inventory.*`), Mutasi Stok (`reports.mutation`), Stock Opname (`stock-opnames.*`), dan Master & Stok Minimum (`materials.*`).
-    4. **Grup Lanjutan**: Laporan & Audit (`reports.*`, `audit-logs.*`) serta Admin Sistem (`users.*`, `roles.*`, `warehouses.*`, `projects.*`, `supabase-sync.*`) tetap berada di bagian bawah sesuai otorisasi.
+    4. **Grup Lanjutan**: Laporan & Audit (`reports.*`, `audit-logs.*`) serta Admin Sistem (`users.*`, `roles.*`, `warehouses.*`, `projects.*`) tetap berada di bagian bawah sesuai otorisasi.
   - Menerapkan perlindungan visibilitas ketat:
     - Sembunyikan grup sepenuhnya (`@if`) jika pengguna tidak memiliki izin ke satupun item di dalamnya.
     - Sembunyikan item individual memakai `@can` / rule otorisasi tanpa memperluas hak akses.
@@ -618,7 +618,7 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - Sewa alat berbayar dan perhitungan depresiasi alat berat.
   - Retensi dan opname subkontraktor lapangan.
   - Modul pembuatan tabel invoice terpisah (nomor invoice tetap disimpan sebagai string pada GR).
-  - Skrip deployment di folder `deploy/` dan service sinkronisasi cloud `SupabaseSyncService`.
+  - Skrip deployment di folder `deploy/` (fitur `SupabaseSyncService` telah dihapus sepenuhnya sesuai permintaan pengguna).
 
 ---
 
@@ -1089,3 +1089,54 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - Simulasi rendering view:
     - User 65 (`Admin PO Proyek`): Halaman `/purchase-receipts` dan `/payments` ter-render sempurna (HTTP 200, bebas error, seluruh kartu grouping mingguan-harian tampil dengan rapi).
     - User 59 (`Admin Pusat`) & User 58 (`Owner`): Berhasil mengakses dasbor verifikasi PO, verifikasi permohonan saldo kas, dan riwayat mutasi kas.
+
+---
+
+## 21. Implementasi Komprehensif Security Hardening Baseline v2 (T38)
+- **Rujukan**: [docs/master_plan_security_hardening_pt_arsikon_v2.md](file:///d:/XAMPP/htdocs/PT-Arsikon/docs/master_plan_security_hardening_pt_arsikon_v2.md)
+- **Tujuan**:
+  1. Menerapkan pengerasan keamanan baseline aplikasi Laravel mengacu OWASP Top 10 dan OWASP ASVS Level 2 dengan referensi Context7 documentation.
+  2. Memperbarui `config/security.php` dan `SecurityHeaders.php`: mengaktifkan Content Security Policy (CSP) mode `Report-Only`, `X-Frame-Options: DENY`, dan penundaan HSTS `preload` hingga seluruh domain siap HTTPS.
+  3. Mengonfigurasi rate limiting login berjenjang dengan jendela penguncian 15 menit (5 percobaan per 15 menit per IP & per kombinasi email+IP) serta memasang middleware `AuthenticateSession` (`auth.session`) pada web stack agar pembatalan sesi ganda (`logoutOtherDevices`) bekerja aktif.
+  4. Menerapkan kebijakan sandi default ketat (`Password::min(10)->mixedCase()->numbers()->symbols()`).
+  5. Mengamankan sistem upload berkas (Layer 5): validasi berlapis `mimes` & `mimetypes`, penyimpanan nama acak aman, dan re-encode gambar via GD untuk melucuti payload metadata/steganografi.
+  6. Membangun sistem logging audit ancaman keamanan (Layer 7.1): tabel & migrasi `security_logs`, model `SecurityLog`, service `SecurityLogger`, event subscriber `SecurityAuthenticationListener`, hook pelanggaran 403 Forbidden di exception handler, serta audit perubahan role admin.
+- **Perubahan File**:
+  - `config/security.php`: Penambahan `lockout_minutes` (15 menit), `x_frame_options` ('DENY'), HSTS preload `false`, dan CSP `enabled` & `report_only` aktif default.
+  - `app/Http/Middleware/SecurityHeaders.php`: Penyesuaian header `X-Frame-Options` ke konfigurasi default `DENY`, penambahan header `Content-Security-Policy-Report-Only` (atau CSP), dan penerapan conditional preload HSTS.
+  - `app/Providers/AppServiceProvider.php`: Definisi `Password::defaults()` terstandarisasi, pembaruan rate limiter login menggunakan `Limit::perMinutes(15, 5)` per email+IP dan global IP.
+  - `app/Http/Requests/Auth/LoginRequest.php`: Peningkatan decay rate limit login menjadi 15 menit (900 detik).
+  - `routes/web.php`: Pemasangan middleware `auth.session` (`AuthenticateSession`) pada grup rute terautentikasi.
+  - `database/migrations/2026_10_23_000001_create_security_logs_table.php`: Migrasi pembuatan tabel `security_logs` dengan indexing performa tinggi untuk event, waktu, IP, dan user.
+  - `app/Models/SecurityLog.php`: Model Eloquent catatan keamanan dengan casts json dan query scopes.
+  - `app/Services/SecurityLogger.php`: Service pencatatan aktivitas keamanan terstruktur dengan fungsi sanitasi otomatis untuk menyamarkan kata sandi dan token, serta method `bridgeToAuditLog()` untuk menggaungkan seluruh event keamanan ke `audit_logs` (Cara B Dual-Write).
+  - `resources/views/audit-logs/index.blade.php`: Pembaruan view Audit Trail dengan badge warna event keamanan (`SECURITY_LOCKOUT`, `AUTH_FAILED`, `ACCESS_FORBIDDEN`, `ROLE_CHANGE`) dan ringkasan teks informatif.
+  - `tests/Feature/SecurityHardeningV2Test.php`: Suite pengujian komprehensif 11 kasus uji mencakup Headers & CSP, 15m Lockout, Password Complexity, AuthenticateSession, Audit Logging, Redaction, Upload Guard, dan Verifikasi Bridging ke `audit_logs`.
+  - `tests/Unit/SecurityHeadersTest.php` & `tests/Feature/SecurityRateLimitTest.php`: Sinkronisasi nilai assert header `DENY` dan CSP.
+- **Hasil Pengujian**:
+  - `php artisan test --filter="Security"`: Seluruh 16 test (83 assertions) berstatus HIJAU (PASS 100%).
+
+---
+
+## 22. Penghapusan Total Fitur Sinkronisasi Cloud / Supabase (T39)
+- **Konteks & Permintaan Pengguna**:
+  - Pengguna meminta menghapus seluruh kode terkait fitur **Sinkronisasi Cloud** (`☁️ Sinkronisasi Cloud`).
+- **Implementasi Penghapusan**:
+  1. **UI & Navigasi**:
+     - Menghapus item menu `Sinkronisasi Cloud` dari grup Admin Sistem pada sidebar (`resources/views/layouts/app.blade.php`).
+     - Menghapus route `'supabase-sync.*'` dari logika penentuan `$isAdminActive` pada sidebar.
+     - Menghapus berkas antarmuka `resources/views/settings/supabase.blade.php`.
+  2. **Routing & Controller**:
+     - Menghapus rute `/supabase-sync`, `/supabase-sync/test-connection`, `/supabase-sync/push`, dan `/supabase-sync/pull` pada `routes/web.php`.
+     - Menghapus controller `app/Http/Controllers/SupabaseSyncController.php`.
+  3. **Service & Artisan Command**:
+     - Menghapus service sinkronisasi `app/Services/SupabaseSyncService.php`.
+     - Menghapus artisan command `app/Console/Commands/SupabaseSyncCommand.php` (`supabase:sync`).
+  4. **Konfigurasi & Pengujian**:
+     - Menghapus koneksi database `'supabase'` dari `config/database.php`.
+     - Menghapus variabel lingkungan `SUPABASE_*` dari `.env` dan `.env.example`.
+     - Menghapus suite pengujian `tests/Feature/SupabaseSyncTest.php`.
+     - Membersihkan komentar Supabase dari `config/security.php` dan `deploy/arsikon-nginx.conf`.
+- **Hasil Verifikasi**:
+  - `php artisan route:clear` & `php artisan config:clear` & `php artisan view:clear`: Sukses dibersihkan.
+  - Seluruh pengujian fitur dan keamanan berstatus HIJAU (PASS).

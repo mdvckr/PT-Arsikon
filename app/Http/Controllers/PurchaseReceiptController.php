@@ -172,7 +172,7 @@ class PurchaseReceiptController extends Controller
             'supplier_name'      => 'nullable|string|max:255',
             'receipt_number'     => 'nullable|string|max:100',
             'receipt_date'       => 'required|date',
-            'image'              => 'nullable|file|mimes:jpeg,png,jpg,pdf,webp|max:10240',
+            'image'              => 'nullable|file|mimes:jpeg,png,jpg,pdf,webp|mimetypes:image/jpeg,image/png,image/webp,application/pdf|max:10240',
             'notes'              => 'nullable|string',
             'items'              => 'required|array|min:1',
             'items.*.material_id'=> 'nullable|exists:materials,id',

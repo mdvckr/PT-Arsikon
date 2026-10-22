@@ -160,6 +160,65 @@
         .btn-try-again:hover {
             background: #a8320e;
         }
+
+        /* ===== 3-STATE INTERACTIVE LOGIN BUTTON ===== */
+        .btn-login-interactive {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 50px;
+            padding: 0 20px;
+            border: none;
+            border-radius: 14px;
+            background: #bd3a13;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(189, 58, 19, 0.28);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+
+        .btn-login-interactive:hover:not(:disabled) {
+            background: #a8320e;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(189, 58, 19, 0.38);
+        }
+
+        .btn-login-interactive:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-login-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        /* State 2: Saat proses login (Memverifikasi...) */
+        .btn-login-interactive.is-loading {
+            background: #bd3a13 !important;
+            opacity: 0.94;
+            cursor: wait !important;
+            pointer-events: none;
+            box-shadow: 0 4px 14px rgba(189, 58, 19, 0.25);
+        }
+
+        /* State 3: Setelah berhasil (Login Berhasil) - Hijau Emerald Sesuai Konsep */
+        .btn-login-interactive.is-success {
+            background: #196c4e !important;
+            color: #ffffff !important;
+            cursor: default !important;
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(25, 108, 78, 0.42) !important;
+            transform: scale(1.008);
+        }
     </style>
 
     @if (session('status'))
@@ -169,7 +228,7 @@
     </div>
     @endif
 
-    <form method="POST" action="{{ route('login') }}" onsubmit="const btn = this.querySelector('button[type=submit]'); if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; }">
+    <form id="loginForm" method="POST" action="{{ route('login') }}">
         @csrf
 
         <!-- Email Address -->
@@ -211,8 +270,10 @@
             @endif
         </div>
 
-        <button type="submit" class="btn-primary">
-            <i class="fas fa-right-to-bracket"></i> Masuk
+        <!-- Tombol Login Rekomendasi 3-State (Tanpa Ikon di Kondisi Normal) -->
+        <button type="submit" id="btnLogin" class="btn-primary btn-login-interactive">
+            <span id="btnLoginIcon" class="btn-login-icon" style="display: none;"></span>
+            <span id="btnLoginText">Masuk</span>
         </button>
     </form>
 
@@ -222,8 +283,7 @@
 
     {{-- Error Modal Popup saat Login Gagal / Kata Sandi Salah --}}
     @push('modals')
-    @if ($errors->any() || request()->has('preview_error'))
-    <div id="loginErrorModal" class="login-modal-overlay" onclick="if(event.target === this) closeLoginErrorModal()">
+    <div id="loginErrorModal" class="login-modal-overlay" style="display: {{ ($errors->any() || request()->has('preview_error')) ? 'flex' : 'none' }};" onclick="if(event.target === this) closeLoginErrorModal()">
         <div class="login-modal-box">
             <button type="button" class="login-modal-close" onclick="closeLoginErrorModal()" aria-label="Tutup">
                 <i class="fas fa-xmark"></i>
@@ -238,7 +298,7 @@
             <h3 class="login-modal-title">Gagal masuk</h3>
             
             <p class="login-modal-desc">
-                Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.
+                {{ $errors->first('email') ?: 'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.' }}
             </p>
 
             <div class="login-modal-tips">
@@ -264,7 +324,6 @@
             </div>
         </div>
     </div>
-    @endif
     @endpush
 
     <script>
@@ -275,6 +334,22 @@
             input.type = show ? 'text' : 'password';
             icon.classList.toggle('fa-eye');
             icon.classList.toggle('fa-eye-slash');
+        }
+
+        function openLoginErrorModal(message) {
+            var modal = document.getElementById('loginErrorModal');
+            if (modal) {
+                if (message) {
+                    var desc = modal.querySelector('.login-modal-desc');
+                    if (desc) desc.textContent = message;
+                }
+                modal.style.display = 'flex';
+                var passInput = document.getElementById('password');
+                if (passInput) {
+                    passInput.focus();
+                    passInput.select();
+                }
+            }
         }
 
         function closeLoginErrorModal() {
@@ -295,5 +370,90 @@
                 closeLoginErrorModal();
             }
         });
+
+        // 3-State Button Transition Management (Normal -> Memverifikasi -> Login Berhasil)
+        (function() {
+            const loginForm = document.getElementById('loginForm');
+            const btnLogin = document.getElementById('btnLogin');
+            const btnLoginIcon = document.getElementById('btnLoginIcon');
+            const btnLoginText = document.getElementById('btnLoginText');
+
+            function setButtonState(state) {
+                if (!btnLogin || !btnLoginIcon || !btnLoginText) return;
+
+                if (state === 'loading') {
+                    btnLogin.disabled = true;
+                    btnLogin.classList.remove('is-success');
+                    btnLogin.classList.add('is-loading');
+                    btnLoginIcon.style.display = 'inline-flex';
+                    btnLoginIcon.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                    btnLoginText.textContent = 'Memverifikasi...';
+                } else if (state === 'success') {
+                    btnLogin.disabled = true;
+                    btnLogin.classList.remove('is-loading');
+                    btnLogin.classList.add('is-success');
+                    btnLoginIcon.style.display = 'inline-flex';
+                    btnLoginIcon.innerHTML = '<i class="fas fa-circle-check"></i>';
+                    btnLoginText.textContent = 'Login Berhasil';
+                } else {
+                    // Normal state - Tanpa icon di kondisi normal
+                    btnLogin.disabled = false;
+                    btnLogin.classList.remove('is-loading', 'is-success');
+                    btnLoginIcon.style.display = 'none';
+                    btnLoginIcon.innerHTML = '';
+                    btnLoginText.textContent = 'Masuk ke Dashboard';
+                }
+            }
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    if (!loginForm.checkValidity()) {
+                        return;
+                    }
+
+                    e.preventDefault();
+                    setButtonState('loading');
+
+                    const formData = new FormData(loginForm);
+
+                    try {
+                        const response = await fetch(loginForm.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json().catch(() => ({}));
+                            
+                            // State 3: Login Berhasil (Hijau)
+                            setButtonState('success');
+
+                            setTimeout(function() {
+                                window.location.href = data.redirect || "{{ route('dashboard') }}";
+                            }, 550);
+                            return;
+                        }
+
+                        // Jika gagal (422 / 429)
+                        const data = await response.json().catch(() => ({}));
+                        setButtonState('normal');
+
+                        const errorMsg = (data.errors && data.errors.email ? data.errors.email[0] : null) ||
+                            data.message ||
+                            'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.';
+
+                        openLoginErrorModal(errorMsg);
+                    } catch (err) {
+                        // Fallback submit standar
+                        setButtonState('loading');
+                        loginForm.submit();
+                    }
+                });
+            }
+        })();
     </script>
 </x-guest-layout>

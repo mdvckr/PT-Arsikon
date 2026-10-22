@@ -21,11 +21,12 @@ class SecurityHeadersTest extends TestCase
         });
 
         $this->assertFalse($response->headers->has('X-Powered-By'));
-        $this->assertEquals('SAMEORIGIN', $response->headers->get('X-Frame-Options'));
+        $this->assertEquals('DENY', $response->headers->get('X-Frame-Options'));
         $this->assertEquals('nosniff', $response->headers->get('X-Content-Type-Options'));
         $this->assertEquals('1; mode=block', $response->headers->get('X-XSS-Protection'));
         $this->assertEquals('strict-origin-when-cross-origin', $response->headers->get('Referrer-Policy'));
         $this->assertTrue($response->headers->has('Permissions-Policy'));
+        $this->assertTrue($response->headers->has('Content-Security-Policy-Report-Only'));
     }
 
     public function test_hsts_header_is_attached_on_https(): void

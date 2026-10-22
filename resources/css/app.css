@@ -3,9 +3,6 @@
 @tailwind utilities;
 
 @layer components {
-    /* ========================================================
-       LIQUID GLASS (iOS 26 Style) DESIGN SYSTEM FOR NOTIFICATIONS
-       ======================================================== */
     .glass {
         position: relative;
         border-radius: 20px;
@@ -28,15 +25,26 @@
         left: 8%;
         right: 8%;
         height: 1.5px;
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(255, 255, 255, 0) 100%);
         pointer-events: none;
         z-index: 2;
     }
 
-    .glass-title   { color: rgba(15,23,42,.92); }
-    .glass-body    { color: rgba(15,23,42,.72); }
-    .glass-divider { border-color: rgba(255,255,255,.35); }
-    .glass-row:hover { background: rgba(255,255,255,.18); }
+    .glass-title {
+        color: rgba(15, 23, 42, .92);
+    }
+
+    .glass-body {
+        color: rgba(15, 23, 42, .72);
+    }
+
+    .glass-divider {
+        border-color: rgba(255, 255, 255, .35);
+    }
+
+    .glass-row:hover {
+        background: rgba(255, 255, 255, .18);
+    }
 
     /* Dark Mode Variant */
     .dark .glass {
@@ -50,13 +58,24 @@
     }
 
     .dark .glass::before {
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
     }
 
-    .dark .glass-title   { color: rgba(248,250,252,.95); }
-    .dark .glass-body    { color: rgba(226,232,240,.78); }
-    .dark .glass-divider { border-color: rgba(255,255,255,.12); }
-    .dark .glass-row:hover { background: rgba(255,255,255,.08); }
+    .dark .glass-title {
+        color: rgba(248, 250, 252, .95);
+    }
+
+    .dark .glass-body {
+        color: rgba(226, 232, 240, .78);
+    }
+
+    .dark .glass-divider {
+        border-color: rgba(255, 255, 255, .12);
+    }
+
+    .dark .glass-row:hover {
+        background: rgba(255, 255, 255, .08);
+    }
 
     /* Authentic Crystal Tint Variants */
     .glass-tint-info {
@@ -140,22 +159,24 @@
     }
 
     @keyframes glassProgress {
-        from { transform: scaleX(1); }
-        to { transform: scaleX(0); }
+        from {
+            transform: scaleX(1);
+        }
+
+        to {
+            transform: scaleX(0);
+        }
     }
 
-    /* ========================================================
-       iOS 26 LIQUID GLASS (3D THICK REFRACTIVE GLASS - HIGH CONTRAST)
-       ======================================================== */
     .ios26-liquid-toast {
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.88) 100%);
         backdrop-filter: blur(32px) saturate(190%) contrast(102%);
         -webkit-backdrop-filter: blur(32px) saturate(190%) contrast(102%);
         border: 1px solid rgba(255, 255, 255, 0.95);
         box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.18),
-                    0 8px 20px -4px rgba(0, 0, 0, 0.08),
-                    inset 0 1.5px 2px rgba(255, 255, 255, 1),
-                    inset 0 -1px 1px rgba(0, 0, 0, 0.04);
+            0 8px 20px -4px rgba(0, 0, 0, 0.08),
+            inset 0 1.5px 2px rgba(255, 255, 255, 1),
+            inset 0 -1px 1px rgba(0, 0, 0, 0.04);
         color: #000000;
     }
 
@@ -165,7 +186,7 @@
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.95);
         box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 1),
-                    0 4px 10px rgba(0, 0, 0, 0.05);
+            0 4px 10px rgba(0, 0, 0, 0.05);
     }
 
     .ios26-glass-pill {
@@ -182,8 +203,8 @@
         -webkit-backdrop-filter: blur(64px) saturate(210%);
         border: 1px solid rgba(255, 255, 255, 0.9);
         box-shadow: inset 0 2px 3px rgba(255, 255, 255, 1),
-                    inset 0 -1.5px 2px rgba(0, 0, 0, 0.04),
-                    0 25px 50px -12px rgba(0, 0, 0, 0.22);
+            inset 0 -1.5px 2px rgba(0, 0, 0, 0.04),
+            0 25px 50px -12px rgba(0, 0, 0, 0.22);
         color: #000000;
     }
 
@@ -192,30 +213,33 @@
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 252, 232, 0.93) 100%);
         border-color: rgba(245, 158, 11, 0.4);
     }
+
     .ios26-squircle-warning {
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 243, 199, 0.5) 100%);
         box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 1),
-                    0 4px 10px rgba(245, 158, 11, 0.15);
+            0 4px 10px rgba(245, 158, 11, 0.15);
     }
 
     .ios26-toast-danger {
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 242, 242, 0.93) 100%);
         border-color: rgba(244, 63, 94, 0.4);
     }
+
     .ios26-squircle-danger {
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 226, 226, 0.5) 100%);
         box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 1),
-                    0 4px 10px rgba(244, 63, 94, 0.15);
+            0 4px 10px rgba(244, 63, 94, 0.15);
     }
 
     .ios26-toast-info {
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 249, 255, 0.93) 100%);
         border-color: rgba(14, 165, 233, 0.4);
     }
+
     .ios26-squircle-info {
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(224, 242, 254, 0.5) 100%);
         box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 1),
-                    0 4px 10px rgba(14, 165, 233, 0.15);
+            0 4px 10px rgba(14, 165, 233, 0.15);
     }
 
     /* Dark Mode Variants for iOS 26 */
@@ -223,13 +247,15 @@
         background: linear-gradient(135deg, rgba(30, 41, 59, 0.70) 0%, rgba(15, 23, 42, 0.85) 100%);
         border-color: rgba(255, 255, 255, 0.20);
         box-shadow: inset 0 2px 2.5px rgba(255, 255, 255, 0.25),
-                    inset 0 -1.5px 2px rgba(0, 0, 0, 0.5),
-                    0 22px 45px -12px rgba(0, 0, 0, 0.55);
+            inset 0 -1.5px 2px rgba(0, 0, 0, 0.5),
+            0 22px 45px -12px rgba(0, 0, 0, 0.55);
     }
+
     .dark .ios26-glass-squircle {
         background: rgba(30, 41, 59, 0.65);
         border-color: rgba(255, 255, 255, 0.20);
     }
+
     .dark .ios26-glass-pill {
         background: rgba(255, 255, 255, 0.15);
         border-color: rgba(255, 255, 255, 0.25);
@@ -237,6 +263,7 @@
 
     /* Fallback: Reduced transparency & unsupported backdrop-filter */
     @media (prefers-reduced-transparency: reduce) {
+
         .glass,
         .glass-material,
         .glass-tint-info,
@@ -258,6 +285,7 @@
     }
 
     @supports not (backdrop-filter: blur(10px)) {
+
         .glass,
         .glass-material,
         .glass-tint-info,
@@ -271,6 +299,7 @@
 
     /* Fallback: Reduced motion */
     @media (prefers-reduced-motion: reduce) {
+
         .glass-anim-in,
         .glass-anim-out,
         .glass-pill {

@@ -28,8 +28,9 @@ class SecurityHeaders
             }
         }
 
-        // 2. Proteksi Clickjacking
-        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        // 2. Proteksi Clickjacking (Master Plan v2 Layer 3.4)
+        $xFrameOptions = config('security.headers.x_frame_options', 'DENY');
+        $response->headers->set('X-Frame-Options', $xFrameOptions);
 
         // 3. Mencegah MIME-type Sniffing
         $response->headers->set('X-Content-Type-Options', 'nosniff');
@@ -52,15 +53,15 @@ class SecurityHeaders
             if (config('security.headers.hsts_include_subdomains', true)) {
                 $hsts .= '; includeSubDomains';
             }
-            if (config('security.headers.hsts_preload', true)) {
+            if (config('security.headers.hsts_preload', false)) {
                 $hsts .= '; preload';
             }
             $response->headers->set('Strict-Transport-Security', $hsts);
         }
 
-        // 9. Content Security Policy (CSP) jika diaktifkan di konfigurasi
-        if (config('security.headers.csp.enabled', false)) {
-            $headerName = config('security.headers.csp.report_only', false)
+        // 9. Content Security Policy (CSP) - Default Report-Only (Master Plan v2 Layer 3.4)
+        if (config('security.headers.csp.enabled', true)) {
+            $headerName = config('security.headers.csp.report_only', true)
                 ? 'Content-Security-Policy-Report-Only'
                 : 'Content-Security-Policy';
 

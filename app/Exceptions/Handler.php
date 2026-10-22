@@ -27,6 +27,17 @@ class Handler extends ExceptionHandler
             //
         });
 
+        // Pencatatan otomatis pelanggaran otorisasi / 403 Forbidden ke Security Logs (Layer 7.1 Master Plan v2)
+        $this->renderable(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            \App\Services\SecurityLogger::logForbidden($request, $e->getMessage());
+            return null; // Teruskan ke default 403 response
+        });
+
+        $this->renderable(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, $request) {
+            \App\Services\SecurityLogger::logForbidden($request, $e->getMessage());
+            return null; // Teruskan ke default 403 response
+        });
+
         // Tangani secara terpusat jika terjadi Throttle / Rate Limit terlampaui
         $this->renderable(function (\Illuminate\Http\Exceptions\ThrottleRequestsException $e, $request) {
             $headers = $e->getHeaders();

@@ -7,6 +7,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,52 +23,65 @@ class AppServiceProvider extends ServiceProvider
         // Cegah silent failure pada mass-assignment saat development/testing
         Model::preventSilentlyDiscardingAttributes(!app()->isProduction());
 
+        // Kebijakan Kompleksitas Password Default (Layer 4.2 Master Plan v2)
+        Password::defaults(function () {
+            $rule = Password::min(10)
+                ->mixedCase()
+                ->numbers()
+                ->symbols();
+
+            return app()->isProduction() ? $rule->uncompromised() : $rule;
+        });
+
         \Illuminate\Support\Facades\Blade::directive('qty', function ($expression) {
             return "<?php echo format_quantity($expression); ?>";
         });
 
-        // 1. Rate Limiter Login: Perlindungan bertingkat (Email + IP dan Global IP)
+        // 1. Rate Limiter Login: 15-menit lockout per IP dan per Email+IP (Layer 4.2 Master Plan v2)
         RateLimiter::for('login', function (Request $request) {
-            $email = strtolower((string) $request->input('email', ''));
+            $email = Str::lower((string) $request->input('email', ''));
             $ip = $request->ip();
 
-            $accountAttempts = (int) config('security.rate_limits.login_per_minute', 5);
+            $lockoutMinutes = (int) config('security.rate_limits.lockout_minutes', 15);
+            $accountAttempts = (int) config('security.rate_limits.login_max_attempts', 5);
             $ipAttempts = (int) config('security.rate_limits.login_ip_per_minute', 15);
 
             return [
-                // Batas percobaan login per kombinasi akun & IP
-                Limit::perMinute($accountAttempts)
-                    ->by($email . '|' . $ip)
-                    ->response(function (Request $request, array $headers) {
-                        $seconds = $headers['Retry-After'] ?? 60;
+                // Batas percobaan login per kombinasi akun & IP: 5 percobaan per 15 menit
+                Limit::perMinutes($lockoutMinutes, $accountAttempts)
+                    ->by('email:' . $email . '|' . $ip)
+                    ->response(function (Request $request, array $headers) use ($lockoutMinutes) {
+                        $seconds = (int) ($headers['Retry-After'] ?? ($lockoutMinutes * 60));
+                        $minutes = ceil($seconds / 60);
                         if ($request->expectsJson()) {
                             return response()->json([
                                 'status' => 429,
                                 'error' => 'Too Many Requests',
-                                'message' => "Terlalu banyak percobaan masuk untuk akun ini. Coba lagi dalam {$seconds} detik.",
-                                'retry_after_seconds' => (int) $seconds,
+                                'message' => "Terlalu banyak percobaan masuk untuk akun ini. Akun dikunci sementara. Silakan coba lagi dalam {$minutes} menit.",
+                                'retry_after_seconds' => $seconds,
                             ], 429, $headers);
                         }
                         return back()->withInput($request->only('email', 'remember'))->withErrors([
-                            'email' => "Terlalu banyak percobaan masuk untuk akun ini. Silakan coba lagi dalam {$seconds} detik.",
+                            'email' => "Terlalu banyak percobaan masuk untuk akun ini. Akun dikunci sementara demi keamanan. Coba lagi dalam {$minutes} menit.",
                         ]);
                     }),
 
-                // Batas total percobaan login dari IP yang sama (mencegah credential stuffing banyak akun)
-                Limit::perMinute($ipAttempts)
+                // Batas total percobaan login dari IP yang sama: 15 percobaan per 15 menit (mencegah credential stuffing masif)
+                Limit::perMinutes($lockoutMinutes, $ipAttempts)
                     ->by('ip:' . $ip)
-                    ->response(function (Request $request, array $headers) {
-                        $seconds = $headers['Retry-After'] ?? 60;
+                    ->response(function (Request $request, array $headers) use ($lockoutMinutes) {
+                        $seconds = (int) ($headers['Retry-After'] ?? ($lockoutMinutes * 60));
+                        $minutes = ceil($seconds / 60);
                         if ($request->expectsJson()) {
                             return response()->json([
                                 'status' => 429,
                                 'error' => 'Too Many Requests',
-                                'message' => "Terlalu banyak permintaan login dari koneksi Anda. Silakan coba lagi nanti.",
-                                'retry_after_seconds' => (int) $seconds,
+                                'message' => "Terlalu banyak permintaan login dari koneksi IP Anda. Silakan coba lagi dalam {$minutes} menit.",
+                                'retry_after_seconds' => $seconds,
                             ], 429, $headers);
                         }
                         return back()->withInput($request->only('email', 'remember'))->withErrors([
-                            'email' => "Terlalu banyak permintaan login dari koneksi Anda. Silakan tunggu {$seconds} detik.",
+                            'email' => "Terlalu banyak permintaan login dari alamat IP Anda. Silakan coba lagi dalam {$minutes} menit.",
                         ]);
                     }),
             ];

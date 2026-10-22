@@ -58,7 +58,7 @@ class TransitLossController extends Controller
 
         $validated = $request->validate([
             'goods_receipt_item_id' => 'required|exists:goods_receipt_items,id',
-            'evidence'              => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png,webp',
+            'evidence'              => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png,webp|mimetypes:image/jpeg,image/png,image/webp,application/pdf',
             'notes'                 => 'required|string|max:2000',
         ], [
             'goods_receipt_item_id.required' => 'Item barang penerimaan wajib dipilih.',

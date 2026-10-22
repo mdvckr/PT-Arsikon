@@ -1941,7 +1941,7 @@
             <!-- 5. GRUP ADMIN SISTEM -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
             @php
-                $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*', 'supabase-sync.*']);
+                $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*']);
             @endphp
             <div class="nav-section" x-data="{ open: {{ $isAdminActive ? 'true' : 'false' }} }">
                 <div class="nav-section-header" @click="open = !open">
@@ -1955,11 +1955,6 @@
                     <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
                         <i class="fas fa-warehouse"></i> Gudang & Proyek
                     </a>
-                    @if(Route::has('supabase-sync.index'))
-                    <a href="{{ route('supabase-sync.index') }}" class="nav-item {{ request()->routeIs('supabase-sync.*') ? 'active' : '' }}">
-                        <i class="fas fa-cloud-arrow-up"></i> Sinkronisasi Cloud
-                    </a>
-                    @endif
                 </div>
             </div>
             @endif
@@ -2226,7 +2221,7 @@
             }
         }
 
-        // Global notification bridge for external callers (e.g. Supabase settings, AJAX)
+        // Global notification bridge for external callers (e.g. AJAX)
         function showNotificationToast(data) {
             if (window.showGlassNotification) {
                 window.showGlassNotification(data);

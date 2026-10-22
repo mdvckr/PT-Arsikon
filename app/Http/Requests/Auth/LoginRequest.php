@@ -45,7 +45,8 @@ class LoginRequest extends FormRequest
         $credentials['is_active'] = true;
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            $lockoutSeconds = (int) config('security.rate_limits.lockout_minutes', 15) * 60;
+            RateLimiter::hit($this->throttleKey(), $lockoutSeconds);
 
             // Specific notification if account is deactivated
             $inactiveUser = \App\Models\User::where('email', $this->email)->first();
@@ -70,7 +71,9 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $maxAttempts = (int) config('security.rate_limits.login_max_attempts', 5);
+
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
             return;
         }
 

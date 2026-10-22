@@ -56,16 +56,20 @@
                 <tbody>
                     @php
                         $actionColors = [
-                            'LOGIN'      => 'badge-info',
-                            'LOGOUT'     => 'badge-gray',
-                            'CREATE'     => 'badge-success',
-                            'UPDATE'     => 'badge-warning',
-                            'DELETE'     => 'badge-danger',
-                            'APPROVE'    => 'badge-success',
-                            'REJECT'     => 'badge-danger',
-                            'SHIP'       => 'badge-primary',
-                            'RECEIVE'    => 'badge-info',
-                            'ADJUSTMENT' => 'badge-purple',
+                            'LOGIN'             => 'badge-info',
+                            'LOGOUT'            => 'badge-gray',
+                            'CREATE'            => 'badge-success',
+                            'UPDATE'            => 'badge-warning',
+                            'DELETE'            => 'badge-danger',
+                            'APPROVE'           => 'badge-success',
+                            'REJECT'            => 'badge-danger',
+                            'SHIP'              => 'badge-primary',
+                            'RECEIVE'           => 'badge-info',
+                            'ADJUSTMENT'        => 'badge-purple',
+                            'SECURITY_LOCKOUT'  => 'badge-danger',
+                            'ACCESS_FORBIDDEN'  => 'badge-danger',
+                            'AUTH_FAILED'       => 'badge-warning',
+                            'ROLE_CHANGE'       => 'badge-purple',
                         ];
                     @endphp
                     @forelse($logs as $log)
@@ -83,7 +87,18 @@
                             <span class="badge {{ $cls }}">{{ strtoupper($log->event) }}</span>
                         </td>
                         <td class="text-muted">{{ class_basename($log->auditable_type ?? 'System') }}</td>
-                        <td style="max-width:300px;font-size:13px;">{{ $log->event }} pada {{ class_basename($log->auditable_type ?? 'Aktivitas') }} #{{ $log->auditable_id ?? '' }}</td>
+                        <td style="max-width:340px;font-size:13px;">
+                            @if(!empty($log->new_values['summary']))
+                                <div>{{ $log->new_values['summary'] }}</div>
+                                @if(!empty($log->new_values['severity']) && in_array($log->new_values['severity'], ['warning', 'critical']))
+                                    <span class="badge {{ $log->new_values['severity'] === 'critical' ? 'badge-danger' : 'badge-warning' }}" style="font-size:10px;padding:2px 6px;margin-top:3px;display:inline-block;">
+                                        <i class="fas fa-shield-halved"></i> {{ strtoupper($log->new_values['severity']) }}
+                                    </span>
+                                @endif
+                            @else
+                                {{ $log->event }} pada {{ class_basename($log->auditable_type ?? 'Aktivitas') }} {{ $log->auditable_id ? '#'.$log->auditable_id : '' }}
+                            @endif
+                        </td>
                         <td class="text-muted" style="font-size:12px;">{{ $log->ip_address ?? '-' }}</td>
                     </tr>
                     @empty

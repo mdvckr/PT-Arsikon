@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\SecurityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -77,6 +78,10 @@ class UserController extends Controller
         }
         if (!empty($rolesToAssign)) {
             $user->syncRoles($rolesToAssign);
+            SecurityLogger::logRoleOrPermissionChange($user, [
+                'action' => 'user_created_with_roles',
+                'assigned_roles' => $rolesToAssign,
+            ], auth()->user());
         }
 
         if (!empty($validated['warehouse_ids'])) {
@@ -144,6 +149,10 @@ class UserController extends Controller
         }
         if (!empty($rolesToAssign)) {
             $user->syncRoles($rolesToAssign);
+            SecurityLogger::logRoleOrPermissionChange($user, [
+                'action' => 'user_updated_roles',
+                'assigned_roles' => $rolesToAssign,
+            ], auth()->user());
         }
 
         $user->warehouses()->sync($request->input('warehouse_ids', []));

@@ -29,7 +29,7 @@ class PrintTemplateController extends Controller
         $request->validate([
             'name'             => 'required|string|max:100',
             'description'      => 'nullable|string|max:300',
-            'file'             => 'required|file|mimes:png,jpg,jpeg,pdf|max:15360', // max 15MB
+            'file'             => 'required|file|mimes:png,jpg,jpeg,pdf|mimetypes:image/png,image/jpeg,application/pdf|max:15360', // max 15MB
             'padding_top_mm'   => 'nullable|numeric|min:0|max:150',
             'padding_left_mm'  => 'nullable|numeric|min:0|max:100',
             'padding_right_mm' => 'nullable|numeric|min:0|max:100',
