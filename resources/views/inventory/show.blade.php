@@ -38,19 +38,25 @@
             <div class="card-body" style="padding:18px;">
                 @php
                     $rows = [
-                        ['Nama Material', $inventory->material?->name],
-                        ['Kode SKU', '<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;color:#334155;background:#f1f5f9;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">'.($inventory->material?->sku ?? '-').'</span>'],
-                        ['Kategori', $inventory->material?->category?->name ?? '-'],
-                        ['Satuan', ($inventory->material?->unit?->name ?? '-').' ('.($inventory->material?->unit?->abbreviation ?? '').')'],
-                        ['Gudang', $inventory->warehouse?->name ?? '-'],
-                        ['Stok Minimum', number_format($inventory->min_stock, 0, ',', '.')],
+                        ['Nama Material', $inventory->material?->name ?? '-', null],
+                        ['Kode SKU', $inventory->material?->sku ?? '-', 'font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;color:#334155;background:#f1f5f9;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;display:inline-block;'],
+                        ['Kategori', $inventory->material?->category?->name ?? '-', null],
+                        ['Satuan', ($inventory->material?->unit?->name ?? '-').' ('.($inventory->material?->unit?->abbreviation ?? '').')', null],
+                        ['Gudang', $inventory->warehouse?->name ?? '-', null],
+                        ['Stok Minimum', number_format($inventory->min_stock, 0, ',', '.'), null],
                     ];
                 @endphp
                 <table style="width:100%;font-size:13px;border-collapse:collapse;">
-                    @foreach($rows as [$lbl, $val])
+                    @foreach($rows as [$lbl, $val, $style])
                     <tr style="border-bottom:1px solid #f8fafc;">
                         <td style="padding:8px 0;color:#64748b;font-weight:500;width:45%;vertical-align:top;font-size:12px;">{{ $lbl }}</td>
-                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;">{!! $val !!}</td>
+                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;">
+                            @if($style)
+                                <span style="{{ $style }}">{{ $val }}</span>
+                            @else
+                                {{ $val }}
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </table>

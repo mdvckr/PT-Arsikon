@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\ProjectBalanceLog;
 use App\Models\Supplier;
 use App\Models\Material;
+use App\Services\SecureUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -172,7 +173,7 @@ class PurchaseReceiptController extends Controller
             'supplier_name'      => 'nullable|string|max:255',
             'receipt_number'     => 'nullable|string|max:100',
             'receipt_date'       => 'required|date',
-            'image'              => 'nullable|file|mimes:jpeg,png,jpg,pdf,webp|mimetypes:image/jpeg,image/png,image/webp,application/pdf|max:10240',
+            'image'              => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048'],
             'notes'              => 'nullable|string',
             'items'                 => 'required|array|min:1',
             'items.*.material_id'   => 'nullable|exists:materials,id',
@@ -234,6 +235,7 @@ class PurchaseReceiptController extends Controller
 
             $imagePath = null;
             if ($request->hasFile('image')) {
+                SecureUploadService::validateSafeFile($request->file('image'), 'image');
                 $imagePath = $this->handleReceiptUpload($request->file('image'));
             }
 
@@ -573,7 +575,13 @@ class PurchaseReceiptController extends Controller
             }
 
             if ($purchaseReceipt->image_path) {
-                Storage::disk('public')->delete($purchaseReceipt->image_path);
+                if (Storage::disk('private')->exists($purchaseReceipt->image_path)) {
+                    Storage::disk('private')->delete($purchaseReceipt->image_path);
+                } elseif (Storage::disk('local')->exists($purchaseReceipt->image_path)) {
+                    Storage::disk('local')->delete($purchaseReceipt->image_path);
+                } elseif (Storage::disk('public')->exists($purchaseReceipt->image_path)) {
+                    Storage::disk('public')->delete($purchaseReceipt->image_path);
+                }
             }
             $purchaseReceipt->delete();
 
@@ -588,90 +596,48 @@ class PurchaseReceiptController extends Controller
     }
 
     /**
-     * Handle receipt upload with auto-compression for images (GD) and direct store for PDFs.
+     * Handle receipt upload using SecureUploadService (Anti-PHP2Shell, Randomized UUID/Hash, Private Storage).
      */
     protected function handleReceiptUpload($file): string
     {
-        $extension = strtolower($file->getClientOriginalExtension());
+        return SecureUploadService::processAndStore($file, 'purchase_receipts', 'private');
+    }
 
-        // File PDF disimpan langsung tanpa dikompres
-        if ($extension === 'pdf') {
-            return $file->store('purchase_receipts', 'public');
+    /**
+     * Tampilkan berkas nota secara aman dari private storage.
+     */
+    public function file(PurchaseReceipt $purchaseReceipt)
+    {
+        $this->authorize('view purchase receipts');
+
+        if (!$purchaseReceipt->image_path) {
+            abort(404, 'File nota tidak ditemukan.');
         }
 
-        // Kompres gambar (JPG, PNG, WEBP) menggunakan ekstensi GD
-        if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']) && function_exists('imagecreatefromstring')) {
-            try {
-                $imageContent = file_get_contents($file->getRealPath());
-                $srcImage = @imagecreatefromstring($imageContent);
+        $path = $purchaseReceipt->image_path;
+        $disk = null;
 
-                if ($srcImage !== false) {
-                    // Deteksi rotasi kamera HP dari EXIF agar foto tidak terbalik/miring
-                    if (function_exists('exif_read_data')) {
-                        $exif = @exif_read_data($file->getRealPath());
-                        if (!empty($exif['Orientation'])) {
-                            switch ($exif['Orientation']) {
-                                case 3:
-                                    $srcImage = imagerotate($srcImage, 180, 0);
-                                    break;
-                                case 6:
-                                    $srcImage = imagerotate($srcImage, -90, 0);
-                                    break;
-                                case 8:
-                                    $srcImage = imagerotate($srcImage, 90, 0);
-                                    break;
-                            }
-                        }
-                    }
-
-                    $origWidth = imagesx($srcImage);
-                    $origHeight = imagesy($srcImage);
-
-                    // Resolusi maksimal 1600px - menjaga tulisan nota, nota rincian, dan stempel tetap sangat tajam
-                    $maxDimension = 1600;
-                    $newWidth = $origWidth;
-                    $newHeight = $origHeight;
-
-                    if ($origWidth > $maxDimension || $origHeight > $maxDimension) {
-                        if ($origWidth > $origHeight) {
-                            $newWidth = $maxDimension;
-                            $newHeight = (int) round(($origHeight / $origWidth) * $maxDimension);
-                        } else {
-                            $newHeight = $maxDimension;
-                            $newWidth = (int) round(($origWidth / $origHeight) * $maxDimension);
-                        }
-                    }
-
-                    $targetImage = imagecreatetruecolor($newWidth, $newHeight);
-
-                    // Background putih (jika file PNG/WEBP transparan)
-                    $white = imagecolorallocate($targetImage, 255, 255, 255);
-                    imagefilledrectangle($targetImage, 0, 0, $newWidth, $newHeight, $white);
-
-                    // Resample gambar berkualitas tinggi
-                    imagecopyresampled($targetImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
-
-                    // Kompres output ke format JPEG dengan kualitas 78% (sweet spot hemat ukuran & detail tajam)
-                    ob_start();
-                    imagejpeg($targetImage, null, 78);
-                    $compressedData = ob_get_clean();
-
-                    imagedestroy($srcImage);
-                    imagedestroy($targetImage);
-
-                    if (!empty($compressedData)) {
-                        $filename = 'purchase_receipts/' . Str::random(40) . '.jpg';
-                        Storage::disk('public')->put($filename, $compressedData);
-                        return $filename;
-                    }
-                }
-            } catch (\Throwable $e) {
-                report($e);
-            }
+        if (Storage::disk('private')->exists($path)) {
+            $disk = Storage::disk('private');
+        } elseif (Storage::disk('local')->exists($path)) {
+            $disk = Storage::disk('local');
+        } elseif (Storage::disk('public')->exists($path)) {
+            $disk = Storage::disk('public');
         }
 
-        // Fallback jika bukan gambar atau GD gagal
-        return $file->store('purchase_receipts', 'public');
+        if (!$disk) {
+            abort(404, 'Berkas fisik nota tidak ditemukan di server.');
+        }
+
+        $mimeType = $disk->mimeType($path) ?: 'application/octet-stream';
+        $fileContents = $disk->get($path);
+
+        return response($fileContents, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-cache, must-revalidate',
+        ]);
     }
 }
 

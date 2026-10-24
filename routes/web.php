@@ -147,8 +147,8 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/procurement/{procurement}/approve', [ProcurementController::class, 'approve'])->name('procurement.approve');
     Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
 
-    // Purchase Orders (Hanya Admin Pusat, Admin PO, dan Owner)
-    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO']], function () {
+    // Purchase Orders (Hanya Admin Pusat, Admin PO, Owner, po_lapangan, dan po_nota_harian / admin-po-nota untuk read-only)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|po_lapangan|po_nota_harian|admin-po-nota|admin_pusat']], function () {
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
         Route::get('/purchase-orders/{purchaseOrder}/print',   [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
         Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
@@ -165,6 +165,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/purchase-receipts/{purchaseReceipt}/print',         [PurchaseReceiptController::class, 'print'])->name('purchase-receipts.print');
     Route::get('/purchase-receipts/{purchaseReceipt}/print-weekly',  [PurchaseReceiptController::class, 'printWeekly'])->name('purchase-receipts.print-weekly');
     Route::get('/purchase-receipts/{purchaseReceipt}/print-monthly', [PurchaseReceiptController::class, 'printMonthly'])->name('purchase-receipts.print-monthly');
+    Route::get('/purchase-receipts/{purchaseReceipt}/file',          [PurchaseReceiptController::class, 'file'])->name('purchase-receipts.file');
     Route::resource('purchase-receipts', PurchaseReceiptController::class);
 
     // Payments

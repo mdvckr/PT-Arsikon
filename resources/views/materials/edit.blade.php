@@ -3,14 +3,6 @@
 
     @push('styles')
     <style>
-        .edit-material-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            max-width: 1100px;
-            margin-bottom: 40px;
-        }
-
         .edit-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -52,7 +44,7 @@
             width: 100%;
             font-size: 12.5px;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 650px;
         }
 
         .stages-table thead tr {
@@ -94,319 +86,410 @@
             color: #b91c1c !important;
             transform: scale(1.05);
         }
-
-        .edit-actions-bar {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        .material-form-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            align-items: start;
+            width: 100%;
         }
 
-        @media (max-width: 768px) {
-            .grid-3 {
-                grid-template-columns: 1fr !important;
+        @media (min-width: 1200px) {
+            .material-form-layout {
+                grid-template-columns: minmax(0, 1fr) 360px;
             }
-            .grid-2 {
-                grid-template-columns: 1fr !important;
-            }
-            .edit-actions-bar {
-                flex-direction: column-reverse;
-                align-items: stretch;
-            }
-            .edit-actions-bar > div,
-            .edit-actions-bar button,
-            .edit-actions-bar a {
-                width: 100%;
-                text-align: center;
-                justify-content: center;
+        }
+
+        .material-form-main {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .material-form-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        @media (min-width: 1200px) {
+            .material-form-sidebar {
+                position: sticky;
+                top: 20px;
             }
         }
     </style>
     @endpush
 
-    {{-- Page Header --}}
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-            <div class="breadcrumb" style="margin-bottom:4px;font-size:12px;">
-                <a href="{{ route('materials.index') }}">Material</a>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-                <a href="{{ route('materials.show', $material) }}">{{ $material->name }}</a>
-                <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
-                <span>Edit</span>
-            </div>
-            <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-pen-to-square text-primary"></i> Edit Material: {{ $material->name }}
-            </h2>
-        </div>
-        <div class="flex gap-2">
-            <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:6px 14px;">
-                <i class="fas fa-eye me-1"></i> Lihat Detail
-            </a>
-            <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:6px 14px;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
-            </a>
-        </div>
-    </div>
-
-    @if (isset($errors) && $errors->any())
-    <div class="alert alert-danger mb-4" style="border-radius:8px;padding:12px 16px;font-size:13px;">
-        <i class="fas fa-circle-exclamation me-2"></i>
-        <strong>Terdapat kesalahan input:</strong>
-        <ul style="margin:4px 0 0 16px;padding:0;">
-            @foreach ($errors->all() as $err)
-            <li>{{ $err }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-    <form method="POST" action="{{ route('materials.update', $material) }}" onsubmit="prepareSubmit()" id="material-form">
-        @csrf @method('PUT')
-
-        <div class="edit-material-layout">
-
-            {{-- ── SECTION 1: KLASIFIKASI MATERIAL ── --}}
-            <div class="edit-card">
-                <div class="edit-card-header">
-                    <div class="edit-card-title">
-                        <i class="fas fa-layer-group text-primary"></i> 1. Klasifikasi Material
-                    </div>
+    <div class="w-full">
+        {{-- Page Header --}}
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+                <div class="breadcrumb" style="margin-bottom:4px;font-size:12px;">
+                    <a href="{{ route('materials.index') }}">Material</a>
+                    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+                    <a href="{{ route('materials.show', $material) }}">{{ $material->name }}</a>
+                    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+                    <span>Edit</span>
                 </div>
-                <div class="edit-card-body">
-                    <div class="grid grid-3" style="gap:16px;">
-                        {{-- Dropdown 1: Kategori --}}
-                        <div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                    Kategori <span style="color:#ef4444;">*</span>
-                                </label>
-                                @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
-                                <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;" title="Hapus kategori yang dipilih jika salah memasukkan">
-                                    <i class="fas fa-trash-can me-1"></i> Hapus Kategori
-                                </button>
-                                @endif
-                            </div>
-                            <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange()" style="height:38px;border-radius:6px;font-size:13px;">
-                                <option value="">— Pilih Kategori —</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id', $material->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                @endforeach
-                                <option value="__new__">✚ Kategori Baru...</option>
-                            </select>
-                            @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
+                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-pen-to-square text-primary"></i> Edit Material: {{ $material->name }}
+                </h2>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-eye"></i> Lihat Detail
+                </a>
+                <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
 
-                        {{-- Dropdown 2: Kelompok Barang --}}
-                        <div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                    Kelompok <span style="color:#ef4444;">*</span>
-                                </label>
-                                <button type="button" id="btn_toggle_custom_type" onclick="toggleTypeMode(true)" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600;">
-                                    + Ketik Baru
-                                </button>
-                            </div>
-                            <div id="type_select_wrap">
-                                <select id="type_select" class="form-control @error('type') is-invalid @enderror" onchange="onTypeSelectChange()" style="height:38px;border-radius:6px;font-size:13px;">
-                                    <option value="">— Pilih Kelompok —</option>
-                                    <option value="__new__">✚ Ketik Kelompok Baru...</option>
+        @if (isset($errors) && $errors->any())
+        <div class="alert alert-danger mb-4" style="border-radius:8px;padding:12px 16px;font-size:13px;">
+            <i class="fas fa-circle-exclamation me-2"></i>
+            <strong>Terdapat kesalahan input:</strong>
+            <ul style="margin:4px 0 0 16px;padding:0;">
+                @foreach ($errors->all() as $err)
+                <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        {{-- Main Grid Form --}}
+        <form method="POST" action="{{ route('materials.update', $material) }}" onsubmit="prepareSubmit()" id="material-form" class="material-form-layout">
+            @csrf @method('PUT')
+
+            {{-- ── KOLOM KIRI: FORM UTAMA ── --}}
+            <div class="material-form-main">
+
+                {{-- ── CARD 1: KLASIFIKASI MATERIAL (3 KOLOM RESPONSIF) ── --}}
+                <div class="edit-card">
+                    <div class="edit-card-header">
+                        <div class="edit-card-title">
+                            <i class="fas fa-layer-group text-primary"></i> 1. Klasifikasi Material
+                        </div>
+                    </div>
+                    <div class="edit-card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {{-- Dropdown 1: Kategori --}}
+                            <div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                        Kategori <span style="color:#ef4444;">*</span>
+                                    </label>
+                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
+                                    <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;white-space:nowrap;" title="Hapus kategori yang dipilih jika salah memasukkan">
+                                        <i class="fas fa-trash-can me-1"></i> Hapus Kategori
+                                    </button>
+                                    @endif
+                                </div>
+                                <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
+                                    <option value="">— Pilih Kategori —</option>
+                                    @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ old('category_id', $material->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                    @endforeach
+                                    <option value="__new__">✚ Kategori Baru...</option>
                                 </select>
+                                @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                            <div id="type_custom_wrap" style="display:none;">
-                                <div style="display:flex;gap:6px;">
-                                    <input type="text" id="type_custom_input" class="form-control" placeholder="Ketik nama kelompok baru..." oninput="onTypeCustomInput()" style="height:38px;border-radius:6px;font-size:13px;">
-                                    <button type="button" onclick="toggleTypeMode(false)" title="Kembali ke dropdown" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:12px;color:#64748b;white-space:nowrap;flex-shrink:0;">
-                                        Pilih
+
+                            {{-- Dropdown 2: Kelompok Barang --}}
+                            <div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
+                                        Kelompok <span style="color:#ef4444;">*</span>
+                                    </label>
+                                    <button type="button" id="btn_toggle_custom_type" onclick="toggleTypeMode(true)" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600;white-space:nowrap;">
+                                        + Ketik Baru
                                     </button>
                                 </div>
+                                <div id="type_select_wrap">
+                                    <select id="type_select" class="form-control @error('type') is-invalid @enderror" onchange="onTypeSelectChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
+                                        <option value="">— Pilih Kelompok —</option>
+                                        <option value="__new__">✚ Ketik Kelompok Baru...</option>
+                                    </select>
+                                </div>
+                                <div id="type_custom_wrap" style="display:none;">
+                                    <div style="display:flex;gap:6px;">
+                                        <input type="text" id="type_custom_input" class="form-control" placeholder="Ketik nama kelompok baru..." oninput="onTypeCustomInput(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
+                                        <button type="button" onclick="toggleTypeMode(false)" title="Kembali ke dropdown" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:12px;color:#64748b;white-space:nowrap;flex-shrink:0;">
+                                            Pilih
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="type" id="type_input" value="{{ old('type', $material->type) }}">
+                                <div id="type_hint" style="font-size:11px;color:#94a3b8;margin-top:4px;">
+                                    Pilih kategori dulu
+                                </div>
+                                @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
-                            <input type="hidden" name="type" id="type_input" value="{{ old('type', $material->type) }}">
-                            <div id="type_hint" style="font-size:11px;color:#94a3b8;margin-top:4px;">
-                                Pilih kategori dulu
-                            </div>
-                            @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                        </div>
 
-                        {{-- Field 3: Ukuran --}}
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                Ukuran / Spesifikasi
-                            </label>
-                            <input type="text" name="size" id="size_input" value="{{ old('size', $material->size) }}"
-                                class="form-control @error('size') is-invalid @enderror"
-                                placeholder="Contoh: D13mm × 12m, 50kg, M8"
-                                oninput="onTypeChange()" style="height:38px;border-radius:6px;font-size:13px;">
-                            @error('size')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                    </div>
-
-                    {{-- Kategori Baru (kondisional) --}}
-                    <div id="new_category_wrap" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-                        <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Kategori Baru</label>
-                        <input type="text" name="new_category" id="new_category" value="{{ old('new_category') }}" class="form-control" placeholder="Contoh: Bahan Kimia, Cat, Kayu" style="height:38px;border-radius:6px;background:#fff;max-width:360px;">
-                        <div class="text-muted" style="font-size:11px;margin-top:4px;">Kategori baru akan otomatis dibuat bila belum ada.</div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── SECTION 2: INFORMASI MATERIAL ── --}}
-            <div class="edit-card">
-                <div class="edit-card-header">
-                    <div class="edit-card-title">
-                        <i class="fas fa-cube text-primary"></i> 2. Informasi & Identitas Material
-                    </div>
-                </div>
-                <div class="edit-card-body">
-                    <div class="grid grid-2" style="gap:16px;">
-                        {{-- SKU --}}
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">KODE MATERIAL (SKU) <span style="color:#ef4444;">*</span></label>
-                            <input type="text" name="sku" value="{{ old('sku', $material->sku) }}"
-                                class="form-control font-monospace @error('sku') is-invalid @enderror"
-                                placeholder="Contoh: MAT-BES-001"
-                                style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;text-transform:uppercase;"
-                                oninput="this.value = this.value.toUpperCase()" required>
-                            @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
-                        {{-- Merek / Brand --}}
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">MEREK / BRAND <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
-                            <input type="text" name="brand" id="brand_input" value="{{ old('brand', $material->brand) }}"
-                                class="form-control @error('brand') is-invalid @enderror"
-                                placeholder="Semen Gresik, Holcim, Krakatau Steel..."
-                                style="height:38px;border-radius:6px;font-size:13px;">
-                            @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
-                        {{-- Nama Material --}}
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">
-                                NAMA MATERIAL (LENGKAP) <span style="color:#ef4444;">*</span>
-                                <span id="name_auto_badge" style="display:none;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;border:1px solid #e2e8f0;">
-                                    Otomatis
-                                </span>
-                            </label>
-                            <input type="text" name="name" id="name_input" value="{{ old('name', $material->name) }}"
-                                class="form-control @error('name') is-invalid @enderror"
-                                style="height:38px;border-radius:6px;font-size:13px;"
-                                required data-manual-edit="true">
-                            @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <div class="text-muted" style="font-size:11px;margin-top:4px;">
-                                Edit manual bila perlu nama dagang khusus.
+                            {{-- Field 3: Ukuran / Spesifikasi (md:col-span-2 lg:col-span-1) --}}
+                            <div class="md:col-span-2 lg:col-span-1">
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:block;">
+                                    Ukuran / Spesifikasi
+                                </label>
+                                <input type="text" name="size" id="size_input" value="{{ old('size', $material->size) }}"
+                                    class="form-control @error('size') is-invalid @enderror"
+                                    placeholder="Contoh: D13mm × 12m, 50kg, M8"
+                                    oninput="onTypeChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
+                                @error('size')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
 
-                        {{-- Satuan --}}
-                        <div>
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">SATUAN <span style="color:#ef4444;">*</span></label>
-                            <select name="unit_id" id="unit_select" class="form-control @error('unit_id') is-invalid @enderror" onchange="toggleNewUnit()" style="height:38px;border-radius:6px;font-size:13px;">
-                                <option value="">— Pilih Satuan —</option>
-                                @foreach($units as $unit)
-                                <option value="{{ $unit->id }}" {{ old('unit_id', $material->unit_id) == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->code }})</option>
-                                @endforeach
-                                <option value="__new__">✚ Satuan Baru...</option>
-                            </select>
-                            @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
-                        {{-- Supplier --}}
-                        <div style="grid-column:span 2;">
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;">SUPPLIER / PEMASOK <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
-                            <input type="text" name="supplier" id="supplier_input" list="supplier_list"
-                                value="{{ old('supplier', $material->supplier?->name ?? $material->supplier_name) }}"
-                                class="form-control @error('supplier') is-invalid @enderror"
-                                placeholder="Ketik nama supplier atau pilih dari daftar..."
-                                style="height:38px;border-radius:6px;font-size:13px;max-width:460px;">
-                            <datalist id="supplier_list">
-                                @foreach($suppliers as $sup)
-                                <option value="{{ $sup->name }}">
-                                @endforeach
-                            </datalist>
-                            @error('supplier')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            <div class="text-muted" style="font-size:11px;margin-top:4px;">Supplier baru akan otomatis terdaftar bila belum ada di master data.</div>
-                        </div>
-
-                        {{-- Satuan Baru --}}
-                        <div id="new_unit_wrap" style="display:none;grid-column:span 2;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Satuan Baru</label>
-                            <input type="text" name="new_unit" id="new_unit" value="{{ old('new_unit') }}" class="form-control" placeholder="Contoh: Unit, Zak, Drum, Liter" style="height:38px;border-radius:6px;background:#fff;max-width:360px;">
-                            <div class="text-muted" style="font-size:11px;margin-top:4px;">Satuan baru akan otomatis dibuat bila belum ada.</div>
+                        {{-- Kategori Baru (kondisional) --}}
+                        <div id="new_category_wrap" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                            <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Kategori Baru</label>
+                            <input type="text" name="new_category" id="new_category" value="{{ old('new_category') }}" class="form-control" placeholder="Contoh: Bahan Kimia, Cat, Kayu" style="height:38px;border-radius:6px;background:#fff;max-width:360px;" oninput="syncSummaryPreview()">
+                            <div class="text-muted" style="font-size:11px;margin-top:4px;">Kategori baru akan otomatis dibuat bila belum ada.</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- ── SECTION 3: TAHAP KEDATANGAN BARANG ── --}}
-            <div class="edit-card">
-                <div class="edit-card-header">
-                    <div>
+                {{-- ── CARD 2: INFORMASI MATERIAL (2 KOLOM RESPONSIF, SUPPLIER FULL-WIDTH) ── --}}
+                <div class="edit-card">
+                    <div class="edit-card-header">
+                        <div class="edit-card-title">
+                            <i class="fas fa-cube text-primary"></i> 2. Informasi & Identitas Material
+                        </div>
+                    </div>
+                    <div class="edit-card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {{-- SKU --}}
+                            <div>
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">KODE MATERIAL (SKU) <span style="color:#ef4444;">*</span></label>
+                                <input type="text" name="sku" id="sku_input" value="{{ old('sku', $material->sku) }}"
+                                    class="form-control font-monospace @error('sku') is-invalid @enderror"
+                                    placeholder="Contoh: MAT-BES-001"
+                                    style="height:38px;border-radius:6px;font-size:13px;font-weight:600;background:#f8fafc;text-transform:uppercase;"
+                                    oninput="this.value = this.value.toUpperCase(); syncSummaryPreview();" required>
+                                @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
+                            {{-- Merek / Brand --}}
+                            <div>
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">MEREK / BRAND <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
+                                <input type="text" name="brand" id="brand_input" value="{{ old('brand', $material->brand) }}"
+                                    class="form-control @error('brand') is-invalid @enderror"
+                                    placeholder="Semen Gresik, Holcim, Krakatau Steel..."
+                                    style="height:38px;border-radius:6px;font-size:13px;">
+                                @error('brand')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
+                            {{-- Nama Material --}}
+                            <div>
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                    NAMA MATERIAL (LENGKAP) <span style="color:#ef4444;">*</span>
+                                    <span id="name_auto_badge" style="display:none;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569;font-size:10px;font-weight:600;border:1px solid #e2e8f0;">
+                                        Otomatis
+                                    </span>
+                                </label>
+                                <input type="text" name="name" id="name_input" value="{{ old('name', $material->name) }}"
+                                    class="form-control @error('name') is-invalid @enderror"
+                                    style="height:38px;border-radius:6px;font-size:13px;"
+                                    oninput="syncSummaryPreview()"
+                                    required data-manual-edit="true">
+                                @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="text-muted" style="font-size:11px;margin-top:4px;">
+                                    Edit manual bila perlu nama dagang khusus.
+                                </div>
+                            </div>
+
+                            {{-- Satuan --}}
+                            <div>
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">SATUAN <span style="color:#ef4444;">*</span></label>
+                                <select name="unit_id" id="unit_select" class="form-control @error('unit_id') is-invalid @enderror" onchange="toggleNewUnit(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
+                                    <option value="">— Pilih Satuan —</option>
+                                    @foreach($units as $unit)
+                                    <option value="{{ $unit->id }}" {{ old('unit_id', $material->unit_id) == $unit->id ? 'selected' : '' }}>{{ $unit->name }} ({{ $unit->code }})</option>
+                                    @endforeach
+                                    <option value="__new__">✚ Satuan Baru...</option>
+                                </select>
+                                @error('unit_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+
+                            {{-- Supplier (md:col-span-2 -> Penuh kiri-kanan, tidak pincang!) --}}
+                            <div class="md:col-span-2">
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">SUPPLIER / PEMASOK <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
+                                <input type="text" name="supplier" id="supplier_input" list="supplier_list"
+                                    value="{{ old('supplier', $material->supplier?->name ?? $material->supplier_name) }}"
+                                    class="form-control @error('supplier') is-invalid @enderror"
+                                    placeholder="Ketik nama supplier atau pilih dari daftar..."
+                                    oninput="syncSummaryPreview()"
+                                    style="height:38px;border-radius:6px;font-size:13px;width:100%;">
+                                <datalist id="supplier_list">
+                                    @foreach($suppliers as $sup)
+                                    <option value="{{ $sup->name }}">
+                                    @endforeach
+                                </datalist>
+                                @error('supplier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="text-muted" style="font-size:11px;margin-top:4px;">Supplier baru akan otomatis terdaftar bila belum ada di master data.</div>
+                            </div>
+
+                            {{-- Satuan Baru (kondisional) --}}
+                            <div id="new_unit_wrap" class="md:col-span-2" style="display:none;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+                                <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;">Nama Satuan Baru</label>
+                                <input type="text" name="new_unit" id="new_unit" value="{{ old('new_unit') }}" class="form-control" placeholder="Contoh: Unit, Zak, Drum, Liter" style="height:38px;border-radius:6px;background:#fff;max-width:360px;" oninput="syncSummaryPreview()">
+                                <div class="text-muted" style="font-size:11px;margin-top:4px;">Satuan baru akan otomatis dibuat bila belum ada.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ── CARD 3: TAHAP KEDATANGAN BARANG ── --}}
+                <div class="edit-card">
+                    <div class="edit-card-header">
                         <div class="edit-card-title">
                             <i class="fas fa-calendar-alt text-primary"></i> 3. Tahap Kedatangan Barang
                         </div>
-                        <div class="text-muted" style="font-size:12px;margin-top:2px;">
-                            Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat barang diterima.
+                        <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:32px;font-size:12px;font-weight:600;padding:0 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
+                            <i class="fas fa-plus"></i> Tambah Tahap
+                        </button>
+                    </div>
+
+                    <div class="edit-card-body">
+                        {{-- Info Note Bar --}}
+                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:14px;font-size:12px;color:#475569;">
+                            <i class="fas fa-circle-info text-primary" style="font-size:15px;flex-shrink:0;"></i>
+                            <span>Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat barang diterima.</span>
+                        </div>
+
+                        {{-- Table Wrapper (Hidden if no rows) --}}
+                        <div id="stages_table_wrap" class="overflow-x-auto" style="display:none;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+                            <table class="stages-table w-full min-w-[650px]" id="stages_table">
+                                <thead>
+                                    <tr>
+                                        <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
+                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
+                                        <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Masuk</th>
+                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
+                                        <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
+                                        <th style="padding:10px 14px;width:50px;text-align:center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stages_tbody">
+                                    {{-- Baris dinamis --}}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Empty State (Shown if no rows) --}}
+                        <div id="stages_empty" style="display:none;padding:32px 16px;text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
+                            <div style="width:42px;height:42px;border-radius:50%;background:#e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;margin-bottom:10px;">
+                                <i class="fas fa-calendar-plus" style="font-size:18px;"></i>
+                            </div>
+                            <div style="font-size:13.5px;font-weight:600;color:#334155;">Belum ada jadwal tahap kedatangan</div>
+                            <div style="font-size:12px;color:#64748b;margin-top:4px;max-width:440px;margin-left:auto;margin-right:auto;">
+                                Bila material ini dikirim secara bertahap, klik tombol <strong>Tambah Tahap</strong> di atas untuk menambahkan jadwal kedatangan.
+                            </div>
+                        </div>
+
+                        {{-- Summary Bar (Hidden if no rows) --}}
+                        <div id="stages_summary_bar" style="display:none;margin-top:14px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                            <div style="display:flex;align-items:center;gap:18px;font-size:12.5px;">
+                                <div>Sudah Masuk: <strong id="summary_received" style="color:#16a34a;font-size:13px;">0</strong></div>
+                                <div>Rencana: <strong id="summary_planned" style="color:#b45309;font-size:13px;">0</strong></div>
+                                <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong></div>
+                            </div>
+                            <div class="text-muted" style="font-size:11.5px;">
+                                <i class="fas fa-lock text-muted me-1"></i> Terkunci otomatis sebagai <strong>Rencana</strong>
+                            </div>
                         </div>
                     </div>
-                    <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:34px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;">
-                        <i class="fas fa-plus me-1"></i> Tambah Tahap
-                    </button>
                 </div>
 
-                <div style="overflow-x:auto;">
-                    <table class="stages-table" id="stages_table">
-                        <thead>
-                            <tr>
-                                <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
-                                <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
-                                <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Masuk</th>
-                                <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
-                                <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
-                                <th style="padding:10px 14px;width:50px;text-align:center;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="stages_tbody">
-                            {{-- Baris dinamis --}}
-                        </tbody>
-                    </table>
-                    <div id="stages_empty" style="display:none;padding:28px 16px;text-align:center;color:#94a3b8;">
-                        <i class="fas fa-calendar-plus" style="font-size:28px;margin-bottom:8px;color:#cbd5e1;display:block;"></i>
-                        <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada jadwal tahap kedatangan.</div>
-                        <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Klik <strong>Tambah Tahap</strong> bila material ini memiliki pengiriman terjadwal.</div>
-                    </div>
-                </div>
-
-                {{-- Summary Bar --}}
-                <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                    <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;">
-                        <div>Masuk: <strong id="summary_received" style="color:#16a34a;font-size:13px;">0</strong></div>
-                        <div>Rencana: <strong id="summary_planned" style="color:#b45309;font-size:13px;">0</strong></div>
-                        <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong></div>
-                    </div>
-                    <div class="text-muted" style="font-size:11.5px;">
-                        <i class="fas fa-lock text-muted me-1"></i> Status terkunci otomatis sebagai <strong>Rencana</strong>, dan akan berubah ke <strong>Sudah Masuk</strong> otomatis saat dicatat di menu Penerimaan Barang.
-                    </div>
-                </div>
             </div>
 
-            {{-- ── ACTION BUTTONS ── --}}
-            <div class="edit-actions-bar">
-                <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="height:38px;padding:0 18px;font-size:13px;font-weight:500;border-radius:7px;color:#64748b;display:inline-flex;align-items:center;">
-                    <i class="fas fa-times me-1"></i> Batal
-                </a>
-                <button type="submit" class="btn btn-primary" style="height:38px;padding:0 24px;font-size:13.5px;font-weight:700;border-radius:7px;box-shadow:0 2px 4px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-floppy-disk"></i> Simpan Perubahan
-                </button>
+            {{-- ── KOLOM KANAN: STICKY PANEL RINGKASAN & AKSI ── --}}
+            <div class="material-form-sidebar">
+
+                {{-- CARD PANEL RINGKASAN MATERIAL --}}
+                <div class="edit-card">
+                    <div class="edit-card-header">
+                        <div class="edit-card-title">
+                            <i class="fas fa-circle-info text-primary"></i> Ringkasan Material
+                        </div>
+                    </div>
+                    <div class="edit-card-body">
+                        <div>
+                            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">KODE MATERIAL</div>
+                            <span id="preview_sku" class="font-mono font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded text-xs border border-slate-200 inline-block">
+                                {{ $material->sku }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3">
+                            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">NAMA MATERIAL</div>
+                            <div id="preview_name" class="font-bold text-slate-900 text-sm leading-snug">
+                                {{ $material->name }}
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-1.5 mt-2.5">
+                            <span id="preview_category" class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;padding:3px 8px;border-radius:5px;font-weight:600;border:1px solid #bfdbfe;">
+                                {{ $material->category?->name ?? 'Kategori' }}
+                            </span>
+                            <span id="preview_type" class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:11px;padding:3px 8px;border-radius:5px;font-weight:600;border:1px solid #ddd6fe;">
+                                {{ $material->type ?: 'Kelompok' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2" style="font-size:12px;">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">Satuan:</span>
+                                <span id="preview_unit" class="text-slate-800 font-semibold">
+                                    {{ $material->unit?->name ?? '-' }} ({{ $material->unit?->code ?? '-' }})
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">Supplier:</span>
+                                <span id="preview_supplier" class="text-slate-800 font-semibold truncate max-w-[180px]" title="{{ $material->supplier?->name ?? $material->supplier_name ?: '-' }}">
+                                    {{ $material->supplier?->name ?? $material->supplier_name ?: '-' }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">Terdaftar:</span>
+                                <span class="text-slate-600 font-medium text-xs">
+                                    {{ $material->created_at ? $material->created_at->format('d M Y, H:i') : '-' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- CARD PANEL AKSI SIMPAN --}}
+                <div class="edit-card">
+                    <div class="edit-card-header">
+                        <div class="edit-card-title">
+                            <i class="fas fa-floppy-disk text-primary"></i> Aksi Perubahan
+                        </div>
+                    </div>
+                    <div class="edit-card-body">
+                        <p class="text-slate-500 text-xs mb-4 leading-relaxed">
+                            Pastikan data klasifikasi, kode material, dan nama dagang telah sesuai sebelum menyimpan perubahan.
+                        </p>
+
+                        <button type="submit" class="btn btn-primary w-full" style="height:42px;font-size:13.5px;font-weight:700;border-radius:8px;box-shadow:0 3px 8px rgba(37,99,235,0.28);display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <i class="fas fa-check"></i> Simpan Perubahan
+                        </button>
+
+                        <a href="{{ route('materials.show', $material) }}" class="btn btn-light border w-full mt-2.5" style="height:38px;font-size:13px;font-weight:600;border-radius:8px;color:#64748b;display:flex;align-items:center;justify-content:center;gap:6px;">
+                            <i class="fas fa-times"></i> Batal
+                        </a>
+                    </div>
+                </div>
+
             </div>
 
-        </div>
-    </form>
+        </form>
+    </div>
 
     @push('scripts')
     <script>
@@ -604,16 +687,65 @@
             }
         }
 
+        function syncSummaryPreview() {
+            var skuVal = document.getElementById('sku_input')?.value || '—';
+            var nameVal = document.getElementById('name_input')?.value || 'Nama Material';
+            
+            var catSelect = document.getElementById('category_select');
+            var catVal = 'Kategori';
+            if (catSelect && catSelect.value === '__new__') {
+                catVal = document.getElementById('new_category')?.value || 'Kategori Baru';
+            } else if (catSelect && catSelect.selectedIndex > 0) {
+                catVal = catSelect.options[catSelect.selectedIndex].text;
+            }
+
+            var typeVal = document.getElementById('type_input')?.value || 'Kelompok';
+            
+            var unitSelect = document.getElementById('unit_select');
+            var unitVal = '-';
+            if (unitSelect && unitSelect.value === '__new__') {
+                unitVal = document.getElementById('new_unit')?.value || 'Satuan Baru';
+            } else if (unitSelect && unitSelect.selectedIndex > 0) {
+                unitVal = unitSelect.options[unitSelect.selectedIndex].text;
+            }
+
+            var supplierVal = document.getElementById('supplier_input')?.value || '-';
+
+            var elSku = document.getElementById('preview_sku');
+            var elName = document.getElementById('preview_name');
+            var elCat = document.getElementById('preview_category');
+            var elType = document.getElementById('preview_type');
+            var elUnit = document.getElementById('preview_unit');
+            var elSup = document.getElementById('preview_supplier');
+
+            if (elSku) elSku.textContent = skuVal.trim() ? skuVal : '—';
+            if (elName) elName.textContent = nameVal.trim() ? nameVal : 'Nama Material';
+            if (elCat) elCat.textContent = catVal;
+            if (elType) elType.textContent = typeVal.trim() ? typeVal : 'Kelompok';
+            if (elUnit) elUnit.textContent = unitVal;
+            if (elSup) {
+                elSup.textContent = supplierVal.trim() ? supplierVal : '-';
+                elSup.title = supplierVal;
+            }
+        }
+
         onCategoryChange();
         toggleNewUnit();
+        syncSummaryPreview();
 
         // ── Incoming Stages Logic (Read-only status badge) ──────────────
         var stageIndex = 0;
 
         function checkEmptyState() {
-            var tbody = document.getElementById('stages_tbody');
-            var empty = document.getElementById('stages_empty');
-            if (empty) empty.style.display = tbody.children.length === 0 ? 'block' : 'none';
+            var tbody   = document.getElementById('stages_tbody');
+            var empty   = document.getElementById('stages_empty');
+            var tblWrap = document.getElementById('stages_table_wrap');
+            var summary = document.getElementById('stages_summary_bar');
+            var hasRows = tbody && tbody.children.length > 0;
+
+            if (empty) empty.style.display = hasRows ? 'none' : 'block';
+            if (tblWrap) tblWrap.style.display = hasRows ? 'block' : 'none';
+            if (summary) summary.style.display = hasRows ? 'flex' : 'none';
         }
 
         function addStageRow(data) {

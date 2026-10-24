@@ -69,20 +69,23 @@
             overflow-y: auto;
         }
 
-        /* Workspace Card */
+        /* Workspace Card (Liquid Glass Effect) */
         .workspace-card {
             margin: 12px 14px 10px 14px;
             padding: 10px 12px;
-            background: rgba(0, 0, 0, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 9px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease;
+            background: rgba(0, 0, 0, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.22s ease;
         }
 
         .workspace-card:hover {
-            background: rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.22);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .workspace-header-row {
@@ -257,15 +260,15 @@
             align-items: center;
             gap: 10px;
             padding: 9px 12px;
-            border-radius: 9px;
-            color: rgba(255,255,255,0.82);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.88);
             text-decoration: none;
             font-size: 13.5px;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
             margin-bottom: 2px;
             cursor: pointer;
-            border: none;
+            border: 1px solid transparent;
             background: none;
             width: 100%;
             text-align: left;
@@ -277,17 +280,23 @@
             font-size: 14px;
         }
 
-        .nav-item:hover {
-            background: rgba(255,255,255,0.16);
-            color: #fff;
+        /* Glass Hover Effect */
+        .nav-item:hover:not(.active) {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.10) 100%);
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            transform: translateX(3px);
+            color: #ffffff;
         }
 
+        /* Clean Glass Active State Pill */
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12));
-            color: #fff;
-            border-left: 3px solid #fff;
-            padding-left: 9px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .nav-item .badge {
@@ -310,22 +319,26 @@
             padding: 14px 12px;
         }
 
+        /* Glass Sidebar User Card */
         .sidebar-user {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 9px 12px;
             border-radius: 12px;
-            border: 1.5px solid rgba(0, 0, 0, 0.4);
-            background: rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.14);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.2);
             transition: all 0.25s ease;
             position: relative;
         }
 
         .sidebar-user:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.18);
             border-color: rgba(255, 255, 255, 0.45);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.35);
             transform: translateY(-1px);
         }
 
@@ -1527,12 +1540,11 @@
         }
     </style>
     <script>
-        (function(){
-            var h=document.documentElement;
-            var s=localStorage.getItem('arsikon_theme');
-            var p=window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if(s==='dark'||(!s&&p))h.classList.add('dark');else h.classList.remove('dark');
-        })();
+        document.documentElement.classList.remove('dark');
+        try {
+            localStorage.removeItem('theme');
+            localStorage.removeItem('arsikon_theme');
+        } catch (e) {}
     </script>
 </head>
 
@@ -1582,9 +1594,6 @@
         </div>
 
         <div class="topbar-actions">
-           <!-- <button type="button" class="topbar-circle-btn" id="themeToggle" title="Mode Gelap/Terang" onclick="toggleTheme()">
-                <i class="fas fa-moon" id="themeIcon"></i> 
-            </button>-->
             <!-- Liquid Glass Notification Bell with Dropdown Panel -->
             <div class="relative" id="glass-notification-bell">
                 <button 
@@ -2018,16 +2027,6 @@
                 }
             }
         });
-
-        function toggleTheme() {
-            var html = document.documentElement;
-            var on = html.classList.toggle('dark');
-            var icon = document.getElementById('themeIcon');
-            if (icon) {
-                icon.className = on ? 'fas fa-sun' : 'fas fa-moon';
-            }
-            localStorage.setItem('arsikon_theme', on ? 'dark' : 'light');
-        }
 
         window.addEventListener('resize', function() {
             if (window.innerWidth > 1024) {

@@ -708,6 +708,7 @@
                     </div>
                 </div>
 
+
                 {{-- Form 2: Update Password --}}
                 <div class="profile-card">
                     <div class="profile-card-header">

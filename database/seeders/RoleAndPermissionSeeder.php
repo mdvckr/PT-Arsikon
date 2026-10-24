@@ -81,7 +81,7 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // ==========================================================
@@ -188,12 +188,25 @@ class RoleAndPermissionSeeder extends Seeder
         // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & payment proyek ---
         $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
         $adminPOProyekRole->syncPermissions([
+            'view material requests',
             'view purchase receipts',
             'create purchase receipts',
+            'delete purchase receipts',
             'view materials',
             'view suppliers',
             'view payments',
             'create payments',
+        ]);
+
+        // --- admin-po-nota: Dokumen Perencanaan Bagian 5 (Akses Penuh Nota Harian, Read-Only PO Lapangan) ---
+        $adminPONotaRole = Role::firstOrCreate(['name' => 'admin-po-nota']);
+        $adminPONotaRole->syncPermissions([
+            'view material requests',
+            'view purchase receipts',
+            'create purchase receipts',
+            'delete purchase receipts',
+            'view materials',
+            'view suppliers',
         ]);
 
         // ==========================================================

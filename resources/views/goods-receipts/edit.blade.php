@@ -1175,8 +1175,8 @@
     @push('scripts')
     <script>
     // Data dari server
-    var grMaterials = {!! json_encode($materialsJson) !!};
-    var grTools     = {!! json_encode($toolsJson) !!};
+    var grMaterials = @json($materialsJson);
+    var grTools     = @json($toolsJson);
     @php
         $suppliersData = $suppliers->map(function($s) {
             return ['id' => $s->id, 'name' => $s->name];
@@ -1196,8 +1196,8 @@
             ];
         });
     @endphp
-    var grSuppliers = {!! json_encode($suppliersData) !!};
-    var grMaterialRequests = {!! json_encode($mrsData) !!};
+    var grSuppliers = @json($suppliersData);
+    var grMaterialRequests = @json($mrsData);
     var grConfig = {
         poItemsUrl:   '{{ url("/goods-receipts/po-items") }}',
         mrItemsUrl:   '{{ url("/goods-receipts/mr-items") }}',
@@ -1207,7 +1207,7 @@
         selectedPoId: '{{ $selectedPoId ?? "" }}'
     };
     // Data item existing untuk pre-fill saat halaman edit dimuat
-    var grExistingItems = {!! json_encode($existingItemsJson) !!};
+    var grExistingItems = @json($existingItemsJson);
     </script>
     <script src="{{ asset('js/goods-receipt-create.js') }}?v={{ filemtime(public_path('js/goods-receipt-create.js')) }}"></script>
     <script>

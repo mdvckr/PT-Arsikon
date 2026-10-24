@@ -21,8 +21,8 @@ class PurchaseOrderController extends Controller
     {
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
-            if (!$user || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->can('view purchase orders'))) {
-                abort(403, 'Akses ditolak: Hanya Admin Pusat, Admin Gudang Pusat, dan Admin PO yang berhak mengakses Purchase Order.');
+            if (!$user || (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO', 'admin_pusat', 'admin_po', 'po_lapangan', 'po_nota_harian', 'admin-po-nota']) && !$user->can('view purchase orders'))) {
+                abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses Purchase Order.');
             }
             return $next($request);
         });
@@ -75,6 +75,9 @@ class PurchaseOrderController extends Controller
 
     public function create(Request $request)
     {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Role po_nota_harian hanya memiliki akses read-only pada modul Purchase Order.');
+        }
         $this->authorize('create purchase orders');
         $suppliers    = Supplier::orderBy('name')->get();
         $materials    = Material::with('unit')->orderBy('name')->get();
@@ -182,6 +185,9 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Role po_nota_harian hanya memiliki akses read-only pada modul Purchase Order.');
+        }
         $this->authorize('create purchase orders');
         $validated = $request->validate([
             'supplier_id'                      => 'nullable|exists:suppliers,id',
@@ -500,6 +506,27 @@ class PurchaseOrderController extends Controller
         $allTemplates  = \App\Models\PrintTemplate::latest()->get();
         $userCanViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
 
+        // Keamanan Blind PO / Hidden Harga di Backend:
+        // Jika user tidak berhak melihat harga, hilangkan seluruh nominal harga dari model & relasi sebelum dikirim ke View/JSON
+        if (!$userCanViewPrice) {
+            $purchaseOrder->total_amount = 0;
+            $purchaseOrder->subtotal = 0;
+            $purchaseOrder->tax_amount = 0;
+            $purchaseOrder->discount_amount = 0;
+            if ($purchaseOrder->items) {
+                foreach ($purchaseOrder->items as $item) {
+                    $item->unit_price = 0;
+                    $item->subtotal = 0;
+                    $item->total_price = 0;
+                }
+            }
+            if ($purchaseOrder->payments) {
+                foreach ($purchaseOrder->payments as $payment) {
+                    $payment->amount = 0;
+                }
+            }
+        }
+
         return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice'));
     }
 
@@ -529,6 +556,21 @@ class PurchaseOrderController extends Controller
         $isBlind = (!$userCanViewPrice) || ($requestedMode === 'blind');
         $hidePrice = $isBlind;
 
+        // Keamanan Blind PO di Backend: Sembunyikan harga langsung di level controller
+        if ($hidePrice) {
+            $purchaseOrder->total_amount = 0;
+            $purchaseOrder->subtotal = 0;
+            $purchaseOrder->tax_amount = 0;
+            $purchaseOrder->discount_amount = 0;
+            if ($purchaseOrder->items) {
+                foreach ($purchaseOrder->items as $item) {
+                    $item->unit_price = 0;
+                    $item->subtotal = 0;
+                    $item->total_price = 0;
+                }
+            }
+        }
+
         $po = $purchaseOrder;
         return view('purchase-orders.print', compact('po', 'hidePrice', 'isBlind', 'userCanViewPrice'));
     }
@@ -536,6 +578,10 @@ class PurchaseOrderController extends Controller
 
     public function approve(PurchaseOrder $purchaseOrder)
     {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Role po_nota_harian tidak berhak melakukan approval Purchase Order.');
+        }
+
         if (! (auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin']))) {
             abort(403);
         }
@@ -563,6 +609,10 @@ class PurchaseOrderController extends Controller
 
     public function send(PurchaseOrder $purchaseOrder)
     {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Operasi tidak diizinkan untuk role po_nota_harian.');
+        }
+
         if (! (auth()->user()->can('send purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO', 'Direktur', 'Manajer Operasional']))) {
             abort(403, 'Anda tidak memiliki hak akses untuk mengirim purchase order.');
         }
@@ -582,6 +632,10 @@ class PurchaseOrderController extends Controller
 
     public function cancel(PurchaseOrder $purchaseOrder)
     {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Operasi tidak diizinkan untuk role po_nota_harian.');
+        }
+
         if (! (auth()->user()->can('cancel purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin', 'Admin Gudang Pusat', 'Admin PO', 'Direktur', 'Manajer Operasional']))) {
             abort(403, 'Anda tidak memiliki hak akses untuk membatalkan purchase order.');
         }

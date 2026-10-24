@@ -7,6 +7,7 @@ use App\Models\Warehouse;
 use App\Services\SecurityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -56,7 +57,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => 'required|email|unique:users,email',
-            'password'        => ['required', 'string', 'min:8', 'confirmed'],
+            'password'        => ['required', 'confirmed', Password::defaults()],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',
@@ -122,7 +123,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'            => 'required|string|max:255',
             'email'           => "required|email|unique:users,email,{$user->id}",
-            'password'        => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password'        => ['nullable', 'confirmed', Password::defaults()],
             'role'            => 'nullable|exists:roles,name',
             'roles'           => 'nullable|array',
             'roles.*'         => 'exists:roles,name',

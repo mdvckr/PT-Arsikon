@@ -1,72 +1,75 @@
 <x-app-layout>
     <x-slot name="title">Detail Alat: {{ $tool->name }}</x-slot>
 
-    {{-- Breadcrumb --}}
-    <div class="breadcrumb no-print" style="margin-bottom:8px;">
-        <a href="{{ route('tools.index') }}">Alat</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
-        <span>{{ $tool->name }}</span>
-    </div>
+    {{-- Main Container (Full Width) --}}
+    <div class="w-full">
 
-    {{-- Action Bar --}}
-    <div class="flex items-center justify-between mb-4 no-print" style="flex-wrap:wrap;gap:12px;">
-        <div>
-            <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;">{{ $tool->name }}</h2>
-                <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;color:#334155;font-weight:600;">
-                    {{ $tool->code }}
-                </span>
-                @if($tool->category)
-                <span class="text-muted" style="font-size:12.5px;">
-                    · {{ $tool->category->name }}
-                </span>
-                @endif
-                @if($tool->type)
-                <span class="badge" style="background:#e0e7ff;color:#4338ca;font-size:11px;font-weight:600;">
-                    {{ $tool->type }}
-                </span>
-                @endif
-                @if($tool->isOwnedByCentral())
-                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;">
-                    <i class="fas fa-building me-1"></i> Milik Pusat
-                </span>
-                @endif
-            </div>
-            <p class="text-muted" style="font-size:12.5px;margin:3px 0 0;">
-                Terdaftar sejak {{ $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-' }}
-            </p>
+        {{-- Breadcrumb --}}
+        <div class="breadcrumb no-print" style="margin-bottom:6px;font-size:12px;">
+            <a href="{{ route('tools.index') }}" class="text-slate-500 hover:text-primary">Alat</a>
+            <span class="breadcrumb-sep mx-1.5 text-slate-400"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+            <span class="text-slate-700 font-medium">{{ $tool->name }}</span>
         </div>
-        <div class="flex gap-2 items-center">
-            @can('edit tools')
-            <a href="{{ route('tools.edit', $tool) }}" class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-pen" style="font-size:12px;"></i> Edit
-            </a>
-            @endcan
-            <button type="button" class="btn btn-primary" onclick="printTool()" id="btn-print-tool" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-print" style="font-size:12px;"></i> Cetak / Print
-            </button>
-            <a href="{{ route('tools.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-arrow-left" style="font-size:12px;"></i> Kembali
-            </a>
-        </div>
-    </div>
 
-    {{-- Print Header (only visible when printing) --}}
-    <div class="print-only" style="display:none;margin-bottom:20px;border-bottom:2px solid #0f172a;padding-bottom:12px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
+        {{-- Action Bar --}}
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3 no-print">
             <div>
-                <div style="font-size:18px;font-weight:800;color:#0f172a;">PT Arsikon Cipta Karya</div>
-                <div style="font-size:11px;color:#64748b;margin-top:2px;">Informasi & Kartu Data Alat Kerja</div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight m-0">{{ $tool->name }}</h2>
+                    <span class="font-mono text-xs sm:text-sm text-slate-700 font-semibold bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+                        {{ $tool->code }}
+                    </span>
+                    @if($tool->category)
+                    <span class="badge text-xs font-semibold px-2.5 py-1 rounded" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">
+                        {{ $tool->category->name }}
+                    </span>
+                    @endif
+                    @if($tool->type)
+                    <span class="badge text-xs font-semibold px-2.5 py-1 rounded" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;">
+                        {{ $tool->type }}
+                    </span>
+                    @endif
+                    @if($tool->isOwnedByCentral())
+                    <span class="badge text-xs font-semibold px-2.5 py-1 rounded" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
+                        <i class="fas fa-building me-1"></i> Milik Pusat
+                    </span>
+                    @endif
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                    Terdaftar sejak {{ $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-' }}
+                </p>
             </div>
-            <div style="text-align:right;">
-                <div style="font-size:11px;color:#64748b;">Dicetak pada:</div>
-                <div style="font-size:12px;font-weight:600;" id="print-date-time"></div>
+            <div class="flex flex-wrap items-center gap-2">
+                @can('edit tools')
+                <a href="{{ route('tools.edit', $tool) }}" class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-pen" style="font-size:12px;"></i> Edit
+                </a>
+                @endcan
+                <button type="button" class="btn btn-primary" onclick="printTool()" id="btn-print-tool" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-print" style="font-size:12px;"></i> Cetak / Print
+                </button>
+                <a href="{{ route('tools.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;display:inline-flex;align-items:center;gap:6px;">
+                    <i class="fas fa-arrow-left" style="font-size:12px;"></i> Kembali
+                </a>
             </div>
         </div>
-    </div>
 
-    {{-- Main Grid Layout --}}
-    <div class="grid" style="grid-template-columns:1fr 340px;gap:20px;align-items:start;" id="tool-detail-grid">
+        {{-- Print Header (only visible when printing) --}}
+        <div class="print-only" style="display:none;margin-bottom:20px;border-bottom:2px solid #0f172a;padding-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <div style="font-size:18px;font-weight:800;color:#0f172a;">PT Arsikon Cipta Karya</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px;">Informasi & Kartu Data Alat Kerja</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px;color:#64748b;">Dicetak pada:</div>
+                    <div style="font-size:12px;font-weight:600;" id="print-date-time"></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Main Grid Layout --}}
+        <div class="grid" style="grid-template-columns:minmax(0, 1fr) 340px;gap:24px;align-items:start;width:100%;" id="tool-detail-grid">
         <div style="display:flex;flex-direction:column;gap:16px;">
             {{-- Stok per Lokasi / Gudang --}}
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
@@ -330,22 +333,36 @@
                         };
 
                         $rows = [
-                            ['Kode Alat', '<span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12.5px;color:#334155;font-weight:600;">'.$tool->code.'</span>'],
-                            ['Nama Alat', '<span style="font-weight:600;color:#0f172a;">'.$tool->name.'</span>'],
-                            ['Kelompok Alat', $tool->type ? '<span class="badge" style="background:#e0e7ff;color:#4338ca;font-size:11px;font-weight:600;">'.$tool->type.'</span>' : '-'],
-                            ['Spesifikasi / Ukuran', $tool->size ? '<span class="badge bg-light text-dark border"><i class="fas fa-ruler-combined me-1"></i>'.$tool->size.'</span>' : '-'],
-                            ['Kategori', $tool->category?->name ?? '-'],
-                            ['Merk / Brand', $tool->brand ?: '-'],
-                            ['Kepemilikan', $tool->isOwnedByCentral() ? '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;"><i class="fas fa-building me-1"></i>Milik Pusat</span>' : ($tool->ownerWarehouse?->name ?? '-')],
-                            ['Gudang Utama', $tool->currentWarehouse?->name ?? 'Gudang Pusat / Default'],
-                            ['Status', $statusBadge],
-                            ['Tgl Terdaftar', $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-'],
+                            ['Kode Alat', $tool->code, 'style', 'font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12.5px;color:#334155;font-weight:600;'],
+                            ['Nama Alat', $tool->name, 'style', 'font-weight:600;color:#0f172a;'],
+                            ['Kelompok Alat', $tool->type ?: '-', $tool->type ? 'badge' : null, 'background:#e0e7ff;color:#4338ca;font-size:11px;font-weight:600;'],
+                            ['Spesifikasi / Ukuran', $tool->size ?: '-', $tool->size ? 'size_badge' : null, null],
+                            ['Kategori', $tool->category?->name ?? '-', null, null],
+                            ['Merk / Brand', $tool->brand ?: '-', null, null],
+                            ['Kepemilikan', $tool->isOwnedByCentral() ? 'Milik Pusat' : ($tool->ownerWarehouse?->name ?? '-'), $tool->isOwnedByCentral() ? 'central_badge' : null, null],
+                            ['Gudang Utama', $tool->currentWarehouse?->name ?? 'Gudang Pusat / Default', null, null],
+                            ['Status', $statusBadge, 'raw', null],
+                            ['Tgl Terdaftar', $tool->created_at ? $tool->created_at->format('d M Y, H:i') : '-', null, null],
                         ];
                     @endphp
-                    @foreach($rows as [$label, $value])
+                    @foreach($rows as [$label, $value, $type, $style])
                     <tr style="border-bottom:1px solid #f8fafc;">
                         <td style="padding:8px 0;color:#64748b;font-weight:500;width:42%;vertical-align:top;font-size:12px;">{{ $label }}</td>
-                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;text-align:right;">{!! $value !!}</td>
+                        <td style="padding:8px 0;color:#1e293b;vertical-align:top;text-align:right;">
+                            @if($type === 'raw')
+                                {!! $value !!}
+                            @elseif($type === 'style')
+                                <span style="{{ $style }}">{{ $value }}</span>
+                            @elseif($type === 'badge')
+                                <span class="badge" style="{{ $style }}">{{ $value }}</span>
+                            @elseif($type === 'size_badge')
+                                <span class="badge bg-light text-dark border"><i class="fas fa-ruler-combined me-1"></i>{{ $value }}</span>
+                            @elseif($type === 'central_badge')
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;"><i class="fas fa-building me-1"></i>{{ $value }}</span>
+                            @else
+                                {{ $value }}
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </table>
@@ -415,7 +432,7 @@
 
     @push('styles')
     <style>
-        @media (max-width: 992px) {
+        @media (max-width: 1199px) {
             #tool-detail-grid {
                 grid-template-columns: 1fr !important;
             }

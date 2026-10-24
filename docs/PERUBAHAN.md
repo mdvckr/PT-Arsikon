@@ -1140,3 +1140,63 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
 - **Hasil Verifikasi**:
   - `php artisan route:clear` & `php artisan config:clear` & `php artisan view:clear`: Sukses dibersihkan.
   - Seluruh pengujian fitur dan keamanan berstatus HIJAU (PASS).
+
+---
+
+## 23. Sprint Increment: Penghapusan Total Mode Gelap (Dark Mode Rollback) & Pemantapan Sidebar Liquid Glass (T40)
+- **Konteks & User Story (Metode Scrum)**:
+  - **User Story**:
+    *Sebagai* Pengguna / Administrator Sistem PT Arsikon,  
+    *Saya ingin* sistem kembali beroperasi penuh pada mode standar (terang) yang bersih, tajam, dan bebas distorsi kontras warna,  
+    *Dan saya ingin* mempertahankan desain navigasi **Sidebar Liquid Glassmorphism** oranye solid dengan efek kaca frosted yang elegan,  
+    *Sehingga* alur kerja operasional logistik, material, dan pengadaan berjalan nyaman, konsisten, dan profesional di seluruh perangkat.
+  - **Sprint Goal**: Mengeliminasi seluruh anomali tampilan akibat intervensi mode gelap otomatis sekaligus memperkuat estetika antarmuka navigasi utama dengan komponen glassmorphic berkualitas enterprise.
+
+- **Acceptance Criteria (Definition of Done — DoD)**:
+  1. **DoD 1 (Clean Dark Mode Rollback)**: Seluruh kelas CSS `.dark`, token CSS tema gelap (`--bg`, `--surface`, `--line`, dsb.), engine global dark mode, dan dependensi Tailwind `darkMode: 'class'` dihapus tanpa sisa.
+  2. **DoD 2 (Anti-Ghosting / Sanitasi Cache Browser)**: Skrip lawas pendeteksi preferensi tema gelap bawaan OS (`prefers-color-scheme: dark`) dihapus tuntas, digantikan skrip sanitasi pembersih instan untuk mencopot kelas `dark` pada `<html>` dan menghapus kunci `theme` serta `arsikon_theme` dari `localStorage`.
+  3. **DoD 3 (Preservasi Sidebar Liquid Glass)**: Sidebar mempertahankan warna oranye solid khas korporat (`#EA580C`) berpadu dengan efek *Liquid Crystal Glassmorphism*:
+     - *Active Navigation Item*: Pill semi-transparan `rgba(255, 255, 255, 0.24)` dengan `backdrop-filter: blur(8px)`, rim putih kiri solid `4px solid #ffffff`, dan border rim halus `rgba(255, 255, 255, 0.45)`.
+     - *Hover Shimmer State*: Gradien kaca `linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.10) 100%)`, border specular, dan pergeseran halus `translateX(3px)`.
+     - *Workspace & Profile Card*: Kartu kaca transparan bertekstur frosted dengan `backdrop-filter: blur(12px)` dan bayangan lembut.
+  4. **DoD 4 (Integritas Pengujian Otomatis)**: Seluruh suite pengujian arsitektur sidebar (`SidebarNavigationTest`) dan RBAC/Security lulus 100% tanpa regresi.
+  5. **DoD 5 (Higienitas Skema Database & Backend)**: Kolom `theme` pada tabel `users` di-drop, atribut model `$fillable` dikembalikan bersih, migrasi dan controller tema dihapus.
+
+- **Rincian Perubahan File (Product Increment Artifacts)**:
+  1. **Stylesheet & Desain Sistem**:
+     - `resources/css/app.css`:
+       - Menghapus blok *Global Dark Mode Engine* (`html.dark`, `body.dark`, penangkal inline style, badge overrides, form input dark).
+       - Menghapus token variabel CSS tema gelap (`--bg`, `--surface`, `--line`, `--muted`, `--soft`).
+       - Menghapus varian dark glass iOS 26 dan media query fallback dark.
+       - Mempertahankan styling *Solid Orange Brand Sidebar* (`#EA580C`) dengan glass token.
+     - `tailwind.config.js`:
+       - Menghapus konfigurasi `darkMode: 'class'` dan token warna variabel tema gelap.
+  2. **Layout & Tampilan Blade**:
+     - `resources/views/layouts/app.blade.php`:
+       - Menghapus skrip auto dark mode lama `(function(){ ... if(s==='dark'||(!s&&p))h.classList.add('dark'); ... })()`.
+       - Memasang skrip pembersih cache browser otomatis (`document.documentElement.classList.remove('dark')`, pembersihan `theme` & `arsikon_theme` dari `localStorage`).
+       - Menghapus tombol toggle dropdown tema dan fungsi lawas `toggleTheme()`.
+       - Mengimplementasikan styling **Liquid Glassmorphism** pada `.nav-item` (hover shimmer & active pill blur), `.workspace-card` (frosted blur 12px), dan `.sidebar-user` (frosted blur 12px).
+       - Menghapus aksen garis putih tebal di sisi kiri item aktif (`border-left: 4px solid #ffffff`) untuk menghasilkan kapsul kaca semi-transparan yang bersih, simetris, dan menyatu alami dengan kontur sidebar.
+       - Mempertahankan DOM accordion sidebar asli yang kompatibel penuh dengan test suite `SidebarNavigationTest`.
+     - `resources/views/profile/edit.blade.php`:
+       - Menghapus kartu formulir *"Preferensi Tema Tampilan"* (pilihan Terang, Gelap, Ikuti Sistem).
+  3. **Frontend JavaScript**:
+     - `resources/js/app.js`:
+       - Menghapus komponen Alpine `themeToggle` dan event listener sinkronisasi preferensi tema.
+  4. **Backend, Routing & Database**:
+     - `app/Models/User.php`: Menghapus atribut `'theme'` dari properti `$fillable`.
+     - `routes/web.php`: Menghapus rute `PATCH /profile/theme`.
+     - `database/migrations/`: Menghapus migrasi penambahan kolom tema dan mengeksekusi penghapusan kolom `theme` pada tabel `users`.
+     - Menghapus berkas yang tidak lagi diperlukan: `app/Http/Controllers/ThemeController.php`, `tests/Feature/ThemeTest.php`, `resources/views/components/sidebar.blade.php`, dan `config/sidebar.php`.
+
+- **Hasil Pengujian & Verifikasi Kualitas (Quality Review)**:
+  1. **Automated Unit & Feature Tests**:
+     - `php artisan test tests/Feature/SidebarNavigationTest.php`:
+       `Tests: 8 passed (68 assertions)` — Verifikasi struktur grup, urutan grup, accordion auto-open, restriksi role, dan eliminasi menu redundan berstatus HIJAU (PASS).
+     - `php artisan test tests/Feature/AdminPoNotaRbacTest.php tests/Feature/SecurityHardeningPhaseTest.php`:
+       `Tests: 9 passed (28 assertions)` — Seluruh guard RBAC dan security header berstatus HIJAU (PASS).
+  2. **Kompilasi Frontend**:
+     - `npm run build`: Berhasil mengompilasi bundel Vite (`public/build/assets/app-*.css` & `app-*.js`) bebas error.
+  3. **Pembersihan Cache Laravel**:
+     - `php artisan view:clear`, `php artisan route:clear`, `php artisan config:clear`, dan `php artisan cache:clear`: Seluruh cache sukses dikosongkan.

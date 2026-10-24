@@ -151,7 +151,7 @@
         });
 
         let rowCount = 1;
-        const materials = {!! json_encode($materials->map(fn($m) => ['id'=>$m->id,'code'=>$m->code,'name'=>$m->name,'abbr'=>$m->unit?->abbreviation])) !!};
+        const materials = @json($materials->map(fn($m) => ['id'=>$m->id,'code'=>$m->code,'name'=>$m->name,'abbr'=>$m->unit?->abbreviation]));
 
         function buildSelect(idx) {
             let opts = "<option value=''>— Pilih Material —</option>";

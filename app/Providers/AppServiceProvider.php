@@ -14,7 +14,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        \Laravel\Sanctum\Sanctum::ignoreMigrations();
+        if (method_exists(\Laravel\Sanctum\Sanctum::class, 'ignoreMigrations')) {
+            \Laravel\Sanctum\Sanctum::ignoreMigrations();
+        }
         require_once app_path('helpers.php');
     }
 
@@ -23,9 +25,10 @@ class AppServiceProvider extends ServiceProvider
         // Cegah silent failure pada mass-assignment saat development/testing
         Model::preventSilentlyDiscardingAttributes(!app()->isProduction());
 
-        // Kebijakan Kompleksitas Password Default (Layer 4.2 Master Plan v2)
+        // Kebijakan Kompleksitas Password Default (Layer 4.2 / High-Security Hardening)
         Password::defaults(function () {
-            $rule = Password::min(10)
+            $rule = Password::min(8)
+                ->letters()
                 ->mixedCase()
                 ->numbers()
                 ->symbols();

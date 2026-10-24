@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use App\Models\MaterialUsage;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseReceipt;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Policies\MaterialUsagePolicy;
+use App\Policies\PurchaseOrderPolicy;
+use App\Policies\PurchaseReceiptPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -18,6 +22,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         MaterialUsage::class => MaterialUsagePolicy::class,
+        PurchaseOrder::class => PurchaseOrderPolicy::class,
+        PurchaseReceipt::class => PurchaseReceiptPolicy::class,
         \Spatie\Permission\Models\Role::class => \App\Policies\RolePolicy::class,
     ];
 

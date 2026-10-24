@@ -227,27 +227,42 @@
                             ? '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><i class="fas fa-ban me-1"></i> Dibatalkan</span>'
                             : '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><i class="fas fa-check-circle me-1"></i> Selesai</span>';
 
-                        $mrVal = $materialUsage->materialRequest
-                            ? '<a href="' . route('material-requests.show', $materialUsage->materialRequest) . '" class="fw-700 text-primary" style="text-decoration:underline;">#' . $materialUsage->materialRequest->request_number . '</a>'
-                            : '<span class="badge" style="background:#f1f5f9;color:#64748b;font-size:10.5px;padding:1px 6px;border-radius:4px;">Manual</span>';
-
                         $infoRows = [
-                            ['No. Bon', '<strong style="color:#0f172a;">' . $materialUsage->usage_number . '</strong>'],
-                            ['Status', $statusBadge],
-                            ['Surat MR', $mrVal],
-                            ['Tanggal', \Carbon\Carbon::parse($materialUsage->usage_date)->format('d/m/Y')],
-                            ['Gudang', $materialUsage->warehouse?->name ?? '-'],
-                            ['Penerima', '<strong style="color:#0f172a;">' . e($materialUsage->recipient_name) . '</strong>'],
-                            ['Pekerjaan', e($materialUsage->job_section ?? '-')],
-                            ['Petugas', e($materialUsage->issuedBy?->name ?? '-')],
-                            ['Waktu Input', $materialUsage->created_at ? $materialUsage->created_at->format('d/m/Y H:i') : '-'],
+                            ['No. Bon', $materialUsage->usage_number, 'font-weight:700;color:#0f172a;'],
+                            ['Status', $statusBadge, null, true],
+                            ['Surat MR', $materialUsage->materialRequest ? '#' . $materialUsage->materialRequest->request_number : 'Manual', null, false, $materialUsage->materialRequest ? route('material-requests.show', $materialUsage->materialRequest) : null],
+                            ['Tanggal', \Carbon\Carbon::parse($materialUsage->usage_date)->format('d/m/Y'), null],
+                            ['Gudang', $materialUsage->warehouse?->name ?? '-', null],
+                            ['Penerima', $materialUsage->recipient_name, 'font-weight:700;color:#0f172a;'],
+                            ['Pekerjaan', $materialUsage->job_section ?? '-', null],
+                            ['Petugas', $materialUsage->issuedBy?->name ?? '-', null],
+                            ['Waktu Input', $materialUsage->created_at ? $materialUsage->created_at->format('d/m/Y H:i') : '-', null],
                         ];
                     @endphp
 
-                    @foreach($infoRows as [$label, $val])
+                    @foreach($infoRows as $row)
+                    @php
+                        $label   = $row[0];
+                        $val     = $row[1];
+                        $style   = $row[2] ?? null;
+                        $isBadge = $row[3] ?? false;
+                        $linkUrl = $row[4] ?? null;
+                    @endphp
                     <div class="info-row">
                         <span class="info-label">{{ $label }}</span>
-                        <span class="info-val">{!! $val !!}</span>
+                        <span class="info-val">
+                            @if($isBadge)
+                                {!! $val !!}
+                            @elseif($linkUrl)
+                                <a href="{{ $linkUrl }}" class="fw-700 text-primary" style="text-decoration:underline;">{{ $val }}</a>
+                            @elseif($label === 'Surat MR' && !$linkUrl)
+                                <span class="badge" style="background:#f1f5f9;color:#64748b;font-size:10.5px;padding:1px 6px;border-radius:4px;">{{ $val }}</span>
+                            @elseif($style)
+                                <span style="{{ $style }}">{{ $val }}</span>
+                            @else
+                                {{ $val }}
+                            @endif
+                        </span>
                     </div>
                     @endforeach
 

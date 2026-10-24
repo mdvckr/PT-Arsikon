@@ -71,19 +71,33 @@
             </div>
             <div class="card-body">
                 @php
+                    $statusBadge = match($stockOpname->status) {
+                        'approved' => '<span class="badge badge-success">Disetujui</span>',
+                        'rejected' => '<span class="badge badge-danger">Ditolak</span>',
+                        default    => '<span class="badge badge-warning">Open</span>',
+                    };
+
                     $rows = [
-                        ['No. Dokumen', $stockOpname->opname_number],
-                        ['Gudang', $stockOpname->warehouse?->name ?? '-'],
-                        ['Tanggal Audit', \Carbon\Carbon::parse($stockOpname->opname_date)->format('d/m/Y')],
-                        ['Status', $stockOpname->status === 'approved' ? '<span class="badge badge-success">Disetujui</span>' : ($stockOpname->status === 'rejected' ? '<span class="badge badge-danger">Ditolak</span>' : '<span class="badge badge-warning">Open</span>')],
-                        ['Dibuat Oleh', $stockOpname->creator?->name ?? '-'],
-                        ['Disetujui Oleh', $stockOpname->approver?->name ?? '-'],
+                        ['No. Dokumen', $stockOpname->opname_number, null, false],
+                        ['Gudang', $stockOpname->warehouse?->name ?? '-', null, false],
+                        ['Tanggal Audit', \Carbon\Carbon::parse($stockOpname->opname_date)->format('d/m/Y'), null, false],
+                        ['Status', $statusBadge, null, true],
+                        ['Dibuat Oleh', $stockOpname->creator?->name ?? '-', null, false],
+                        ['Disetujui Oleh', $stockOpname->approver?->name ?? '-', null, false],
                     ];
                 @endphp
-                @foreach($rows as [$label, $value])
+                @foreach($rows as [$label, $value, $style, $isBadge])
                 <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px;">
                     <span class="text-muted fw-500" style="width:130px;flex-shrink:0;">{{ $label }}</span>
-                    <span class="fw-600 text-end">{!! $value !!}</span>
+                    <span class="fw-600 text-end">
+                        @if($isBadge)
+                            {!! $value !!}
+                        @elseif($style)
+                            <span style="{{ $style }}">{{ $value }}</span>
+                        @else
+                            {{ $value }}
+                        @endif
+                    </span>
                 </div>
                 @endforeach
                 @if($stockOpname->notes)

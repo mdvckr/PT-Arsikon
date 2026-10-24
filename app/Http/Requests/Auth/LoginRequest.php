@@ -45,19 +45,11 @@ class LoginRequest extends FormRequest
         $credentials['is_active'] = true;
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            $lockoutSeconds = (int) config('security.rate_limits.lockout_minutes', 15) * 60;
-            RateLimiter::hit($this->throttleKey(), $lockoutSeconds);
+            RateLimiter::hit($this->throttleKey(), 60);
 
-            // Specific notification if account is deactivated
-            $inactiveUser = \App\Models\User::where('email', $this->email)->first();
-            if ($inactiveUser && !$inactiveUser->is_active && \Illuminate\Support\Facades\Hash::check($this->password, $inactiveUser->password)) {
-                throw ValidationException::withMessages([
-                    'email' => 'Akun Anda sedang dinonaktifkan oleh Administrator. Hubungi pihak manajemen untuk aktivasi.',
-                ]);
-            }
-
+            // Generic error message to prevent user enumeration
             throw ValidationException::withMessages([
-                'email' => 'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.',
+                'email' => 'Kredensial yang Anda masukkan tidak sesuai.',
             ]);
         }
 
@@ -71,7 +63,8 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        $maxAttempts = (int) config('security.rate_limits.login_max_attempts', 5);
+        // Maximum 5 failed attempts per minute
+        $maxAttempts = 5;
 
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
             return;
@@ -82,10 +75,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'email' => "Kredensial yang Anda masukkan tidak sesuai. Terlalu banyak percobaan gagal, silakan coba lagi dalam {$seconds} detik.",
         ]);
     }
 

@@ -119,16 +119,16 @@
                     <div class="text-center py-6">
                         <i class="fas fa-file-pdf text-danger" style="font-size:48px;"></i>
                         <p class="text-sm mt-2 text-muted">Dokumen Nota Format PDF</p>
-                        <a href="{{ asset('storage/' . $purchaseReceipt->image_path) }}" target="_blank" class="btn btn-primary btn-sm mt-3">
+                        <a href="{{ route('purchase-receipts.file', $purchaseReceipt) }}" target="_blank" class="btn btn-primary btn-sm mt-3">
                             <i class="fas fa-external-link-alt me-1"></i> Buka File PDF
                         </a>
                     </div>
                 @else
                     <div class="text-center">
-                        <a href="{{ asset('storage/' . $purchaseReceipt->image_path) }}" target="_blank" title="Klik untuk memperbesar">
-                            <img src="{{ asset('storage/' . $purchaseReceipt->image_path) }}" alt="Foto Nota Fisik" class="rounded shadow-sm max-h-64 mx-auto hover:opacity-90 transition">
+                        <a href="{{ route('purchase-receipts.file', $purchaseReceipt) }}" target="_blank" title="Klik untuk memperbesar">
+                            <img src="{{ route('purchase-receipts.file', $purchaseReceipt) }}" alt="Foto Nota Fisik" class="rounded shadow-sm max-h-64 mx-auto hover:opacity-90 transition">
                         </a>
-                        <a href="{{ asset('storage/' . $purchaseReceipt->image_path) }}" target="_blank" class="btn btn-light btn-xs mt-3 text-xs">
+                        <a href="{{ route('purchase-receipts.file', $purchaseReceipt) }}" target="_blank" class="btn btn-light btn-xs mt-3 text-xs">
                             <i class="fas fa-expand me-1"></i> Lihat Ukuran Penuh
                         </a>
                     </div>
