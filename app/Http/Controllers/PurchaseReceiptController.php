@@ -174,12 +174,14 @@ class PurchaseReceiptController extends Controller
             'receipt_date'       => 'required|date',
             'image'              => 'nullable|file|mimes:jpeg,png,jpg,pdf,webp|mimetypes:image/jpeg,image/png,image/webp,application/pdf|max:10240',
             'notes'              => 'nullable|string',
-            'items'              => 'required|array|min:1',
-            'items.*.material_id'=> 'nullable|exists:materials,id',
-            'items.*.item_name'  => 'nullable|string|max:255',
-            'items.*.quantity'   => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.notes'      => 'nullable|string|max:255',
+            'items'                 => 'required|array|min:1',
+            'items.*.material_id'   => 'nullable|exists:materials,id',
+            'items.*.material_name' => 'nullable|string|max:255',
+            'items.*.item_name'     => 'nullable|string|max:255',
+            'items.*.unit_name'     => 'nullable|string|max:50',
+            'items.*.quantity'      => 'required|numeric|min:0.01',
+            'items.*.unit_price'    => 'required|numeric|min:0',
+            'items.*.notes'         => 'nullable|string|max:255',
         ]);
 
         $user = auth()->user();
@@ -259,16 +261,23 @@ class PurchaseReceiptController extends Controller
 
             foreach ($validated['items'] as $item) {
                 $material = !empty($item['material_id']) ? Material::find($item['material_id']) : null;
-                $itemName = $item['item_name'] ?? ($material ? $material->name : 'Item Nota');
+                $materialName = !empty($item['material_name']) ? trim($item['material_name']) : ($material ? $material->name : null);
+                $itemName = !empty($item['item_name']) ? trim($item['item_name']) : ($materialName ?? 'Item Nota');
+                if (empty($materialName)) {
+                    $materialName = $itemName;
+                }
+                $unitName = !empty($item['unit_name']) ? trim($item['unit_name']) : ($material?->unit?->symbol ?? 'Bh');
                 $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
 
                 $receipt->items()->create([
-                    'material_id' => $item['material_id'] ?? null,
-                    'item_name'   => $itemName,
-                    'quantity'    => $item['quantity'],
-                    'unit_price'  => $item['unit_price'],
-                    'subtotal'    => $subtotal,
-                    'notes'       => $item['notes'] ?? null,
+                    'material_id'   => $item['material_id'] ?? null,
+                    'material_name' => $materialName,
+                    'item_name'     => $itemName,
+                    'unit_name'     => $unitName,
+                    'quantity'      => $item['quantity'],
+                    'unit_price'    => $item['unit_price'],
+                    'subtotal'      => $subtotal,
+                    'notes'         => $item['notes'] ?? null,
                 ]);
             }
 
@@ -306,6 +315,216 @@ class PurchaseReceiptController extends Controller
 
         $purchaseReceipt->load(['purchaseOrder.payments', 'project', 'supplier', 'creator', 'items.material.unit']);
         return view('purchase-receipts.show', compact('purchaseReceipt'));
+    }
+
+    public function print(PurchaseReceipt $purchaseReceipt)
+    {
+        $this->authorize('view purchase receipts');
+
+        $purchaseReceipt->load(['purchaseOrder', 'project', 'supplier', 'creator', 'items.material.unit']);
+        return view('purchase-receipts.print', compact('purchaseReceipt'));
+    }
+
+    public function printWeekly(PurchaseReceipt $purchaseReceipt)
+    {
+        $this->authorize('view purchase receipts');
+
+        $date        = $purchaseReceipt->receipt_date ?? now();
+        $startOfWeek = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $endOfWeek   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+        $weekNumber  = $date->isoWeek();
+
+        $project = $purchaseReceipt->project;
+
+        $receipts = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
+            ->where('project_id', $purchaseReceipt->project_id)
+            ->whereBetween('receipt_date', [$startOfWeek->format('Y-m-d'), $endOfWeek->format('Y-m-d')])
+            ->orderBy('receipt_date')
+            ->orderBy('id')
+            ->get();
+
+        $bulanId = [
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+        $bulanStart = $bulanId[$startOfWeek->month] ?? '';
+        $bulanEnd   = $bulanId[$endOfWeek->month]   ?? '';
+
+        $periodLabel  = 'Minggu ke-' . $weekNumber . ' (' . $startOfWeek->format('d') . ' ' . $bulanStart . ' — ' . $endOfWeek->format('d') . ' ' . $bulanEnd . ' ' . $endOfWeek->format('Y') . ')';
+        $reportTitle  = 'LAPORAN KAS OPERASIONAL MINGGUAN ' . strtoupper($project?->name ?? '') . ' ' . $startOfWeek->format('Y');
+        $reportType   = 'weekly';
+        $periodYear   = $date->year;
+
+        $backUrl     = route('purchase-receipts.show', $purchaseReceipt);
+        $weeklyUrl   = route('purchase-receipts.print-weekly', $purchaseReceipt);
+        $monthlyUrl  = route('purchase-receipts.print-monthly', $purchaseReceipt);
+
+        return view('purchase-receipts.print-report', compact(
+            'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
+            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+        ));
+    }
+
+    public function printMonthly(PurchaseReceipt $purchaseReceipt)
+    {
+        $this->authorize('view purchase receipts');
+
+        $date  = $purchaseReceipt->receipt_date ?? now();
+        $month = $date->month;
+        $year  = $date->year;
+
+        $project = $purchaseReceipt->project;
+
+        $receipts = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
+            ->where('project_id', $purchaseReceipt->project_id)
+            ->whereYear('receipt_date', $year)
+            ->whereMonth('receipt_date', $month)
+            ->orderBy('receipt_date')
+            ->orderBy('id')
+            ->get();
+
+        $bulanId = [
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+        $namaBulan = $bulanId[$month] ?? '';
+
+        $periodLabel = $namaBulan . ' ' . $year;
+        $reportTitle = 'PENGELUARAN KAS OPERASIONAL ' . strtoupper($project?->name ?? '') . ' BULAN ' . strtoupper($namaBulan) . ' ' . $year;
+        $reportType  = 'monthly';
+        $periodYear  = $year;
+
+        $backUrl    = route('purchase-receipts.show', $purchaseReceipt);
+        $weeklyUrl  = route('purchase-receipts.print-weekly', $purchaseReceipt);
+        $monthlyUrl = route('purchase-receipts.print-monthly', $purchaseReceipt);
+
+        return view('purchase-receipts.print-report', compact(
+            'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
+            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+        ));
+    }
+
+    public function weeklyReport(Request $request)
+    {
+        $this->authorize('view purchase receipts');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        $projectId = $request->project_id;
+        if (empty($projectId) && !empty($userProjectIds)) {
+            $projectId = $userProjectIds[0];
+        }
+
+        $project = null;
+        if (!empty($projectId)) {
+            $project = Project::find($projectId);
+        } elseif (!$request->has('project_id')) {
+            $project = Project::orderBy('name')->first();
+        }
+
+        if ($request->filled('date')) {
+            $date = \Carbon\Carbon::parse($request->date);
+        } elseif ($request->filled('year') && $request->filled('week')) {
+            $date = \Carbon\Carbon::now()->setISODate((int)$request->year, (int)$request->week);
+        } else {
+            $date = now();
+        }
+
+        $startOfWeek = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
+        $endOfWeek   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+        $weekNumber  = $date->isoWeek();
+
+        $query = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
+            ->whereBetween('receipt_date', [$startOfWeek->format('Y-m-d'), $endOfWeek->format('Y-m-d')]);
+
+        if ($project) {
+            $query->where('project_id', $project->id);
+        } elseif ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $query->whereIn('project_id', $userProjectIds);
+        }
+
+        $receipts = $query->orderBy('receipt_date')->orderBy('id')->get();
+
+        $bulanId = [
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+        $bulanStart = $bulanId[$startOfWeek->month] ?? '';
+        $bulanEnd   = $bulanId[$endOfWeek->month]   ?? '';
+
+        $periodLabel  = 'Minggu ke-' . $weekNumber . ' (' . $startOfWeek->format('d') . ' ' . $bulanStart . ' — ' . $endOfWeek->format('d') . ' ' . $bulanEnd . ' ' . $endOfWeek->format('Y') . ')';
+        $projectNameStr = $project ? strtoupper($project->name) : 'SEMUA PROYEK';
+        $reportTitle  = 'LAPORAN KAS OPERASIONAL MINGGUAN ' . $projectNameStr . ' ' . $startOfWeek->format('Y');
+        $reportType   = 'weekly';
+        $periodYear   = $date->year;
+
+        $backUrl     = route('purchase-receipts.index', array_filter(['project_id' => $project?->id]));
+        $weeklyUrl   = route('purchase-receipts.weekly-report', array_filter(['project_id' => $project?->id, 'year' => $startOfWeek->year, 'week' => $weekNumber]));
+        $monthlyUrl  = route('purchase-receipts.monthly-report', array_filter(['project_id' => $project?->id, 'year' => $startOfWeek->year, 'month' => $startOfWeek->month]));
+
+        return view('purchase-receipts.print-report', compact(
+            'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
+            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+        ));
+    }
+
+    public function monthlyReport(Request $request)
+    {
+        $this->authorize('view purchase receipts');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        $projectId = $request->project_id;
+        if (empty($projectId) && !empty($userProjectIds)) {
+            $projectId = $userProjectIds[0];
+        }
+
+        $project = null;
+        if (!empty($projectId)) {
+            $project = Project::find($projectId);
+        } elseif (!$request->has('project_id')) {
+            $project = Project::orderBy('name')->first();
+        }
+
+        $year  = (int) ($request->year ?? now()->year);
+        $month = (int) ($request->month ?? ($request->filled('date') ? \Carbon\Carbon::parse($request->date)->month : now()->month));
+
+        $query = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
+            ->whereYear('receipt_date', $year)
+            ->whereMonth('receipt_date', $month);
+
+        if ($project) {
+            $query->where('project_id', $project->id);
+        } elseif ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $query->whereIn('project_id', $userProjectIds);
+        }
+
+        $receipts = $query->orderBy('receipt_date')->orderBy('id')->get();
+
+        $bulanId = [
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+        $namaBulan = $bulanId[$month] ?? '';
+
+        $periodLabel    = $namaBulan . ' ' . $year;
+        $projectNameStr = $project ? strtoupper($project->name) : 'SEMUA PROYEK';
+        $reportTitle    = 'PENGELUARAN KAS OPERASIONAL ' . $projectNameStr . ' BULAN ' . strtoupper($namaBulan) . ' ' . $year;
+        $reportType     = 'monthly';
+        $periodYear     = $year;
+
+        $backUrl    = route('purchase-receipts.index', array_filter(['project_id' => $project?->id]));
+        $weeklyUrl  = route('purchase-receipts.weekly-report', array_filter(['project_id' => $project?->id, 'year' => $year, 'week' => now()->isoWeek()]));
+        $monthlyUrl = route('purchase-receipts.monthly-report', array_filter(['project_id' => $project?->id, 'year' => $year, 'month' => $month]));
+
+        return view('purchase-receipts.print-report', compact(
+            'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
+            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+        ));
     }
 
     public function updateStatus(Request $request, PurchaseReceipt $purchaseReceipt)

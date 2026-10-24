@@ -159,7 +159,12 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     });
 
     // Nota Pembelian Harian / Purchase Receipts
+    Route::get('/purchase-receipts/report/weekly',   [PurchaseReceiptController::class, 'weeklyReport'])->name('purchase-receipts.weekly-report');
+    Route::get('/purchase-receipts/report/monthly',  [PurchaseReceiptController::class, 'monthlyReport'])->name('purchase-receipts.monthly-report');
     Route::patch('/purchase-receipts/{purchaseReceipt}/update-status', [PurchaseReceiptController::class, 'updateStatus'])->name('purchase-receipts.update-status');
+    Route::get('/purchase-receipts/{purchaseReceipt}/print',         [PurchaseReceiptController::class, 'print'])->name('purchase-receipts.print');
+    Route::get('/purchase-receipts/{purchaseReceipt}/print-weekly',  [PurchaseReceiptController::class, 'printWeekly'])->name('purchase-receipts.print-weekly');
+    Route::get('/purchase-receipts/{purchaseReceipt}/print-monthly', [PurchaseReceiptController::class, 'printMonthly'])->name('purchase-receipts.print-monthly');
     Route::resource('purchase-receipts', PurchaseReceiptController::class);
 
     // Payments

@@ -6,9 +6,26 @@
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Pencatatan Nota Pembelian Harian</h2>
             <p class="text-muted" style="font-size:13px;">Daftar belanja nota fisik harian di proyek, dikelompokkan per 1 minggu & di dalamnya per hari.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <a href="{{ route('purchase-receipts.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-1"></i> Catat Nota Baru
+        <div class="flex items-center gap-2 flex-wrap">
+            {{-- Tombol Cetak Laporan Mingguan --}}
+            <button type="button" onclick="openPrintModal('weekly')"
+                    class="btn btn-sm"
+                    style="font-weight:600; background:#0ea5e9; border:1px solid #0284c7; color:#fff; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:6px; cursor:pointer;"
+                    title="Cetak Laporan Kas Mingguan">
+                <i class="fas fa-calendar-week"></i> Lap. Mingguan
+            </button>
+
+            {{-- Tombol Cetak Laporan Bulanan --}}
+            <button type="button" onclick="openPrintModal('monthly')"
+                    class="btn btn-sm"
+                    style="font-weight:600; background:#8b5cf6; border:1px solid #7c3aed; color:#fff; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:6px; cursor:pointer;"
+                    title="Cetak Laporan Kas Bulanan">
+                <i class="fas fa-calendar-alt"></i> Lap. Bulanan
+            </button>
+
+            {{-- Tombol Catat Nota Baru --}}
+            <a href="{{ route('purchase-receipts.create') }}" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px;">
+                <i class="fas fa-plus-circle"></i> Catat Nota Baru
             </a>
         </div>
     </div>
@@ -101,6 +118,21 @@
                     <span style="background:#10b981;color:#ffffff;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:800;letter-spacing:0.2px;">
                         Total: Rp {{ number_format($week->total, 0, ',', '.') }}
                     </span>
+                    @if($week->days->isNotEmpty() && $week->days->first()->receipts->isNotEmpty())
+                        @php
+                            $firstRec = $week->days->first()->receipts->first();
+                            $projId = request('project_id') ?: ($firstRec->project_id ?? null);
+                            $firstDate = $firstRec->receipt_date ? $firstRec->receipt_date->format('Y-m-d') : null;
+                        @endphp
+                        <a href="{{ route('purchase-receipts.weekly-report', array_filter(['project_id' => $projId, 'date' => $firstDate])) }}"
+                           target="_blank"
+                           onclick="event.stopPropagation();"
+                           class="btn btn-xs"
+                           style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:#ffffff;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"
+                           title="Cetak Laporan Kas Minggu Ini">
+                            <i class="fas fa-print"></i> Cetak Minggu Ini
+                        </a>
+                    @endif
                     <i class="fas fa-chevron-down week-icon" id="week-icon-{{ $weekIdx }}" style="font-size:14px;color:#94a3b8;transition:transform 0.2s;"></i>
                 </div>
             </div>
@@ -229,6 +261,143 @@
         </div>
     @endif
 
+    {{-- Modal Cetak Laporan Mingguan --}}
+    <div id="modalPrintWeekly" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div class="card" style="width:100%;max-width:480px;background:#ffffff;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);overflow:hidden;">
+            {{-- Header --}}
+            <div style="background:#0ea5e9;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;color:#ffffff;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-week" style="font-size:18px;"></i>
+                    <h3 style="font-size:16px;font-weight:700;margin:0;color:#ffffff;">Cetak Laporan Kas Mingguan</h3>
+                </div>
+                <button type="button" onclick="closePrintModal('weekly')" style="background:none;border:none;color:#ffffff;font-size:22px;cursor:pointer;line-height:1;opacity:0.85;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">&times;</button>
+            </div>
+
+            {{-- Form --}}
+            <form action="{{ route('purchase-receipts.weekly-report') }}" method="GET" target="_blank" onsubmit="setTimeout(() => closePrintModal('weekly'), 300)">
+                <div style="padding:20px;">
+                    <div class="mb-3">
+                        <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">
+                            Pilih Proyek:
+                        </label>
+                        <select name="project_id" class="form-control" style="width:100%;padding:8px 12px;font-size:13.5px;border:1px solid #cbd5e1;border-radius:6px;">
+                            <option value="">-- Semua Proyek / Default --</option>
+                            @foreach($projects as $proj)
+                                <option value="{{ $proj->id }}" {{ request('project_id') == $proj->id ? 'selected' : '' }}>
+                                    {{ $proj->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">
+                            Pilih Tanggal Acuan Minggu:
+                        </label>
+                        <input type="date" name="date" value="{{ request('date', date('Y-m-d')) }}" class="form-control" style="width:100%;padding:8px 12px;font-size:13.5px;border:1px solid #cbd5e1;border-radius:6px;" required>
+                        <p class="text-muted" style="font-size:11.5px;margin-top:5px;line-height:1.4;">
+                            <i class="fas fa-info-circle text-sky-500 me-1"></i>
+                            Sistem otomatis menarik seluruh nota dalam 1 minggu penuh (Senin s/d Minggu) berdasarkan tanggal yang dipilih.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Footer --}}
+                <div style="background:#f8fafc;padding:14px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" onclick="closePrintModal('weekly')" class="btn btn-secondary btn-sm" style="font-weight:600;padding:7px 14px;border-radius:6px;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-sm" style="background:#0ea5e9;border:1px solid #0284c7;color:#fff;font-weight:600;padding:7px 16px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fas fa-print"></i> Buka Laporan Cetak (PDF)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Cetak Laporan Bulanan --}}
+    <div id="modalPrintMonthly" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div class="card" style="width:100%;max-width:480px;background:#ffffff;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);overflow:hidden;">
+            {{-- Header --}}
+            <div style="background:#8b5cf6;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;color:#ffffff;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-alt" style="font-size:18px;"></i>
+                    <h3 style="font-size:16px;font-weight:700;margin:0;color:#ffffff;">Cetak Laporan Kas Bulanan</h3>
+                </div>
+                <button type="button" onclick="closePrintModal('monthly')" style="background:none;border:none;color:#ffffff;font-size:22px;cursor:pointer;line-height:1;opacity:0.85;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">&times;</button>
+            </div>
+
+            {{-- Form --}}
+            <form action="{{ route('purchase-receipts.monthly-report') }}" method="GET" target="_blank" onsubmit="setTimeout(() => closePrintModal('monthly'), 300)">
+                <div style="padding:20px;">
+                    <div class="mb-3">
+                        <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">
+                            Pilih Proyek:
+                        </label>
+                        <select name="project_id" class="form-control" style="width:100%;padding:8px 12px;font-size:13.5px;border:1px solid #cbd5e1;border-radius:6px;">
+                            <option value="">-- Semua Proyek / Default --</option>
+                            @foreach($projects as $proj)
+                                <option value="{{ $proj->id }}" {{ request('project_id') == $proj->id ? 'selected' : '' }}>
+                                    {{ $proj->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">
+                                Bulan:
+                            </label>
+                            @php
+                                $curMonth = (int) (request('date') ? date('n', strtotime(request('date'))) : date('n'));
+                                $monthNames = [
+                                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                ];
+                            @endphp
+                            <select name="month" class="form-control" style="width:100%;padding:8px 12px;font-size:13.5px;border:1px solid #cbd5e1;border-radius:6px;">
+                                @foreach($monthNames as $num => $name)
+                                    <option value="{{ $num }}" {{ $curMonth == $num ? 'selected' : '' }}>
+                                        {{ $name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">
+                                Tahun:
+                            </label>
+                            @php $curYear = (int) (request('date') ? date('Y', strtotime(request('date'))) : date('Y')); @endphp
+                            <select name="year" class="form-control" style="width:100%;padding:8px 12px;font-size:13.5px;border:1px solid #cbd5e1;border-radius:6px;">
+                                @for($y = $curYear - 2; $y <= $curYear + 2; $y++)
+                                    <option value="{{ $y }}" {{ $curYear == $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-muted" style="font-size:11.5px;margin-top:5px;line-height:1.4;">
+                        <i class="fas fa-info-circle text-purple-500 me-1"></i>
+                        Laporan mencakup rekap nota harian selama 1 bulan penuh (A4 Landscape).
+                    </p>
+                </div>
+
+                {{-- Footer --}}
+                <div style="background:#f8fafc;padding:14px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" onclick="closePrintModal('monthly')" class="btn btn-secondary btn-sm" style="font-weight:600;padding:7px 14px;border-radius:6px;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-sm" style="background:#8b5cf6;border:1px solid #7c3aed;color:#fff;font-weight:600;padding:7px 16px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fas fa-print"></i> Buka Laporan Cetak (PDF)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         function toggleWeek(idx) {
@@ -250,6 +419,30 @@
                 icon.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
             });
         }
+
+        function openPrintModal(type) {
+            const modalId = type === 'weekly' ? 'modalPrintWeekly' : 'modalPrintMonthly';
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closePrintModal(type) {
+            const modalId = type === 'weekly' ? 'modalPrintWeekly' : 'modalPrintMonthly';
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Close modal on backdrop click or Escape
+        window.addEventListener('click', function(e) {
+            if (e.target.id === 'modalPrintWeekly') closePrintModal('weekly');
+            if (e.target.id === 'modalPrintMonthly') closePrintModal('monthly');
+        });
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePrintModal('weekly');
+                closePrintModal('monthly');
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

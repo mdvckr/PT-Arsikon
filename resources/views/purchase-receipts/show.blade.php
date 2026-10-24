@@ -12,6 +12,24 @@
             <p class="text-muted" style="font-size:13px;">Tanggal Nota: {{ $purchaseReceipt->receipt_date ? $purchaseReceipt->receipt_date->format('d F Y') : '-' }}</p>
         </div>
         <div class="flex gap-2 items-center flex-wrap">
+            {{-- Tombol Cetak PDF --}}
+            <a href="{{ route('purchase-receipts.print', $purchaseReceipt) }}" target="_blank"
+               class="btn btn-primary btn-sm"
+               style="font-weight:600; background:#dc2626; border-color:#dc2626; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-print"></i> Cetak Nota Ini
+            </a>
+            {{-- Laporan Mingguan --}}
+            <a href="{{ route('purchase-receipts.print-weekly', $purchaseReceipt) }}" target="_blank"
+               class="btn btn-sm"
+               style="font-weight:600; background:#0ea5e9; border-color:#0284c7; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-calendar-week"></i> Lap. Mingguan
+            </a>
+            {{-- Laporan Bulanan --}}
+            <a href="{{ route('purchase-receipts.print-monthly', $purchaseReceipt) }}" target="_blank"
+               class="btn btn-sm"
+               style="font-weight:600; background:#8b5cf6; border-color:#7c3aed; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-calendar-alt"></i> Lap. Bulanan
+            </a>
             @if($purchaseReceipt->purchaseOrder)
                 <a href="{{ route('purchase-orders.show', $purchaseReceipt->purchaseOrder) }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-file-invoice me-1"></i> Lihat PO terkait ({{ $purchaseReceipt->purchaseOrder->po_number }})
@@ -247,25 +265,35 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width:5%;">#</th>
-                        <th>Nama Barang / Material</th>
-                        <th class="text-center">Jumlah</th>
-                        <th class="text-end">Harga Satuan</th>
-                        <th class="text-end">Subtotal</th>
+                        <th style="width:4%;">#</th>
+                        <th style="width:22%;">Nama Material</th>
+                        <th style="width:24%;">Item (Jenis yang Dibeli)</th>
+                        <th class="text-center" style="width:10%;">Jumlah (Vol)</th>
+                        <th class="text-center" style="width:8%;">Satuan</th>
+                        <th class="text-end" style="width:14%;">Harga Satuan</th>
+                        <th class="text-end" style="width:14%;">Subtotal</th>
                         <th>Catatan Item</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($purchaseReceipt->items as $idx => $item)
+                    @php
+                        $matName = $item->material_name ?: ($item->material?->name ?: $item->item_name);
+                        $itemName = $item->item_name ?: '-';
+                        $satuan = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
+                    @endphp
                     <tr>
-                        <td class="text-muted">{{ $idx + 1 }}</td>
+                        <td class="text-muted text-center">{{ $idx + 1 }}</td>
                         <td>
-                            <strong>{{ $item->item_name }}</strong>
-                            @if($item->material)
-                                <span class="badge badge-secondary text-xs ms-1">{{ $item->material->unit?->symbol ?? 'unit' }}</span>
-                            @endif
+                            <strong class="text-primary">{{ $matName }}</strong>
                         </td>
-                        <td class="text-center">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                        <td>
+                            <span>{{ $itemName }}</span>
+                        </td>
+                        <td class="text-center font-semibold">{{ number_format($item->quantity, $item->quantity == floor($item->quantity) ? 0 : 2, ',', '.') }}</td>
+                        <td class="text-center">
+                            <span class="badge badge-secondary text-xs">{{ $satuan }}</span>
+                        </td>
                         <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
                         <td class="text-end"><strong class="text-success">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
                         <td class="text-muted text-xs">{{ $item->notes ?? '-' }}</td>
@@ -274,7 +302,7 @@
                 </tbody>
                 <tfoot>
                     <tr style="background:#f8fafc;font-weight:bold;">
-                        <td colspan="4" class="text-end" style="font-size:15px;">TOTAL PEMBELIAN NOTA:</td>
+                        <td colspan="6" class="text-end" style="font-size:15px;">TOTAL PEMBELIAN NOTA:</td>
                         <td class="text-end" style="font-size:17px;color:#16a34a;">
                             Rp {{ number_format($purchaseReceipt->total_amount, 0, ',', '.') }}
                         </td>

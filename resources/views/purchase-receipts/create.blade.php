@@ -109,10 +109,12 @@
                 <table class="data-table" id="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 35%;">Nama Barang / Material <span class="text-danger">*</span></th>
-                            <th style="width: 15%;">Jumlah (Qty) <span class="text-danger">*</span></th>
-                            <th style="width: 20%;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
-                            <th style="width: 20%;">Subtotal (Rp)</th>
+                            <th style="width: 22%;">Nama Material <span class="text-danger">*</span></th>
+                            <th style="width: 24%;">Item (Jenis yang Dibeli) <span class="text-danger">*</span></th>
+                            <th style="width: 11%;">Satuan <span class="text-danger">*</span></th>
+                            <th style="width: 10%;">Vol (Qty) <span class="text-danger">*</span></th>
+                            <th style="width: 14%;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
+                            <th style="width: 14%;">Subtotal (Rp)</th>
                             <th style="width: 5%; text-align:center;">Hapus</th>
                         </tr>
                     </thead>
@@ -123,11 +125,20 @@
                                     $qty = (float)($it['quantity'] ?? 1);
                                     $price = (float)($it['unit_price'] ?? 0);
                                     $subtotal = $qty * $price;
+                                    $matName = $it['material_name'] ?? ($it['item_name'] ?? '');
+                                    $itemName = $it['item_name'] ?? '';
+                                    $unitName = $it['unit_name'] ?? '';
                                 @endphp
                                 <tr class="item-row">
                                     <td>
                                         <input type="hidden" name="items[{{ $idx }}][material_id]" value="{{ $it['material_id'] ?? '' }}">
-                                        <input type="text" name="items[{{ $idx }}][item_name]" value="{{ $it['item_name'] ?? '' }}" placeholder="Ketik nama barang / material..." class="form-control" required>
+                                        <input type="text" name="items[{{ $idx }}][material_name]" list="material-list" value="{{ $matName }}" placeholder="Misal: Triplek, Semen, Besi..." class="form-control" onchange="autoFillUnit(this)" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="items[{{ $idx }}][item_name]" value="{{ $itemName }}" placeholder="Misal: Triplek 9mm 1.2x1.2..." class="form-control" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="items[{{ $idx }}][unit_name]" list="unit-list" value="{{ $unitName }}" placeholder="Lbr/Zak/Kg" class="form-control unit-input" required>
                                     </td>
                                     <td>
                                         <input type="number" step="0.01" min="0.01" name="items[{{ $idx }}][quantity]" value="{{ $qty }}" class="form-control qty-input" oninput="calculateRow(this)" required>
@@ -149,7 +160,13 @@
                             <tr class="item-row">
                                 <td>
                                     <input type="hidden" name="items[0][material_id]" value="">
-                                    <input type="text" name="items[0][item_name]" placeholder="Ketik nama barang / material (misal: Semen Gresik, Paku 5cm)..." class="form-control" required>
+                                    <input type="text" name="items[0][material_name]" list="material-list" placeholder="Misal: Triplek, Semen, Besi..." class="form-control" onchange="autoFillUnit(this)" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="items[0][item_name]" placeholder="Misal: Triplek 9mm 1.2x1.2 / Bon toko..." class="form-control" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="items[0][unit_name]" list="unit-list" placeholder="Lbr/Zak/Kg" class="form-control unit-input" required>
                                 </td>
                                 <td>
                                     <input type="number" step="0.01" min="0.01" name="items[0][quantity]" value="1" class="form-control qty-input" oninput="calculateRow(this)" required>
@@ -170,7 +187,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="text-end font-bold" style="font-size:15px;padding-top:14px;">TOTAL BELANJA NOTA:</td>
+                            <td colspan="5" class="text-end font-bold" style="font-size:15px;padding-top:14px;">TOTAL BELANJA NOTA:</td>
                             <td colspan="2" style="padding-top:14px;">
                                 <strong id="grand-total-display" class="text-success" style="font-size:20px;">Rp 0</strong>
                             </td>
@@ -178,6 +195,30 @@
                     </tfoot>
                 </table>
             </div>
+
+            {{-- Datalist untuk Material dan Satuan --}}
+            <datalist id="material-list">
+                @foreach($materials as $mat)
+                    <option value="{{ $mat->name }}" data-unit="{{ $mat->unit?->symbol ?? '' }}">{{ $mat->name }}</option>
+                @endforeach
+            </datalist>
+
+            <datalist id="unit-list">
+                <option value="Lbr">Lembar (Lbr)</option>
+                <option value="Zak">Zak</option>
+                <option value="Pcs">Pcs</option>
+                <option value="Bh">Buah (Bh)</option>
+                <option value="Kg">Kilogram (Kg)</option>
+                <option value="M3">Meter Kubik (M3)</option>
+                <option value="M2">Meter Persegi (M2)</option>
+                <option value="Meter">Meter (m)</option>
+                <option value="Batang">Batang</option>
+                <option value="Roll">Roll</option>
+                <option value="Kaleng">Kaleng</option>
+                <option value="Dus">Dus / Box</option>
+                <option value="Set">Set</option>
+                <option value="Liter">Liter</option>
+            </datalist>
 
             {{-- Alert Dinamis jika Saldo Kurang --}}
             <div id="saldo_warning_alert" class="alert alert-danger mt-3" style="display:none;background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
@@ -277,6 +318,21 @@
             }
         }
 
+        function autoFillUnit(inputEl) {
+            const row = inputEl.closest('tr');
+            const unitInput = row.querySelector('.unit-input');
+            const itemInput = row.querySelector('input[name*="[item_name]"]');
+            if (unitInput && !unitInput.value) {
+                const opt = document.querySelector(`#material-list option[value="${CSS.escape(inputEl.value)}"]`);
+                if (opt && opt.dataset.unit) {
+                    unitInput.value = opt.dataset.unit;
+                }
+            }
+            if (itemInput && !itemInput.value) {
+                itemInput.value = inputEl.value;
+            }
+        }
+
         function addItemRow() {
             const tbody = document.getElementById('items-tbody');
             const newRow = document.createElement('tr');
@@ -284,7 +340,13 @@
             newRow.innerHTML = `
                 <td>
                     <input type="hidden" name="items[${rowIndex}][material_id]" value="">
-                    <input type="text" name="items[${rowIndex}][item_name]" placeholder="Ketik nama barang / material..." class="form-control" required>
+                    <input type="text" name="items[${rowIndex}][material_name]" list="material-list" placeholder="Misal: Triplek, Semen, Besi..." class="form-control" onchange="autoFillUnit(this)" required>
+                </td>
+                <td>
+                    <input type="text" name="items[${rowIndex}][item_name]" placeholder="Misal: Triplek 9mm 1.2x1.2..." class="form-control" required>
+                </td>
+                <td>
+                    <input type="text" name="items[${rowIndex}][unit_name]" list="unit-list" placeholder="Lbr/Zak/Kg" class="form-control unit-input" required>
                 </td>
                 <td>
                     <input type="number" step="0.01" min="0.01" name="items[${rowIndex}][quantity]" value="1" class="form-control qty-input" oninput="calculateRow(this)" required>
