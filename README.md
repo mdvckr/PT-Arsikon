@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Laravel-10.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 10">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.2+">
   <img src="https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL 8.0+">
   <img src="https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
@@ -136,7 +136,7 @@ Aplikasi dibangun dengan standar kepatuhan **OWASP Top 10** dan **OWASP ASVS Lev
 
 | Komponen | Teknologi yang Digunakan |
 | :--- | :--- |
-| **Backend Framework** | Laravel 10.x |
+| **Backend Framework** | Laravel 12.x (Laravel 12.70.1) |
 | **Bahasa Pemrograman** | PHP 8.2+ (Typed Properties, Enums, Match Expressions) |
 | **Database Engine** | MySQL 8.0+ / MariaDB 10.6+ (InnoDB, Transactional Locks) |
 | **Otorisasi & Role** | Spatie Laravel-Permission 6.x |
