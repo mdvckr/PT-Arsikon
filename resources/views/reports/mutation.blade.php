@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-4">
         <div class="breadcrumb">
             <a href="{{ route('reports.index') }}">Laporan</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span>Mutasi Stok</span>
         </div>
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-secondary">
@@ -15,7 +15,7 @@
     <div class="card">
         <div class="card-header" style="display:flex;align-items:center;gap:10px;padding:16px 20px;">
             <div style="width:32px;height:32px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;flex-shrink:0;">
-                <i class="fas fa-arrow-right-arrow-left" style="font-size:13px;"></i>
+                <x-lucide-arrow-left-right style="font-size:13px;" />
             </div>
             <span class="card-title" style="margin:0;font-size:15px;">Riwayat Mutasi Stok</span>
         </div>

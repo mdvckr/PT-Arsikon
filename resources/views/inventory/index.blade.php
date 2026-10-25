@@ -1,507 +1,6 @@
 <x-app-layout>
     <x-slot name="title">Inventori Gudang</x-slot>
 
-    @push('styles')
-    <style>
-        /* ===== INVENTORY STYLESHEET ===== */
-        .inv-page-header {
-            margin-bottom: 20px;
-        }
-
-        /* KPI Quick Stats Cards */
-        .inv-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 22px;
-        }
-        .inv-kpi-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 16px 18px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 104px;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        .inv-kpi-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        .inv-kpi-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .inv-kpi-title {
-            font-size: 11.5px;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .inv-kpi-badge {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            white-space: nowrap;
-        }
-        .inv-kpi-num {
-            font-size: 22px;
-            font-weight: 900;
-            color: #0f172a;
-            line-height: 1.15;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: -0.02em;
-        }
-        .inv-kpi-sub {
-            font-size: 11.5px;
-            color: #64748b;
-            margin-top: 6px;
-            font-weight: 500;
-        }
-        @media (max-width: 1024px) {
-            .inv-kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (max-width: 640px) {
-            .inv-kpi-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-        }
-
-        /* Filter Panel */
-        .inv-filter-panel {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            padding: 16px 20px;
-            margin-bottom: 24px;
-        }
-        .inv-filter-label {
-            display: block;
-            font-size: 11.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #475569;
-            margin-bottom: 6px;
-        }
-        .inv-input, .inv-select {
-            height: 42px;
-            border-radius: 8px;
-            border: 1.5px solid #cbd5e1;
-            background: #ffffff;
-            font-size: 13px;
-            color: #1e293b;
-            padding: 0 14px;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        .inv-input:focus, .inv-select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-            outline: none;
-        }
-        .inv-select {
-            cursor: pointer;
-            padding-right: 32px;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 15px;
-        }
-        .inv-btn-primary {
-            height: 42px;
-            padding: 0 18px;
-            border-radius: 8px;
-            background: #2563eb;
-            color: #ffffff;
-            font-size: 13px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(37,99,235,0.25);
-            white-space: nowrap;
-        }
-        .inv-btn-primary:hover {
-            background: #1d4ed8;
-            box-shadow: 0 3px 8px rgba(37,99,235,0.35);
-        }
-        .inv-btn-secondary {
-            height: 42px;
-            padding: 0 15px;
-            border-radius: 8px;
-            background: #f8fafc;
-            color: #475569;
-            font-size: 13px;
-            font-weight: 600;
-            border: 1.5px solid #e2e8f0;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .inv-btn-secondary:hover {
-            background: #f1f5f9;
-            color: #0f172a;
-            border-color: #cbd5e1;
-        }
-
-        /* Section Container & Headers */
-        .inv-section-box {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            overflow: hidden;
-            margin-bottom: 28px;
-        }
-        .inv-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .inv-section-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .inv-section-badge-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-        .inv-section-badge-icon.mat {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-        .inv-section-badge-icon.tool {
-            background: #fffbeb;
-            color: #d97706;
-        }
-        .inv-section-heading {
-            font-size: 15px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0;
-            line-height: 1.25;
-        }
-        .inv-section-sub {
-            font-size: 12px;
-            color: #64748b;
-            margin: 0;
-        }
-        .inv-section-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .inv-btn-toggle-all {
-            height: 30px;
-            padding: 0 10px;
-            font-size: 11.5px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            color: #475569;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.15s ease;
-        }
-        .inv-btn-toggle-all:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        /* Modern Table */
-        .inv-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .inv-table thead th {
-            background: #f8fafc;
-            color: #64748b;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 12px 14px;
-            border-bottom: 2px solid #e2e8f0;
-            white-space: nowrap;
-        }
-        .inv-table thead th.center { text-align: center; }
-        .inv-table thead th.right  { text-align: right; }
-
-        /* Hierarchy Level 1: Category Header */
-        .inv-group-cat {
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.15s ease;
-        }
-        .inv-group-cat:hover {
-            background: #f1f5f9;
-        }
-        .inv-cat-cell {
-            padding: 10px 18px !important;
-        }
-        .inv-cat-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .inv-cat-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .inv-cat-chev {
-            font-size: 10px;
-            color: #64748b;
-            width: 16px;
-            height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease;
-        }
-        .inv-group-cat.collapsed .inv-cat-chev {
-            transform: rotate(-90deg);
-        }
-        .inv-cat-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #0f172a;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .inv-cat-count {
-            font-size: 11px;
-            font-weight: 600;
-            color: #475569;
-            background: #e2e8f0;
-            padding: 2px 8px;
-            border-radius: 12px;
-        }
-
-        /* Hierarchy Level 2: Subgroup (Kelompok Barang / Type) */
-        .inv-group-sub {
-            background: #fafbfc;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
-            user-select: none;
-            transition: background 0.15s ease;
-        }
-        .inv-group-sub:hover {
-            background: #f4f6f8;
-        }
-        .inv-sub-cell {
-            padding: 8px 18px 8px 36px !important;
-            border-left: 3px solid #cbd5e1;
-        }
-        .inv-sub-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .inv-sub-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .inv-sub-chev {
-            font-size: 9px;
-            color: #94a3b8;
-            width: 14px;
-            height: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease;
-        }
-        .inv-group-sub.collapsed .inv-sub-chev {
-            transform: rotate(-90deg);
-        }
-        .inv-sub-title {
-            font-size: 12.5px;
-            font-weight: 600;
-            color: #334155;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .inv-sub-count {
-            font-size: 11px;
-            font-weight: 500;
-            color: #64748b;
-        }
-
-        /* Hierarchy Level 3: Individual Item Rows */
-        .inv-row-item {
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.15s ease;
-        }
-        .inv-row-item:hover {
-            background: #f8fafc;
-        }
-        .inv-row-item td {
-            padding: 11px 14px;
-            vertical-align: middle;
-        }
-
-        /* Badges & Pills */
-        .inv-sku-badge {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            font-size: 11px;
-            font-weight: 600;
-            color: #334155;
-            background: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            padding: 2px 7px;
-            border-radius: 5px;
-            letter-spacing: 0.02em;
-            display: inline-block;
-        }
-        .inv-wh-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5.5px;
-            padding: 3.5px 9px;
-            border-radius: 6px;
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            font-size: 11.5px;
-            font-weight: 600;
-            color: #334155;
-            white-space: nowrap;
-        }
-        .inv-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11.5px;
-            font-weight: 600;
-            padding: 3px 9px;
-            border-radius: 6px;
-            white-space: nowrap;
-        }
-        .inv-status-pill.green {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-        .inv-status-pill.amber {
-            background: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-        .inv-status-pill.red {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .inv-stock-num {
-            font-size: 14px;
-            font-weight: 700;
-            color: #0f172a;
-            font-variant-numeric: tabular-nums;
-        }
-        .inv-unit-lbl {
-            font-size: 11.5px;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .action-btn-view {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #2563eb;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-        .action-btn-view:hover {
-            background: #2563eb;
-            color: #ffffff;
-            border-color: #2563eb;
-            box-shadow: 0 2px 6px rgba(37,99,235,0.28);
-        }
-
-        /* Empty State */
-        .inv-empty-state {
-            padding: 48px 20px;
-            text-align: center;
-        }
-        .inv-empty-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            color: #94a3b8;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            margin-bottom: 12px;
-        }
-        .inv-empty-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 4px;
-        }
-        .inv-empty-sub {
-            font-size: 12.5px;
-            color: #94a3b8;
-            max-width: 340px;
-            margin: 0 auto;
-        }
-    </style>
-    @endpush
-
     @php
         // Summary KPI Computations
         $totalMatVariants = $categoriesData->sum(fn($c) => $c->materials->count());
@@ -514,621 +13,731 @@
         $totalToolBorrowed = $toolsCategoriesData->sum(fn($c) => $c->tools->sum('stock_borrowed'));
         $totalToolLow = $toolsCategoriesData->sum(fn($c) => $c->tools->filter(fn($t) => $t->stock_available <= 2)->count());
 
+        $totalActiveItems = $totalMatVariants + $totalToolsCount;
+        $totalCritical = $totalLowStockMat + $totalToolLow;
+        $healthPercentage = $totalActiveItems > 0 
+            ? max(0, min(100, round((($totalActiveItems - $totalCritical) / $totalActiveItems) * 100))) 
+            : 100;
+
         $currentWhObj = is_numeric($selectedWarehouseId ?? null) ? $accessibleWarehouses->firstWhere('id', (int)$selectedWarehouseId) : null;
+
+        // Micro-Chart: Komposisi Kategori Material
+        $categoryComposition = $categoriesData->map(function($cat) {
+            $stock = $cat->materials->sum(fn($m) => $m->inventories->sum('quantity'));
+            $variants = $cat->materials->count();
+            return [
+                'name' => $cat->name,
+                'stock' => $stock,
+                'variants' => $variants,
+            ];
+        })->sortByDesc('stock')->values();
+
+        $compTotalStock = $categoryComposition->sum('stock');
+        $colorStyles = [
+            ['bar' => 'bg-blue-600', 'dot' => 'bg-blue-600', 'text' => 'text-blue-700'],
+            ['bar' => 'bg-orange-500', 'dot' => 'bg-orange-500', 'text' => 'text-orange-700'],
+            ['bar' => 'bg-emerald-500', 'dot' => 'bg-emerald-500', 'text' => 'text-emerald-700'],
+            ['bar' => 'bg-purple-600', 'dot' => 'bg-purple-600', 'text' => 'text-purple-700'],
+        ];
+
+        // Collect all category keys for Alpine openGroups
+        $allCategoryKeys = [];
+        foreach ($categoriesData as $cat) {
+            $allCategoryKeys[] = 'cat-mat-' . $cat->id;
+        }
+        foreach ($toolsCategoriesData as $tCat) {
+            $allCategoryKeys[] = 'cat-tool-' . $tCat->id;
+        }
+
+        $gradientPalette = [
+            'from-blue-600 to-indigo-600',
+            'from-amber-500 to-orange-600',
+            'from-emerald-600 to-teal-600',
+            'from-purple-600 to-indigo-600',
+            'from-cyan-600 to-blue-600',
+            'from-rose-500 to-pink-600',
+        ];
     @endphp
 
-    {{-- Page Header --}}
-    <div class="inv-page-header">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-            <div>
-                <div class="flex items-center gap-2.5">
-                    <h2 class="fw-700" style="font-size:21px;color:#0f172a;margin:0;letter-spacing:-0.01em;">Inventori Gudang</h2>
-                    @if($currentWhObj)
-                        <span class="inv-wh-badge" title="Gudang Terpilih: {{ $currentWhObj->name }}">
-                            <i class="fas fa-warehouse text-primary" style="font-size:11px;"></i> {{ $currentWhObj->name }}{{ $currentWhObj->is_central ? ' (Pusat)' : ' (Proyek)' }}
+    <div x-data="{ 
+            activeTab: '{{ request('item_type') === 'tool' ? 'alat' : 'material' }}', 
+            searchQuery: '{{ addslashes(request('search', '')) }}',
+            openGroups: {{ json_encode($allCategoryKeys) }},
+            toggleGroup(group) {
+                if (this.openGroups.includes(group)) {
+                    this.openGroups = this.openGroups.filter(g => g !== group);
+                } else {
+                    this.openGroups.push(group);
+                }
+            },
+            expandAll() { 
+                this.openGroups = {{ json_encode($allCategoryKeys) }}; 
+            },
+            collapseAll() { 
+                this.openGroups = []; 
+            },
+            matchesSearch(name, sku, brand, spec) {
+                if (!this.searchQuery) return true;
+                const q = this.searchQuery.toLowerCase();
+                return (name && name.toLowerCase().includes(q)) ||
+                       (sku && sku.toLowerCase().includes(q)) ||
+                       (brand && brand.toLowerCase().includes(q)) ||
+                       (spec && spec.toLowerCase().includes(q));
+            }
+        }" 
+        class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- ================= 1. EXECUTIVE HEADER BANNER (LIGHT ENTERPRISE THEME) ================= -->
+        <div class="relative overflow-hidden rounded-2xl bg-white p-6 sm:p-7 border border-slate-200/90 shadow-xs">
+            <!-- Subtle Ambient Background Accents -->
+            <div class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl"></div>
+            <div class="pointer-events-none absolute right-48 -bottom-20 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl"></div>
+
+            <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-xs font-semibold text-emerald-800 shadow-2xs">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                    @elseif(($selectedWarehouseId ?? null) === 'all')
-                        <span class="inv-wh-badge" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe;">
-                            <i class="fas fa-boxes-stacked text-primary" style="font-size:11px;"></i> Semua Gudang (Konsolidasi)
-                        </span>
-                    @endif
-                </div>
-                <p class="text-muted" style="font-size:12.5px;margin:3px 0 0 0;">Monitoring posisi stok material dan alat kerja secara terpadu di seluruh site gudang</p>
-            </div>
-        </div>
-    </div>
-
-    {{-- KPI Summary Stats Cards (Human Enterprise Architecture) --}}
-    <div class="inv-kpi-grid">
-        {{-- Card 1: Material Konstruksi --}}
-        <div class="inv-kpi-card">
-            <div class="inv-kpi-header">
-                <span class="inv-kpi-title">Material Konstruksi</span>
-                <span class="inv-kpi-badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
-                    {{ number_format($totalMatVariants, 0, ',', '.') }} Varian
-                </span>
-            </div>
-            <div>
-                <div class="inv-kpi-num">
-                    {{ number_format($totalMatStock, 0, ',', '.') }}
-                    <span style="font-size:12px;font-weight:600;color:#64748b;letter-spacing:0;">Unit Fisik</span>
-                </div>
-                <div class="inv-kpi-sub">
-                    <i class="fas fa-cubes text-blue-600 me-1"></i> Total persediaan material terdaftar
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 2: Alat Kerja --}}
-        <div class="inv-kpi-card">
-            <div class="inv-kpi-header">
-                <span class="inv-kpi-title">Alat Kerja & Peralatan</span>
-                <span class="inv-kpi-badge" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;">
-                    {{ number_format($totalToolsCount, 0, ',', '.') }} Jenis
-                </span>
-            </div>
-            <div>
-                <div class="inv-kpi-num">
-                    {{ number_format($totalToolAvailable, 0, ',', '.') }}
-                    <span style="font-size:12px;font-weight:600;color:#059669;letter-spacing:0;">Unit Siap</span>
-                </div>
-                <div class="inv-kpi-sub">
-                    <i class="fas fa-toolbox text-amber-600 me-1"></i> {{ number_format($totalToolBorrowed, 0, ',', '.') }} unit aktif dipinjam di proyek
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 3: Alert Stok --}}
-        <div class="inv-kpi-card" style="{{ ($totalLowStockMat + $totalToolLow) > 0 ? 'background:#fffafa;border-color:#fecaca;' : '' }}">
-            <div class="inv-kpi-header">
-                <span class="inv-kpi-title">Status Level Stok</span>
-                @if(($totalLowStockMat + $totalToolLow) > 0)
-                    <span class="inv-kpi-badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;">
-                        <i class="fas fa-triangle-exclamation me-1"></i> Perlu Restok
-                    </span>
-                @else
-                    <span class="inv-kpi-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
-                        <i class="fas fa-circle-check me-1"></i> Terkendali
-                    </span>
-                @endif
-            </div>
-            <div>
-                <div class="inv-kpi-num" style="{{ ($totalLowStockMat + $totalToolLow) > 0 ? 'color:#dc2626;' : 'color:#059669;' }}">
-                    @if(($totalLowStockMat + $totalToolLow) > 0)
-                        {{ number_format($totalLowStockMat + $totalToolLow, 0, ',', '.') }}
-                        <span style="font-size:12px;font-weight:600;color:#dc2626;letter-spacing:0;">Item Kritis</span>
-                    @else
-                        Stok Aman
-                        <span style="font-size:12px;font-weight:600;color:#64748b;letter-spacing:0;">(0 Kritis)</span>
-                    @endif
-                </div>
-                <div class="inv-kpi-sub">
-                    @if(($totalLowStockMat + $totalToolLow) > 0)
-                        <span style="color:#dc2626;"><i class="fas fa-circle-exclamation me-1"></i> {{ $totalLowStockMat }} material &bull; {{ $totalToolLow }} alat menipis/habis</span>
-                    @else
-                        <span style="color:#059669;"><i class="fas fa-shield-check me-1"></i> Semua item di atas batas minimum stok</span>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 4: Lokasi Penyimpanan --}}
-        <div class="inv-kpi-card">
-            <div class="inv-kpi-header">
-                <span class="inv-kpi-title">Lokasi Penyimpanan</span>
-                @if($currentWhObj)
-                    <span class="inv-kpi-badge" style="background:#f8fafc;color:#334155;border:1px solid #cbd5e1;">
-                        {{ $currentWhObj->is_central ? 'Pusat' : 'Proyek' }}
-                    </span>
-                @else
-                    <span class="inv-kpi-badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
-                        Multi-Gudang
-                    </span>
-                @endif
-            </div>
-            <div>
-                <div class="inv-kpi-num" style="font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $currentWhObj ? $currentWhObj->name : 'Semua Gudang (Konsolidasi)' }}">
-                    {{ $currentWhObj ? $currentWhObj->name : 'Semua Gudang' }}
-                </div>
-                <div class="inv-kpi-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                    <i class="fas fa-warehouse text-primary me-1"></i> {{ $currentWhObj ? ($currentWhObj->is_central ? 'Gudang Sentral Distribusi' : 'Site Gudang Operasional') : 'Mode konsolidasi multi-site gudang' }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Filter Panel --}}
-    <div class="inv-filter-panel">
-        <form method="GET" action="{{ route('inventory.index') }}" id="inventoryFilterForm" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-            {{-- Kolom Pencarian --}}
-            <div style="flex:2;min-width:260px;">
-                <label class="inv-filter-label">Pencarian Item</label>
-                <div style="position:relative;">
-                    <i class="fas fa-search" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:12.5px;color:#94a3b8;pointer-events:none;"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" class="inv-input"
-                        placeholder="Cari nama barang, kode SKU/Alat, atau spesifikasi..."
-                        style="padding-left:36px;">
-                </div>
-            </div>
-
-            {{-- Kolom Lokasi Gudang --}}
-            <div style="flex:1.2;min-width:220px;">
-                <label class="inv-filter-label">Lokasi Gudang</label>
-                <select name="warehouse_id" id="filter_warehouse_id" class="inv-select" onchange="this.form.submit()">
-                    @if(!empty($canViewAllWarehouses))
-                        <option value="all" {{ ($selectedWarehouseId === 'all') ? 'selected' : '' }}>
-                            &#127981; Semua Gudang (Konsolidasi)
-                        </option>
-                    @endif
-                    @foreach($accessibleWarehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
-                            {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Kolom Jenis Item --}}
-            <div style="flex:1;min-width:170px;">
-                <label class="inv-filter-label">Jenis Item</label>
-                <select name="item_type" id="filter_item_type" class="inv-select" onchange="this.form.submit()">
-                    <option value="">Semua (Material & Alat)</option>
-                    <option value="material" {{ request('item_type') === 'material' ? 'selected' : '' }}>Material Konstruksi</option>
-                    <option value="tool" {{ request('item_type') === 'tool' ? 'selected' : '' }}>Alat Kerja</option>
-                </select>
-            </div>
-
-            {{-- Kolom Filter Stok Level --}}
-            <div style="flex:1;min-width:150px;">
-                <label class="inv-filter-label">Status Stok</label>
-                <select name="stock_level" id="filter_stock_level" class="inv-select" onchange="this.form.submit()">
-                    <option value="">Semua Kondisi</option>
-                    <option value="low" {{ request('stock_level') === 'low' ? 'selected' : '' }}>Menipis (Min. Stok)</option>
-                    <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Stok Habis (0)</option>
-                </select>
-            </div>
-
-            {{-- Tombol Aksi --}}
-            <div style="display:flex;gap:8px;align-items:center;">
-                <button type="submit" class="inv-btn-primary" title="Terapkan Filter">
-                    <i class="fas fa-filter" style="font-size:11px;"></i> Filter
-                </button>
-                @if(request('search') || request('item_type') || request('stock_level') || (request()->has('warehouse_id') && request('warehouse_id') != (auth()->user()->activeWarehouse()?->id ?? 'all')))
-                <a href="{{ route('inventory.index') }}" class="inv-btn-secondary" title="Reset Semua Filter">
-                    <i class="fas fa-rotate-left" style="font-size:11px;"></i> Reset
-                </a>
-                @endif
-            </div>
-        </form>
-    </div>
-
-    {{-- TABEL INVENTORI: MATERIAL --}}
-    @if(!$itemType || $itemType === 'material')
-    <div class="inv-section-box">
-        <div class="inv-section-header">
-            <div class="inv-section-title-wrap">
-                <div class="inv-section-badge-icon mat">
-                    <i class="fas fa-cubes"></i>
-                </div>
-                <div>
-                    <h3 class="inv-section-heading">Inventori Material Konstruksi</h3>
-                    <p class="inv-section-sub">Daftar stok material bahan bangunan & consumable di gudang</p>
-                </div>
-            </div>
-            <div class="inv-section-actions">
-                <span class="inv-cat-count" style="margin-right:6px;">
-                    {{ $totalMatVariants }} varian terdaftar
-                </span>
-                <button type="button" class="inv-btn-toggle-all" onclick="toggleAllGroups('mat', true)" title="Buka seluruh kelompok">
-                    <i class="fas fa-angles-down" style="font-size:10px;"></i> Buka Semua
-                </button>
-                <button type="button" class="inv-btn-toggle-all" onclick="toggleAllGroups('mat', false)" title="Tutup seluruh kelompok">
-                    <i class="fas fa-angles-up" style="font-size:10px;"></i> Tutup Semua
-                </button>
-            </div>
-        </div>
-
-        <div class="table-wrap">
-            <table class="inv-table mb-0" id="table-material-inventory">
-                <thead>
-                    <tr>
-                        <th style="padding-left:18px;min-width:240px;">Material & SKU</th>
-                        <th style="min-width:160px;">Kelompok & Spesifikasi</th>
-                        <th style="min-width:120px;">Kategori</th>
-                        <th style="min-width:170px;">Gudang Penyimpanan</th>
-                        <th class="center" style="min-width:120px;">Stok Saat Ini</th>
-                        <th class="center" style="min-width:100px;">Min. Stok</th>
-                        <th class="center" style="min-width:110px;">Status</th>
-                        <th class="center" style="min-width:105px;">Terakhir Update</th>
-                        <th class="center" style="width:70px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($categoriesData as $category)
-                    @php
-                        $materialsWithInv = $category->materials->filter(fn($m) => $m->inventories->isNotEmpty());
-                        $typeGroups = $materialsWithInv->groupBy(function($m) {
-                            if (!empty($m->type)) {
-                                return $m->type;
-                            }
-                            if (!empty($m->size) && str_ends_with($m->name, $m->size)) {
-                                $inferred = trim(substr($m->name, 0, -strlen($m->size)));
-                                if (!empty($inferred)) return $inferred;
-                            }
-                            return $m->category?->name ?? 'Umum';
-                        });
-                        $catMaterialCount = $materialsWithInv->count();
-                    @endphp
-                    @if($materialsWithInv->isNotEmpty())
-                    {{-- Level 1: Category Header --}}
-                    <tr class="inv-group-cat group-toggle group-toggle-mat" data-group="group-mat-cat-{{ $category->id }}">
-                        <td colspan="9" class="inv-cat-cell">
-                            <div class="inv-cat-inner">
-                                <div class="inv-cat-left">
-                                    <span class="inv-cat-chev group-chev"><i class="fas fa-chevron-down"></i></span>
-                                    <i class="fas fa-folder text-warning" style="font-size:13px;"></i>
-                                    <span class="inv-cat-title">{{ $category->name }}</span>
-                                    <span class="inv-cat-count">{{ $catMaterialCount }} item</span>
-                                </div>
-                                <span style="font-size:11.5px;color:#94a3b8;font-weight:500;">
-                                    Klik untuk membuka / menutup
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-
-                    {{-- Level 2: Sub-Group Header (Kelompok Barang / Type) --}}
-                    @foreach($typeGroups as $typeName => $materialsInType)
-                    @php $subKey = 'sub-mat-' . $category->id . '-' . Str::slug($typeName); @endphp
-                    <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-toggle subgroup-toggle-mat inv-group-sub" data-group="{{ $subKey }}">
-                        <td colspan="9" class="inv-sub-cell">
-                            <div class="inv-sub-inner">
-                                <div class="inv-sub-left">
-                                    <span class="inv-sub-chev subgroup-chev"><i class="fas fa-chevron-down"></i></span>
-                                    <span class="inv-sub-title">
-                                        <i class="fas fa-layer-group text-primary" style="font-size:11px;"></i>
-                                        {{ $typeName }}
-                                    </span>
-                                    <span class="inv-sub-count">({{ $materialsInType->count() }} varian)</span>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-
-                    {{-- Level 3: Individual Inventory Material Rows --}}
-                    @foreach($materialsInType as $material)
-                        @foreach($material->inventories as $inv)
-                        <tr class="group-rows group-mat-cat-{{ $category->id }} subgroup-rows {{ $subKey }} inv-row-item">
-                            <td style="padding-left:18px;">
-                                <div class="fw-600" style="color:#0f172a;font-size:13px;line-height:1.35;">{{ $material->name }}</div>
-                                <div style="margin-top:3.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                                    <span class="inv-sku-badge">{{ $material->sku ?? '-' }}</span>
-                                    @if($material->brand)
-                                    <span class="text-muted" style="font-size:11.5px;">
-                                        &bull; Merek: <strong style="color:#475569;">{{ $material->brand }}</strong>
-                                    </span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td>
-                                <span class="fw-500" style="color:#334155;">{{ $material->type ?: '-' }}</span>
-                                @if($material->size)
-                                <span class="text-muted" style="font-size:11.5px;"> &bull; {{ $material->size }}</span>
-                                @endif
-                            </td>
-                            <td style="color:#64748b;font-size:12.5px;">
-                                {{ $category->name }}
-                            </td>
-                            <td>
-                                <span class="inv-wh-badge">
-                                    <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i>
-                                    {{ $inv->warehouse?->name ?? '-' }}
-                                </span>
-                            </td>
-                            <td class="center">
-                                <span class="inv-stock-num">{{ number_format($inv->quantity, 0, ',', '.') }}</span>
-                                <span class="inv-unit-lbl">{{ $material->unit?->abbreviation ?? $material->unit?->name }}</span>
-                            </td>
-                            <td class="center" style="color:#64748b;font-variant-numeric:tabular-nums;">
-                                {{ number_format($inv->min_stock, 0, ',', '.') }}
-                            </td>
-                            <td class="center">
-                                @if($inv->quantity <= 0)
-                                    <span class="inv-status-pill red"><i class="fas fa-circle-xmark"></i> Habis</span>
-                                @elseif($inv->quantity <= $inv->min_stock)
-                                    <span class="inv-status-pill amber"><i class="fas fa-triangle-exclamation"></i> Menipis</span>
-                                @else
-                                    <span class="inv-status-pill green"><i class="fas fa-circle-check"></i> Normal</span>
-                                @endif
-                            </td>
-                            <td class="center text-muted" style="font-size:12px;white-space:nowrap;">
-                                {{ $inv->updated_at ? $inv->updated_at->format('d/m/Y') : '-' }}
-                            </td>
-                            <td class="center">
-                                <a href="{{ route('inventory.show', $inv) }}" class="action-btn-view" title="Detail Riwayat Stok">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        @endforeach
-                    @endforeach
-                    @endforeach
-                    @endif
-                    @empty
-                    <tr>
-                        <td colspan="9" class="inv-empty-state">
-                            <div class="inv-empty-icon">
-                                <i class="fas fa-boxes-stacked"></i>
-                            </div>
-                            <div class="inv-empty-title">Tidak Ada Data Material</div>
-                            <div class="inv-empty-sub">Tidak ditemukan catatan inventori material yang sesuai dengan kriteria filter saat ini.</div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
-
-    {{-- TABEL INVENTORI: ALAT KERJA --}}
-    @if(!$itemType || $itemType === 'tool')
-    <div class="inv-section-box">
-        <div class="inv-section-header">
-            <div class="inv-section-title-wrap">
-                <div class="inv-section-badge-icon tool">
-                    <i class="fas fa-toolbox"></i>
-                </div>
-                <div>
-                    <h3 class="inv-section-heading">Inventori Alat Kerja & Peralatan</h3>
-                    <p class="inv-section-sub">Daftar kesiapan alat kerja, posisi unit, dan status peminjaman proyek</p>
-                </div>
-            </div>
-            <div class="inv-section-actions">
-                <span class="inv-cat-count" style="margin-right:6px;">
-                    {{ $totalToolsCount }} alat terdaftar
-                </span>
-                <button type="button" class="inv-btn-toggle-all" onclick="toggleAllGroups('tool', true)" title="Buka seluruh kelompok">
-                    <i class="fas fa-angles-down" style="font-size:10px;"></i> Buka Semua
-                </button>
-                <button type="button" class="inv-btn-toggle-all" onclick="toggleAllGroups('tool', false)" title="Tutup seluruh kelompok">
-                    <i class="fas fa-angles-up" style="font-size:10px;"></i> Tutup Semua
-                </button>
-            </div>
-        </div>
-
-        <div class="table-wrap">
-            <table class="inv-table mb-0" id="table-tool-inventory">
-                <thead>
-                    <tr>
-                        <th style="padding-left:18px;min-width:240px;">Nama Alat & Kode</th>
-                        <th style="min-width:160px;">Merk & Spesifikasi</th>
-                        <th style="min-width:120px;">Kategori</th>
-                        <th style="min-width:170px;">Gudang / Lokasi</th>
-                        <th class="center" style="min-width:110px;">Total Unit</th>
-                        <th class="center" style="min-width:110px;">Tersedia</th>
-                        <th class="center" style="min-width:100px;">Dipinjam</th>
-                        <th class="center" style="min-width:110px;">Status</th>
-                        <th class="center" style="width:70px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($toolsCategoriesData as $toolCategory)
-                    @php
-                        $toolTypeGroups = $toolCategory->tools->groupBy(function($t) {
-                            if (!empty($t->type)) {
-                                return $t->type;
-                            }
-                            if (!empty($t->size) && str_ends_with($t->name, $t->size)) {
-                                $inferred = trim(substr($t->name, 0, -strlen($t->size)));
-                                if (!empty($inferred)) return $inferred;
-                            }
-                            return $t->category?->name ?? 'Umum';
-                        });
-                        $catToolCount = $toolCategory->tools->count();
-                    @endphp
-                    {{-- Level 1: Tool Category Header --}}
-                    <tr class="inv-group-cat group-toggle group-toggle-tool" data-group="group-tool-cat-{{ $toolCategory->id }}">
-                        <td colspan="9" class="inv-cat-cell">
-                            <div class="inv-cat-inner">
-                                <div class="inv-cat-left">
-                                    <span class="inv-cat-chev group-chev"><i class="fas fa-chevron-down"></i></span>
-                                    <i class="fas fa-folder text-warning" style="font-size:13px;"></i>
-                                    <span class="inv-cat-title">{{ $toolCategory->name }}</span>
-                                    <span class="inv-cat-count">{{ $catToolCount }} alat</span>
-                                </div>
-                                <span style="font-size:11.5px;color:#94a3b8;font-weight:500;">
-                                    Klik untuk membuka / menutup
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-
-                    {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
-                    @foreach($toolTypeGroups as $toolTypeName => $toolsInType)
-                    @php $subToolKey = 'sub-tool-' . $toolCategory->id . '-' . Str::slug($toolTypeName); @endphp
-                    <tr class="group-rows group-tool-cat-{{ $toolCategory->id }} subgroup-toggle subgroup-toggle-tool inv-group-sub" data-group="{{ $subToolKey }}">
-                        <td colspan="9" class="inv-sub-cell" style="border-left-color:#f97316;">
-                            <div class="inv-sub-inner">
-                                <div class="inv-sub-left">
-                                    <span class="inv-sub-chev subgroup-chev"><i class="fas fa-chevron-down"></i></span>
-                                    <span class="inv-sub-title">
-                                        <i class="fas fa-layer-group text-warning" style="font-size:11px;"></i>
-                                        {{ $toolTypeName }}
-                                    </span>
-                                    <span class="inv-sub-count">({{ $toolsInType->count() }} item)</span>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-
-                    {{-- Level 3: Individual Tool Rows --}}
-                    @foreach($toolsInType as $tool)
-                    <tr class="group-rows group-tool-cat-{{ $toolCategory->id }} subgroup-rows {{ $subToolKey }} inv-row-item">
-                        <td style="padding-left:18px;">
-                            <div class="fw-600" style="color:#0f172a;font-size:13px;line-height:1.35;">{{ $tool->name }}</div>
-                            <div style="margin-top:3.5px;">
-                                <span class="inv-sku-badge">{{ $tool->code ?? '-' }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            @if($tool->brand)
-                            <span class="fw-500" style="color:#334155;">{{ $tool->brand }}</span>
-                            @endif
-                            @if($tool->size)
-                            <span class="text-muted" style="font-size:11.5px;"> &bull; {{ $tool->size }}</span>
-                            @elseif(!$tool->brand)
-                            <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td style="color:#64748b;font-size:12.5px;">
-                            {{ $toolCategory->name }}
-                        </td>
-                        <td>
-                            @php
-                                $whName = ($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
-                                    ? ($tool->inventories->first()->warehouse?->name ?? '-')
-                                    : ($tool->currentWarehouse?->name ?? 'Gudang Pusat');
-                            @endphp
-                            <span class="inv-wh-badge">
-                                <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i>
-                                {{ $whName }}
-                            </span>
-                        </td>
-                        <td class="center">
-                            <span class="inv-stock-num">{{ number_format($tool->stock_total, 0, ',', '.') }}</span>
-                            <span class="inv-unit-lbl">unit</span>
-                        </td>
-                        <td class="center">
-                            <span class="inv-stock-num" style="color:#16a34a;">{{ number_format($tool->stock_available, 0, ',', '.') }}</span>
-                            <span class="inv-unit-lbl">unit</span>
-                        </td>
-                        <td class="center" style="color:#64748b;font-variant-numeric:tabular-nums;">
-                            {{ number_format($tool->stock_borrowed, 0, ',', '.') }}
-                        </td>
-                        <td class="center">
-                            @if($tool->stock_available > 0)
-                                <span class="inv-status-pill green"><i class="fas fa-circle-check"></i> Siap Pakai</span>
+                        <span>
+                            @if($currentWhObj)
+                                {{ $currentWhObj->name }} {{ $currentWhObj->is_central ? '(Gudang Pusat Sentral)' : '(Site Gudang Proyek)' }}
+                            @elseif(($selectedWarehouseId ?? null) === 'all')
+                                Semua Gudang (Konsolidasi Multi-Site)
                             @else
-                                <span class="inv-status-pill red"><i class="fas fa-circle-xmark"></i> Kosong / Dipinjam</span>
+                                Gudang Pusat PT Arsikon (Sentral Distribusi)
                             @endif
-                        </td>
-                        <td class="center">
-                            <a href="{{ route('tools.show', $tool) }}" class="action-btn-view" title="Detail Riwayat Alat">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    @endforeach
-                    @endforeach
-                    @empty
-                    <tr>
-                        <td colspan="9" class="inv-empty-state">
-                            <div class="inv-empty-icon">
-                                <i class="fas fa-toolbox"></i>
-                            </div>
-                            <div class="inv-empty-title">Tidak Ada Data Alat Kerja</div>
-                            <div class="inv-empty-sub">Tidak ditemukan catatan inventori alat kerja yang sesuai dengan kriteria filter saat ini.</div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                        </span>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                        Pusat Kendali Inventori & Aset
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-500 max-w-2xl">
+                        Pantau pergerakan stok material konstruksi, ambang batas kritis, dan distribusi alat kerja proyek secara presisi.
+                    </p>
+                </div>
+
+                <!-- Tombol Aksi Cepat Bergaya Enterprise -->
+                <div class="flex flex-wrap items-center gap-3 self-start lg:self-center">
+                    <a href="{{ route('reports.stock') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition">
+                        <x-lucide-file-spreadsheet class="w-4 h-4 text-slate-500" />
+                        <span>Unduh Laporan Stok</span>
+                    </a>
+                    <a href="{{ route('stock-opnames.create') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white shadow-sm shadow-orange-500/25 transition">
+                        <x-lucide-plus class="w-4 h-4" />
+                        <span>Stock Opname Baru</span>
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-    @endif
 
-    @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Level 1: Toggle Category Group
-            var toggleRows = document.querySelectorAll('.group-toggle');
-            toggleRows.forEach(function (row) {
-                row.addEventListener('click', function (e) {
-                    if (e.target.closest('.btn') || e.target.closest('a') || e.target.closest('.action-btn-view')) return;
-                    var group = row.getAttribute('data-group');
-                    var isCatCollapsed = row.classList.toggle('collapsed');
-                    var targetRows = document.querySelectorAll('.' + group);
+        <!-- ================= 2. BENTO METRIC CARDS (LIGHT THEME) ================= -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                    targetRows.forEach(function (r) {
-                        if (isCatCollapsed) {
-                            r.style.display = 'none';
-                        } else {
-                            if (r.classList.contains('subgroup-toggle')) {
-                                r.style.display = '';
-                            } else if (r.classList.contains('subgroup-rows')) {
-                                var subKey = null;
-                                r.classList.forEach(function (cls) {
-                                    if (cls.startsWith('sub-')) subKey = cls;
+            <!-- BENTO 1: Material + Visual Komposisi Bar -->
+            <div class="group relative bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Material Konstruksi</span>
+                        <div class="mt-2 flex items-baseline gap-2.5">
+                            <span class="text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                                {{ number_format($totalMatStock, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs font-semibold text-slate-500">
+                                Unit Fisik ({{ number_format($totalMatVariants, 0, ',', '.') }} Varian)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs">
+                        <x-lucide-boxes class="w-5 h-5" />
+                    </div>
+                </div>
+
+                <!-- Micro-Chart: Komposisi Kategori Material -->
+                <div class="mt-5 space-y-2">
+                    <div class="flex h-2 w-full overflow-hidden rounded-full bg-slate-100 p-0.5 gap-0.5">
+                        @if($compTotalStock > 0 && $categoryComposition->isNotEmpty())
+                            @foreach($categoryComposition->take(3) as $idx => $comp)
+                                @php
+                                    $pct = max(4, round(($comp['stock'] / $compTotalStock) * 100));
+                                    $style = $colorStyles[$idx % count($colorStyles)];
+                                    $isFirst = $loop->first;
+                                    $isLast = $loop->last;
+                                    $roundClass = ($isFirst && $isLast) ? 'rounded-full' : ($isFirst ? 'rounded-l-full' : ($isLast ? 'rounded-r-full' : ''));
+                                @endphp
+                                <div class="{{ $style['bar'] }} {{ $roundClass }}" style="width: {{ $pct }}%" title="{{ $comp['name'] }} ({{ $pct }}%)"></div>
+                            @endforeach
+                        @else
+                            <div class="bg-blue-600 rounded-full w-full" title="Belum ada data stok"></div>
+                        @endif
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-600 flex-wrap gap-1">
+                        @if($categoryComposition->isNotEmpty())
+                            @foreach($categoryComposition->take(3) as $idx => $comp)
+                                @php $style = $colorStyles[$idx % count($colorStyles)]; @endphp
+                                <span class="inline-flex items-center gap-1">
+                                    <i class="w-2 h-2 rounded-full {{ $style['dot'] }} inline-block"></i> 
+                                    <strong class="font-medium text-slate-700">{{ Str::limit($comp['name'], 12) }}</strong> ({{ $comp['variants'] }})
+                                </span>
+                            @endforeach
+                        @else
+                            <span class="inline-flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-blue-600 inline-block"></i> Umum ({{ $totalMatVariants }})</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- BENTO 2: Kesiapan Armada & Alat Kerja -->
+            <div class="group relative bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Kesiapan Alat Kerja</span>
+                        <div class="mt-2 flex items-baseline gap-2.5">
+                            <span class="text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+                                {{ number_format($totalToolAvailable, 0, ',', '.') }}
+                            </span>
+                            <span class="text-xs font-semibold text-emerald-600">Unit Siap Pakai</span>
+                        </div>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-2xs">
+                        <x-lucide-wrench class="w-5 h-5" />
+                    </div>
+                </div>
+
+                <!-- Split Pill Info -->
+                <div class="mt-5 grid grid-cols-2 gap-2.5 pt-1">
+                    <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-medium">Di Proyek</span>
+                        <span class="text-xs font-bold text-slate-800 tabular-nums">
+                            {{ number_format($totalToolBorrowed, 0, ',', '.') }} Unit
+                        </span>
+                    </div>
+                    <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-medium">Total Armada</span>
+                        <span class="text-xs font-bold text-slate-800 tabular-nums">
+                            {{ number_format($totalToolStockTotal, 0, ',', '.') }} Unit
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BENTO 3: Indikator Kesehatan Stok (Stock Health Radar) -->
+            <div class="group relative bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Indeks Kesehatan Stok</span>
+                        <div class="mt-2 flex items-center gap-2.5">
+                            <span class="text-3xl font-extrabold tracking-tight tabular-nums {{ $healthPercentage >= 90 ? 'text-emerald-600' : 'text-rose-600' }}">
+                                {{ $healthPercentage }}%
+                            </span>
+                            @if($totalCritical === 0)
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                    Terkendali
+                                </span>
+                            @else
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
+                                    Perlu Restok
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl {{ $totalCritical === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600' }} border flex items-center justify-center shadow-2xs">
+                        @if($totalCritical === 0)
+                            <x-lucide-shield-check class="w-5 h-5" />
+                        @else
+                            <x-lucide-triangle-alert class="w-5 h-5" />
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between px-3.5 py-2.5 rounded-xl {{ $totalCritical === 0 ? 'bg-emerald-50/70 border-emerald-100' : 'bg-rose-50/70 border-rose-100' }} border">
+                    <span class="text-xs {{ $totalCritical === 0 ? 'text-emerald-800' : 'text-rose-800' }} font-medium">
+                        Stok di bawah batas minimum
+                    </span>
+                    <span class="text-xs font-extrabold {{ $totalCritical === 0 ? 'text-emerald-700' : 'text-rose-700' }} tabular-nums">
+                        {{ $totalCritical }} SKU Kritis
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= 3. MAIN DATA WORKSPACE (LIGHT ENTERPRISE THEME) ================= -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+
+            <!-- COMMAND BAR: Segmented Switcher + Search & Filter Form -->
+            <form method="GET" action="{{ route('inventory.index') }}" id="inventoryFilterForm" class="p-4 sm:px-6 border-b border-slate-200/80 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                <input type="hidden" name="item_type" :value="activeTab === 'material' ? 'material' : 'tool'">
+
+                <!-- Segmented Switcher -->
+                <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/80 self-start">
+                    <button type="button" @click="activeTab = 'material'"
+                        :class="activeTab === 'material' ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-900/5' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer">
+                        <span class="w-2 h-2 rounded-full transition-colors" :class="activeTab === 'material' ? 'bg-orange-500' : 'bg-slate-300'"></span>
+                        <span>Material Konstruksi</span>
+                        <span class="px-2 py-0.5 rounded-md text-[11px] bg-slate-100 text-slate-700 tabular-nums">
+                            {{ $totalMatVariants }}
+                        </span>
+                    </button>
+
+                    <button type="button" @click="activeTab = 'alat'"
+                        :class="activeTab === 'alat' ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-900/5' : 'text-slate-600 hover:text-slate-900'"
+                        class="flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer">
+                        <span class="w-2 h-2 rounded-full transition-colors" :class="activeTab === 'alat' ? 'bg-orange-500' : 'bg-slate-300'"></span>
+                        <span>Alat Kerja & Armada</span>
+                        <span class="px-2 py-0.5 rounded-md text-[11px] bg-slate-100 text-slate-700 tabular-nums">
+                            {{ $totalToolsCount }}
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Filter & Search Controls -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+                    <!-- Quick Search Input -->
+                    <div class="relative w-full sm:w-72">
+                        <x-lucide-search class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input type="text" name="search" value="{{ request('search') }}" x-model="searchQuery"
+                            @keydown.window.prevent.slash="$el.focus()"
+                            placeholder="Filter cepat nama, SKU, merk..." 
+                            class="w-full pl-10 pr-10 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                        <kbd class="hidden sm:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 rounded shadow-2xs">/</kbd>
+                    </div>
+
+                    <!-- Warehouse Selector -->
+                    <select name="warehouse_id" id="filter_warehouse_id" onchange="this.form.submit()"
+                        class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 font-medium cursor-pointer focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                        @if(!empty($canViewAllWarehouses))
+                            <option value="all" {{ ($selectedWarehouseId === 'all') ? 'selected' : '' }}>
+                                Semua Gudang (Konsolidasi)
+                            </option>
+                        @endif
+                        @foreach($accessibleWarehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
+                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <!-- Stock Condition Selector -->
+                    <select name="stock_level" id="filter_stock_level" onchange="this.form.submit()"
+                        class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 font-medium cursor-pointer focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                        <option value="">Semua Kondisi Stok</option>
+                        <option value="low" {{ request('stock_level') === 'low' ? 'selected' : '' }}>Menipis (Min. Stok)</option>
+                        <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Stok Habis (0)</option>
+                    </select>
+
+                    <!-- Reset Filter Button -->
+                    @if(request('search') || request('stock_level') || request('item_type') || (request()->has('warehouse_id') && request('warehouse_id') != (auth()->user()->activeWarehouse()?->id ?? 'all')))
+                        <a href="{{ route('inventory.index') }}" title="Reset Semua Filter" 
+                            class="p-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                            <x-lucide-rotate-ccw class="w-4 h-4" />
+                        </a>
+                    @endif
+                </div>
+            </form>
+
+            <!-- ================= TAB 1: TABEL MATERIAL KONSTRUKSI ================= -->
+            <div x-show="activeTab === 'material'" class="overflow-x-auto">
+                <div class="px-6 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between text-xs text-slate-500">
+                    <span class="font-medium">Total <strong class="text-slate-800">{{ $totalMatVariants }} varian</strong> material terdaftar</span>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="expandAll()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:text-orange-600 font-medium transition cursor-pointer shadow-2xs">
+                            <x-lucide-chevrons-down class="w-3.5 h-3.5" />
+                            <span>Buka Semua</span>
+                        </button>
+                        <button type="button" @click="collapseAll()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:text-orange-600 font-medium transition cursor-pointer shadow-2xs">
+                            <x-lucide-chevrons-up class="w-3.5 h-3.5" />
+                            <span>Tutup Semua</span>
+                        </button>
+                    </div>
+                </div>
+
+                <table class="w-full text-left border-collapse min-w-[960px]">
+                    <thead>
+                        <tr class="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="py-3.5 px-6">Identitas Material & SKU</th>
+                            <th class="py-3.5 px-4">Spesifikasi & Kelompok</th>
+                            <th class="py-3.5 px-4">Titik Gudang</th>
+                            <th class="py-3.5 px-4 w-52">Kapasitas Stok Fisik</th>
+                            <th class="py-3.5 px-4 text-center">Status Level</th>
+                            <th class="py-3.5 px-4">Pembaruan Terakhir</th>
+                            <th class="py-3.5 px-6 text-right">Tindakan</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-100 text-xs">
+                        @forelse($categoriesData as $category)
+                            @php
+                                $catKey = 'cat-mat-' . $category->id;
+                                $materialsWithInv = $category->materials->filter(fn($m) => $m->inventories->isNotEmpty());
+                                $catMaterialCount = $materialsWithInv->count();
+                                $typeGroups = $materialsWithInv->groupBy(function($m) {
+                                    if (!empty($m->type)) return $m->type;
+                                    if (!empty($m->size) && str_ends_with($m->name, $m->size)) {
+                                        $inferred = trim(substr($m->name, 0, -strlen($m->size)));
+                                        if (!empty($inferred)) return $inferred;
+                                    }
+                                    return $m->category?->name ?? 'Umum';
                                 });
-                                var subToggle = subKey ? document.querySelector('.subgroup-toggle[data-group="' + subKey + '"]') : null;
-                                if (!subToggle || !subToggle.classList.contains('collapsed')) {
-                                    r.style.display = '';
-                                } else {
-                                    r.style.display = 'none';
-                                }
-                            } else {
-                                r.style.display = '';
-                            }
-                        }
-                    });
-                });
-            });
+                                $avatarGradient = $gradientPalette[$category->id % count($gradientPalette)];
+                            @endphp
 
-            // Level 2: Toggle Subgroup (Kelompok Barang / Type)
-            var subToggleRows = document.querySelectorAll('.subgroup-toggle');
-            subToggleRows.forEach(function (subRow) {
-                subRow.addEventListener('click', function (e) {
-                    if (e.target.closest('.btn') || e.target.closest('a') || e.target.closest('.action-btn-view')) return;
-                    var subKey = subRow.getAttribute('data-group');
-                    var isSubCollapsed = subRow.classList.toggle('collapsed');
-                    var childRows = document.querySelectorAll('.' + subKey);
+                            @if($materialsWithInv->isNotEmpty())
+                                <!-- GRUP KATEGORI ACCORDION -->
+                                <tr @click="toggleGroup('{{ $catKey }}')" class="bg-slate-50/80 hover:bg-slate-100/90 cursor-pointer transition select-none border-b border-slate-200/60">
+                                    <td colspan="7" class="py-3 px-6">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <span class="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-2xs">
+                                                    <svg :class="openGroups.includes('{{ $catKey }}') ? 'rotate-90 text-orange-600' : 'text-slate-400'" 
+                                                        class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                                                    </svg>
+                                                </span>
+                                                <span class="font-bold tracking-wide text-slate-800">
+                                                    {{ strtoupper($category->name) }}
+                                                </span>
+                                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/70">
+                                                    {{ $catMaterialCount }} Varian Material
+                                                </span>
+                                            </div>
+                                            <span class="text-[11px] font-medium text-slate-500 hover:text-slate-800" x-text="openGroups.includes('{{ $catKey }}') ? 'Lipat Grup' : 'Buka Grup'"></span>
+                                        </div>
+                                    </td>
+                                </tr>
 
-                    childRows.forEach(function (r) {
-                        r.style.display = isSubCollapsed ? 'none' : '';
-                    });
-                });
-            });
+                                <!-- BARIS MATERIAL DI DALAM KATEGORI -->
+                                @foreach($typeGroups as $typeName => $materialsInType)
+                                    @foreach($materialsInType as $material)
+                                        @foreach($material->inventories as $inv)
+                                            @php
+                                                // Generate 2-Letter Monogram Initials
+                                                $words = preg_split('/\s+/', trim($material->name));
+                                                if (count($words) >= 2) {
+                                                    $rawInit = mb_substr($words[0], 0, 1) . mb_substr($words[1], 0, 1);
+                                                } else {
+                                                    $rawInit = mb_substr($material->name, 0, 2);
+                                                }
+                                                $initials = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawInit) ?: 'MT');
 
-            @if(!request('search') && !request('stock_level') && !request('item_type'))
-            // Default: collapse all categories if no search/filter is applied
-            toggleAllGroups('mat', false);
-            toggleAllGroups('tool', false);
-            @endif
-        });
+                                                // Compute Visual Stock Capacity
+                                                $qty = (float) $inv->quantity;
+                                                $minStock = (float) $inv->min_stock;
+                                                if ($minStock > 0) {
+                                                    $percent = min(100, max(6, round(($qty / max(1, $minStock * 2)) * 100)));
+                                                } else {
+                                                    $percent = $qty > 0 ? 100 : 0;
+                                                }
 
-        // Global Expand / Collapse All Helper
-        function toggleAllGroups(section, expand) {
-            var catToggles = document.querySelectorAll('.group-toggle-' + section);
-            var subToggles = document.querySelectorAll('.subgroup-toggle-' + section);
-            var allSectionRows = document.querySelectorAll('#table-' + (section === 'mat' ? 'material' : 'tool') + '-inventory tbody tr');
+                                                if ($qty <= 0) {
+                                                    $barClass = 'bg-rose-500';
+                                                    $barWidth = '0%';
+                                                    $statusText = 'Stok Habis';
+                                                    $statusBadge = 'bg-rose-50 text-rose-700 border-rose-200';
+                                                    $dotColor = 'bg-rose-500';
+                                                } elseif ($minStock > 0 && $qty <= $minStock) {
+                                                    $barClass = 'bg-amber-500';
+                                                    $barWidth = $percent . '%';
+                                                    $statusText = 'Menipis';
+                                                    $statusBadge = 'bg-amber-50 text-amber-700 border-amber-200';
+                                                    $dotColor = 'bg-amber-500';
+                                                } else {
+                                                    $barClass = 'bg-emerald-500';
+                                                    $barWidth = $percent . '%';
+                                                    $statusText = 'Stok Aman';
+                                                    $statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                                    $dotColor = 'bg-emerald-500';
+                                                }
+                                            @endphp
 
-            catToggles.forEach(function(cat) {
-                if (expand) {
-                    cat.classList.remove('collapsed');
-                } else {
-                    cat.classList.add('collapsed');
-                }
-            });
+                                            <tr x-show="openGroups.includes('{{ $catKey }}') && matchesSearch('{{ addslashes($material->name) }}', '{{ addslashes($material->sku ?? '') }}', '{{ addslashes($material->brand ?? '') }}', '{{ addslashes($material->type ?? '') }}')"
+                                                class="group hover:bg-orange-50/40 transition">
+                                                <!-- Kolom 1: Monogram Avatar + Nama + Pill SKU -->
+                                                <td class="py-4 px-6">
+                                                    <div class="flex items-center gap-3.5">
+                                                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ $avatarGradient }} text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0 select-none">
+                                                            {{ $initials }}
+                                                        </div>
+                                                        <div>
+                                                            <div class="font-bold text-slate-900 text-[13px] group-hover:text-orange-600 transition">
+                                                                {{ $material->name }}
+                                                            </div>
+                                                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                                <span class="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[10px] font-semibold text-slate-700 border border-slate-200">
+                                                                    {{ $material->sku ?? '-' }}
+                                                                </span>
+                                                                @if($material->brand)
+                                                                    <span class="text-[11px] text-slate-500">{{ $material->brand }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
 
-            subToggles.forEach(function(sub) {
-                if (expand) {
-                    sub.classList.remove('collapsed');
-                } else {
-                    sub.classList.add('collapsed');
-                }
-            });
+                                                <!-- Kolom 2: Spesifikasi & Kelompok -->
+                                                <td class="py-4 px-4">
+                                                    <div class="font-semibold text-slate-800">{{ $material->type ?: '-' }}</div>
+                                                    @if($material->size)
+                                                        <div class="text-[11px] text-slate-500 mt-0.5">{{ $material->size }}</div>
+                                                    @endif
+                                                </td>
 
-            allSectionRows.forEach(function(row) {
-                if (row.classList.contains('group-toggle')) {
-                    row.style.display = '';
-                } else if (row.classList.contains('subgroup-toggle')) {
-                    row.style.display = expand ? '' : 'none';
-                } else if (row.classList.contains('subgroup-rows')) {
-                    row.style.display = expand ? '' : 'none';
-                }
-            });
-        }
-    </script>
-    @endpush
+                                                <!-- Kolom 3: Titik Gudang -->
+                                                <td class="py-4 px-4">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-700 font-medium text-[11px] border border-slate-200/60">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                        {{ $inv->warehouse?->name ?? '-' }}
+                                                    </span>
+                                                </td>
+
+                                                <!-- Kolom 4: Visual Stock Meter -->
+                                                <td class="py-4 px-4">
+                                                    <div class="flex items-baseline justify-between mb-1.5">
+                                                        <span class="text-sm font-extrabold text-slate-900 tabular-nums">
+                                                            {{ number_format($inv->quantity, 0, ',', '.') }} 
+                                                            <span class="text-[11px] font-normal text-slate-500">
+                                                                {{ $material->unit?->abbreviation ?? $material->unit?->name }}
+                                                            </span>
+                                                        </span>
+                                                        <span class="text-[10px] font-medium text-slate-400">
+                                                            Min: {{ number_format($inv->min_stock, 0, ',', '.') }}
+                                                        </span>
+                                                    </div>
+                                                    <!-- Progress Bar Stok -->
+                                                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div class="{{ $barClass }} h-full rounded-full transition-all duration-300" style="width: {{ $barWidth }}"></div>
+                                                    </div>
+                                                </td>
+
+                                                <!-- Kolom 5: Badge Status -->
+                                                <td class="py-4 px-4 text-center">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border {{ $statusBadge }}">
+                                                        <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span> 
+                                                        {{ $statusText }}
+                                                    </span>
+                                                </td>
+
+                                                <!-- Kolom 6: Waktu Update -->
+                                                <td class="py-4 px-4">
+                                                    <div class="text-slate-800 font-medium">
+                                                        {{ $inv->updated_at ? $inv->updated_at->format('d M Y') : '-' }}
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-400">
+                                                        {{ $inv->updated_at ? 'Pukul ' . $inv->updated_at->format('H:i') . ' WIB' : '-' }}
+                                                    </div>
+                                                </td>
+
+                                                <!-- Kolom 7: Tombol Aksi Interaktif -->
+                                                <td class="py-4 px-6 text-right">
+                                                    <a href="{{ route('inventory.show', $inv) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:border-orange-500 hover:text-orange-600 shadow-2xs transition">
+                                                        <x-lucide-eye class="w-3.5 h-3.5" />
+                                                        <span>Kartu Stok</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endforeach
+                                @endforeach
+                            @endif
+                        @empty
+                            <tr>
+                                <td colspan="7" class="p-12 text-center">
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3.5 border border-slate-200">
+                                        <x-lucide-boxes class="w-6 h-6" />
+                                    </div>
+                                    <h3 class="text-sm font-bold text-slate-800">Tidak Ada Data Material</h3>
+                                    <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                                        Tidak ditemukan catatan inventori material yang sesuai dengan kriteria filter saat ini.
+                                    </p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ================= TAB 2: TABEL ALAT KERJA & ARMADA ================= -->
+            <div x-show="activeTab === 'alat'" style="display: none;" class="overflow-x-auto">
+                @if($toolsCategoriesData->isEmpty())
+                    <div class="p-14 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3.5 border border-slate-200">
+                            <x-lucide-wrench class="w-6 h-6" />
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-800">Belum Ada Unit Alat Kerja Terdaftar</h3>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                            Data inventaris alat kerja dan posisi peminjaman proyek akan tampil di sini setelah ditambahkan melalui modul Alat.
+                        </p>
+                    </div>
+                @else
+                    <div class="px-6 py-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center justify-between text-xs text-slate-500">
+                        <span class="font-medium">Total <strong class="text-slate-800">{{ $totalToolsCount }} jenis alat</strong> terdaftar</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="expandAll()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:text-orange-600 font-medium transition cursor-pointer shadow-2xs">
+                                <x-lucide-chevrons-down class="w-3.5 h-3.5" />
+                                <span>Buka Semua</span>
+                            </button>
+                            <button type="button" @click="collapseAll()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:text-orange-600 font-medium transition cursor-pointer shadow-2xs">
+                                <x-lucide-chevrons-up class="w-3.5 h-3.5" />
+                                <span>Tutup Semua</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-left border-collapse min-w-[960px]">
+                        <thead>
+                            <tr class="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3.5 px-6">Nama Alat & Kode</th>
+                                <th class="py-3.5 px-4">Merk & Spesifikasi</th>
+                                <th class="py-3.5 px-4">Titik Lokasi / Site</th>
+                                <th class="py-3.5 px-4 text-center">Total Unit</th>
+                                <th class="py-3.5 px-4 text-center">Siap Pakai</th>
+                                <th class="py-3.5 px-4 text-center">Di Proyek</th>
+                                <th class="py-3.5 px-4 text-center">Status Level</th>
+                                <th class="py-3.5 px-6 text-right">Tindakan</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-slate-100 text-xs">
+                            @foreach($toolsCategoriesData as $toolCategory)
+                                @php
+                                    $toolCatKey = 'cat-tool-' . $toolCategory->id;
+                                    $catToolCount = $toolCategory->tools->count();
+                                @endphp
+
+                                <!-- GRUP KATEGORI ALAT -->
+                                <tr @click="toggleGroup('{{ $toolCatKey }}')" class="bg-slate-50/80 hover:bg-slate-100/90 cursor-pointer transition select-none border-b border-slate-200/60">
+                                    <td colspan="8" class="py-3 px-6">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <span class="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-2xs">
+                                                    <svg :class="openGroups.includes('{{ $toolCatKey }}') ? 'rotate-90 text-amber-600' : 'text-slate-400'" 
+                                                        class="w-3.5 h-3.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                                                    </svg>
+                                                </span>
+                                                <span class="font-bold tracking-wide text-slate-800">
+                                                    DIVISI {{ strtoupper($toolCategory->name) }}
+                                                </span>
+                                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/70">
+                                                    {{ $catToolCount }} Jenis Alat
+                                                </span>
+                                            </div>
+                                            <span class="text-[11px] font-medium text-slate-500 hover:text-slate-800" x-text="openGroups.includes('{{ $toolCatKey }}') ? 'Lipat Grup' : 'Buka Grup'"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- BARIS ALAT -->
+                                @foreach($toolCategory->tools as $tool)
+                                    @php
+                                        $whName = ($tool->relationLoaded('inventories') && $tool->inventories->isNotEmpty())
+                                            ? ($tool->inventories->first()->warehouse?->name ?? '-')
+                                            : ($tool->currentWarehouse?->name ?? 'Gudang Pusat');
+
+                                        // Monogram for tool
+                                        $words = preg_split('/\s+/', trim($tool->name));
+                                        if (count($words) >= 2) {
+                                            $rawInit = mb_substr($words[0], 0, 1) . mb_substr($words[1], 0, 1);
+                                        } else {
+                                            $rawInit = mb_substr($tool->name, 0, 2);
+                                        }
+                                        $initialsTool = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawInit) ?: 'EQ');
+                                    @endphp
+
+                                    <tr x-show="openGroups.includes('{{ $toolCatKey }}') && matchesSearch('{{ addslashes($tool->name) }}', '{{ addslashes($tool->code ?? '') }}', '{{ addslashes($tool->brand ?? '') }}', '{{ addslashes($tool->type ?? '') }}')"
+                                        class="group hover:bg-amber-50/25 transition">
+                                        <!-- Kolom 1: Avatar + Nama Alat + Kode -->
+                                        <td class="py-4 px-6">
+                                            <div class="flex items-center gap-3.5">
+                                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0 select-none">
+                                                    {{ $initialsTool }}
+                                                </div>
+                                                <div>
+                                                    <div class="font-bold text-slate-900 text-[13px] group-hover:text-orange-600 transition">
+                                                        {{ $tool->name }}
+                                                    </div>
+                                                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                        <span class="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[10px] font-semibold text-slate-700 border border-slate-200">
+                                                            {{ $tool->code ?? '-' }}
+                                                        </span>
+                                                        @if($tool->brand)
+                                                            <span class="text-[11px] text-slate-500">{{ $tool->brand }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Kolom 2: Merk & Spesifikasi -->
+                                        <td class="py-4 px-4">
+                                            <div class="font-semibold text-slate-800">{{ $tool->type ?: '-' }}</div>
+                                            @if($tool->size)
+                                                <div class="text-[11px] text-slate-500 mt-0.5">{{ $tool->size }}</div>
+                                            @endif
+                                        </td>
+
+                                        <!-- Kolom 3: Lokasi Site -->
+                                        <td class="py-4 px-4">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/90 text-slate-700 font-medium text-[11px] border border-slate-200/60">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                {{ $whName }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Kolom 4: Total Unit -->
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="font-extrabold text-slate-900 tabular-nums text-sm">
+                                                {{ number_format($tool->stock_total, 0, ',', '.') }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-500">unit</span>
+                                        </td>
+
+                                        <!-- Kolom 5: Siap Pakai -->
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="font-extrabold text-emerald-600 tabular-nums text-sm">
+                                                {{ number_format($tool->stock_available, 0, ',', '.') }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-500">unit</span>
+                                        </td>
+
+                                        <!-- Kolom 6: Di Proyek -->
+                                        <td class="py-4 px-4 text-center">
+                                            <span class="font-bold text-slate-700 tabular-nums text-xs">
+                                                {{ number_format($tool->stock_borrowed, 0, ',', '.') }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Kolom 7: Status Level -->
+                                        <td class="py-4 px-4 text-center">
+                                            @if($tool->stock_available > 0)
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Siap Pakai
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Dipinjam / Habis
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        <!-- Kolom 8: Tindakan -->
+                                        <td class="py-4 px-6 text-right">
+                                            <a href="{{ route('tools.show', $tool) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:border-orange-500 hover:text-orange-600 shadow-2xs transition">
+                                                <x-lucide-eye class="w-3.5 h-3.5" />
+                                                <span>Detail</span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+
+        </div>
+
+    </div>
 </x-app-layout>

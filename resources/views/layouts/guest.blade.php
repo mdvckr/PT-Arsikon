@@ -92,14 +92,21 @@
         background: #fef2f2;
     }
 
-    .input-wrap > i {
+    .input-wrap > i,
+    .input-wrap > svg,
+    .input-wrap > svg.lucide,
+    .input-wrap > svg.lucide-icon {
         position: absolute;
         left: 16px;
         top: 50%;
         transform: translateY(-50%);
         color: #94a3b8;
-        font-size: 14px;
+        width: 18px !important;
+        height: 18px !important;
+        max-width: 18px !important;
+        max-height: 18px !important;
         pointer-events: none;
+        stroke-width: 2;
     }
 
     .form-control {
@@ -143,6 +150,32 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .toggle-password svg {
+        width: 18px !important;
+        height: 18px !important;
+        max-width: 18px !important;
+        max-height: 18px !important;
+        color: #94a3b8;
+        stroke-width: 2;
+    }
+
+    .alert svg {
+        width: 18px !important;
+        height: 18px !important;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+
+    svg.lucide,
+    svg.lucide-icon {
+        display: inline-block;
+        vertical-align: middle;
+        flex-shrink: 0;
+        width: 1em;
+        height: 1em;
+        stroke-width: 2;
     }
 
     .toggle-password:hover {

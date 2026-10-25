@@ -4,7 +4,7 @@
     {{-- Breadcrumb --}}
     <div class="breadcrumb" style="margin-bottom:8px;">
         <a href="{{ route('inventory.index') }}">Inventori</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>{{ $inventory->material?->name }}</span>
     </div>
 
@@ -23,7 +23,7 @@
         </div>
         <div>
             <a href="{{ route('inventory.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
+                <x-lucide-arrow-left class="me-1" /> Kembali
             </a>
         </div>
     </div>

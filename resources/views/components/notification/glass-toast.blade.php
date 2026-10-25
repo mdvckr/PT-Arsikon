@@ -11,11 +11,11 @@
         'danger', 'error' => 'glass-tint-danger',
         default => 'glass-tint-success',
     };
-    $iconClass = match($type) {
-        'info' => 'fa-circle-info text-sky-600 bg-sky-500/15',
-        'warning' => 'fa-triangle-exclamation text-amber-600 bg-amber-500/15',
-        'danger', 'error' => 'fa-circle-xmark text-rose-600 bg-rose-500/15',
-        default => 'fa-circle-check text-emerald-600 bg-emerald-500/15',
+    $iconColor = match($type) {
+        'info' => 'text-sky-600 bg-sky-500/15',
+        'warning' => 'text-amber-600 bg-amber-500/15',
+        'danger', 'error' => 'text-rose-600 bg-rose-500/15',
+        default => 'text-emerald-600 bg-emerald-500/15',
     };
 @endphp
 
@@ -33,8 +33,16 @@
     @click="show = false"
     role="status"
 >
-    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm {{ $iconClass }}">
-        <i class="fas {{ explode(' ', $iconClass)[0] }}"></i>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm {{ $iconColor }}">
+        @if($type === 'info')
+            <x-lucide-info class="w-4 h-4" />
+        @elseif($type === 'warning')
+            <x-lucide-triangle-alert class="w-4 h-4" />
+        @elseif(in_array($type, ['danger', 'error']))
+            <x-lucide-circle-x class="w-4 h-4" />
+        @else
+            <x-lucide-circle-check class="w-4 h-4" />
+        @endif
     </div>
     <div class="flex-1 min-w-0">
         @if($title)
@@ -42,7 +50,7 @@
         @endif
         <div class="text-[11.5px] font-semibold text-slate-900 leading-snug truncate">{{ $message }}</div>
     </div>
-    <button type="button" @click.stop="show = false" class="text-slate-600 hover:text-black text-xs px-1">
-        <i class="fas fa-xmark"></i>
+    <button type="button" @click.stop="show = false" class="text-slate-600 hover:text-black text-xs px-1" aria-label="Tutup">
+        <x-lucide-x class="w-3.5 h-3.5" />
     </button>
 </div>

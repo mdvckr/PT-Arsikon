@@ -386,3 +386,127 @@
         transform: none !important;
     }
 }
+
+/* ==========================================================================
+   Universal SVG & Lucide Icon Specifications (Anti-Blowup & Clean Alignment)
+   ========================================================================== */
+svg.lucide,
+svg.lucide-icon,
+svg[class*="lucide-"],
+svg.metric-icon,
+svg.input-icon,
+svg.nav-icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Dashboard & KPI Metric Card Icons */
+.metric-icon,
+svg.metric-icon {
+    width: 16px !important;
+    height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    color: #94a3b8;
+    flex-shrink: 0 !important;
+}
+
+/* Stat Icon Circle/Box Containers */
+.stat-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Button Icons */
+.btn svg,
+.button svg,
+button svg {
+    width: 15px;
+    height: 15px;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.btn-sm svg,
+.btn.btn-sm svg {
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.btn-icon svg,
+.action-btn svg,
+.btn-toggle-kpi svg,
+.btn-close-custom svg {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+/* Status Badges */
+.badge svg {
+    width: 11px !important;
+    height: 11px !important;
+    margin-right: 4px;
+    vertical-align: -1px;
+    flex-shrink: 0;
+}
+
+/* Quick Action Toolbar & Tags */
+.dash-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+.dash-tag svg {
+    width: 12px !important;
+    height: 12px !important;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.fleet-lens-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0;
+}
+
+/* Form Input Icons */
+.input-icon-wrap svg.input-icon,
+.input-icon-group svg.input-icon,
+.input-icon-wrap .input-icon,
+.input-icon-group .input-icon {
+    width: 15px !important;
+    height: 15px !important;
+    max-width: 15px !important;
+    max-height: 15px !important;
+    flex-shrink: 0;
+}
+
+.toggle-password svg,
+.toggle-password-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0;
+}
+
+/* Flash Alerts */
+.alert svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 8px;
+    flex-shrink: 0;
+}

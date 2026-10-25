@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('users.index') }}">Data Pengguna</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>{{ $user->name }}</span>
     </div>
 
@@ -11,9 +11,9 @@
 
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-user-circle text-primary"></i> <span class="card-title">Profil Pengguna</span>
+                <x-lucide-user class="text-primary" /> <span class="card-title">Profil Pengguna</span>
                 @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-                <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning"><i class="fas fa-pen"></i> Edit</a>
+                <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning"><x-lucide-pencil /> Edit</a>
                 @endif
             </div>
             <div class="card-body" style="text-align:center;">
@@ -44,7 +44,7 @@
 
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-shield-halved text-primary"></i> <span class="card-title">Aktivitas Terakhir (Audit Log)</span>
+                <x-lucide-shield class="text-primary" /> <span class="card-title">Aktivitas Terakhir (Audit Log)</span>
             </div>
             <div class="table-wrap">
                 <table class="data-table">

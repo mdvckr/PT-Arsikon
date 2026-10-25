@@ -43,7 +43,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
             <div style="display:flex;align-items:center;gap:10px;">
                 <a href="{{ route('payments.index') }}" class="btn btn-sm btn-light border" style="font-size:12px;color:#475569;padding:6px 10px;border-radius:6px;">
-                    <i class="fas fa-arrow-left"></i>
+                    <x-lucide-arrow-left />
                 </a>
                 <div>
                     <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">
@@ -57,7 +57,7 @@
 
             <div style="display:flex;align-items:center;gap:8px;">
                 <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-success" style="background:#059669;border-color:#059669;color:#ffffff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:6px;">
-                    <i class="fas fa-wallet me-1"></i> + Top-Up Saldo Kas
+                    <x-lucide-wallet class="me-1" /> + Top-Up Saldo Kas
                 </button>
                 <a href="{{ route('payments.index') }}" class="btn btn-secondary" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;">
                     Kembali
@@ -68,7 +68,7 @@
 
     @if(session('success'))
     <div class="alert alert-success mb-3" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-check-circle" style="font-size:16px;"></i>
+        <x-lucide-circle-check style="font-size:16px;" />
         <span style="font-size:13px;font-weight:600;">{{ session('success') }}</span>
     </div>
     @endif
@@ -76,7 +76,7 @@
     @if(isset($errors) && $errors->any())
     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px 16px;border-radius:8px;">
         <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <i class="fas fa-circle-exclamation"></i> Terjadi Kesalahan Pengisian:
+            <x-lucide-circle-alert /> Terjadi Kesalahan Pengisian:
         </div>
         <ul style="margin:0;padding-left:18px;font-size:12px;">
             @foreach($errors->all() as $err)
@@ -90,7 +90,7 @@
         <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 2px 8px -2px rgba(0,0,0,0.05);overflow:hidden;">
             <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-credit-card text-primary" style="font-size:15px;"></i>
+                    <x-lucide-credit-card class="text-primary" style="font-size:15px;" />
                     <span style="font-size:14px;font-weight:700;color:#0f172a;">Formulir Pengajuan Pembayaran</span>
                 </div>
                 <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700;padding:3px 9px;">
@@ -202,12 +202,12 @@
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                             <div>
                                 <span style="font-size:12px;font-weight:700;color:#1e293b;">
-                                    <i class="fas fa-truck-field text-primary me-1"></i> Supplier: {{ $selectedPO->supplier?->name ?? '-' }}
+                                    <x-lucide-truck class="text-primary me-1" /> Supplier: {{ $selectedPO->supplier?->name ?? '-' }}
                                 </span>
                                 <span class="text-muted ms-2" style="font-size:11px;">({{ $selectedPO->po_number }})</span>
                                 @if($detectedProject)
                                     <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;margin-left:6px;">
-                                        <i class="fas fa-building me-1"></i> {{ $detectedProject->name }}
+                                        <x-lucide-building-2 class="me-1" /> {{ $detectedProject->name }}
                                     </span>
                                 @endif
                             </div>
@@ -262,7 +262,7 @@
                         <div style="margin-top:14px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;padding:12px;">
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                                 <span style="font-size:12px;font-weight:700;color:#1e293b;">
-                                    <i class="fas fa-receipt text-primary me-1"></i> Nota Pembelian Harian Terkait PO ({{ $selectedPO->receipts->count() }} Nota)
+                                    <x-lucide-receipt class="text-primary me-1" /> Nota Pembelian Harian Terkait PO ({{ $selectedPO->receipts->count() }} Nota)
                                 </span>
                                 @if($unpaidCount > 0)
                                     <span class="badge" style="background:#fef3c7;color:#b45309;font-weight:700;font-size:11px;">
@@ -287,7 +287,7 @@
                                         <strong style="color:#0f172a;">Rp {{ number_format($rc->total_amount, 0, ',', '.') }}</strong>
                                         <span class="badge badge-{{ $rc->status_color }}" style="font-size:10.5px;">{{ $rc->status_label }}</span>
                                         <a href="{{ route('purchase-receipts.show', $rc) }}" target="_blank" class="text-primary text-xs" title="Lihat Detail Nota">
-                                            <i class="fas fa-external-link-alt"></i>
+                                            <x-lucide-external-link />
                                         </a>
                                     </div>
                                 </div>
@@ -310,7 +310,7 @@
                                     onclick="setPaymentAmount('{{ (int) $poPayableRemaining }}')" 
                                     class="btn btn-sm btn-light border" 
                                     style="font-size:11.5px;font-weight:600;padding:4px 10px;color:#2563eb;background:#ffffff;">
-                                <i class="fas fa-check-double me-1"></i> Bayar Maksimal Nilai Sah (Rp {{ number_format($poPayableRemaining, 0, ',', '.') }})
+                                <x-lucide-check-check class="me-1" /> Bayar Maksimal Nilai Sah (Rp {{ number_format($poPayableRemaining, 0, ',', '.') }})
                             </button>
                         </div>
                     </div>
@@ -345,7 +345,7 @@
                                 </select>
                             </div>
                             <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-light border" style="height:40px;padding:0 12px;font-size:12px;font-weight:600;color:#065f46;background:#f0fdf4;border-color:#86efac;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;">
-                                <i class="fas fa-plus-circle"></i> Top-Up Saldo
+                                <x-lucide-circle-plus /> Top-Up Saldo
                             </button>
                         </div>
 
@@ -389,7 +389,7 @@
                             {{-- Alert jika saldo kurang --}}
                             <div id="insufficientBalanceAlert" style="display:none;margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;color:#991b1b;font-size:11.5px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                                 <div style="display:flex;align-items:center;gap:6px;">
-                                    <i class="fas fa-triangle-exclamation" style="font-size:14px;"></i>
+                                    <x-lucide-triangle-alert style="font-size:14px;" />
                                     <span>Saldo kas proyek tidak mencukupi! Silakan top-up saldo terlebih dahulu atau alihkan ke opsi <strong>PO Proyek (Menunggu)</strong>.</span>
                                 </div>
                                 <button type="button" onclick="openTopupModal()" class="btn btn-sm btn-danger" style="font-size:11px;font-weight:700;padding:3px 8px;">
@@ -498,7 +498,7 @@
                             Batal
                         </a>
                         <button type="submit" id="btnSubmitPayment" class="btn btn-primary" style="font-size:12.5px;font-weight:700;padding:8px 22px;border-radius:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fas fa-paper-plane"></i> <span id="btnSubmitText">Simpan & Ajukan Pembayaran</span>
+                            <x-lucide-send /> <span id="btnSubmitText">Simpan & Ajukan Pembayaran</span>
                         </button>
                     </div>
 
@@ -512,11 +512,11 @@
         <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);width:100%;max-width:500px;overflow:hidden;">
             <div style="background:#064e3b;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <i class="fas fa-wallet text-emerald-200" style="font-size:18px;"></i>
+                    <x-lucide-wallet class="text-emerald-200" style="font-size:18px;" />
                     <h3 style="font-size:15px;font-weight:800;margin:0;">Top-Up Saldo Kas Proyek</h3>
                 </div>
                 <button type="button" onclick="closeTopupModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;">
-                    <i class="fas fa-xmark"></i>
+                    <x-lucide-x />
                 </button>
             </div>
             <form method="POST" action="{{ route('payments.topupBalance') }}">

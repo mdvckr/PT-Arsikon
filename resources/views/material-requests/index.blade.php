@@ -90,20 +90,20 @@
         </div>
         @can('create material requests')
         <a href="{{ route('material-requests.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Buat PO Lapangan
+            <x-lucide-plus class="me-1" /> Buat PO Lapangan
         </a>
         @endcan
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -113,7 +113,7 @@
                 <div class="filter-col" style="flex: 2; min-width: 220px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. PO Lapangan, pemohon..." style="padding-left:28px !important;">
                     </div>
                 </div>
@@ -153,11 +153,11 @@
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     @if(request()->anyFilled(['search', 'status', 'category_id', 'sort', 'overdue']))
                     <a href="{{ route('material-requests.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <i class="fas fa-rotate-left" style="font-size:11px;"></i>
+                        <x-lucide-rotate-ccw style="font-size:11px;" />
                     </a>
                     @endif
                 </div>
@@ -204,25 +204,25 @@
                             <div>{{ $req->needed_at ? \Carbon\Carbon::parse($req->needed_at)->format('d/m/Y') : '-' }}</div>
                             @if($req->is_overdue)
                                 <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:9.5px;padding:1px 5px;border-radius:4px;display:inline-block;margin-top:2px;font-weight:600;">
-                                    <i class="fas fa-triangle-exclamation me-1"></i>Terlambat
+                                    <x-lucide-triangle-alert class="me-1" />Terlambat
                                 </span>
                             @endif
                         </td>
                         <td class="nowrap text-center">
                             @if($req->status === 'draft')
-                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-file me-1" style="font-size:9px;"></i>Draft</span>
+                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-file class="me-1" style="font-size:9px;" />Draft</span>
                             @elseif($req->status === 'submitted')
-                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-clock me-1" style="font-size:9px;"></i>Menunggu</span>
+                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-clock class="me-1" style="font-size:9px;" />Menunggu</span>
                             @elseif($req->status === 'approved')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-check me-1" style="font-size:9px;"></i>Disetujui</span>
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check class="me-1" style="font-size:9px;" />Disetujui</span>
                             @elseif($req->status === 'partially_fulfilled')
-                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-truck me-1" style="font-size:9px;"></i>Sebagian</span>
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-truck class="me-1" style="font-size:9px;" />Sebagian</span>
                             @elseif($req->status === 'fulfilled')
-                                <span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-check-double me-1" style="font-size:9px;"></i>Terpenuhi</span>
+                                <span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check-check class="me-1" style="font-size:9px;" />Terpenuhi</span>
                             @elseif($req->status === 'rejected')
-                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-xmark me-1" style="font-size:9px;"></i>Ditolak</span>
+                                <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-x class="me-1" style="font-size:9px;" />Ditolak</span>
                             @elseif($req->status === 'cancelled')
-                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-ban me-1" style="font-size:9px;"></i>Dibatalkan</span>
+                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-ban class="me-1" style="font-size:9px;" />Dibatalkan</span>
                             @else
                                 <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">{{ $req->status }}</span>
                             @endif
@@ -231,11 +231,11 @@
                         <td class="nowrap text-center">
                             <div style="display:inline-flex;gap:4px;align-items:center;">
                                 <a href="{{ route('material-requests.show', $req) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
-                                    <i class="fas fa-eye" style="font-size:11px;"></i>
+                                    <x-lucide-eye style="font-size:11px;" />
                                 </a>
                                 @if(in_array($req->status, ['submitted', 'draft']) && ($req->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])))
                                 <a href="{{ route('material-requests.edit', $req) }}" class="btn btn-sm btn-light border" title="Edit PO Lapangan" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#d97706;background:#f8fafc;">
-                                    <i class="fas fa-pen-to-square" style="font-size:11px;"></i>
+                                    <x-lucide-square-pen style="font-size:11px;" />
                                 </a>
                                 @endif
                             </div>
@@ -243,8 +243,10 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" style="text-align:center;padding:32px 16px;color:#94a3b8;">
-                            <i class="fas fa-file-circle-plus" style="font-size:26px;color:#cbd5e1;margin-bottom:6px;display:block;"></i>
+                        <td colspan="8" style="text-align:center;padding:36px 16px;color:#94a3b8;">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px;color:#94a3b8;">
+                                <x-lucide-file-plus style="width:24px;height:24px;" />
+                            </div>
                             <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada PO Lapangan</div>
                             <div class="text-muted" style="font-size:11.5px;margin-top:2px;">Buat PO Lapangan pertama.</div>
                         </td>

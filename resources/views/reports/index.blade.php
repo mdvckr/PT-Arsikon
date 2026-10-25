@@ -13,7 +13,7 @@
             <div>
                 <div class="card-header" style="display:flex;align-items:center;gap:12px;padding:16px 20px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#334155;flex-shrink:0;">
-                        <i class="fas fa-boxes-stacked" style="font-size:15px;"></i>
+                        <x-lucide-boxes style="font-size:15px;" />
                     </div>
                     <div>
                         <div class="card-title" style="font-size:15px;margin:0;">Laporan Stok Material</div>
@@ -56,7 +56,7 @@
             <div>
                 <div class="card-header" style="display:flex;align-items:center;gap:12px;padding:16px 20px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#334155;flex-shrink:0;">
-                        <i class="fas fa-arrow-right-arrow-left" style="font-size:15px;"></i>
+                        <x-lucide-arrow-left-right style="font-size:15px;" />
                     </div>
                     <div>
                         <div class="card-title" style="font-size:15px;margin:0;">Laporan Mutasi Stok</div>
@@ -102,7 +102,7 @@
             <div>
                 <div class="card-header" style="display:flex;align-items:center;gap:12px;padding:16px 20px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#334155;flex-shrink:0;">
-                        <i class="fas fa-clipboard-check" style="font-size:15px;"></i>
+                        <x-lucide-clipboard-check style="font-size:15px;" />
                     </div>
                     <div>
                         <div class="card-title" style="font-size:15px;margin:0;">Laporan Diskrepansi Opname</div>
@@ -138,7 +138,7 @@
             <div>
                 <div class="card-header" style="display:flex;align-items:center;gap:12px;padding:16px 20px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#334155;flex-shrink:0;">
-                        <i class="fas fa-toolbox" style="font-size:15px;"></i>
+                        <x-lucide-wrench style="font-size:15px;" />
                     </div>
                     <div>
                         <div class="card-title" style="font-size:15px;margin:0;">Laporan Status Alat</div>

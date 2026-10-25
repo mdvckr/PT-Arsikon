@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('returns.index') }}">Pengembalian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>Form Pengembalian Baru</span>
     </div>
 
@@ -17,7 +17,7 @@
                 {{-- Informasi Utama --}}
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-undo-alt text-primary"></i> <span class="card-title">Informasi Pengembalian</span>
+                        <x-lucide-undo-2 class="text-primary" /> <span class="card-title">Informasi Pengembalian</span>
                     </div>
                     <div class="card-body">
                         <div class="text-muted mb-3" style="font-size:13px;">
@@ -54,7 +54,7 @@
                 <div class="card">
                     <div class="card-header flex justify-between items-center">
                         <div>
-                            <i class="fas fa-boxes-stacked text-primary"></i> <span class="card-title">Item Material yang Dikembalikan</span>
+                            <x-lucide-boxes class="text-primary" /> <span class="card-title">Item Material yang Dikembalikan</span>
                         </div>
                         <span id="item-count-badge" class="badge badge-primary">1 item</span>
                     </div>
@@ -87,7 +87,7 @@
                                     </td>
                                     <td style="text-align:right;">
                                         <button type="button" class="btn btn-sm btn-danger btn-icon" disabled onclick="removeRow(this)">
-                                            <i class="fas fa-trash"></i>
+                                            <x-lucide-trash-2 />
                                         </button>
                                     </td>
                                 </tr>
@@ -96,7 +96,7 @@
                     </div>
                     <div class="card-body border-top" style="padding:12px 16px;">
                         <button type="button" class="btn btn-sm btn-secondary" onclick="addRow()">
-                            <i class="fas fa-plus"></i> Tambah Material
+                            <x-lucide-plus /> Tambah Material
                         </button>
                     </div>
                 </div>
@@ -104,7 +104,7 @@
                 {{-- Catatan Tambahan --}}
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-sticky-note text-primary"></i> <span class="card-title">Catatan Tambahan</span>
+                        <x-lucide-sticky-note class="text-primary" /> <span class="card-title">Catatan Tambahan</span>
                     </div>
                     <div class="card-body">
                         <textarea name="notes" class="form-control" rows="3" placeholder="Tambahkan catatan khusus pengembalian jika ada (opsional)...">{{ old('notes') }}</textarea>
@@ -116,7 +116,7 @@
             {{-- Panel Gudang & Action --}}
             <div class="card" style="position:sticky;top:20px;">
                 <div class="card-header">
-                    <i class="fas fa-warehouse text-primary"></i> <span class="card-title">Gudang Asal & Tujuan</span>
+                    <x-lucide-warehouse class="text-primary" /> <span class="card-title">Gudang Asal & Tujuan</span>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -156,7 +156,7 @@
 
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">
-                            <i class="fas fa-paper-plane"></i> Kirim Pengembalian
+                            <x-lucide-send /> Kirim Pengembalian
                         </button>
                         <a href="{{ route('returns.index') }}" class="btn btn-secondary w-full" style="justify-content:center;">
                             Batal

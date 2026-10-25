@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('returns.index') }}">Pengembalian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>{{ $return->return_number }}</span>
     </div>
 
@@ -13,7 +13,7 @@
         <div class="card">
             <div class="card-header flex justify-between items-center">
                 <div>
-                    <i class="fas fa-boxes-stacked text-primary"></i> <span class="card-title">Item Material Dikembalikan</span>
+                    <x-lucide-boxes class="text-primary" /> <span class="card-title">Item Material Dikembalikan</span>
                 </div>
                 <span class="badge badge-primary">{{ count($return->items) }} item</span>
             </div>
@@ -66,7 +66,7 @@
             @if($return->notes)
             <div class="card-body border-top" style="background:#f8fafc;padding:12px 16px;">
                 <div style="font-size:13px;color:#475569;">
-                    <strong><i class="fas fa-sticky-note me-1 text-secondary"></i> Catatan Tambahan:</strong>
+                    <strong><x-lucide-sticky-note class="me-1 text-secondary" /> Catatan Tambahan:</strong>
                     <div class="mt-1">{{ $return->notes }}</div>
                 </div>
             </div>
@@ -77,7 +77,7 @@
         <div style="display:flex;flex-direction:column;gap:20px;">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-file-alt text-primary"></i> <span class="card-title">Informasi Pengembalian</span>
+                    <x-lucide-file-text class="text-primary" /> <span class="card-title">Informasi Pengembalian</span>
                 </div>
                 <div class="card-body">
                     @php
@@ -101,10 +101,10 @@
                         $statusMap = [
                             'pending'  => ['badge-warning', 'clock', 'Menunggu Persetujuan'],
                             'approved' => ['badge-primary', 'truck', 'Disetujui (Dalam Pengiriman)'],
-                            'received' => ['badge-success', 'check-double', 'Diterima di Pusat'],
-                            'rejected' => ['badge-danger', 'times-circle', 'Ditolak'],
+                            'received' => ['badge-success', 'check-check', 'Diterima di Pusat'],
+                            'rejected' => ['badge-danger', 'circle-x', 'Ditolak'],
                         ];
-                        [$cls, $icon, $label] = $statusMap[$return->status] ?? ['badge-gray', 'question', ucfirst($return->status)];
+                        [$cls, $icon, $label] = $statusMap[$return->status] ?? ['badge-gray', 'help-circle', ucfirst($return->status)];
                     @endphp
 
                     @foreach($rows as [$lbl, $val])
@@ -116,13 +116,13 @@
 
                     <div style="margin-top:16px;" class="text-center">
                         <span class="badge {{ $cls }}" style="font-size:13px;padding:8px 16px;width:100%;justify-content:center;">
-                            <i class="fas fa-{{ $icon }} me-1"></i> {{ $label }}
+                            <x-dynamic-component :component="'lucide-'.$icon" class="w-4 h-4 inline-block me-1" /> {{ $label }}
                         </span>
                     </div>
 
                     @if($return->rejection_reason)
                     <div style="margin-top:12px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12.5px;color:#991b1b;">
-                        <strong><i class="fas fa-exclamation-circle me-1"></i> Alasan Penolakan:</strong><br>{{ $return->rejection_reason }}
+                        <strong><x-lucide-circle-alert class="me-1" /> Alasan Penolakan:</strong><br>{{ $return->rejection_reason }}
                     </div>
                     @endif
                 </div>
@@ -131,7 +131,7 @@
             {{-- Action Box --}}
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-cog text-primary"></i> <span class="card-title">Aksi Status</span>
+                    <x-lucide-settings class="text-primary" /> <span class="card-title">Aksi Status</span>
                 </div>
                 <div class="card-body">
                     @if($return->status === 'pending')
@@ -139,12 +139,12 @@
                             <form method="POST" action="{{ route('returns.approve', $return) }}">
                                 @csrf
                                 <button type="submit" class="btn btn-primary w-full" style="justify-content:center;" onclick="return confirm('Setujui pengembalian material ini?')">
-                                    <i class="fas fa-check me-1"></i> Setujui Pengembalian
+                                    <x-lucide-check class="me-1" /> Setujui Pengembalian
                                 </button>
                             </form>
 
                             <button type="button" onclick="document.getElementById('reject-form-box').style.display='block'" class="btn btn-danger w-full" style="justify-content:center;">
-                                <i class="fas fa-times me-1"></i> Tolak Pengembalian
+                                <x-lucide-x class="me-1" /> Tolak Pengembalian
                             </button>
 
                             <div id="reject-form-box" style="display:none;margin-top:8px;padding:12px;border:1px solid #fee2e2;border-radius:8px;background:#fff5f5;">
@@ -166,7 +166,7 @@
                                 Material sudah tiba di Gudang Pusat? Klik tombol di bawah untuk memasukkan kembali stok ke Gudang Pusat.
                             </p>
                             <button type="submit" class="btn btn-success w-full" style="justify-content:center;" onclick="return confirm('Konfirmasi penerimaan barang di Gudang Pusat & update stok?')">
-                                <i class="fas fa-box-open me-1"></i> Terima Barang & Update Stok
+                                <x-lucide-package-open class="me-1" /> Terima Barang & Update Stok
                             </button>
                         </form>
                     @else
@@ -177,7 +177,7 @@
 
                     <div class="mt-3 border-top pt-3">
                         <a href="{{ route('returns.index') }}" class="btn btn-secondary w-full" style="justify-content:center;">
-                            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar
+                            <x-lucide-arrow-left class="me-1" /> Kembali ke Daftar
                         </a>
                     </div>
                 </div>

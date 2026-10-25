@@ -98,20 +98,20 @@
         </div>
         @can('create material usages')
         <a href="{{ route('material-usages.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Catat Pengeluaran
+            <x-lucide-plus class="me-1" /> Catat Pengeluaran
         </a>
         @endcan
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -122,7 +122,7 @@
                 <div class="filter-col" style="flex: 1.5; min-width: 200px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. bukti, penerima, pekerjaan..." style="padding-left:28px !important;">
                     </div>
                 </div>
@@ -147,11 +147,11 @@
                 </div>
                 <div class="flex gap-1 filter-actions-flex" style="align-items:center;">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     @if(request()->anyFilled(['search', 'warehouse_id', 'start_date', 'end_date']))
                     <a href="{{ route('material-usages.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <i class="fas fa-rotate-left" style="font-size:11px;"></i>
+                        <x-lucide-rotate-ccw style="font-size:11px;" />
                     </a>
                     @endif
                 </div>
@@ -194,7 +194,7 @@
                         </td>
                         <td class="nowrap">
                             <span class="badge" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;white-space:nowrap;{{ $usage->warehouse?->is_central ? 'background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;' : 'background:#f8fafc;color:#475569;border:1px solid #e2e8f0;' }}">
-                                <i class="fas fa-warehouse me-1" style="font-size:9.5px;opacity:0.75;"></i>{{ $usage->warehouse?->name ?? '-' }}
+                                <x-lucide-warehouse class="me-1" style="font-size:9.5px;opacity:0.75;" />{{ $usage->warehouse?->name ?? '-' }}
                             </span>
                         </td>
                         <td>
@@ -211,11 +211,11 @@
                         <td class="nowrap text-center">
                             @if($usage->status === 'cancelled')
                                 <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:600;white-space:nowrap;">
-                                    <i class="fas fa-circle-xmark me-1" style="font-size:9.5px;"></i> Dibatalkan
+                                    <x-lucide-circle-x class="me-1" style="font-size:9.5px;" /> Dibatalkan
                                 </span>
                             @else
                                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:600;white-space:nowrap;">
-                                    <i class="fas fa-circle-check me-1" style="font-size:9.5px;"></i> Selesai
+                                    <x-lucide-circle-check class="me-1" style="font-size:9.5px;" /> Selesai
                                 </span>
                             @endif
                         </td>
@@ -225,11 +225,11 @@
                         <td class="nowrap text-center">
                             <div class="flex justify-center gap-1" style="align-items:center;">
                                 <a href="{{ route('material-usages.show', $usage) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
-                                    <i class="fas fa-eye" style="font-size:11px;"></i>
+                                    <x-lucide-eye style="font-size:11px;" />
                                 </a>
                                 @if($usage->status !== 'cancelled')
                                 <a href="{{ route('material-usages.print', $usage) }}" target="_blank" class="btn btn-sm btn-light border" title="Cetak Bon" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#64748b;background:#f8fafc;">
-                                    <i class="fas fa-print" style="font-size:11px;"></i>
+                                    <x-lucide-printer style="font-size:11px;" />
                                 </a>
                                 @endif
                             </div>
@@ -237,8 +237,10 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" style="text-align:center;padding:32px 16px;color:#94a3b8;">
-                            <i class="fas fa-inbox" style="font-size:26px;color:#cbd5e1;margin-bottom:6px;display:block;"></i>
+                        <td colspan="9" style="text-align:center;padding:36px 16px;color:#94a3b8;">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px;color:#94a3b8;">
+                                <x-lucide-inbox style="width:24px;height:24px;" />
+                            </div>
                             <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada riwayat pengeluaran material</div>
                             <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">Gunakan tombol 'Catat Pengeluaran' untuk memulai pencatatan baru.</div>
                         </td>

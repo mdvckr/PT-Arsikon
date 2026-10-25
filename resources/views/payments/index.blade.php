@@ -202,7 +202,7 @@
         <div>
             <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:18px;">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <x-lucide-file-spreadsheet />
                 </div>
                 <div>
                     @if($isRoleAdminPOProyek)
@@ -228,14 +228,14 @@
     {{-- Flash Notifications --}}
     @if(session('success'))
     <div class="alert alert-success mb-3" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-check-circle" style="font-size:16px;"></i>
+        <x-lucide-circle-check style="font-size:16px;" />
         <span style="font-size:13px;font-weight:600;">{{ session('success') }}</span>
     </div>
     @endif
 
     @if(session('error'))
     <div class="alert alert-danger mb-3" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-triangle-exclamation" style="font-size:16px;"></i>
+        <x-lucide-triangle-alert style="font-size:16px;" />
         <span style="font-size:13px;font-weight:600;">{{ session('error') }}</span>
     </div>
     @endif
@@ -246,7 +246,7 @@
             <div>
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                     <span class="badge" style="background:rgba(255,255,255,0.22);color:#ffffff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:0.3px;">
-                        <i class="fas fa-coins me-1"></i> SALDO KAS PROYEK (ADMIN PO)
+                        <x-lucide-coins class="me-1" /> SALDO KAS PROYEK (ADMIN PO)
                     </span>
                     <span style="font-size:11.5px;color:#a7f3d0;font-weight:500;">
                         Petty Cash Operasional Nota Pembelian Harian Lapangan
@@ -256,7 +256,7 @@
                     Rp {{ number_format($metrics['total_operational_balance'] ?? 0, 0, ',', '.') }}
                 </div>
                 <div style="font-size:12px;color:#d1fae5;margin-top:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <span><i class="fas fa-circle-check text-emerald-300 me-1"></i> Total saldo aktif siap pakai di seluruh proyek</span>
+                    <span><x-lucide-circle-check class="text-emerald-300 me-1" /> Total saldo aktif siap pakai di seluruh proyek</span>
                     <span>&bull;</span>
                     <span><strong>{{ $metrics['instant_count'] ?? 0 }}x</strong> Pembayaran Instan Berhasil (Rp {{ number_format($metrics['instant_verified_amount'] ?? 0, 0, ',', '.') }})</span>
                 </div>
@@ -264,24 +264,24 @@
 
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:2;">
                 <button type="button" onclick="openBalanceHistoryModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
-                    <i class="fas fa-list-ul me-1"></i> Riwayat Mutasi
+                    <x-lucide-list class="me-1" /> Riwayat Mutasi
                 </button>
                 @if($isRoleAdminPOProyek)
                     <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
-                        <i class="fas fa-list-check me-1"></i> Status Pengajuan Saldo
+                        <x-lucide-list-checks class="me-1" /> Status Pengajuan Saldo
                     </button>
                     <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                        <i class="fas fa-hand-holding-usd me-1"></i> Minta Top-Up ke Pusat/Owner
+                        <x-lucide-hand-coins class="me-1" /> Minta Top-Up ke Pusat/Owner
                     </button>
                 @else
                     <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:{{ $pendingBalanceRequestsCount > 0 ? '#f59e0b' : 'rgba(255,255,255,0.18)' }};color:#ffffff;border:1px solid {{ $pendingBalanceRequestsCount > 0 ? '#d97706' : 'rgba(255,255,255,0.3)' }};font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;box-shadow:{{ $pendingBalanceRequestsCount > 0 ? '0 2px 8px rgba(245,158,11,0.3)' : 'none' }};">
-                        <i class="fas fa-inbox me-1"></i> Permintaan Saldo
+                        <x-lucide-inbox class="me-1" /> Permintaan Saldo
                         @if($pendingBalanceRequestsCount > 0)
                             <span class="badge" style="background:#dc2626;color:#ffffff;font-size:10.5px;margin-left:4px;padding:2px 6px;border-radius:10px;">{{ $pendingBalanceRequestsCount }}</span>
                         @endif
                     </button>
                     <button type="button" onclick="openTopupModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                        <i class="fas fa-plus-circle me-1"></i> Top-Up Saldo Langsung
+                        <x-lucide-circle-plus class="me-1" /> Top-Up Saldo Langsung
                     </button>
                 @endif
             </div>
@@ -326,7 +326,7 @@
             <div class="flex justify-between items-center flex-wrap gap-4">
                 <div class="flex items-center gap-3">
                     <div style="width:44px;height:44px;border-radius:10px;background:#10b981;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:20px;">
-                        <i class="fas fa-receipt"></i>
+                        <x-lucide-receipt />
                     </div>
                     <div>
                         <h3 style="font-size:16px;font-weight:700;color:#065f46;margin:0;">
@@ -339,10 +339,10 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="{{ route('purchase-receipts.create') }}" class="btn btn-outline-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 14px;">
-                        <i class="fas fa-plus-circle me-1"></i> Catat Nota Baru
+                        <x-lucide-circle-plus class="me-1" /> Catat Nota Baru
                     </a>
                     <a href="{{ route('purchase-receipts.index') }}" class="btn btn-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 16px;background:#059669;border-color:#059669;">
-                        <i class="fas fa-arrow-right me-1"></i> Buka Daftar Nota Harian
+                        <x-lucide-arrow-right class="me-1" /> Buka Daftar Nota Harian
                     </a>
                 </div>
             </div>
@@ -352,12 +352,12 @@
         <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;">
             <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-hand-holding-usd text-emerald-600" style="font-size:16px;"></i>
+                    <x-lucide-hand-coins class="text-emerald-600" style="font-size:16px;" />
                     <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner</h3>
                     <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceRequests->count() }} Pengajuan</span>
                 </div>
                 <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm btn-primary" style="font-size:12px;font-weight:700;">
-                    <i class="fas fa-paper-plane me-1"></i> Ajukan Permintaan Saldo Baru
+                    <x-lucide-send class="me-1" /> Ajukan Permintaan Saldo Baru
                 </button>
             </div>
             <div class="table-wrap">
@@ -392,10 +392,10 @@
                             </td>
                             <td>
                                 @if($req->status === 'approved')
-                                    <span class="text-success text-xs font-semibold"><i class="fas fa-check-circle me-1"></i>Disetujui {{ $req->approver?->name }}</span>
+                                    <span class="text-success text-xs font-semibold"><x-lucide-circle-check class="me-1" />Disetujui {{ $req->approver?->name }}</span>
                                     @if($req->reference_number)<div class="text-muted text-xs">Ref: {{ $req->reference_number }}</div>@endif
                                 @elseif($req->status === 'rejected')
-                                    <span class="text-danger text-xs font-semibold"><i class="fas fa-times-circle me-1"></i>Ditolak: {{ $req->rejection_reason }}</span>
+                                    <span class="text-danger text-xs font-semibold"><x-lucide-circle-x class="me-1" />Ditolak: {{ $req->rejection_reason }}</span>
                                 @else
                                     <span class="text-muted text-xs italic">Menunggu verifikasi Pusat / Owner</span>
                                 @endif
@@ -417,16 +417,16 @@
         <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.03);">
             <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-clock-rotate-left text-primary" style="font-size:16px;"></i>
+                    <x-lucide-history class="text-primary" style="font-size:16px;" />
                     <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Riwayat Mutasi Saldo Kas Proyek</h3>
                     <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceLogs->count() }} Transaksi</span>
                     @if(isset($groupedBalanceWeeks) && $groupedBalanceWeeks->count() > 0)
                         <div class="flex items-center gap-1 ms-2">
                             <button type="button" onclick="toggleAllBalanceWeeks(true)" class="btn btn-light btn-xs border" style="font-size:11px;padding:3px 8px;font-weight:600;">
-                                <i class="fas fa-angles-down me-1"></i> Buka Semua
+                                <x-lucide-chevrons-down class="me-1" /> Buka Semua
                             </button>
                             <button type="button" onclick="toggleAllBalanceWeeks(false)" class="btn btn-light btn-xs border" style="font-size:11px;padding:3px 8px;font-weight:600;">
-                                <i class="fas fa-angles-up me-1"></i> Tutup Semua
+                                <x-lucide-chevrons-up class="me-1" /> Tutup Semua
                             </button>
                         </div>
                     @endif
@@ -444,7 +444,7 @@
                             
                             <div class="flex items-center gap-3">
                                 <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;">
-                                    <i class="fas fa-calendar-week text-emerald-400"></i>
+                                    <x-lucide-calendar-range class="text-emerald-400" />
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-2">
@@ -463,7 +463,7 @@
 
                             <div class="flex items-center gap-2">
                                 <span style="background:rgba(255,255,255,0.12);color:#e2e8f0;padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:600;">
-                                    <i class="fas fa-receipt me-1"></i> {{ $week->count }} Mutasi
+                                    <x-lucide-receipt class="me-1" /> {{ $week->count }} Mutasi
                                 </span>
                                 @if($week->total_topup > 0)
                                 <span style="background:#10b981;color:#ffffff;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">
@@ -475,7 +475,7 @@
                                     - Rp {{ number_format($week->total_deduction, 0, ',', '.') }}
                                 </span>
                                 @endif
-                                <i class="fas fa-chevron-down balance-week-icon" id="balance-week-icon-{{ $wIdx }}" style="font-size:13px;color:#94a3b8;transition:transform 0.2s;"></i>
+                                <x-lucide-chevron-down class="balance-week-icon" id="balance-week-icon-{{ $wIdx }}" style="font-size:13px;color:#94a3b8;transition:transform 0.2s;" />
                             </div>
                         </div>
 
@@ -487,7 +487,7 @@
                                     {{-- Subheader Hari --}}
                                     <div style="background:#f1f5f9;padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid #e2e8f0;">
                                         <div class="flex items-center gap-2">
-                                            <i class="far fa-calendar-alt text-emerald-600" style="font-size:15px;"></i>
+                                            <x-lucide-calendar class="text-emerald-600" style="font-size:15px;" />
                                             <strong style="font-size:13px;color:#0f172a;">📅 Hari: {{ $day->date_label }}</strong>
                                             <span class="badge badge-secondary" style="font-size:10.5px;padding:2px 7px;">{{ $day->count }} transaksi</span>
                                         </div>
@@ -528,11 +528,11 @@
                                                     <td>
                                                         @if($log->type === 'topup')
                                                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;font-weight:700;">
-                                                                <i class="fas fa-arrow-down me-1"></i> Top-Up Masuk
+                                                                <x-lucide-arrow-down class="me-1" /> Top-Up Masuk
                                                             </span>
                                                         @elseif($log->type === 'payment_deduction')
                                                             <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10.5px;font-weight:700;">
-                                                                <i class="fas fa-bolt text-warning me-1"></i> Potong Nota Harian
+                                                                <x-lucide-zap class="text-warning me-1" /> Potong Nota Harian
                                                             </span>
                                                         @else
                                                             <span class="badge badge-secondary">{{ $log->type_label }}</span>
@@ -562,7 +562,7 @@
                     </div>
                 @empty
                     <div style="text-align:center;padding:36px 16px;color:#64748b;background:#ffffff;border-radius:8px;border:1px dashed #cbd5e1;">
-                        <i class="fas fa-receipt text-gray-300 mb-2" style="font-size:36px;display:block;"></i>
+                        <x-lucide-receipt class="text-gray-300 mb-2" style="font-size:36px;display:inline-block;" />
                         <div style="font-weight:700;font-size:13.5px;color:#1e293b;">Belum Ada Riwayat Mutasi Saldo Kas Proyek</div>
                         <p style="font-size:12px;margin:4px 0 0 0;color:#64748b;">Transaksi top-up dan pemotongan nota belanja harian akan otomatis dikelompokkan per minggu &amp; hari di sini.</p>
                     </div>
@@ -578,7 +578,7 @@
         {{-- 1. Total Terverifikasi (Nominal) --}}
         <div class="payment-kpi-card">
             <div class="payment-kpi-icon" style="background:#ecfdf5;color:#059669;">
-                <i class="fas fa-circle-check"></i>
+                <x-lucide-circle-check />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">
@@ -596,7 +596,7 @@
         {{-- 2. Menunggu Verifikasi --}}
         <div class="payment-kpi-card" style="{{ ($metrics['pending_count'] ?? 0) > 0 ? 'border-color:#fde68a;background:#fffdf5;' : '' }}">
             <div class="payment-kpi-icon" style="background:#fffbeb;color:#d97706;">
-                <i class="fas fa-clock-rotate-left"></i>
+                <x-lucide-history />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">
@@ -614,7 +614,7 @@
         {{-- 3. Total Transaksi --}}
         <div class="payment-kpi-card">
             <div class="payment-kpi-icon" style="background:#eff6ff;color:#2563eb;">
-                <i class="fas fa-receipt"></i>
+                <x-lucide-receipt />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">
@@ -632,7 +632,7 @@
         {{-- 4. Ditolak / Dibatalkan --}}
         <div class="payment-kpi-card">
             <div class="payment-kpi-icon" style="background:#fef2f2;color:#dc2626;">
-                <i class="fas fa-ban"></i>
+                <x-lucide-ban />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">
@@ -654,7 +654,7 @@
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f1f5f9;">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                 <span style="font-size:11.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-right:4px;">
-                    <i class="fas fa-filter text-primary me-1"></i> Filter:
+                    <x-lucide-filter class="text-primary me-1" /> Filter:
                 </span>
                 
                 {{-- Semua --}}
@@ -666,37 +666,37 @@
                 {{-- Instan Kas Proyek --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('payment_type', 'page'), ['payment_type' => 'instant'])) }}" 
                    class="status-tab-btn {{ request('payment_type') === 'instant' ? 'active' : '' }}" style="{{ request('payment_type') === 'instant' ? 'background:#059669;border-color:#059669;' : '' }}">
-                    <i class="fas fa-bolt text-warning"></i> ⚡ Instan Kas Proyek ({{ $metrics['instant_count'] ?? 0 }})
+                    <x-lucide-zap class="text-warning" /> ⚡ Instan Kas Proyek ({{ $metrics['instant_count'] ?? 0 }})
                 </a>
 
                 {{-- PO Proyek Reguler --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('payment_type', 'page'), ['payment_type' => 'waiting'])) }}" 
                    class="status-tab-btn {{ request('payment_type') === 'waiting' ? 'active' : '' }}">
-                    <i class="fas fa-clock text-blue-500"></i> ⏳ PO Proyek Reguler ({{ $metrics['waiting_count'] ?? 0 }})
+                    <x-lucide-clock class="text-blue-500" /> ⏳ PO Proyek Reguler ({{ $metrics['waiting_count'] ?? 0 }})
                 </a>
 
                 {{-- Menunggu Verifikasi --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'pending'])) }}" 
                    class="status-tab-btn {{ request('status') === 'pending' ? 'active' : '' }}">
-                    <i class="fas fa-hourglass-half text-warning"></i> Menunggu Verifikasi ({{ $metrics['pending_count'] ?? 0 }})
+                    <x-lucide-hourglass class="text-warning" /> Menunggu Verifikasi ({{ $metrics['pending_count'] ?? 0 }})
                 </a>
 
                 {{-- Terverifikasi --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'verified'])) }}" 
                    class="status-tab-btn {{ request('status') === 'verified' ? 'active' : '' }}">
-                    <i class="fas fa-check-circle text-success"></i> Terverifikasi ({{ $metrics['verified_count'] ?? 0 }})
+                    <x-lucide-circle-check class="text-success" /> Terverifikasi ({{ $metrics['verified_count'] ?? 0 }})
                 </a>
 
                 {{-- Ditolak --}}
                 <a href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => 'rejected'])) }}" 
                    class="status-tab-btn {{ request('status') === 'rejected' ? 'active' : '' }}">
-                    <i class="fas fa-ban text-danger"></i> Ditolak ({{ $metrics['rejected_count'] ?? 0 }})
+                    <x-lucide-ban class="text-danger" /> Ditolak ({{ $metrics['rejected_count'] ?? 0 }})
                 </a>
             </div>
 
             @if(request()->hasAny(['search', 'status', 'payment_type', 'project_id', 'payment_method', 'start_date', 'end_date']))
             <a href="{{ route('payments.index') }}" class="btn btn-sm btn-light border" style="font-size:11.5px;padding:5px 10px;color:#dc2626;background:#fef2f2;border-color:#fecaca;">
-                <i class="fas fa-xmark me-1"></i> Reset Semua Filter
+                <x-lucide-x class="me-1" /> Reset Semua Filter
             </a>
             @endif
         </div>
@@ -713,7 +713,7 @@
             {{-- Input Search --}}
             <div style="flex:2;min-width:240px;position:relative;">
                 <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;pointer-events:none;">
-                    <i class="fas fa-magnifying-glass"></i>
+                    <x-lucide-search />
                 </div>
                 <input type="text" 
                        name="search" 
@@ -766,7 +766,7 @@
             </div>
 
             <button type="submit" class="btn btn-secondary" style="height:38px;padding:0 16px;border-radius:8px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-filter"></i> Terapkan
+                <x-lucide-filter /> Terapkan
             </button>
         </form>
     </div>
@@ -775,7 +775,7 @@
     <div class="payment-table-card">
         <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <i class="fas fa-list-check text-primary" style="font-size:14px;"></i>
+                <x-lucide-list-checks class="text-primary" style="font-size:14px;" />
                 <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Daftar Transaksi Pembayaran</span>
                 <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;">
                     {{ $payments->total() }} Data
@@ -784,10 +784,10 @@
                 {{-- Global Expand / Collapse All Buttons --}}
                 <div style="display:inline-flex;align-items:center;gap:5px;margin-left:8px;">
                     <button type="button" onclick="toggleAllPoGroups(true)" class="btn btn-light border" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:#ffffff;color:#2563eb;line-height:1.4;" title="Buka semua dropdown pembayaran">
-                        <i class="fas fa-angles-down me-1"></i> Buka Semua
+                        <x-lucide-chevrons-down class="me-1" /> Buka Semua
                     </button>
                     <button type="button" onclick="toggleAllPoGroups(false)" class="btn btn-light border" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:#ffffff;color:#64748b;line-height:1.4;" title="Tutup semua dropdown pembayaran">
-                        <i class="fas fa-angles-up me-1"></i> Tutup Semua
+                        <x-lucide-chevrons-up class="me-1" /> Tutup Semua
                     </button>
                 </div>
             </div>
@@ -840,24 +840,24 @@
                                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                                         {{-- Toggle Icon Indicator --}}
                                         <span class="group-toggle-btn" style="width:26px;height:26px;border-radius:6px;background:#ffffff;border:1px solid #cbd5e1;display:inline-flex;align-items:center;justify-content:center;color:#334155;font-size:11px;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-                                            <i class="fas fa-chevron-down group-toggle-icon" id="icon-group-{{ $poId }}"></i>
+                                            <x-lucide-chevron-down class="group-toggle-icon" id="icon-group-{{ $poId }}" />
                                         </span>
 
                                         @if($po)
                                             <a href="{{ route('purchase-orders.show', $po) }}" onclick="event.stopPropagation()" style="text-decoration:none;" title="Lihat Detail PO">
                                                 <span class="badge" style="background:#2563eb;color:#ffffff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;">
-                                                    <i class="fas fa-receipt"></i> {{ $po->po_number }}
+                                                    <x-lucide-receipt /> {{ $po->po_number }}
                                                 </span>
                                             </a>
                                             <span style="font-size:13px;font-weight:700;color:#0f172a;">
-                                                <i class="fas fa-truck-field text-muted me-1"></i> {{ $po->supplier?->name ?? '-' }}
+                                                <x-lucide-truck class="text-muted me-1" /> {{ $po->supplier?->name ?? '-' }}
                                             </span>
                                             <span class="text-muted" style="font-size:12px;">
                                                 (Total Nilai PO: <strong>Rp {{ number_format($poTotal, 0, ',', '.') }}</strong>)
                                             </span>
                                         @else
                                             <span class="badge" style="background:#64748b;color:#ffffff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:6px;">
-                                                <i class="fas fa-file-invoice"></i> Pembayaran Mandiri / Tanpa PO
+                                                <x-lucide-receipt /> Pembayaran Mandiri / Tanpa PO
                                             </span>
                                         @endif
                                     </div>
@@ -871,12 +871,12 @@
                                         </div>
 
                                         <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;border:1px solid #bfdbfe;padding:4px 8px;">
-                                            <i class="fas fa-layer-group me-1"></i> {{ $poItems->count() }}x Pembayaran
+                                            <x-lucide-layers class="me-1" /> {{ $poItems->count() }}x Pembayaran
                                         </span>
 
                                         @if($isPoLunas)
                                             <span class="badge" style="background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;border:1px solid #a7f3d0;padding:4px 8px;">
-                                                <i class="fas fa-check-double me-1"></i> Tagihan Lunas
+                                                <x-lucide-check-check class="me-1" /> Tagihan Lunas
                                             </span>
                                         @endif
 
@@ -905,17 +905,17 @@
                                 <div style="display:flex;flex-direction:column;gap:3px;">
                                     <div style="display:flex;align-items:center;gap:6px;">
                                         <a href="{{ route('payments.show', $p) }}" style="font-size:13px;font-weight:700;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                            <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
+                                            <x-lucide-receipt class="text-primary" style="font-size:11px;" />
                                             {{ $p->payment_number }}
                                         </a>
 
                                         @if($p->isInstant())
                                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">
-                                                <i class="fas fa-bolt text-warning me-1"></i> Instan (Kas Proyek)
+                                                <x-lucide-zap class="text-warning me-1" /> Instan (Kas Proyek)
                                             </span>
                                         @else
                                             <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">
-                                                <i class="fas fa-clock text-blue-500 me-1"></i> PO Proyek (Reguler)
+                                                <x-lucide-clock class="text-blue-500 me-1" /> PO Proyek (Reguler)
                                             </span>
                                         @endif
                                     </div>
@@ -945,7 +945,7 @@
                                 @endphp
                                 @if($proj)
                                     <div style="font-size:12px;font-weight:600;color:#0f172a;display:inline-flex;align-items:center;gap:5px;">
-                                        <i class="fas fa-building text-primary" style="font-size:11px;"></i>
+                                        <x-lucide-building-2 class="text-primary" style="font-size:11px;" />
                                         <span>{{ $proj->name }}</span>
                                     </div>
                                     <div style="font-size:10.5px;color:#64748b;">
@@ -953,7 +953,7 @@
                                     </div>
                                 @elseif($po?->deliveryWarehouse)
                                     <div style="font-size:12px;color:#334155;">
-                                        <i class="fas fa-warehouse text-muted me-1"></i> {{ $po->deliveryWarehouse->name }}
+                                        <x-lucide-warehouse class="text-muted me-1" /> {{ $po->deliveryWarehouse->name }}
                                     </div>
                                 @else
                                     <span class="text-muted" style="font-size:11.5px;">-</span>
@@ -970,14 +970,14 @@
                                         default => 'Bank Transfer'
                                     };
                                     $methodIcon = match($method) {
-                                        'cash' => 'fa-money-bill-wave',
-                                        'cheque' => 'fa-money-check',
-                                        default => 'fa-building-columns'
+                                        'cash' => 'banknote',
+                                        'cheque' => 'file-text',
+                                        default => 'landmark'
                                     };
                                 @endphp
                                 <div style="display:flex;flex-direction:column;gap:3px;">
                                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:10.5px;font-weight:700;width:fit-content;display:inline-flex;align-items:center;gap:4px;">
-                                        <i class="fas {{ $methodIcon }}" style="font-size:10px;"></i>
+                                        <x-dynamic-component :component="'lucide-'.$methodIcon" style="width:11px;height:11px;" />
                                         {{ $methodLabel }}
                                     </span>
                                     @if($p->bank_account)
@@ -1019,7 +1019,7 @@
                             <td style="text-align:center;">
                                 @if($p->status === 'verified')
                                     <span class="payment-badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;">
-                                        <i class="fas fa-circle-check"></i> Terverifikasi
+                                        <x-lucide-circle-check /> Terverifikasi
                                     </span>
                                     @if($p->verified_at)
                                     <div class="text-muted" style="font-size:9.5px;margin-top:2px;">
@@ -1028,11 +1028,11 @@
                                     @endif
                                 @elseif($p->status === 'pending')
                                     <span class="payment-badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;">
-                                        <i class="fas fa-clock"></i> Menunggu Verifikasi
+                                        <x-lucide-clock /> Menunggu Verifikasi
                                     </span>
                                 @elseif($p->status === 'rejected')
                                     <span class="payment-badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">
-                                        <i class="fas fa-circle-xmark"></i> Ditolak
+                                        <x-lucide-circle-x /> Ditolak
                                     </span>
                                 @else
                                     <span class="payment-badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;">
@@ -1047,7 +1047,7 @@
                                    class="btn btn-sm btn-light border" 
                                    style="font-size:11.5px;padding:5px 10px;border-radius:6px;color:#2563eb;background:#ffffff;font-weight:600;display:inline-flex;align-items:center;gap:4px;"
                                    title="Lihat Detail Pembayaran">
-                                    <i class="fas fa-eye" style="font-size:11px;"></i> Detail
+                                    <x-lucide-eye style="font-size:11px;" /> Detail
                                 </a>
                             </td>
                         </tr>
@@ -1057,7 +1057,7 @@
                     <tr>
                         <td colspan="9" style="text-align:center;padding:48px 16px;background:#ffffff;">
                             <div style="width:56px;height:56px;border-radius:50%;background:#f1f5f9;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;">
-                                <i class="fas fa-receipt"></i>
+                                <x-lucide-receipt />
                             </div>
                             <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:4px;">
                                 Belum Ada Data Pembayaran
@@ -1071,11 +1071,11 @@
                             </p>
                             @if(request()->hasAny(['search', 'status', 'payment_type', 'project_id', 'payment_method', 'start_date', 'end_date']))
                                 <a href="{{ route('payments.index') }}" class="btn btn-sm btn-light border" style="font-size:12px;font-weight:600;">
-                                    <i class="fas fa-rotate-left me-1"></i> Reset Filter
+                                    <x-lucide-rotate-ccw class="me-1" /> Reset Filter
                                 </a>
                             @else
                                 <a href="{{ route('payments.create') }}" class="btn btn-sm btn-primary" style="font-size:12px;font-weight:700;">
-                                    <i class="fas fa-plus-circle me-1"></i> Catat Pembayaran Baru
+                                    <x-lucide-circle-plus class="me-1" /> Catat Pembayaran Baru
                                 </a>
                             @endif
                         </td>
@@ -1102,7 +1102,7 @@
             <div style="background:#064e3b;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:16px;">
-                        <i class="fas fa-wallet text-emerald-200"></i>
+                        <x-lucide-wallet class="text-emerald-200" />
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Top-Up Saldo Kas Proyek</h3>
@@ -1110,7 +1110,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeTopupModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
-                    <i class="fas fa-xmark"></i>
+                    <x-lucide-x />
                 </button>
             </div>
 
@@ -1191,7 +1191,7 @@
                         Batal
                     </button>
                     <button type="submit" class="btn btn-success" style="font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;background:#059669;border-color:#059669;box-shadow:0 2px 6px rgba(5,150,105,0.25);display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-check-circle"></i> Simpan Top-Up Saldo
+                        <x-lucide-circle-check /> Simpan Top-Up Saldo
                     </button>
                 </div>
             </form>
@@ -1207,7 +1207,7 @@
             <div style="background:#0f172a;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:#38bdf8;">
-                        <i class="fas fa-clock-rotate-left"></i>
+                        <x-lucide-history />
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Riwayat Mutasi Saldo Kas Proyek</h3>
@@ -1215,7 +1215,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeBalanceHistoryModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
-                    <i class="fas fa-xmark"></i>
+                    <x-lucide-x />
                 </button>
             </div>
 
@@ -1229,7 +1229,7 @@
                             <div onclick="toggleModalBalanceWeek('{{ $wIdx }}')"
                                  style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);color:#ffffff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none;">
                                 <div class="flex items-center gap-2">
-                                    <i class="fas fa-calendar-week text-emerald-400"></i>
+                                    <x-lucide-calendar-range class="text-emerald-400" />
                                     <strong style="font-size:13px;color:#ffffff;">{{ $week->week_label }}</strong>
                                     <span class="badge" style="background:#047857;color:#a7f3d0;font-size:10px;padding:2px 6px;">1 Minggu</span>
                                 </div>
@@ -1247,7 +1247,7 @@
                                             -Rp {{ number_format($week->total_deduction, 0, ',', '.') }}
                                         </span>
                                     @endif
-                                    <i class="fas fa-chevron-down modal-balance-icon" id="modal-balance-icon-{{ $wIdx }}" style="font-size:11px;color:#94a3b8;transition:transform 0.2s;"></i>
+                                    <x-lucide-chevron-down class="modal-balance-icon" id="modal-balance-icon-{{ $wIdx }}" style="font-size:11px;color:#94a3b8;transition:transform 0.2s;" />
                                 </div>
                             </div>
 
@@ -1257,7 +1257,7 @@
                                     <div style="border-bottom:1px solid #e2e8f0;">
                                         <div style="background:#f1f5f9;padding:7px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;border-top:1px solid #e2e8f0;font-size:11.5px;">
                                             <div class="flex items-center gap-2">
-                                                <i class="far fa-calendar-alt text-emerald-600"></i>
+                                                <x-lucide-calendar class="text-emerald-600" />
                                                 <strong style="color:#0f172a;">📅 Hari: {{ $day->date_label }}</strong>
                                                 <span class="badge badge-secondary" style="font-size:10px;padding:1px 5px;">{{ $day->count }} mutasi</span>
                                             </div>
@@ -1331,7 +1331,7 @@
                     @endforeach
                 @else
                     <div style="text-align:center;padding:36px 16px;color:#64748b;">
-                        <i class="fas fa-history" style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:block;"></i>
+                        <x-lucide-history style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:inline-block;" />
                         <div style="font-weight:700;font-size:13px;color:#1e293b;">Belum Ada Riwayat Mutasi Saldo</div>
                         <p style="font-size:12px;margin:4px 0 0 0;">Transaksi top-up dan pemotongan pembayaran instan akan tercatat otomatis di sini.</p>
                     </div>
@@ -1355,7 +1355,7 @@
             <div style="background:linear-gradient(135deg, #065f46 0%, #047857 100%);color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">
-                        <i class="fas fa-hand-holding-usd text-amber-300"></i>
+                        <x-lucide-hand-coins class="text-amber-300" />
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Minta Saldo Kas ke Pusat / Owner</h3>
@@ -1363,7 +1363,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeRequestBalanceModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
-                    <i class="fas fa-xmark"></i>
+                    <x-lucide-x />
                 </button>
             </div>
 
@@ -1436,7 +1436,7 @@
                         Batal
                     </button>
                     <button type="submit" class="btn btn-success" style="font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-paper-plane"></i> Kirim Permintaan ke Pusat/Owner
+                        <x-lucide-send /> Kirim Permintaan ke Pusat/Owner
                     </button>
                 </div>
             </form>
@@ -1450,7 +1450,7 @@
             <div style="background:#0f172a;color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;color:#f59e0b;">
-                        <i class="fas fa-inbox"></i>
+                        <x-lucide-inbox />
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Daftar Permintaan Saldo Kas Operasional Proyek</h3>
@@ -1458,7 +1458,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeBalanceRequestsModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
-                    <i class="fas fa-xmark"></i>
+                    <x-lucide-x />
                 </button>
             </div>
 
@@ -1515,11 +1515,11 @@
                                             <form action="{{ route('payments.approveBalanceRequest', $reqItem) }}" method="POST" class="inline" onsubmit="return confirm('Setujui permintaan saldo Rp {{ number_format($reqItem->amount, 0, ',', '.') }} untuk {{ $reqItem->project?->name }}?')">
                                                 @csrf
                                                 <button type="submit" class="btn btn-xs btn-success" title="Setujui & Top-Up Saldo">
-                                                    <i class="fas fa-check me-1"></i> Setujui
+                                                    <x-lucide-check class="me-1" /> Setujui
                                                 </button>
                                             </form>
                                             <button type="button" class="btn btn-xs btn-outline-danger" onclick="promptRejectRequest({{ $reqItem->id }}, '{{ addslashes($reqItem->project?->name) }}')">
-                                                <i class="fas fa-times me-1"></i> Tolak
+                                                <x-lucide-x class="me-1" /> Tolak
                                             </button>
                                         </div>
                                     @else
@@ -1537,7 +1537,7 @@
                 </table>
                 @else
                 <div style="text-align:center;padding:36px 16px;color:#64748b;">
-                    <i class="fas fa-inbox" style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:block;"></i>
+                    <x-lucide-inbox style="font-size:32px;color:#cbd5e1;margin-bottom:8px;display:inline-block;" />
                     <div style="font-weight:700;font-size:13px;color:#1e293b;">Belum Ada Permintaan Saldo Kas</div>
                     <p style="font-size:12px;margin:4px 0 0 0;">Permintaan saldo kas dari Admin PO Proyek ke Pusat/Owner akan tampil di sini.</p>
                 </div>

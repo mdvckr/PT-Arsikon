@@ -88,7 +88,7 @@
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('goods-receipts.index') }}">Penerimaan Barang</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Detail #{{ $goodsReceipt->receipt_number }}</span>
     </div>
 
@@ -96,7 +96,7 @@
     <div class="flex items-center justify-between mb-3 page-actions-header">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <a href="{{ route('goods-receipts.index') }}" class="btn btn-light border btn-sm" style="border-radius:6px;padding:5px 10px;font-size:11.5px;color:#475569;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
+                <x-lucide-arrow-left class="me-1" /> Kembali
             </a>
             <div>
                 <h2 class="fw-700" style="font-size:15px;color:#0f172a;margin:0;display:inline-flex;align-items:center;gap:6px;">
@@ -105,11 +105,11 @@
             </div>
             @if($goodsReceipt->isConfirmed())
                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                    <i class="fas fa-circle-check me-1"></i> Dikonfirmasi
+                    <x-lucide-circle-check class="me-1" /> Dikonfirmasi
                 </span>
             @else
                 <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                    <i class="fas fa-clock me-1"></i> Draft (Stok Belum Masuk)
+                    <x-lucide-clock class="me-1" /> Draft (Stok Belum Masuk)
                 </span>
             @endif
         </div>
@@ -122,7 +122,7 @@
                     <button type="submit" class="btn btn-success btn-sm"
                         onclick="return confirm('Konfirmasi penerimaan ini? Stok gudang akan otomatis diperbarui.')"
                         style="border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(16,185,129,0.25);">
-                        <i class="fas fa-circle-check me-1"></i> Konfirmasi & Update Stok
+                        <x-lucide-circle-check class="me-1" /> Konfirmasi & Update Stok
                     </button>
                 </form>
                 @endcan
@@ -135,20 +135,20 @@
                 class="btn btn-light border btn-sm" 
                 style="border-radius:6px;padding:6px 12px;font-size:11.5px;color:#475569;"
                 title="Buka Daily Log">
-                <i class="fas fa-calendar-check me-1"></i> Daily Log
+                <x-lucide-calendar-check class="me-1" /> Daily Log
             </a>
         </div>
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -160,7 +160,7 @@
             <div class="card mb-3" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+                        <x-lucide-boxes class="text-primary" style="font-size:13px;" />
                         <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Daftar Item Barang Masuk</span>
                     </div>
                     <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11px;padding:2px 7px;border-radius:12px;font-weight:600;">
@@ -195,11 +195,11 @@
                                 <td>
                                     @if($isTool)
                                         <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">
-                                            <i class="fas fa-helmet-safety"></i> Alat
+                                            <x-lucide-hard-hat /> Alat
                                         </span>
                                     @else
                                         <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-weight:700;">
-                                            <i class="fas fa-box"></i> Material
+                                            <x-lucide-package /> Material
                                         </span>
                                     @endif
                                 </td>
@@ -207,7 +207,7 @@
                                     <div class="fw-700" style="color:#0f172a;font-size:13px;">{{ $itemName }}</div>
                                     <div class="text-muted" style="font-size:11px;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                                         @if($itemCode && $itemCode !== '-')
-                                            <code style="background:#f1f5f9;color:#475569;padding:1px 5px;border-radius:3px;font-size:10.5px;"><i class="fas fa-barcode me-1"></i>{{ $itemCode }}</code>
+                                            <code style="background:#f1f5f9;color:#475569;padding:1px 5px;border-radius:3px;font-size:10.5px;"><x-lucide-barcode class="me-1" />{{ $itemCode }}</code>
                                         @endif
                                         @php
                                             $brand = $isTool ? $item->tool?->brand : $item->material?->brand;
@@ -246,7 +246,7 @@
                                         @if($item->missing_status === 'unresolved' && auth()->user()->can('create transit losses'))
                                             <div style="margin-top:4px;">
                                                 <button type="button" class="btn btn-outline-danger btn-xs" onclick="openDeclareLossModal({{ $item->id }}, '{{ addslashes($itemName) }}', {{ $item->qty_missing }}, '{{ $unitName }}')" style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">
-                                                    <i class="fas fa-triangle-exclamation me-1"></i> Nyatakan Hilang
+                                                    <x-lucide-triangle-alert class="me-1" /> Nyatakan Hilang
                                                 </button>
                                             </div>
                                         @endif
@@ -283,7 +283,7 @@
             @if($goodsReceipt->notes)
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);padding:12px 16px;">
                 <div style="font-weight:700;font-size:12px;color:#475569;margin-bottom:4px;display:flex;align-items:center;gap:5px;">
-                    <i class="fas fa-quote-left text-muted" style="font-size:10px;"></i>
+                    <x-lucide-quote class="text-muted" style="font-size:10px;" />
                     Catatan Penerimaan:
                 </div>
                 <div style="font-size:12.5px;color:#1e293b;line-height:1.5;background:#f8fafc;padding:10px 12px;border-radius:6px;border:1px solid #f1f5f9;">
@@ -297,7 +297,7 @@
         <div>
             <div class="card mb-3" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-file-lines text-primary" style="font-size:12.5px;"></i>
+                    <x-lucide-file-text class="text-primary" style="font-size:12.5px;" />
                     <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Penerimaan</span>
                 </div>
                 <div class="card-body" style="padding:10px 14px;">
@@ -341,7 +341,7 @@
                         <span class="info-label">PO Lapangan</span>
                         <span class="info-val">
                             <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#2563eb;text-decoration:none;font-weight:700;">
-                                <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                                <x-lucide-clipboard-check class="me-1" />#{{ $linkedMr->request_number }}
                             </a>
                             <div style="font-size:10.5px;color:#64748b;font-weight:normal;">
                                 {{ $linkedMr->toWarehouse?->project?->name ?? $linkedMr->toWarehouse?->name }}
@@ -353,7 +353,7 @@
                     <div class="info-row">
                         <span class="info-label">Supplier</span>
                         <span class="info-val" style="display:inline-flex;align-items:center;gap:4px;">
-                            <i class="fas fa-building text-muted" style="font-size:10px;"></i>
+                            <x-lucide-building-2 class="text-muted" style="font-size:10px;" />
                             {{ $goodsReceipt->supplier?->name ?? '—' }}
                         </span>
                     </div>
@@ -385,7 +385,7 @@
                     <div class="info-row">
                         <span class="info-label">Nama Penerima</span>
                         <span class="info-val" style="display:inline-flex;align-items:center;gap:4px;">
-                            <i class="fas fa-user-check text-muted" style="font-size:10px;"></i>
+                            <x-lucide-user-check class="text-muted" style="font-size:10px;" />
                             {{ $goodsReceipt->received_by_name ?? $goodsReceipt->receivedBy?->name ?? '—' }}
                         </span>
                     </div>
@@ -395,11 +395,11 @@
                         <span class="info-val">
                             @if($goodsReceipt->isConfirmed())
                                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:1px 7px;border-radius:10px;">
-                                    <i class="fas fa-check me-1"></i> Dikonfirmasi
+                                    <x-lucide-check class="me-1" /> Dikonfirmasi
                                 </span>
                             @else
                                 <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:1px 7px;border-radius:10px;">
-                                    <i class="fas fa-clock me-1"></i> Draft
+                                    <x-lucide-clock class="me-1" /> Draft
                                 </span>
                             @endif
                         </span>
@@ -427,7 +427,7 @@
             @if(!$goodsReceipt->isConfirmed())
             <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);padding:12px 14px;">
                 <div style="font-size:11.5px;color:#92400e;display:flex;align-items:flex-start;gap:8px;line-height:1.4;">
-                    <i class="fas fa-circle-info" style="font-size:13px;color:#d97706;margin-top:2px;flex-shrink:0;"></i>
+                    <x-lucide-info style="font-size:13px;color:#d97706;margin-top:2px;flex-shrink:0;" />
                     <div>
                         <strong>Penerimaan masih berstatus Draft.</strong><br>
                         Stok inventori di gudang belum bertambah sampai penerimaan ini dikonfirmasi.
@@ -439,12 +439,12 @@
                     <button type="submit" class="btn btn-success w-full" 
                         onclick="return confirm('Konfirmasi penerimaan ini? Stok gudang akan otomatis diperbarui.')"
                         style="justify-content:center;font-size:12px;font-weight:600;padding:7px 12px;border-radius:6px;">
-                        <i class="fas fa-check-circle me-1"></i> Konfirmasi Sekarang
+                        <x-lucide-circle-check class="me-1" /> Konfirmasi Sekarang
                     </button>
                 </form>
                 @else
                 <div style="margin-top:10px;padding:8px 10px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;font-size:11px;color:#991b1b;display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-lock"></i>
+                    <x-lucide-lock />
                     <span>Hanya petugas di <strong>{{ $goodsReceipt->warehouse?->name }}</strong> yang berhak mengonfirmasi penerimaan barang ini.</span>
                 </div>
                 @endif
@@ -460,7 +460,7 @@
         <div style="background:#ffffff;border-radius:12px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
             <div style="padding:14px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-triangle-exclamation text-danger" style="font-size:16px;"></i>
+                    <x-lucide-triangle-alert class="text-danger" style="font-size:16px;" />
                     <strong style="font-size:14px;color:#0f172a;">Nyatakan Barang Hilang (Transit Loss)</strong>
                 </div>
                 <button type="button" onclick="closeDeclareLossModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#64748b;">&times;</button>
@@ -494,7 +494,7 @@
                 <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeclareLossModal()" style="font-size:12px;">Batal</button>
                     <button type="submit" class="btn btn-danger btn-sm" style="font-size:12px;font-weight:700;">
-                        <i class="fas fa-paper-plane me-1"></i> Ajukan Laporan Kehilangan
+                        <x-lucide-send class="me-1" /> Ajukan Laporan Kehilangan
                     </button>
                 </div>
             </form>

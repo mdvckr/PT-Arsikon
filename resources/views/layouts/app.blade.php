@@ -244,11 +244,12 @@
         }
 
         .nav-section-chevron {
-            font-size: 14px;
-            font-weight: 900;
+            width: 14px;
+            height: 14px;
             color: #1e293b;
             transition: transform 0.25s ease;
             display: inline-block;
+            flex-shrink: 0;
         }
 
         .nav-section-body {
@@ -258,7 +259,7 @@
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 9px 12px;
             border-radius: 8px;
             color: rgba(255, 255, 255, 0.88);
@@ -278,6 +279,144 @@
             width: 18px;
             text-align: center;
             font-size: 14px;
+        }
+
+        .nav-icon {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            flex-shrink: 0;
+            stroke-width: 1.9;
+            stroke: currentColor;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ===== UNIVERSAL LUCIDE / SVG STYLING ===== */
+        svg,
+        svg[class*="lucide-"],
+        svg.lucide,
+        svg.lucide-icon,
+        .btn svg,
+        .btn-sm svg,
+        .btn-icon svg,
+        .action-btn svg,
+        .badge svg,
+        .card-header svg,
+        .alert svg,
+        .stat-icon svg,
+        .breadcrumb svg,
+        .tab-btn svg,
+        .metric-icon,
+        svg.metric-icon {
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        svg[class*="lucide-"],
+        svg.lucide,
+        svg.lucide-icon {
+            width: 1em;
+            height: 1em;
+            stroke-width: 2;
+        }
+
+        .metric-icon,
+        svg.metric-icon {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            color: #94a3b8;
+            flex-shrink: 0 !important;
+        }
+
+        .btn svg {
+            width: 15px;
+            height: 15px;
+            stroke-width: 2;
+            margin-right: 5px;
+        }
+
+        .btn.btn-sm svg,
+        .btn-sm svg {
+            width: 13px;
+            height: 13px;
+            margin-right: 4px;
+        }
+
+        .btn-icon svg,
+        .action-btn svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 0 !important;
+        }
+
+        .badge svg {
+            width: 12px;
+            height: 12px;
+            margin-right: 4px;
+            vertical-align: -1px;
+        }
+
+        .card-header svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+
+        .alert svg {
+            width: 18px;
+            height: 18px;
+            margin-right: 6px;
+        }
+
+        .stat-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .dash-btn svg {
+            width: 14px !important;
+            height: 14px !important;
+            margin-right: 5px;
+        }
+
+        .dash-tag svg {
+            width: 12px !important;
+            height: 12px !important;
+            margin-right: 4px;
+        }
+
+        .fleet-lens-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+        }
+
+        .input-icon-wrap svg.input-icon,
+        .input-icon-group svg.input-icon,
+        .input-icon-wrap .input-icon,
+        .input-icon-group .input-icon {
+            width: 15px !important;
+            height: 15px !important;
+            max-width: 15px !important;
+            max-height: 15px !important;
+            flex-shrink: 0;
+        }
+
+        .toggle-password svg,
+        .toggle-password-btn svg {
+            width: 16px !important;
+            height: 16px !important;
+            flex-shrink: 0;
+        }
+
+        .payment-kpi-icon svg {
+            width: 22px !important;
+            height: 22px !important;
+            flex-shrink: 0;
         }
 
         /* Glass Hover Effect */
@@ -1561,7 +1700,7 @@
     <header class="topbar" id="mainTopbar">
         <div class="topbar-brand">
             <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
-                <i class="fas fa-bars"></i>
+                <x-lucide-menu class="w-5 h-5" aria-hidden="true" />
             </button>
             <a href="{{ route('dashboard') }}" class="brand-link">
                 <img src="{{ asset('assets/Logo-Dashboard.png') }}" class="brand-logo" alt="PT ARSIKON CIPTA KARYA">
@@ -1603,7 +1742,7 @@
                     @click.stop="togglePanel()"
                     aria-label="Pusat Notifikasi"
                 >
-                    <i class="fas fa-bell"></i>
+                    <x-lucide-bell class="w-5 h-5" aria-hidden="true" />
                     <x-notification.glass-badge :count="$unreadNotificationsCount" />
                 </button>
 
@@ -1638,43 +1777,43 @@
             if ($authUser->hasRole('Owner')) {
                 $roleLabel = 'Owner / Direksi';
                 $roleBadge = 'Owner';
-                $roleIcon = 'fa-crown';
+                $roleIcon = 'crown';
                 $subHeadline = 'Multi-Gudang (Akses Penuh)';
                 $subDesc = 'Monitoring pusat & seluruh proyek';
             } elseif ($authUser->hasRole('Admin Pusat')) {
                 $roleLabel = 'Admin Pusat';
                 $roleBadge = 'Admin';
-                $roleIcon = 'fa-user-shield';
+                $roleIcon = 'shield-check';
                 $subHeadline = 'Kantor Pusat (Full Akses)';
                 $subDesc = 'Manajemen pengguna, gudang & sistem';
             } elseif ($authUser->hasRole('Admin Gudang Pusat')) {
                 $roleLabel = 'Admin Gudang Pusat';
                 $roleBadge = 'Pusat';
-                $roleIcon = 'fa-building';
+                $roleIcon = 'building-2';
                 $subHeadline = 'Sentral Logistik Jakarta';
                 $subDesc = 'Distribusi material & stok sentral';
             } elseif ($authUser->hasRole('Admin Gudang Proyek')) {
                 $roleLabel = 'Admin Gudang Proyek';
                 $roleBadge = 'Proyek';
-                $roleIcon = 'fa-helmet-safety';
+                $roleIcon = 'hard-hat';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'PO Lapangan & alat proyek';
             } elseif ($authUser->hasRole('Admin PO Proyek')) {
                 $roleLabel = 'Admin PO Proyek';
                 $roleBadge = 'PO Proyek';
-                $roleIcon = 'fa-receipt';
+                $roleIcon = 'receipt';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'Pencatatan nota pembelian harian';
             } elseif ($authUser->hasRole('Admin PO')) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
-                $roleIcon = 'fa-truck-ramp-box';
+                $roleIcon = 'truck';
                 $subHeadline = 'Divisi Pembelian & Vendor';
                 $subDesc = 'Purchase order & pembayaran';
             } else {
                 $roleLabel = $authUser->roles->first()?->name ?? 'User';
                 $roleBadge = 'Petugas';
-                $roleIcon = 'fa-warehouse';
+                $roleIcon = 'warehouse';
                 $subHeadline = $activeWarehouseName;
                 $subDesc = 'Operasional inventaris';
             }
@@ -1684,7 +1823,7 @@
             <!-- DASHBOARD -->
             <div class="nav-section" style="padding-top: 4px; padding-bottom: 2px;">
                 <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-table-cells-large"></i> Dashboard
+                    <x-lucide-layout-dashboard class="nav-icon" aria-hidden="true" /> Dashboard
                 </a>
             </div>
 
@@ -1709,19 +1848,19 @@
                 @else
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">TEKNIS</span>
-                    <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                    <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 @endif
                 <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
                     @can('view material requests')
                     <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
-                        <i class="fas fa-file-circle-plus"></i> PO Lapangan
+                        <x-lucide-file-plus class="nav-icon" aria-hidden="true" /> PO Lapangan
                     </a>
                     @endcan
 
                     @can('view distributions')
                     <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                        <i class="fas fa-right-left"></i> Surat Jalan
+                        <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
                     </a>
                     @endcan
                 </div>
@@ -1747,13 +1886,13 @@
                     </div>
                     <div class="nav-section-body">
                         <a href="{{ route('purchase-receipts.create') }}" class="nav-item {{ request()->routeIs('purchase-receipts.create') ? 'active' : '' }}">
-                            <i class="fas fa-circle-plus"></i> Catat Nota Baru
+                            <x-lucide-circle-plus class="nav-icon" aria-hidden="true" /> Catat Nota Baru
                         </a>
                         <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.index') || request()->routeIs('purchase-receipts.show') ? 'active' : '' }}">
-                            <i class="fas fa-receipt"></i> Daftar Nota Harian
+                            <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Daftar Nota Harian
                         </a>
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <i class="fas fa-wallet"></i> Kas & Saldo Proyek
+                            <x-lucide-wallet class="nav-icon" aria-hidden="true" /> Kas & Saldo Proyek
                         </a>
                     </div>
                 </div>
@@ -1767,36 +1906,36 @@
                     <div class="nav-section-body">
                         @can('view material requests')
                         <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
-                            <i class="fas fa-file-circle-plus"></i> PO Lapangan
+                            <x-lucide-file-plus class="nav-icon" aria-hidden="true" /> PO Lapangan
                         </a>
                         @endcan
 
                         @can('view purchase orders')
                         <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-                            <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                            <x-lucide-file-text class="nav-icon" aria-hidden="true" /> Purchase Order (PO)
                         </a>
                         @endcan
 
                         @can('view purchase receipts')
                         <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
-                            <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                            <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Nota Pembelian Harian
                         </a>
                         @endcan
 
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <i class="fas fa-money-bill-wave"></i> Pembayaran
+                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Pembayaran
                         </a>
                         @endcan
 
                         @can('view distributions')
                         <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                            <i class="fas fa-right-left"></i> Surat Jalan
+                            <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
                         </a>
                         @endcan
 
                         <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                            <i class="fas fa-stamp"></i> Template Kop Surat
+                            <x-lucide-layout-template class="nav-icon" aria-hidden="true" /> Template Kop Surat
                         </a>
                     </div>
                 </div>
@@ -1804,30 +1943,30 @@
                 <div class="nav-section" x-data="{ open: {{ $isPengadaanActive ? 'true' : 'false' }} }">
                     <div class="nav-section-header" @click="open = !open">
                         <span class="nav-section-label">PENGADAAN</span>
-                        <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                        <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                     </div>
                     <div x-show="open" class="nav-section-body">
                         @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']) && auth()->user()->can('view purchase orders'))
                         <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
-                            <i class="fas fa-file-invoice-dollar"></i> Purchase Order (PO)
+                            <x-lucide-file-text class="nav-icon" aria-hidden="true" /> Purchase Order (PO)
                         </a>
                         @endif
 
                         @can('view purchase receipts')
                         <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.*') ? 'active' : '' }}">
-                            <i class="fas fa-receipt"></i> Nota Pembelian Harian
+                            <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Nota Pembelian Harian
                         </a>
                         @endcan
 
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <i class="fas fa-money-bill-wave"></i> Pembayaran
+                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Pembayaran
                         </a>
                         @endcan
 
                         @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
                         <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                            <i class="fas fa-stamp"></i> Template Kop Surat
+                            <x-lucide-layout-template class="nav-icon" aria-hidden="true" /> Template Kop Surat
                         </a>
                         @endif
                     </div>
@@ -1861,61 +2000,61 @@
                 @else
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">LOGISTIK</span>
-                    <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                    <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 @endif
                 <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
                     @can('view tools')
                     <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
-                        <i class="fas fa-screwdriver-wrench"></i> Alat
+                        <x-lucide-wrench class="nav-icon" aria-hidden="true" /> Alat
                     </a>
                     @endcan
 
                     @can('view inventory')
                     <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
-                        <i class="fas fa-layer-group"></i> Inventori
+                        <x-lucide-layers class="nav-icon" aria-hidden="true" /> Inventori
                     </a>
                     @endcan
 
                     @if($canDailyLog)
                     <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
-                        <i class="fas fa-calendar-check"></i> Log Harian Proyek
+                        <x-lucide-calendar-check class="nav-icon" aria-hidden="true" /> Log Harian Proyek
                     </a>
                     @endif
 
                     @can('view materials')
                     <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
-                        <i class="fas fa-boxes-stacked"></i> Material
+                        <x-lucide-package class="nav-icon" aria-hidden="true" /> Material
                     </a>
                     @endcan
 
                     @can('view material usages')
                     <a href="{{ route('material-usages.index') }}" class="nav-item {{ request()->routeIs('material-usages.*') ? 'active' : '' }}">
-                        <i class="fas fa-dolly"></i> Pemakaian Material
+                        <x-lucide-package-minus class="nav-icon" aria-hidden="true" /> Pemakaian Material
                     </a>
                     @endcan
 
                     @can('view tool assignments')
                     <a href="{{ route('tool-assignments.index') }}" class="nav-item {{ request()->routeIs('tool-assignments.*') ? 'active' : '' }}">
-                        <i class="fas fa-hand-holding"></i> Peminjaman Alat
+                        <x-lucide-hand-helping class="nav-icon" aria-hidden="true" /> Peminjaman Alat
                     </a>
                     @endcan
 
                     @can('view goods receipts')
                     <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                        <i class="fas fa-truck-ramp-box"></i> Penerimaan Barang
+                        <x-lucide-package-check class="nav-icon" aria-hidden="true" /> Penerimaan Barang
                     </a>
                     @endcan
 
                     @can('view returns')
                     <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
-                        <i class="fas fa-rotate-left"></i> Retur Material
+                        <x-lucide-undo-2 class="nav-icon" aria-hidden="true" /> Retur Material
                     </a>
                     @endcan
 
                     @can('view stock opname')
                     <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
-                        <i class="fas fa-clipboard-check"></i> Stock Opname
+                        <x-lucide-clipboard-check class="nav-icon" aria-hidden="true" /> Stock Opname
                     </a>
                     @endcan
                 </div>
@@ -1930,17 +2069,17 @@
             <div class="nav-section" x-data="{ open: {{ $isLaporanActive ? 'true' : 'false' }} }">
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">LAPORAN & AUDIT</span>
-                    <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                    <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 <div x-show="open" class="nav-section-body">
                     @can('view reports')
                     <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools']) ? 'active' : '' }}">
-                        <i class="fas fa-chart-bar"></i> Laporan
+                        <x-lucide-chart-column class="nav-icon" aria-hidden="true" /> Laporan
                     </a>
                     @endcan
                     @can('view audit logs')
                     <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
-                        <i class="fas fa-shield-halved"></i> Audit Log
+                        <x-lucide-scroll-text class="nav-icon" aria-hidden="true" /> Audit Log
                     </a>
                     @endcan
                 </div>
@@ -1955,14 +2094,14 @@
             <div class="nav-section" x-data="{ open: {{ $isAdminActive ? 'true' : 'false' }} }">
                 <div class="nav-section-header" @click="open = !open">
                     <span class="nav-section-label">ADMIN SISTEM</span>
-                    <i class="fas fa-chevron-right nav-section-chevron" :style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'"></i>
+                    <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 <div x-show="open" class="nav-section-body">
                     <a href="{{ route('users.index') }}" class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                        <i class="fas fa-users"></i> Pengguna & Akun
+                        <x-lucide-users class="nav-icon" aria-hidden="true" /> Pengguna & Akun
                     </a>
                     <a href="{{ route('warehouses.index') }}" class="nav-item {{ request()->routeIs(['warehouses.*', 'projects.*']) ? 'active' : '' }}">
-                        <i class="fas fa-warehouse"></i> Gudang & Proyek
+                        <x-lucide-warehouse class="nav-icon" aria-hidden="true" /> Gudang & Proyek
                     </a>
                 </div>
             </div>
@@ -1976,19 +2115,19 @@
         <main class="page-content">
             @if(session('success'))
             <div class="alert alert-success">
-                <i class="fas fa-circle-check"></i>
+                <x-lucide-circle-check class="w-5 h-5 text-success" aria-hidden="true" />
                 <div>{{ session('success') }}</div>
             </div>
             @endif
             @if(session('error'))
             <div class="alert alert-danger">
-                <i class="fas fa-circle-xmark"></i>
+                <x-lucide-circle-x class="w-5 h-5 text-danger" aria-hidden="true" />
                 <div>{{ session('error') }}</div>
             </div>
             @endif
             @if(session('warning'))
             <div class="alert alert-warning">
-                <i class="fas fa-triangle-exclamation"></i>
+                <x-lucide-triangle-alert class="w-5 h-5 text-warning" aria-hidden="true" />
                 <div>{{ session('warning') }}</div>
             </div>
             @endif

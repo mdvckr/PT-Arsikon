@@ -90,20 +90,20 @@
         </div>
         @can('create distributions')
         <a href="{{ route('distributions.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Buat Surat Jalan
+            <x-lucide-plus class="me-1" /> Buat Surat Jalan
         </a>
         @endcan
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -117,7 +117,7 @@
         <a href="{{ route('distributions.index', array_filter(['status' => 'in_transit', 'search' => request('search')])) }}" 
            class="btn btn-sm {{ request('status') === 'in_transit' ? 'btn-primary' : 'btn-light border' }}" 
            style="border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-           <i class="fas fa-truck-fast"></i> Dalam Perjalanan (Perlu Diterima)
+           <x-lucide-truck /> Dalam Perjalanan (Perlu Diterima)
         </a>
         <a href="{{ route('distributions.index', array_filter(['status' => 'completed', 'search' => request('search')])) }}" 
            class="btn btn-sm {{ request('status') === 'completed' ? 'btn-primary' : 'btn-light border' }}" 
@@ -137,7 +137,7 @@
                 <div class="filter-col" style="flex: 2; min-width: 220px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. surat jalan, gudang..." style="padding-left:28px !important;">
                     </div>
                 </div>
@@ -153,11 +153,11 @@
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     @if(request()->anyFilled(['search', 'status']))
                     <a href="{{ route('distributions.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <i class="fas fa-rotate-left" style="font-size:11px;"></i>
+                        <x-lucide-rotate-ccw style="font-size:11px;" />
                     </a>
                     @endif
                 </div>
@@ -200,7 +200,7 @@
                         <td style="padding:8px 12px;">
                             @if($dist->materialRequest)
                             <a href="{{ route('material-requests.show', $dist->materialRequest) }}" class="text-primary" style="font-size:11.5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-                                <i class="fas fa-link" style="font-size:9px;"></i>
+                                <x-lucide-link style="font-size:9px;" />
                                 {{ $dist->materialRequest->request_number }}
                             </a>
                             @else
@@ -209,27 +209,29 @@
                         </td>
                         <td class="nowrap text-center">
                             @if($dist->status === 'draft')
-                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-clock me-1" style="font-size:9px;"></i>Draft</span>
+                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-clock class="me-1" style="font-size:9px;" />Draft</span>
                             @elseif($dist->status === 'in_transit')
-                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-truck me-1" style="font-size:9px;"></i>Dalam Pengiriman</span>
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-truck class="me-1" style="font-size:9px;" />Dalam Pengiriman</span>
                             @elseif($dist->status === 'completed')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-check-double me-1" style="font-size:9px;"></i>Selesai</span>
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check-check class="me-1" style="font-size:9px;" />Selesai</span>
                             @elseif($dist->status === 'cancelled')
-                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><i class="fas fa-ban me-1" style="font-size:9px;"></i>Dibatalkan</span>
+                                <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-ban class="me-1" style="font-size:9px;" />Dibatalkan</span>
                             @else
                                 <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;">{{ $dist->status }}</span>
                             @endif
                         </td>
                         <td class="nowrap text-center">
                             <a href="{{ route('distributions.show', $dist) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
-                                <i class="fas fa-eye" style="font-size:11px;"></i>
+                                <x-lucide-eye style="font-size:11px;" />
                             </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" style="text-align:center;padding:32px 16px;color:#94a3b8;">
-                            <i class="fas fa-truck" style="font-size:26px;color:#cbd5e1;margin-bottom:6px;display:block;"></i>
+                        <td colspan="7" style="text-align:center;padding:36px 16px;color:#94a3b8;">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px;color:#94a3b8;">
+                                <x-lucide-truck style="width:24px;height:24px;" />
+                            </div>
                             <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada data distribusi / surat jalan</div>
                             <div class="text-muted" style="font-size:11.5px;margin-top:2px;">Buat surat jalan pertama untuk mulai mengirim barang.</div>
                         </td>

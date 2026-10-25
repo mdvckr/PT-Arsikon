@@ -12,7 +12,7 @@
 
     <div class="breadcrumb pr-no-print">
         <a href="{{ route('procurement.index') }}">Permintaan Pengadaan</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>{{ $procurement->pr_number }}</span>
     </div>
 
@@ -53,7 +53,7 @@
                 @endif
             @endcan
             <button type="button" class="pr-btn pr-btn-print" onclick="window.print()">
-                <i class="fas fa-print"></i> Cetak / PDF
+                <x-lucide-printer /> Cetak / PDF
             </button>
             <a href="{{ route('procurement.index') }}" class="pr-btn pr-btn-back">
                 Kembali
@@ -203,7 +203,7 @@
     <div class="modal-overlay pr-no-print" id="rejectModal">
         <div class="modal-box">
             <div class="modal-header">
-                <i class="fas fa-times-circle" style="color:#ef4444;font-size:20px;"></i>
+                <x-lucide-circle-x style="color:#ef4444;font-size:20px;" />
                 <h3>Tolak Permintaan Pengadaan</h3>
             </div>
             <form method="POST" action="{{ route('procurement.reject', $procurement) }}">
@@ -216,7 +216,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="pr-btn pr-btn-back" onclick="document.getElementById('rejectModal').classList.remove('open')">Batal</button>
-                    <button type="submit" class="pr-btn pr-btn-danger"><i class="fas fa-times"></i> Tolak Dokumen</button>
+                    <button type="submit" class="pr-btn pr-btn-danger"><x-lucide-x /> Tolak Dokumen</button>
                 </div>
             </form>
         </div>

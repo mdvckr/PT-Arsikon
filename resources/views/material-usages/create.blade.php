@@ -252,13 +252,13 @@
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('material-usages.index') }}">Pemakaian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Catat Pengeluaran Baru</span>
     </div>
 
     @if ($errors->any())
     <div class="alert alert-danger mb-3" style="border-radius: 6px; font-size:12px; padding:8px 12px;">
-        <i class="fas fa-triangle-exclamation text-danger" style="font-size: 14px;"></i>
+        <x-lucide-triangle-alert class="text-danger" style="font-size: 14px;" />
         <div>
             <strong>Terdapat kesalahan pada input pengeluaran:</strong>
             <ul style="margin: 3px 0 0 16px; font-size: 11.5px;">
@@ -285,27 +285,27 @@
                 <div class="card" style="border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
                     <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+                            <x-lucide-boxes class="text-primary" style="font-size:13px;" />
                             <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Rincian Material yang Dikeluarkan</span>
                         </div>
                         <span id="itemsLoadingSpinner" style="display: none; font-size: 11.5px; color: #2563eb; font-weight: 600;">
-                            <i class="fas fa-spinner fa-spin me-1"></i> Memuat data MR...
+                            <x-lucide-loader-2 class="me-1 animate-spin" /> Memuat data MR...
                         </span>
 
                         <div id="mrQuickActions" style="display: none;" class="flex gap-1">
                             <button type="button" class="btn btn-sm btn-light border text-primary fw-600" onclick="fillAllRemainingQuota()" title="Otomatis mengisi kuantitas sesuai sisa kuota yang disetujui" style="height: 32px; font-size: 12px; border-radius:6px; padding:0 12px;">
-                                <i class="fas fa-check-double text-primary me-1"></i> Penuhi Kuota
+                                <x-lucide-check-check class="text-primary me-1" /> Penuhi Kuota
                             </button>
                             <button type="button" class="btn btn-sm btn-light border text-muted fw-600" onclick="resetAllQuantities()" title="Kosongkan nilai input kuantitas" style="height: 32px; font-size: 12px; border-radius:6px; padding:0 10px;">
-                                <i class="fas fa-rotate-left me-1"></i> Reset
+                                <x-lucide-rotate-ccw class="me-1" /> Reset
                             </button>
                         </div>
                         <div id="manualButtonsGroup" style="display: none; gap: 8px;">
                             <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
-                                <i class="fas fa-plus me-1"></i> Tambah Baris
+                                <x-lucide-plus class="me-1" /> Tambah Baris
                             </button>
                             <button type="button" class="btn btn-sm btn-light border text-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
-                                <i class="fas fa-plus me-1"></i> Item Custom
+                                <x-lucide-plus class="me-1" /> Item Custom
                             </button>
                         </div>
                     </div>
@@ -313,7 +313,7 @@
                     {{-- Search Toolbar --}}
                     <div style="padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                         <div style="position: relative; max-width: 320px; width: 100%;">
-                            <i class="fas fa-search" style="position: absolute; left: 11px; top: 50%; transform:translateY(-50%); font-size: 11.5px; color: #94a3b8;"></i>
+                            <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform:translateY(-50%); font-size: 11.5px; color: #94a3b8;" />
                             <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 34px; padding-left: 32px; font-size: 12px; border-radius: 6px; border-color:#cbd5e1;">
                         </div>
                         <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
@@ -342,7 +342,7 @@
 
                         {{-- Empty State jika belum pilih MR --}}
                         <div id="mrEmptyState" style="padding: 28px 16px; text-align: center; color: #94a3b8;">
-                            <i class="fas fa-inbox" style="font-size: 24px; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
+                            <x-lucide-inbox style="font-size: 24px; color: #cbd5e1; margin-bottom: 6px; display:inline-block;" />
                             <div style="font-size: 12.5px; font-weight: 600; color: #475569;">Belum Ada PO Lapangan (MR) yang Dipilih</div>
                             <div style="font-size: 11px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>Metode & Surat PO Lapangan</strong> di atas.</div>
                         </div>
@@ -367,7 +367,7 @@
             {{-- ── Kanan: Informasi Bon Pengeluaran ── --}}
             <div class="card sidebar-sticky-bon" id="bonSidebarCard" style="position:sticky; top:20px; border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-file-invoice text-primary" style="font-size:13px;"></i>
+                    <x-lucide-receipt class="text-primary" style="font-size:13px;" />
                     <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Informasi Bon Pengeluaran</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
@@ -378,7 +378,7 @@
                             <label class="form-label mb-0" style="font-size:11px; font-weight:600; color:#334155;">Gudang Sumber <span class="text-danger">*</span></label>
                             @if($warehouses->count() > 1 && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']))
                             <button type="button" onclick="toggleWarehouseSwitch()" style="background:none; border:none; padding:0; font-size:10.5px; color:#2563eb; font-weight:600; cursor:pointer;" title="Ganti Gudang">
-                                <i class="fas fa-arrow-right-arrow-left" style="font-size:9.5px;"></i> Ganti
+                                <x-lucide-arrow-left-right style="font-size:9.5px;" /> Ganti
                             </button>
                             @endif
                         </div>
@@ -389,13 +389,13 @@
                         {{-- Readonly Box: Otomatis --}}
                         <div id="warehouseLockedDisplay" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; min-height:36px; box-sizing:border-box;">
                             <div style="display:flex; align-items:center; gap:7px; overflow:hidden;">
-                                <i class="fas fa-warehouse text-primary" style="font-size:12px; flex-shrink:0;"></i>
+                                <x-lucide-warehouse class="text-primary" style="font-size:12px; flex-shrink:0;" />
                                 <span style="font-size:12px; font-weight:600; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="displayWarehouseName">
                                     {{ $selectedWarehouse?->name ?? 'Gudang Pusat' }} {{ $selectedWarehouse?->is_central ? '(Pusat)' : '' }}
                                 </span>
                             </div>
                             <span class="badge" style="background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; font-size:10px; padding:2px 7px; border-radius:4px; font-weight:600; flex-shrink:0;">
-                                <i class="fas fa-lock" style="font-size:8.5px;"></i> Otomatis
+                                <x-lucide-lock style="font-size:8.5px;" /> Otomatis
                             </span>
                         </div>
 
@@ -444,7 +444,7 @@
 
                     <div style="display:flex; flex-direction:column; gap:6px;">
                         <button type="submit" class="btn btn-primary w-full" id="submitBtn" style="justify-content:center; padding:8px 12px; height:38px; font-size:12.5px; font-weight:600; border-radius:6px; box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                            <i class="fas fa-check-circle me-1"></i> Simpan &amp; Potong Stok
+                            <x-lucide-circle-check class="me-1" /> Simpan &amp; Potong Stok
                         </button>
                         <a href="{{ route('material-usages.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center; padding:6px 12px; height:32px; font-size:12px; font-weight:500; border-radius:6px; color:#64748b;">
                             Batal
@@ -465,7 +465,7 @@
     {{-- Floating Action Bar for Mobile View --}}
     <div id="mobileUsageSummaryBar" style="display:none;position:fixed;bottom:14px;left:14px;right:14px;z-index:99;background:#0f172a;color:#ffffff;border-radius:10px;padding:10px 14px;box-shadow:0 8px 20px -3px rgba(0,0,0,0.3);align-items:center;justify-content:space-between;gap:10px;">
         <div style="display:flex;align-items:center;gap:6px;">
-            <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+            <x-lucide-boxes class="text-primary" style="font-size:13px;" />
             <span style="font-size:12px;font-weight:600;"><span id="mobileUsageItemCount">0</span> Item Siap</span>
         </div>
         <button type="button" onclick="scrollToBonForm()" class="btn btn-sm btn-primary" style="padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:5px;box-shadow:none;">
@@ -595,7 +595,7 @@
                                 <code style="font-size: 10.5px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #475569;">${item.code}</code>
                                 <span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; border-radius:3px; padding:1px 5px;">${item.category}</span>
                             </div>
-                            ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><i class="fas fa-check"></i> Terpenuhi</span>' : ''}
+                            ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><x-lucide-check /> Terpenuhi</span>' : ''}
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
                             <div class="fw-700" style="font-size: 12px; color:#1e293b;">Tiba: ${item.qty_received} ${item.unit}</div>
@@ -636,7 +636,7 @@
                         </td>
                         <td style="padding: 8px 6px; text-align: center;">
                             <button type="button" class="btn-delete-row" onclick="removeRow('${rowId}')" title="Hapus Baris">
-                                <i class="fas fa-trash-can"></i>
+                                <x-lucide-trash-2 />
                             </button>
                         </td>
                     `;
@@ -668,11 +668,11 @@
             if (val > remaining) {
                 input.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-circle-exclamation me-1"></i> Max: ${remaining}`;
+                warningEl.innerHTML = `<x-lucide-circle-alert class="me-1" /> Max: ${remaining}`;
             } else if (val > stock) {
                 input.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Stok: ${stock}`;
+                warningEl.innerHTML = `<x-lucide-triangle-alert class="me-1" /> Stok: ${stock}`;
             } else {
                 input.classList.remove('is-invalid');
                 warningEl.style.display = 'none';
@@ -739,7 +739,7 @@
             tr.innerHTML = `
                 <td style="padding: 8px 12px; position: relative;">
                     <div style="position: relative;">
-                        <i class="fas fa-search" style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;"></i>
+                        <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;" />
                         <input type="text" 
                                id="${rowId}-name-input" 
                                class="form-control material-autocomplete-input" 
@@ -755,7 +755,7 @@
                                 onclick="clearMaterialRowSelection('${rowId}')" 
                                 style="display: ${initialName ? 'block' : 'none'}; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" 
                                 title="Hapus / Ganti">
-                            <i class="fas fa-times"></i>
+                            <x-lucide-x />
                         </button>
                     </div>
 
@@ -789,7 +789,7 @@
                 </td>
                 <td style="padding: 8px 6px; text-align: center;">
                     <button type="button" class="btn-delete-row" onclick="removeRow('${rowId}')" title="Hapus Baris">
-                        <i class="fas fa-trash-can"></i>
+                        <x-lucide-trash-2 />
                     </button>
                 </td>
             `;
@@ -894,7 +894,7 @@
 
             if (matched.length > 0) {
                 html += `<div style="padding:6px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
-                    <span><i class="fas fa-boxes-stacked me-1 text-primary"></i> Data Master Inventori (${matched.length} Ditemukan)</span>
+                    <span><x-lucide-boxes class="me-1 text-primary" /> Data Master Inventori (${matched.length} Ditemukan)</span>
                     <span style="font-size:10px;color:#94a3b8;font-weight:normal;">Urut A-Z</span>
                 </div>`;
 
@@ -944,14 +944,14 @@
                               onclick="selectAsCustomMaterial('${rowId}', '${query.trim().replace(/'/g, "\\'")}')" 
                               style="padding:9px 12px;background:#fffbeb;border-top:1.5px dashed #fde68a;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:#92400e;transition:background .15s;">
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-pen-to-square text-warning" style="font-size:12.5px;"></i>
+                        <x-lucide-square-pen class="text-warning" style="font-size:12.5px;" />
                         <span style="font-size:12px;">Gunakan "<strong>${safeQ}</strong>" sebagai Material Custom</span>
                     </div>
                     <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;padding:2px 6px;">Non-Master</span>
                 </div>`;
             } else if (matched.length === 0) {
                 html = `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:12px;">
-                    <i class="fas fa-keyboard" style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;"></i>
+                    <x-lucide-keyboard style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;" />
                     Ketik nama material untuk mencari di inventori
                 </div>`;
             }
@@ -1192,7 +1192,7 @@
             if (max > 0 && val > max) {
                 qtyInput.classList.add('is-invalid');
                 warningEl.style.display = 'block';
-                warningEl.innerHTML = `<i class="fas fa-triangle-exclamation me-1"></i> Max: ${max}`;
+                warningEl.innerHTML = `<x-lucide-triangle-alert class="me-1" /> Max: ${max}`;
             } else {
                 qtyInput.classList.remove('is-invalid');
                 warningEl.style.display = 'none';
@@ -1259,11 +1259,11 @@
 
             const badge = document.getElementById('statusValidationBadge');
             if (hasInvalid) {
-                badge.innerHTML = `<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><i class="fas fa-circle-xmark me-1"></i> Melebihi Batas</span>`;
+                badge.innerHTML = `<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><x-lucide-circle-x class="me-1" /> Melebihi Batas</span>`;
             } else if (totalItems === 0) {
                 badge.innerHTML = `<span class="badge" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; font-size: 10.5px; padding:2px 7px; border-radius:12px;">Belum Ada Kuantitas</span>`;
             } else {
-                badge.innerHTML = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><i class="fas fa-circle-check me-1"></i> Siap (${totalItems} item)</span>`;
+                badge.innerHTML = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size: 10.5px; padding:2px 7px; border-radius:12px;"><x-lucide-circle-check class="me-1" /> Siap (${totalItems} item)</span>`;
             }
 
             // Mobile Floating Action Bar
@@ -1345,7 +1345,7 @@
             const btn = form.querySelector('button[type=submit]');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
+                btn.innerHTML = '<x-lucide-loader-2 class="me-1 animate-spin" /> Menyimpan...';
             }
 
             return true;

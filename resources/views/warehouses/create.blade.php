@@ -4,8 +4,8 @@
     <div class="warehouse-edit-container">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
-            <a href="{{ route('warehouses.index') }}"><i class="fas fa-warehouse" style="font-size:12px;"></i> Data Gudang</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <a href="{{ route('warehouses.index') }}"><x-lucide-warehouse style="font-size:12px;" /> Data Gudang</a>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span style="color:#1e293b;font-weight:600;">Tambah Baru</span>
         </div>
 
@@ -15,7 +15,7 @@
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2">
                         <div class="icon-circle icon-circle-primary">
-                            <i class="fas fa-plus"></i>
+                            <x-lucide-plus />
                         </div>
                         <div>
                             <span class="card-title" style="font-size:16px;">Form Tambah Gudang Baru</span>
@@ -23,7 +23,7 @@
                         </div>
                     </div>
                     <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Kembali
+                        <x-lucide-arrow-left /> Kembali
                     </a>
                 </div>
             </div>
@@ -32,7 +32,7 @@
                 @if (isset($errors) && $errors->any())
                     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
                         <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada pengisian form:
+                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
                         </strong>
                         <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
                             @foreach ($errors->all() as $error)
@@ -48,7 +48,7 @@
                     <!-- SECTION 1: IDENTITAS GUDANG -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-warehouse text-primary"></i>
+                            <x-lucide-warehouse class="text-primary" />
                             <h3 class="section-title">Identitas Gudang</h3>
                         </div>
 
@@ -58,7 +58,7 @@
                                     Kode Gudang <span class="text-muted" style="font-size:12px;font-weight:normal;">(Otomatis jika kosong)</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-barcode input-icon"></i>
+                                    <x-lucide-barcode class="input-icon" />
                                     <input type="text" id="whCode" name="code" value="{{ old('code') }}" class="form-control with-icon" placeholder="mis. W-PRJ-005">
                                 </div>
                             </div>
@@ -68,7 +68,7 @@
                                     Nama Gudang <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-building input-icon"></i>
+                                    <x-lucide-building-2 class="input-icon" />
                                     <input type="text" id="whName" name="name" value="{{ old('name') }}" class="form-control with-icon" required placeholder="mis. Gudang Site BSD City">
                                 </div>
                             </div>
@@ -80,7 +80,7 @@
                     <!-- SECTION 2: TIPE & RELASI PROYEK -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-layer-group text-warning"></i>
+                            <x-lucide-layers class="text-warning" />
                             <h3 class="section-title">Tipe Gudang & Relasi Proyek</h3>
                         </div>
 
@@ -90,7 +90,7 @@
                                     Tipe Gudang <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-tag input-icon"></i>
+                                    <x-lucide-tag class="input-icon" />
                                     <select name="type" class="form-control with-icon" id="warehouseType" required onchange="toggleProject()">
                                         <option value="project" {{ old('type', 'project') == 'project' ? 'selected' : '' }}>🏗️ Gudang Proyek (Project Site)</option>
                                         <option value="central" {{ old('type') == 'central' ? 'selected' : '' }}>🏢 Gudang Pusat (Central)</option>
@@ -103,7 +103,7 @@
                                     Terkait Proyek <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-building-columns input-icon"></i>
+                                    <x-lucide-landmark class="input-icon" />
                                     <input type="text" 
                                            id="projectNameInput" 
                                            name="project_name" 
@@ -129,7 +129,7 @@
                     <!-- SECTION 3: LOKASI & ALAMAT -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-location-dot text-danger"></i>
+                            <x-lucide-map-pin class="text-danger" />
                             <h3 class="section-title">Lokasi & Alamat Gudang</h3>
                         </div>
 
@@ -138,7 +138,7 @@
                                 Alamat Lengkap
                             </label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
-                                <i class="fas fa-map-pin input-icon" style="top:12px;"></i>
+                                <x-lucide-map-pin class="input-icon" style="top:12px;" />
                                 <textarea id="whAddress" name="address" class="form-control with-icon" rows="3" placeholder="Alamat lengkap lokasi gudang atau instruksi akses pengiriman...">{{ old('address', old('location')) }}</textarea>
                             </div>
                         </div>
@@ -148,10 +148,10 @@
                     <div class="form-actions-bar">
                         <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
                             <button type="submit" class="btn btn-primary btn-submit-form">
-                                <i class="fas fa-plus-circle"></i> Simpan Gudang Baru
+                                <x-lucide-circle-plus /> Simpan Gudang Baru
                             </button>
                             <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <i class="fas fa-xmark"></i> Batal
+                                <x-lucide-x /> Batal
                             </a>
                         </div>
                     </div>

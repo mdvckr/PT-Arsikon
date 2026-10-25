@@ -95,13 +95,13 @@
 
     <div class="breadcrumb">
         <a href="{{ route('distributions.index') }}">Distribusi & Surat Jalan</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>Buat Surat Jalan Baru</span>
     </div>
 
     @if(session('error'))
     <div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:14px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-exclamation-circle" style="font-size:16px;"></i>
+        <x-lucide-circle-alert style="font-size:16px;" />
         <span>{{ session('error') }}</span>
     </div>
     @endif
@@ -109,7 +109,7 @@
     @if($errors->any())
     <div class="alert alert-danger" style="margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:14px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">
         <div style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:6px;">
-            <i class="fas fa-exclamation-triangle"></i> Periksa kembali data formulir:
+            <x-lucide-triangle-alert /> Periksa kembali data formulir:
         </div>
         <ul style="margin:0 0 0 20px;padding:0;font-size:13px;">
             @foreach($errors->all() as $err)
@@ -149,7 +149,7 @@
                 <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 4px 12px -2px rgba(0,0,0,0.04);overflow:hidden;">
                     <div class="card-header flex justify-between items-center" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 18px;">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            <i class="fas fa-boxes-stacked text-primary" style="font-size:15px;"></i>
+                            <x-lucide-boxes class="text-primary" style="font-size:15px;" />
                             <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Barang & Alat yang Dikirim</span>
                         </div>
                         <div>
@@ -161,7 +161,7 @@
                     <div id="item-adder-box" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 18px;position:relative;">
                         <div style="font-weight:600;font-size:12.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;color:#475569;">
                             <div style="display:flex;align-items:center;gap:6px;">
-                                <i class="fas fa-pen-to-square text-primary" style="font-size:12px;"></i>
+                                <x-lucide-square-pen class="text-primary" style="font-size:12px;" />
                                 <span style="color:#1e293b;font-weight:700;">Input Barang / Alat</span>
                                 <span class="text-muted" style="font-weight:normal;font-size:11.5px;">(Ketik manual atau pilih rekomendasi dari inventori)</span>
                             </div>
@@ -182,7 +182,7 @@
                                     <span id="input-source-indicator" class="badge" style="display:none;font-size:10px;padding:1px 6px;"></span>
                                 </div>
                                 <div style="position:relative;">
-                                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12.5px;pointer-events:none;"></i>
+                                    <x-lucide-search style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12.5px;pointer-events:none;" />
                                     <input type="text" id="manual-custom-name" class="form-control" 
                                         placeholder="Ketik nama barang / alat (cth: Semen, Genset, Terpal, Kabel)..." 
                                         autocomplete="off"
@@ -192,7 +192,7 @@
                                         onkeydown="onItemSearchKeydown(event)">
                                     <button type="button" id="clear-item-btn" onclick="clearItemSearch()" 
                                         style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 4px;" title="Hapus teks">
-                                        <i class="fas fa-times"></i>
+                                        <x-lucide-x />
                                     </button>
                                 </div>
 
@@ -229,7 +229,7 @@
                             <div>
                                 <button type="button" class="btn btn-primary" onclick="addManualItem()" 
                                     style="height:38px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:8px;padding:0 18px;">
-                                    <i class="fas fa-plus" style="font-size:12px;"></i> <span>Tambah</span>
+                                    <x-lucide-plus style="font-size:12px;" /> <span>Tambah</span>
                                 </button>
                             </div>
                         </div>
@@ -237,18 +237,18 @@
                         {{-- Status Info Strip (muncul saat item master inventori terpilih) --}}
                         <div id="master-item-selected-strip" style="display:none;margin-top:8px;padding:6px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:11.5px;align-items:center;justify-content:space-between;gap:8px;">
                             <div style="display:flex;align-items:center;gap:6px;color:#166534;">
-                                <i class="fas fa-circle-check text-success"></i>
+                                <x-lucide-circle-check class="text-success" />
                                 <span>Terhubung Master: <strong id="selected-master-title"></strong></span>
                                 <span id="selected-master-stock-pill" class="badge" style="background:#dcfce7;color:#15803d;font-size:10.5px;margin-left:4px;"></span>
                             </div>
                             <button type="button" class="btn btn-link btn-xs p-0 text-danger" onclick="unlinkMasterItem(false)" style="text-decoration:none;font-size:11px;font-weight:600;" title="Jadikan item bebas tanpa relasi master inventori">
-                                <i class="fas fa-unlink me-1"></i> Lepas Relasi (Jadikan Manual)
+                                <x-lucide-unlink class="me-1" /> Lepas Relasi (Jadikan Manual)
                             </button>
                         </div>
 
                         <div id="manual-warning" class="text-danger" style="display:none;font-size:11.5px;font-weight:600;margin-top:8px;"></div>
                         <div id="manual-hint" class="text-muted" style="font-size:11.5px;margin-top:6px;color:#94a3b8;">
-                            <i class="fas fa-lightbulb text-warning me-1"></i> <strong>Tips:</strong> Ketik nama barang untuk memunculkan pilihan dari inventori secara otomatis, atau ketik nama bebas untuk barang manual non-inventori.
+                            <x-lucide-lightbulb class="text-warning me-1" /> <strong>Tips:</strong> Ketik nama barang untuk memunculkan pilihan dari inventori secara otomatis, atau ketik nama bebas untuk barang manual non-inventori.
                         </div>
                     </div>
 
@@ -265,7 +265,9 @@
                             <tbody id="itemsBody">
                                 <tr id="empty-row">
                                     <td colspan="4" style="text-align:center;padding:36px 20px;color:#94a3b8;">
-                                        <i class="fas fa-inbox" style="font-size:26px;color:#cbd5e1;margin-bottom:8px;display:block;"></i>
+                                        <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px;color:#94a3b8;">
+                                            <x-lucide-inbox style="width:24px;height:24px;" />
+                                        </div>
                                         <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada barang atau alat yang dimasukkan</div>
                                         <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;">Pilih dokumen permintaan di atas atau gunakan formulir tambah manual di atas</div>
                                     </td>
@@ -278,7 +280,7 @@
                 {{-- CARD 3: Tanggal & Catatan Pengiriman --}}
                 <div class="card" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;box-shadow:0 4px 12px -2px rgba(0,0,0,0.04);overflow:hidden;">
                     <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-truck text-primary" style="font-size:15px;"></i>
+                        <x-lucide-truck class="text-primary" style="font-size:15px;" />
                         <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Informasi Pengiriman</span>
                     </div>
                     <div class="card-body" style="padding:18px;">
@@ -308,11 +310,11 @@
             <div class="card sidebar-sticky-route" id="routeSidebarCard" style="position:sticky;top:20px;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 4px 12px -2px rgba(0,0,0,0.04);">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-route text-primary" style="font-size:15px;"></i>
+                        <x-lucide-route class="text-primary" style="font-size:15px;" />
                         <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Rute Pengiriman</span>
                     </div>
                     <span id="route-type-badge" class="badge" style="background:#eff6ff;color:#2563eb;font-size:11px;font-weight:600;padding:4px 8px;border-radius:20px;">
-                        <i class="fas fa-route" style="font-size:9.5px;"></i> <span id="route-type-text">Pusat &rarr; Proyek</span>
+                        <x-lucide-route style="font-size:9.5px;" /> <span id="route-type-text">Pusat &rarr; Proyek</span>
                     </span>
                 </div>
                 <div class="card-body" style="padding:18px;">
@@ -336,7 +338,7 @@
 
                             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
                                 <div style="font-weight:600;font-size:13px;color:#1e293b;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;">
-                                    <i class="fas fa-warehouse text-primary" style="font-size:13px;flex-shrink:0;"></i>
+                                    <x-lucide-warehouse class="text-primary" style="font-size:13px;flex-shrink:0;" />
                                     <span id="display-from-warehouse-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                         {{ $originWarehouse?->name ?? 'Gudang Pusat' }}
                                     </span>
@@ -351,7 +353,7 @@
                         <div style="position:relative;">
                             {{-- Node Dot --}}
                             <div style="position:absolute;left:-30px;top:2px;width:22px;height:22px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;z-index:2;">
-                                <i class="fas fa-location-dot" style="font-size:10px;color:#16a34a;"></i>
+                                <x-lucide-map-pin style="font-size:10px;color:#16a34a;" />
                             </div>
 
                             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:5px;">
@@ -381,13 +383,13 @@
 
                     {{-- Status note --}}
                     <div style="background:#f8fafc;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:18px;font-size:11.5px;color:#475569;line-height:1.45;">
-                        <i class="fas fa-info-circle text-primary" style="margin-right:4px;"></i>
+                        <x-lucide-info class="text-primary" style="margin-right:4px;" />
                         Surat jalan berstatus <strong>Draft</strong> sebelum diverifikasi dan dikirim.
                     </div>
 
                     {{-- Submit Button --}}
                     <button type="submit" id="btn-submit" class="btn btn-primary w-full" style="justify-content:center;padding:12px;font-size:14px;font-weight:600;border-radius:8px;box-shadow:0 2px 6px rgba(37,99,235,0.25);">
-                        <i class="fas fa-paper-plane" style="margin-right:6px;"></i> Buat Surat Jalan
+                        <x-lucide-send style="margin-right:6px;" /> Buat Surat Jalan
                     </button>
                 </div>
             </div>
@@ -397,7 +399,7 @@
     {{-- Floating Action Bar for Mobile View --}}
     <div id="mobileDistSummaryBar" style="display:none;position:fixed;bottom:16px;left:16px;right:16px;z-index:99;background:#0f172a;color:#ffffff;border-radius:12px;padding:12px 16px;box-shadow:0 10px 25px -4px rgba(0,0,0,0.3);align-items:center;justify-content:space-between;gap:12px;">
         <div style="display:flex;align-items:center;gap:8px;">
-            <i class="fas fa-boxes-stacked text-primary" style="font-size:15px;"></i>
+            <x-lucide-boxes class="text-primary" style="font-size:15px;" />
             <span style="font-size:13px;font-weight:600;"><span id="mobileDistItemCount">0</span> Item Siap Kirim</span>
         </div>
         <button type="button" onclick="scrollToRoute()" class="btn btn-sm btn-primary" style="padding:6px 14px;font-size:12px;font-weight:600;border-radius:6px;box-shadow:none;">
@@ -532,7 +534,7 @@
                     </td>
                     <td style="text-align:center;">
                         <button type="button" class="btn btn-sm btn-light border text-danger" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus alat" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;">
-                            <i class="fas fa-trash-can" style="font-size:11px;"></i>
+                            <x-lucide-trash-2 style="font-size:11px;" />
                         </button>
                     </td>`;
 
@@ -724,7 +726,7 @@
 
             if (matchedItems.length > 0) {
                 html += `<div style="padding:6px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:700;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
-                    <span><i class="fas fa-boxes-stacked me-1 text-primary"></i> Data Inventori Berdasarkan Nama (${matchedItems.length} Ditemukan)</span>
+                    <span><x-lucide-boxes class="me-1 text-primary" /> Data Inventori Berdasarkan Nama (${matchedItems.length} Ditemukan)</span>
                     <span style="font-size:10px;color:#94a3b8;font-weight:normal;">Urut Nama A-Z</span>
                 </div>`;
 
@@ -773,7 +775,7 @@
                 const safeQ = q.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 html += `<div class="suggestion-item suggestion-custom-opt" data-index="${itemIndexCounter}" onclick="selectAsManualCustom('${safeQ}')" style="padding:10px 14px;background:#fffbeb;border-top:1.5px dashed #fde68a;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:#92400e;transition:background .15s;">
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-pen-to-square text-warning" style="font-size:13px;"></i>
+                        <x-lucide-square-pen class="text-warning" style="font-size:13px;" />
                         <span style="font-size:12px;">Gunakan nama "<strong>${escapeHtml(query.trim())}</strong>" sebagai Barang Manual</span>
                     </div>
                     <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;padding:2px 6px;">Non-Master</span>
@@ -784,7 +786,7 @@
                 });
             } else if (matchedItems.length === 0) {
                 html = `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:12px;">
-                    <i class="fas fa-keyboard" style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;"></i>
+                    <x-lucide-keyboard style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;" />
                     Ketik nama barang atau alat untuk mencari di inventori
                 </div>`;
             }
@@ -856,10 +858,10 @@
 
             if (stock > 0 && qty > stock) {
                 manualWarning.style.display = 'block';
-                manualWarning.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Perhatian: Kuantitas kirim (${qty} ${unit}) melebihi stok yang tersedia di gudang asal (${stock} ${unit}).`;
+                manualWarning.innerHTML = `<x-lucide-triangle-alert /> Perhatian: Kuantitas kirim (${qty} ${unit}) melebihi stok yang tersedia di gudang asal (${stock} ${unit}).`;
             } else if (stock <= 0) {
                 manualWarning.style.display = 'block';
-                manualWarning.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Perhatian: Stok item ini di gudang asal adalah 0 ${unit}.`;
+                manualWarning.innerHTML = `<x-lucide-triangle-alert /> Perhatian: Stok item ini di gudang asal adalah 0 ${unit}.`;
             } else {
                 manualWarning.style.display = 'none';
             }
@@ -933,7 +935,7 @@
 
             if (type === 'material' && id) {
                 tr.innerHTML = `
-                    <td><span class="badge" style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-cube me-1"></i>Material</span></td>
+                    <td><span class="badge" style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><x-lucide-box class="me-1" />Material</span></td>
                     <td>
                         <input type="hidden" name="items[${rowIndex}][type]" value="material">
                         <input type="hidden" name="items[${rowIndex}][material_id]" value="${id}">
@@ -952,12 +954,12 @@
                     </td>
                     <td style="text-align:center;">
                         <button type="button" class="btn btn-sm btn-light border text-danger" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus item" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;">
-                            <i class="fas fa-trash-can" style="font-size:11px;"></i>
+                            <x-lucide-trash-2 style="font-size:11px;" />
                         </button>
                     </td>`;
             } else if (type === 'tool' && id) {
                 tr.innerHTML = `
-                    <td><span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-wrench me-1"></i>Alat</span></td>
+                    <td><span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><x-lucide-wrench class="me-1" />Alat</span></td>
                     <td>
                         <input type="hidden" name="items[${rowIndex}][type]" value="tool">
                         <input type="hidden" name="items[${rowIndex}][tool_id]" value="${id}">
@@ -976,13 +978,13 @@
                     </td>
                     <td style="text-align:center;">
                         <button type="button" class="btn btn-sm btn-light border text-danger" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus alat" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;">
-                            <i class="fas fa-trash-can" style="font-size:11px;"></i>
+                            <x-lucide-trash-2 style="font-size:11px;" />
                         </button>
                     </td>`;
             } else {
                 // Custom / Manual item
                 tr.innerHTML = `
-                    <td><span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><i class="fas fa-pen-nib me-1"></i>Manual</span></td>
+                    <td><span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;"><x-lucide-pen-tool class="me-1" />Manual</span></td>
                     <td>
                         <input type="hidden" name="items[${rowIndex}][type]" value="custom">
                         <input type="hidden" name="items[${rowIndex}][custom_item_name]" value="${escapeHtml(name)}">
@@ -1002,7 +1004,7 @@
                     </td>
                     <td style="text-align:center;">
                         <button type="button" class="btn btn-sm btn-light border text-danger" onclick="this.closest('tr').remove(); updateBadge();" title="Hapus item" style="width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;">
-                            <i class="fas fa-trash-can" style="font-size:11px;"></i>
+                            <x-lucide-trash-2 style="font-size:11px;" />
                         </button>
                     </td>`;
             }
@@ -1068,7 +1070,7 @@
             }
 
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan Surat Jalan...';
+            btnSubmit.innerHTML = '<x-lucide-loader-2 class="animate-spin" /> Menyimpan Surat Jalan...';
         });
 
         // Initialize on load

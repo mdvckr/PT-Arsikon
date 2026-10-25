@@ -308,7 +308,7 @@
     <div class="daily-page-header">
         <div>
             <h2 class="fw-700" style="font-size:18px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-calendar-check text-primary" style="font-size:18px;"></i>
+                <x-lucide-calendar-check class="text-primary" style="font-size:18px;" />
                 Log Harian Logistik dan Aktivitas Proyek
             </h2>
             <p class="text-muted" style="font-size:12.5px;margin-top:3px;margin-bottom:0;">
@@ -318,7 +318,7 @@
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <a href="{{ route('daily-log.print', ['warehouse_id' => $selectedWarehouse->id, 'date' => $date]) }}" target="_blank" 
                class="btn btn-sm btn-primary" style="height:36px;padding:0 14px;border-radius:8px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(37,99,235,0.25);">
-                <i class="fas fa-print"></i> Cetak Laporan
+                <x-lucide-printer /> Cetak Laporan
             </a>
         </div>
     </div>
@@ -332,7 +332,7 @@
                     Gudang / Site Proyek
                 </label>
                 <div style="position:relative;">
-                    <i class="fas fa-warehouse" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;"></i>
+                    <x-lucide-warehouse style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;" />
                     <select name="warehouse_id" class="form-control" onchange="this.form.submit()" style="padding-left:32px !important;">
                         @foreach($warehouses as $wh)
                         <option value="{{ $wh->id }}" {{ $selectedWarehouse->id == $wh->id ? 'selected' : '' }}>
@@ -352,7 +352,7 @@
                     <div style="display:inline-flex;align-items:center;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:2px;gap:2px;">
                         <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => $prevDate]) }}" 
                            class="btn-tab-filter" style="border:none;background:transparent;padding:4px 9px;font-size:11px;color:#475569;" title="Kemarin">
-                            <i class="fas fa-chevron-left"></i> H-1
+                            <x-lucide-chevron-left /> H-1
                         </a>
                         <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => date('Y-m-d')]) }}" 
                            class="btn-tab-filter {{ $isToday ? 'active' : '' }}" style="border:none;padding:4px 10px;font-size:11px;" title="Hari Ini">
@@ -360,7 +360,7 @@
                         </a>
                         <a href="{{ route('daily-log.index', ['warehouse_id' => $selectedWarehouse->id, 'date' => $nextDate]) }}" 
                            class="btn-tab-filter" style="border:none;background:transparent;padding:4px 9px;font-size:11px;color:#475569;" title="Besok">
-                            H+1 <i class="fas fa-chevron-right"></i>
+                            H+1 <x-lucide-chevron-right />
                         </a>
                     </div>
                     <input type="date" name="date" value="{{ $date }}" class="form-control" onchange="this.form.submit()" style="flex:1;min-width:130px;">
@@ -369,7 +369,7 @@
 
             <div style="display:flex;gap:6px;">
                 <button type="submit" class="btn btn-primary" style="height:38px;padding:0 16px;border-radius:8px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-arrows-rotate"></i> Muat Data
+                    <x-lucide-rotate-cw /> Muat Data
                 </button>
             </div>
         </form>
@@ -381,7 +381,7 @@
         {{-- 1. Material Masuk --}}
         <div class="daily-kpi-card" data-kpi-category="material" onclick="goToSection('section-material-masuk', 'material')" title="Klik untuk menuju ke Penerimaan Material Masuk">
             <div class="daily-kpi-icon" style="background:#eff6ff;color:#2563eb;">
-                <i class="fas fa-truck-ramp-box"></i>
+                <x-lucide-package-check />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Material Masuk</div>
@@ -396,7 +396,7 @@
         {{-- 2. Material Dipakai --}}
         <div class="daily-kpi-card" data-kpi-category="material" onclick="goToSection('section-material-dipakai', 'material')" title="Klik untuk menuju ke Pemakaian Material Lapangan">
             <div class="daily-kpi-icon" style="background:#fff7ed;color:#ea580c;">
-                <i class="fas fa-dolly"></i>
+                <x-lucide-package-check />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Material Dipakai</div>
@@ -411,7 +411,7 @@
         {{-- 3. Alat Ready --}}
         <div class="daily-kpi-card" data-kpi-category="tool" onclick="goToSection('section-kesiapan-alat', 'tool')" title="Klik untuk menuju ke Kesiapan Alat Kerja di Gudang">
             <div class="daily-kpi-icon" style="background:#ecfdf5;color:#059669;">
-                <i class="fas fa-screwdriver-wrench"></i>
+                <x-lucide-wrench />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Alat Ready</div>
@@ -426,7 +426,7 @@
         {{-- 4. Alat di Lapangan --}}
         <div class="daily-kpi-card" data-kpi-category="tool" onclick="goToSection('section-alat-lapangan', 'tool')" title="Klik untuk menuju ke Pantauan Alat di Lapangan">
             <div class="daily-kpi-icon" style="background:#f5f3ff;color:#7c3aed;">
-                <i class="fas fa-hand-holding"></i>
+                <x-lucide-hand />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Alat di Lapangan</div>
@@ -441,7 +441,7 @@
         {{-- 5. Alat Rusak / Servis --}}
         <div class="daily-kpi-card" data-kpi-category="tool" onclick="goToSection('section-kesiapan-alat', 'tool')" title="Klik untuk menuju ke Alat Perlu Servis / Rusak">
             <div class="daily-kpi-icon" style="background:#fef2f2;color:{{ $totalToolsDamaged > 0 ? '#dc2626' : '#94a3b8' }};">
-                <i class="fas fa-triangle-exclamation"></i>
+                <x-lucide-triangle-alert />
             </div>
             <div>
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Alat Rusak / Servis</div>
@@ -458,28 +458,29 @@
     <div class="daily-filter-bar">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span style="font-size:12px;font-weight:700;color:#475569;margin-right:2px;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-filter text-primary" style="font-size:12px;"></i> Filter Bagian:
+                <x-lucide-filter class="text-primary" style="font-size:12px;" /> Filter Bagian:
             </span>
             <button type="button" class="btn-tab-filter active" data-filter="all" onclick="filterSections('all')">
-                <i class="fas fa-layer-group"></i> Semua Bagian
+                <x-lucide-layers /> Semua Bagian
             </button>
             <button type="button" class="btn-tab-filter" data-filter="material" onclick="filterSections('material')">
-                <i class="fas fa-boxes-stacked"></i> Khusus Material
+                <x-lucide-boxes /> Khusus Material
             </button>
             <button type="button" class="btn-tab-filter" data-filter="tool" onclick="filterSections('tool')">
-                <i class="fas fa-screwdriver-wrench"></i> Khusus Alat Kerja
+                <x-lucide-wrench /> Khusus Alat Kerja
             </button>
         </div>
 
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             {{-- Tombol Toggle Sembunyikan / Tampilkan Seluruh Kartu di Atas --}}
             <button type="button" id="btnToggleKpiCards" onclick="toggleAllKpiCards()" class="btn-toggle-kpi" title="Sembunyikan / Tampilkan kartu metrik di atas">
-                <i class="fas fa-eye-slash" id="toggleKpiIcon"></i>
+                <span id="toggleKpiEye" style="display:none;"><x-lucide-eye /></span>
+                <span id="toggleKpiEyeOff"><x-lucide-eye-off /></span>
                 <span id="toggleKpiText">Sembunyikan Kartu</span>
             </button>
 
             <div class="text-muted" id="filterHelpText" style="font-size:11px;">
-                <i class="fas fa-mouse-pointer me-1 text-primary"></i> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.
+                <x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.
             </div>
         </div>
     </div>
@@ -514,7 +515,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('material-usages.show', $usage) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-file-invoice text-primary" style="font-size:11px;"></i>
+                                <x-lucide-receipt class="text-primary" style="font-size:11px;" />
                                 {{ $usage->usage_number }}
                             </a>
                         </td>
@@ -546,7 +547,7 @@
                     @empty
                     <tr>
                         <td colspan="5" class="daily-empty-box">
-                            <i class="fas fa-box-open"></i>
+                            <x-lucide-package-open />
                             Tidak ada pengeluaran / pemakaian material pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                         </td>
                     </tr>
@@ -587,7 +588,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('distributions.show', $dist) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-truck-fast text-primary" style="font-size:11px;"></i>
+                                <x-lucide-truck class="text-primary" style="font-size:11px;" />
                                 {{ $dist->distribution_number }}
                             </a>
                         </td>
@@ -609,7 +610,7 @@
                         </td>
                         <td style="text-align:center;">
                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:700;">
-                                <i class="fas fa-check me-1"></i> Diterima di Site
+                                <x-lucide-check class="me-1" /> Diterima di Site
                             </span>
                         </td>
                     </tr>
@@ -620,7 +621,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('goods-receipts.show', $gr) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-receipt text-primary" style="font-size:11px;"></i>
+                                <x-lucide-receipt class="text-primary" style="font-size:11px;" />
                                 {{ $gr->receipt_number }}
                             </a>
                         </td>
@@ -642,7 +643,7 @@
                         </td>
                         <td style="text-align:center;">
                             <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:700;">
-                                <i class="fas fa-check-circle me-1"></i> Masuk Gudang
+                                <x-lucide-circle-check class="me-1" /> Masuk Gudang
                             </span>
                         </td>
                     </tr>
@@ -651,7 +652,7 @@
                     @if(!$hasIncoming)
                     <tr>
                         <td colspan="4" class="daily-empty-box">
-                            <i class="fas fa-truck"></i>
+                            <x-lucide-truck />
                             Tidak ada penerimaan barang masuk pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                         </td>
                     </tr>
@@ -691,7 +692,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('distributions.show', $dist) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-paper-plane text-primary" style="font-size:11px;"></i>
+                                <x-lucide-send class="text-primary" style="font-size:11px;" />
                                 {{ $dist->distribution_number }}
                             </a>
                         </td>
@@ -725,7 +726,7 @@
                     @empty
                     <tr>
                         <td colspan="5" class="daily-empty-box">
-                            <i class="fas fa-route"></i>
+                            <x-lucide-route />
                             Tidak ada distribusi pengiriman keluar pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                         </td>
                     </tr>
@@ -765,7 +766,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('returns.show', $ret) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-rotate-left text-warning" style="font-size:11px;"></i>
+                                <x-lucide-rotate-ccw class="text-warning" style="font-size:11px;" />
                                 {{ $ret->return_number }}
                             </a>
                         </td>
@@ -796,7 +797,7 @@
                     @empty
                     <tr>
                         <td colspan="5" class="daily-empty-box">
-                            <i class="fas fa-arrow-rotate-left"></i>
+                            <x-lucide-rotate-ccw />
                             Tidak ada retur material diterima pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                         </td>
                     </tr>
@@ -885,7 +886,7 @@
                     @empty
                     <tr>
                         <td colspan="7" class="daily-empty-box">
-                            <i class="fas fa-screwdriver-wrench"></i>
+                            <x-lucide-wrench />
                             Tidak ada alat kerja yang sedang dipinjam di lapangan pada tanggal ini.
                         </td>
                     </tr>
@@ -916,7 +917,7 @@
                 @foreach($stockBalanceGrouped as $catName => $rows)
                 <div class="category-sub-bar">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-tag text-primary" style="font-size:11px;"></i>
+                        <x-lucide-tag class="text-primary" style="font-size:11px;" />
                         <span style="font-weight:700;font-size:11.5px;text-transform:uppercase;color:#1e293b;letter-spacing:0.3px;">{{ $catName }}</span>
                     </div>
                     <span class="badge" style="background:#ffffff;color:#475569;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:600;">
@@ -975,7 +976,7 @@
                 @endforeach
             @else
                 <div class="daily-empty-box">
-                    <i class="fas fa-layer-group"></i>
+                    <x-lucide-layers />
                     Tidak ada transaksi mutasi material pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                 </div>
             @endif
@@ -1007,7 +1008,7 @@
                 @foreach($toolBalanceGrouped as $catName => $rows)
                 <div class="category-sub-bar">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-toolbox text-primary" style="font-size:11px;"></i>
+                        <x-lucide-wrench class="text-primary" style="font-size:11px;" />
                         <span style="font-weight:700;font-size:11.5px;text-transform:uppercase;color:#1e293b;letter-spacing:0.3px;">{{ $catName }}</span>
                     </div>
                     <span class="badge" style="background:#ffffff;color:#475569;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:600;">
@@ -1066,7 +1067,7 @@
                                         <div style="display:flex;flex-direction:column;gap:3px;">
                                             @foreach($tb->borrowers as $bName)
                                             <div style="font-size:11.5px;color:#1e293b;display:flex;align-items:center;gap:5px;">
-                                                <i class="fas fa-user text-muted" style="font-size:10px;"></i>
+                                                <x-lucide-user class="text-muted" style="font-size:10px;" />
                                                 {{ $bName }}
                                             </div>
                                             @endforeach
@@ -1094,7 +1095,7 @@
                 @endforeach
             @else
                 <div class="daily-empty-box">
-                    <i class="fas fa-wrench"></i>
+                    <x-lucide-wrench />
                     Tidak ada alat yang dipinjam pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
                 </div>
             @endif
@@ -1131,7 +1132,7 @@
                     <tr>
                         <td style="white-space:nowrap;">
                             <a href="{{ route('stock-opnames.show', $opname) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-clipboard-check text-warning" style="font-size:11px;"></i>
+                                <x-lucide-clipboard-check class="text-warning" style="font-size:11px;" />
                                 {{ $opname->opname_number }}
                             </a>
                         </td>
@@ -1158,7 +1159,7 @@
                         </td>
                         <td style="text-align:center;">
                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:700;">
-                                <i class="fas fa-check-circle me-1"></i> Disetujui
+                                <x-lucide-circle-check class="me-1" /> Disetujui
                             </span>
                         </td>
                     </tr>
@@ -1186,7 +1187,8 @@
 
             // 2. OTOMATIS HILANGKAN KARTU / CHART METRIK DI ATAS SAAT DI-FILTER
             const kpiGrid = document.getElementById('dailyKpiGridContainer');
-            const toggleIcon = document.getElementById('toggleKpiIcon');
+            const eyeOpen = document.getElementById('toggleKpiEye');
+            const eyeOff = document.getElementById('toggleKpiEyeOff');
             const toggleText = document.getElementById('toggleKpiText');
             const filterHelp = document.getElementById('filterHelpText');
 
@@ -1194,10 +1196,11 @@
                 if (category !== 'all') {
                     // Saat memilih filter (Khusus Material / Khusus Alat Kerja): Otomatis HILANGKAN kartu di atas
                     kpiGrid.style.display = 'none';
-                    if (toggleIcon) toggleIcon.className = 'fas fa-eye';
+                    if (eyeOpen) eyeOpen.style.display = 'inline-flex';
+                    if (eyeOff) eyeOff.style.display = 'none';
                     if (toggleText) toggleText.innerText = 'Tampilkan Kartu';
                     if (filterHelp) {
-                        filterHelp.innerHTML = '<i class="fas fa-eye-slash me-1 text-primary"></i> Kartu ringkasan otomatis disembunyikan saat memfilter bagian.';
+                        filterHelp.innerHTML = '<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan otomatis disembunyikan saat memfilter bagian.';
                     }
                 } else {
                     // Saat memilih "Semua Bagian": Tampilkan kembali kartu ringkasan secara penuh
@@ -1206,10 +1209,11 @@
                     document.querySelectorAll('.daily-kpi-card[data-kpi-category]').forEach(card => {
                         card.style.display = 'flex';
                     });
-                    if (toggleIcon) toggleIcon.className = 'fas fa-eye-slash';
+                    if (eyeOpen) eyeOpen.style.display = 'none';
+                    if (eyeOff) eyeOff.style.display = 'inline-flex';
                     if (toggleText) toggleText.innerText = 'Sembunyikan Kartu';
                     if (filterHelp) {
-                        filterHelp.innerHTML = '<i class="fas fa-mouse-pointer me-1 text-primary"></i> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
+                        filterHelp.innerHTML = '<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
                     }
                 }
             }
@@ -1231,7 +1235,8 @@
          */
         function toggleAllKpiCards() {
             const kpiGrid = document.getElementById('dailyKpiGridContainer');
-            const toggleIcon = document.getElementById('toggleKpiIcon');
+            const eyeOpen = document.getElementById('toggleKpiEye');
+            const eyeOff = document.getElementById('toggleKpiEyeOff');
             const toggleText = document.getElementById('toggleKpiText');
             const filterHelp = document.getElementById('filterHelpText');
 
@@ -1258,17 +1263,19 @@
                     });
                     kpiGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
                 }
-                if (toggleIcon) toggleIcon.className = 'fas fa-eye-slash';
+                if (eyeOpen) eyeOpen.style.display = 'none';
+                if (eyeOff) eyeOff.style.display = 'inline-flex';
                 if (toggleText) toggleText.innerText = 'Sembunyikan Kartu';
                 if (filterHelp) {
-                    filterHelp.innerHTML = '<i class="fas fa-mouse-pointer me-1 text-primary"></i> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
+                    filterHelp.innerHTML = '<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
                 }
             } else {
                 kpiGrid.style.display = 'none';
-                if (toggleIcon) toggleIcon.className = 'fas fa-eye';
+                if (eyeOpen) eyeOpen.style.display = 'inline-flex';
+                if (eyeOff) eyeOff.style.display = 'none';
                 if (toggleText) toggleText.innerText = 'Tampilkan Kartu';
                 if (filterHelp) {
-                    filterHelp.innerHTML = '<i class="fas fa-eye-slash me-1 text-primary"></i> Kartu ringkasan disembunyikan.';
+                    filterHelp.innerHTML = '<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan disembunyikan.';
                 }
             }
         }

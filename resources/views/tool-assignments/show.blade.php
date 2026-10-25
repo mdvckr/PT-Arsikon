@@ -83,7 +83,7 @@
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('tool-assignments.index') }}">Peminjaman Alat</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Detail #{{ $toolLoan->loan_number }}</span>
     </div>
 
@@ -91,7 +91,7 @@
     <div class="flex items-center justify-between mb-3 page-actions-header">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <a href="{{ route('tool-assignments.index') }}" class="btn btn-light border btn-sm" style="border-radius:6px;padding:5px 10px;font-size:11.5px;color:#475569;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
+                <x-lucide-arrow-left class="me-1" /> Kembali
             </a>
             <div>
                 <h2 class="fw-700" style="font-size:15px;color:#0f172a;margin:0;display:inline-flex;align-items:center;gap:6px;">
@@ -101,21 +101,21 @@
             @php
                 if ($toolLoan->status === 'returned') {
                     if ($toolLoan->returned_lost > 0) {
-                        $statusBadge = '<span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><i class="fas fa-circle-exclamation me-1"></i> Dikembalikan (' . $toolLoan->returned_lost . ' Hilang)</span>';
+                        $statusBadge = '<span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><x-lucide-circle-alert class="me-1" /> Dikembalikan (' . $toolLoan->returned_lost . ' Hilang)</span>';
                     } elseif ($toolLoan->returned_damaged > 0) {
-                        $statusBadge = '<span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><i class="fas fa-triangle-exclamation me-1"></i> Dikembalikan (' . $toolLoan->returned_damaged . ' Rusak)</span>';
+                        $statusBadge = '<span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><x-lucide-triangle-alert class="me-1" /> Dikembalikan (' . $toolLoan->returned_damaged . ' Rusak)</span>';
                     } else {
-                        $statusBadge = '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><i class="fas fa-check me-1"></i> Dikembalikan Lengkap</span>';
+                        $statusBadge = '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><x-lucide-check class="me-1" /> Dikembalikan Lengkap</span>';
                     }
                 } elseif ($toolLoan->status === 'lost') {
-                    $statusBadge = '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><i class="fas fa-circle-xmark me-1"></i> Hilang Total</span>';
+                    $statusBadge = '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;"><x-lucide-circle-x class="me-1" /> Hilang Total</span>';
                 } else {
                     $statusBadge = match ($toolLoan->status) {
-                        'pending'   => '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><i class="fas fa-hourglass-half me-1"></i> Menunggu Persetujuan</span>',
-                        'overdue'   => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><i class="fas fa-clock me-1"></i> Terlambat</span>',
-                        'rejected'  => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><i class="fas fa-xmark me-1"></i> Ditolak</span>',
-                        'cancelled' => '<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><i class="fas fa-ban me-1"></i> Dibatalkan</span>',
-                        default     => '<span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><i class="fas fa-hand-holding me-1"></i> Dipinjam</span>',
+                        'pending'   => '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><x-lucide-hourglass class="me-1" /> Menunggu Persetujuan</span>',
+                        'overdue'   => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><x-lucide-clock class="me-1" /> Terlambat</span>',
+                        'rejected'  => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><x-lucide-x class="me-1" /> Ditolak</span>',
+                        'cancelled' => '<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><x-lucide-ban class="me-1" /> Dibatalkan</span>',
+                        default     => '<span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;"><x-lucide-hand class="me-1" /> Dipinjam</span>',
                     };
                 }
             @endphp
@@ -126,7 +126,7 @@
             @if(in_array($toolLoan->status, ['active', 'pending']))
                 @can('create distributions')
                 <a href="{{ route('distributions.create', ['tool_loan_id' => $toolLoan->id]) }}" class="btn btn-primary btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                    <i class="fas fa-truck-fast"></i> Buat Surat Jalan
+                    <x-lucide-truck /> Buat Surat Jalan
                 </a>
                 @endcan
             @endif
@@ -135,19 +135,19 @@
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
     @if($toolLoan->status === 'cancelled')
     <div class="alert alert-danger mb-3" style="display:flex;align-items:center;gap:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:8px;padding:10px 14px;">
-        <i class="fas fa-ban" style="font-size:16px;color:#dc2626;"></i>
+        <x-lucide-ban style="font-size:16px;color:#dc2626;" />
         <div>
             <strong style="color:#991b1b;font-size:12.5px;">Peminjaman Ini Telah Dibatalkan</strong>
             <div class="text-muted" style="font-size:11px;margin-top:1px;">
@@ -170,7 +170,7 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-clipboard-user text-primary" style="font-size:13px;"></i>
+                        <x-lucide-clipboard-pen class="text-primary" style="font-size:13px;" />
                         <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Peminjaman</span>
                     </div>
                     <span class="text-muted" style="font-size:11px;">Oleh: <strong>{{ $toolLoan->assignedBy?->name ?? '-' }}</strong></span>
@@ -206,7 +206,7 @@
                                 @endphp
                                 <span class="{{ $isOverdue ? 'text-danger fw-700' : '' }}">
                                     {{ $expDate->format('d/m/Y') }}
-                                    @if($isOverdue) <i class="fas fa-triangle-exclamation ms-1"></i> @endif
+                                    @if($isOverdue) <x-lucide-triangle-alert class="ms-1" /> @endif
                                 </span>
                             @else
                                 <span class="text-muted">-</span>
@@ -222,7 +222,7 @@
                     @if(in_array($toolLoan->status, ['returned', 'lost']))
                     <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;">
                         <div class="fw-700 mb-2" style="font-size:12px;color:#047857;display:flex;align-items:center;gap:6px;">
-                            <i class="fas fa-check-circle"></i> Hasil Rekapitulasi Pengembalian
+                            <x-lucide-circle-check /> Hasil Rekapitulasi Pengembalian
                         </div>
                         <div class="info-row">
                             <span class="info-label">Waktu Kembali</span>
@@ -232,16 +232,16 @@
                             <span class="info-label">Kondisi Fisik Alat</span>
                             <div class="info-val" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end;">
                                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;">
-                                    <i class="fas fa-circle-check me-1"></i> {{ $toolLoan->returned_good }} Baik
+                                    <x-lucide-circle-check class="me-1" /> {{ $toolLoan->returned_good }} Baik
                                 </span>
                                 @if($toolLoan->returned_damaged > 0)
                                 <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;">
-                                    <i class="fas fa-triangle-exclamation me-1"></i> {{ $toolLoan->returned_damaged }} Rusak
+                                    <x-lucide-triangle-alert class="me-1" /> {{ $toolLoan->returned_damaged }} Rusak
                                 </span>
                                 @endif
                                 @if($toolLoan->returned_lost > 0)
                                 <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;">
-                                    <i class="fas fa-circle-xmark me-1"></i> {{ $toolLoan->returned_lost }} Hilang
+                                    <x-lucide-circle-x class="me-1" /> {{ $toolLoan->returned_lost }} Hilang
                                 </span>
                                 @endif
                             </div>
@@ -261,7 +261,7 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-screwdriver-wrench text-primary" style="font-size:13px;"></i>
+                        <x-lucide-wrench class="text-primary" style="font-size:13px;" />
                         <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Daftar Alat yang Dipinjam</span>
                     </div>
                     <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:10.5px;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe;">
@@ -315,17 +315,17 @@
                                     <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                                         @if($item->returned_good > 0)
                                         <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                            <i class="fas fa-check me-1"></i> {{ $item->returned_good }} Baik
+                                            <x-lucide-check class="me-1" /> {{ $item->returned_good }} Baik
                                         </span>
                                         @endif
                                         @if($item->returned_damaged > 0)
                                         <span class="badge" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                            <i class="fas fa-triangle-exclamation me-1"></i> {{ $item->returned_damaged }} Rusak
+                                            <x-lucide-triangle-alert class="me-1" /> {{ $item->returned_damaged }} Rusak
                                         </span>
                                         @endif
                                         @if($item->returned_lost > 0)
                                         <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                            <i class="fas fa-circle-xmark me-1"></i> {{ $item->returned_lost }} Hilang
+                                            <x-lucide-circle-x class="me-1" /> {{ $item->returned_lost }} Hilang
                                         </span>
                                         @endif
                                     </div>
@@ -367,7 +367,7 @@
                 @can('approve tool assignments')
                 <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;box-shadow:0 2px 6px -1px rgba(245,158,11,0.06);overflow:hidden;">
                     <div class="card-header" style="background:#fef3c7;border-bottom:1px solid #fde68a;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-shield-halved text-warning" style="font-size:13px;"></i>
+                        <x-lucide-shield class="text-warning" style="font-size:13px;" />
                         <span class="card-title" style="font-size:12.5px;font-weight:700;color:#92400e;">Persetujuan Admin Pusat</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
@@ -377,7 +377,7 @@
                         <form method="POST" action="{{ route('tool-assignments.approve', $toolLoan->id) }}" class="mb-2">
                             @csrf
                             <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12px;font-weight:600;border-radius:6px;" onclick="return confirm('Setujui pengajuan peminjaman #{{ $toolLoan->loan_number }} ini? Stok seluruh alat akan otomatis dikurangi.')">
-                                <i class="fas fa-check-circle me-1"></i> Setujui Peminjaman
+                                <x-lucide-circle-check class="me-1" /> Setujui Peminjaman
                             </button>
                         </form>
                         <form method="POST" action="{{ route('tool-assignments.reject', $toolLoan->id) }}">
@@ -387,7 +387,7 @@
                                 <input type="text" name="rejection_reason" class="form-control" placeholder="Alasan penolakan..." required style="font-size:11.5px;height:36px;padding:6px 10px;border-radius:5px;border-color:#fcd34d;">
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:11.5px;font-weight:600;border-radius:6px;" onclick="return confirm('Tolak pengajuan peminjaman ini?')">
-                                <i class="fas fa-xmark me-1"></i> Tolak Pengajuan
+                                <x-lucide-x class="me-1" /> Tolak Pengajuan
                             </button>
                         </form>
                     </div>
@@ -396,7 +396,7 @@
             @elseif($toolLoan->status === 'rejected')
                 <div class="card" style="border:1px solid #fecaca;border-radius:10px;background:#fef2f2;overflow:hidden;">
                     <div class="card-header" style="background:#fee2e2;border-bottom:1px solid #fecaca;padding:10px 14px;">
-                        <span class="card-title" style="font-size:12px;font-weight:700;color:#991b1b;"><i class="fas fa-circle-xmark me-1"></i> Pengajuan Ditolak</span>
+                        <span class="card-title" style="font-size:12px;font-weight:700;color:#991b1b;"><x-lucide-circle-x class="me-1" /> Pengajuan Ditolak</span>
                     </div>
                     <div class="card-body" style="padding:10px 14px;">
                         <div style="font-size:11.5px;color:#7f1d1d;">
@@ -407,7 +407,7 @@
             @elseif($toolLoan->approvedBy)
                 <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                     <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-check-circle text-success" style="font-size:12px;"></i>
+                        <x-lucide-circle-check class="text-success" style="font-size:12px;" />
                         <span class="card-title" style="font-size:12px;font-weight:700;color:#1e293b;">Disetujui Oleh</span>
                     </div>
                     <div class="card-body" style="padding:10px 14px;">
@@ -428,7 +428,7 @@
                 @can('return tool assignments')
                 <div class="card" style="border:1px solid #cbd5e1;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                     <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-rotate-left text-primary" style="font-size:12px;"></i>
+                        <x-lucide-rotate-ccw class="text-primary" style="font-size:12px;" />
                         <span class="card-title" style="font-size:12.5px;font-weight:700;color:#0f172a;">Proses Pengembalian</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
@@ -462,7 +462,7 @@
                                     <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:6px;margin-bottom:6px;">
                                         <div>
                                             <label style="font-size:10px;font-weight:700;color:#047857;display:block;margin-bottom:2px;">
-                                                <i class="fas fa-check-circle"></i> Baik
+                                                <x-lucide-circle-check /> Baik
                                             </label>
                                             <input type="number" 
                                                    name="returns[{{ $item->id }}][returned_good]" 
@@ -477,7 +477,7 @@
                                         </div>
                                         <div>
                                             <label style="font-size:10px;font-weight:700;color:#ea580c;display:block;margin-bottom:2px;">
-                                                <i class="fas fa-triangle-exclamation"></i> Rusak
+                                                <x-lucide-triangle-alert /> Rusak
                                             </label>
                                             <input type="number" 
                                                    name="returns[{{ $item->id }}][returned_damaged]" 
@@ -492,7 +492,7 @@
                                         </div>
                                         <div>
                                             <label style="font-size:10px;font-weight:700;color:#dc2626;display:block;margin-bottom:2px;">
-                                                <i class="fas fa-circle-xmark"></i> Hilang
+                                                <x-lucide-circle-x /> Hilang
                                             </label>
                                             <input type="number" 
                                                    name="returns[{{ $item->id }}][returned_lost]" 
@@ -529,7 +529,7 @@
                             </div>
 
                             <button type="submit" id="btnSubmitReturn" class="btn btn-success w-full" style="justify-content:center;padding:9px;font-size:12.5px;font-weight:700;border-radius:6px;" onclick="return confirm('Konfirmasi pengembalian seluruh alat? Stok fisik gudang akan otomatis diperbarui.')">
-                                <i class="fas fa-check-circle me-1"></i> Konfirmasi Pengembalian
+                                <x-lucide-circle-check class="me-1" /> Konfirmasi Pengembalian
                             </button>
                         </form>
                     </div>
@@ -542,7 +542,7 @@
                 @can('cancel tool assignments')
                 <div class="card" style="border:1px solid #fecaca;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(220,38,38,0.04);overflow:hidden;">
                     <div class="card-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-ban" style="color:#dc2626;font-size:12px;"></i>
+                        <x-lucide-ban style="color:#dc2626;font-size:12px;" />
                         <span class="card-title" style="font-size:12px;font-weight:700;color:#991b1b;">Batalkan Peminjaman</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
@@ -560,7 +560,7 @@
                                 <textarea name="cancellation_reason" class="form-control" rows="2" required placeholder="Alasan..." style="padding:8px 10px;border-radius:5px;font-size:11.5px;border-color:#fca5a5;"></textarea>
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:12px;font-weight:600;border-radius:6px;" onclick="return confirm('Yakin ingin MEMBATALKAN peminjaman ini?')">
-                                <i class="fas fa-ban me-1"></i> Batalkan Transaksi
+                                <x-lucide-ban class="me-1" /> Batalkan Transaksi
                             </button>
                         </form>
                     </div>

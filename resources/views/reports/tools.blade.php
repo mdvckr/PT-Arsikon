@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between mb-4">
         <div class="breadcrumb">
             <a href="{{ route('reports.index') }}">Laporan</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span>Status & Kepemilikan Alat</span>
         </div>
         <a href="{{ route('reports.index') }}" class="btn btn-sm btn-secondary">
@@ -39,7 +39,7 @@
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-wrap:wrap;gap:12px;">
             <div style="display:flex;align-items:center;gap:10px;">
                 <div style="width:34px;height:34px;border-radius:6px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#1d4ed8;flex-shrink:0;">
-                    <i class="fas fa-building-circle-check" style="font-size:15px;"></i>
+                    <x-lucide-building-2 style="font-size:15px;" />
                 </div>
                 <div>
                     <span class="card-title" style="margin:0;font-size:15px;font-weight:700;color:#0f172a;">Alat Milik Pusat yang Sedang Berada di Tiap Proyek</span>
@@ -59,7 +59,7 @@
                 </select>
                 @if($warehouseId)
                 <a href="{{ route('reports.tools') }}" class="btn btn-sm btn-light border" title="Reset Filter" style="height:34px;line-height:22px;">
-                    <i class="fas fa-times"></i>
+                    <x-lucide-x />
                 </a>
                 @endif
             </form>
@@ -100,13 +100,13 @@
                         </td>
                         <td>
                             <div style="font-size:12.5px;color:#334155;display:flex;align-items:center;gap:5px;">
-                                <i class="fas fa-calendar-day" style="font-size:11px;color:#64748b;"></i>
+                                <x-lucide-calendar-days style="font-size:11px;color:#64748b;" />
                                 {{ \Carbon\Carbon::parse($item->received_date)->format('d/m/Y') }}
                             </div>
                         </td>
                         <td>
                             <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-weight:600;font-size:11px;padding:3px 8px;border-radius:4px;">
-                                <i class="fas fa-building me-1" style="font-size:10px;"></i> Milik Pusat
+                                <x-lucide-building-2 class="me-1" style="font-size:10px;" /> Milik Pusat
                             </span>
                         </td>
                         <td>
@@ -139,7 +139,7 @@
     <div class="card">
         <div class="card-header" style="display:flex;align-items:center;gap:10px;padding:16px 20px;">
             <div style="width:32px;height:32px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;flex-shrink:0;">
-                <i class="fas fa-toolbox" style="font-size:13px;"></i>
+                <x-lucide-wrench style="font-size:13px;" />
             </div>
             <span class="card-title" style="margin:0;font-size:15px;">Daftar Status Seluruh Alat</span>
         </div>

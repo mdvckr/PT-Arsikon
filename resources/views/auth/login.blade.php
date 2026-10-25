@@ -70,6 +70,16 @@
             font-size: 26px;
         }
 
+        .login-modal-icon-circle svg {
+            width: 32px !important;
+            height: 32px !important;
+        }
+
+        .login-modal-close svg {
+            width: 14px !important;
+            height: 14px !important;
+        }
+
         @keyframes fadeInOverlay {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -138,6 +148,11 @@
             color: #059669;
         }
 
+        .tip-icon-pill svg {
+            width: 13px !important;
+            height: 13px !important;
+        }
+
         .btn-try-again {
             width: 100%;
             height: 46px;
@@ -155,6 +170,11 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.2s ease;
+        }
+
+        .btn-try-again svg {
+            width: 16px !important;
+            height: 16px !important;
         }
 
         .btn-try-again:hover {
@@ -223,7 +243,7 @@
 
     @if (session('status'))
     <div class="alert alert-success">
-        <i class="fas fa-circle-check"></i>
+        <x-lucide-circle-check />
         <div>{{ session('status') }}</div>
     </div>
     @endif
@@ -235,7 +255,7 @@
         <div class="field">
             <label class="form-label" for="email">Email</label>
             <div class="input-wrap @error('email') has-error @enderror">
-                <i class="fas fa-envelope"></i>
+                <x-lucide-mail />
                 <input id="email" class="form-control @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
             </div>
             @error('email')
@@ -247,10 +267,11 @@
         <div class="field">
             <label class="form-label" for="password">Password</label>
             <div class="input-wrap @error('password') has-error @enderror">
-                <i class="fas fa-lock"></i>
+                <x-lucide-lock />
                 <input id="password" class="form-control @error('password') is-invalid @enderror" type="password" name="password" required autocomplete="current-password" style="padding-right:44px;">
                 <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1" aria-label="Tampilkan password">
-                    <i id="toggle-icon" class="fas fa-eye"></i>
+                    <span id="iconEye"><x-lucide-eye class="w-4 h-4" /></span>
+                    <span id="iconEyeOff" style="display:none;"><x-lucide-eye-off class="w-4 h-4" /></span>
                 </button>
             </div>
             @error('password')
@@ -286,12 +307,12 @@
     <div id="loginErrorModal" class="login-modal-overlay" style="display: {{ ($errors->any() || request()->has('preview_error')) ? 'flex' : 'none' }};" onclick="if(event.target === this) closeLoginErrorModal()">
         <div class="login-modal-box">
             <button type="button" class="login-modal-close" onclick="closeLoginErrorModal()" aria-label="Tutup">
-                <i class="fas fa-xmark"></i>
+                <x-lucide-x />
             </button>
             
             <div class="login-modal-icon-wrap">
                 <div class="login-modal-icon-circle">
-                    <i class="fas fa-triangle-exclamation"></i>
+                    <x-lucide-triangle-alert />
                 </div>
             </div>
 
@@ -304,13 +325,13 @@
             <div class="login-modal-tips">
                 <div class="login-modal-tip-item">
                     <div class="tip-icon-pill tip-icon-warning">
-                        <i class="fas fa-keyboard"></i>
+                        <x-lucide-keyboard />
                     </div>
                     <span>Periksa tombol <strong style="color:#0f172a;font-weight:700;">Caps Lock</strong> pada keyboard Anda.</span>
                 </div>
                 <div class="login-modal-tip-item">
                     <div class="tip-icon-pill tip-icon-success">
-                        <i class="fas fa-check"></i>
+                        <x-lucide-check />
                     </div>
                     <span>Pastikan alamat email dan kata sandi yang Anda ketik sudah tepat.</span>
                 </div>
@@ -318,7 +339,7 @@
 
             <div class="login-modal-actions">
                 <button type="button" class="btn-try-again" onclick="closeLoginErrorModal()">
-                    <i class="fas fa-rotate-right"></i>
+                    <x-lucide-rotate-cw />
                     <span>Coba masuk kembali</span>
                 </button>
             </div>
@@ -329,11 +350,14 @@
     <script>
         function togglePassword() {
             var input = document.getElementById('password');
-            var icon = document.getElementById('toggle-icon');
+            var iconEye = document.getElementById('iconEye');
+            var iconEyeOff = document.getElementById('iconEyeOff');
             var show = input.type === 'password';
             input.type = show ? 'text' : 'password';
-            icon.classList.toggle('fa-eye');
-            icon.classList.toggle('fa-eye-slash');
+            if (iconEye && iconEyeOff) {
+                iconEye.style.display = show ? 'none' : 'inline-block';
+                iconEyeOff.style.display = show ? 'inline-block' : 'none';
+            }
         }
 
         function openLoginErrorModal(message) {
@@ -386,14 +410,14 @@
                     btnLogin.classList.remove('is-success');
                     btnLogin.classList.add('is-loading');
                     btnLoginIcon.style.display = 'inline-flex';
-                    btnLoginIcon.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                    btnLoginIcon.innerHTML = '<x-lucide-loader-2 class="animate-spin" />';
                     btnLoginText.textContent = 'Memverifikasi...';
                 } else if (state === 'success') {
                     btnLogin.disabled = true;
                     btnLogin.classList.remove('is-loading');
                     btnLogin.classList.add('is-success');
                     btnLoginIcon.style.display = 'inline-flex';
-                    btnLoginIcon.innerHTML = '<i class="fas fa-circle-check"></i>';
+                    btnLoginIcon.innerHTML = '<x-lucide-circle-check />';
                     btnLoginText.textContent = 'Login Berhasil';
                 } else {
                     // Normal state - Tanpa icon di kondisi normal

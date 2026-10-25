@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('stock-opnames.index') }}">Stock Opname</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>Buat Baru</span>
     </div>
 
@@ -13,7 +13,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-list-check text-primary"></i> <span class="card-title">Input Hasil Audit Fisik</span>
+                    <x-lucide-list-checks class="text-primary" /> <span class="card-title">Input Hasil Audit Fisik</span>
                 </div>
                 <div class="table-wrap">
                     <table class="data-table">
@@ -50,7 +50,7 @@
 
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-file-alt text-primary"></i> <span class="card-title">Informasi Audit</span>
+                    <x-lucide-file-text class="text-primary" /> <span class="card-title">Informasi Audit</span>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -73,7 +73,7 @@
                         <textarea name="notes" class="form-control" rows="3" placeholder="Alasan audit atau catatan auditor...">{{ old('notes') }}</textarea>
                     </div>
                     <button type="submit" class="btn btn-primary w-full" style="justify-content:center;" {{ $inventory->isEmpty() ? 'disabled' : '' }}>
-                        <i class="fas fa-save"></i> Simpan Draft Opname
+                        <x-lucide-save /> Simpan Draft Opname
                     </button>
                     <a href="{{ route('stock-opnames.index') }}" class="btn btn-secondary w-full mt-2" style="justify-content:center;">Batal</a>
                 </div>

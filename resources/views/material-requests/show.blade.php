@@ -392,7 +392,7 @@
                 'text' => '#334155',
                 'border' => '#cbd5e1',
                 'dot' => '#64748b',
-                'icon' => 'fa-file-lines',
+                'icon' => 'file-text',
                 'stepIndex' => 1,
             ],
             'submitted' => [
@@ -401,7 +401,7 @@
                 'text' => '#b45309',
                 'border' => '#fde68a',
                 'dot' => '#f59e0b',
-                'icon' => 'fa-hourglass-half',
+                'icon' => 'hourglass',
                 'stepIndex' => 2,
             ],
             'approved' => [
@@ -410,7 +410,7 @@
                 'text' => '#065f46',
                 'border' => '#a7f3d0',
                 'dot' => '#10b981',
-                'icon' => 'fa-circle-check',
+                'icon' => 'circle-check',
                 'stepIndex' => 3,
             ],
             'partially_fulfilled' => [
@@ -419,7 +419,7 @@
                 'text' => '#1e40af',
                 'border' => '#bfdbfe',
                 'dot' => '#3b82f6',
-                'icon' => 'fa-truck-ramp-box',
+                'icon' => 'truck',
                 'stepIndex' => 3,
             ],
             'fulfilled' => [
@@ -428,7 +428,7 @@
                 'text' => '#5b21b6',
                 'border' => '#ddd6fe',
                 'dot' => '#8b5cf6',
-                'icon' => 'fa-check-double',
+                'icon' => 'check-check',
                 'stepIndex' => 4,
             ],
             'rejected' => [
@@ -437,7 +437,7 @@
                 'text' => '#991b1b',
                 'border' => '#fecaca',
                 'dot' => '#ef4444',
-                'icon' => 'fa-circle-xmark',
+                'icon' => 'circle-x',
                 'stepIndex' => 2,
             ],
             'cancelled' => [
@@ -446,7 +446,7 @@
                 'text' => '#475569',
                 'border' => '#e2e8f0',
                 'dot' => '#94a3b8',
-                'icon' => 'fa-ban',
+                'icon' => 'ban',
                 'stepIndex' => 1,
             ],
             default => [
@@ -455,7 +455,7 @@
                 'text' => '#334155',
                 'border' => '#cbd5e1',
                 'dot' => '#64748b',
-                'icon' => 'fa-circle-info',
+                'icon' => 'info',
                 'stepIndex' => 1,
             ],
         };
@@ -467,7 +467,7 @@
         <div class="dossier-topbar">
             <div class="dossier-breadcrumb">
                 <a href="{{ route('material-requests.index') }}" class="btn-dossier-secondary" style="padding:6px 12px;font-size:12px;">
-                    <i class="fas fa-arrow-left"></i>
+                    <x-lucide-arrow-left />
                     <span>Daftar PO Lapangan</span>
                 </a>
                 <span style="color:#cbd5e1;">/</span>
@@ -479,7 +479,7 @@
                 {{-- Terima Surat Jalan (Distribusi In-Transit) --}}
                 @if($inTransitDist && $canReceiveDist)
                     <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn-dossier-success">
-                        <i class="fas fa-boxes-packing"></i>
+                        <x-lucide-boxes />
                         <span>Terima Surat Jalan (#{{ $inTransitDist->distribution_number }})</span>
                     </a>
                 @endif
@@ -487,7 +487,7 @@
                 {{-- Terima Barang Masuk (GR) --}}
                 @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $canReceiveGr)
                     <a href="{{ route('goods-receipts.create', array_filter(['from_mr_id' => $materialRequest->id, 'purchase_order_id' => $sentPo?->id])) }}" class="btn-dossier-primary">
-                        <i class="fas fa-dolly"></i>
+                        <x-lucide-package-check />
                         <span>Penerimaan Barang (GR)</span>
                     </a>
                 @endif
@@ -495,12 +495,12 @@
                 {{-- Buat PO ke Vendor --}}
                 @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems && $canCreatePo)
                     <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
-                        <i class="fas fa-cart-shopping"></i>
+                        <x-lucide-shopping-cart />
                         <span>Terbitkan PO Vendor</span>
                     </a>
                 @elseif($hasCustomItems && $canCreatePo)
                     <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
-                        <i class="fas fa-cart-shopping"></i>
+                        <x-lucide-shopping-cart />
                         <span>Buat PO Item Manual</span>
                     </a>
                 @endif
@@ -508,14 +508,14 @@
                 {{-- Edit PO Lapangan --}}
                 @if($canEdit)
                     <a href="{{ route('material-requests.edit', $materialRequest) }}" class="btn-dossier-secondary">
-                        <i class="fas fa-pen-to-square"></i>
+                        <x-lucide-square-pen />
                         <span>Edit</span>
                     </a>
                 @endif
 
                 {{-- Print PDF --}}
                 <a href="{{ route('material-requests.show', $materialRequest) }}?print=1" target="_blank" class="btn-dossier-secondary">
-                    <i class="fas fa-print"></i>
+                    <x-lucide-printer />
                     <span>Cetak PDF</span>
                 </a>
 
@@ -525,12 +525,12 @@
                     <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;">
                         @csrf
                         <button type="submit" class="btn-dossier-success" onclick="return confirm('Apakah Anda yakin ingin menyetujui PO Lapangan ini?')">
-                            <i class="fas fa-check"></i>
+                            <x-lucide-check />
                             <span>Setujui Permohonan</span>
                         </button>
                     </form>
                     <button type="button" class="btn-dossier-secondary" style="color:#b91c1c;border-color:#fca5a5;" onclick="document.getElementById('rejectModal').classList.add('show')">
-                        <i class="fas fa-xmark"></i>
+                        <x-lucide-x />
                         <span>Tolak</span>
                     </button>
                     @endcan
@@ -541,14 +541,14 @@
         {{-- FLASH MESSAGES --}}
         @if (session('success'))
         <div class="mb-4 p-4 rounded-xl flex items-center gap-3 border" style="background:#ecfdf5;border-color:#a7f3d0;color:#065f46;">
-            <i class="fas fa-circle-check text-emerald-600 text-lg"></i>
+            <x-lucide-circle-check class="text-emerald-600 text-lg" />
             <span class="text-sm font-semibold">{{ session('success') }}</span>
         </div>
         @endif
 
         @if (session('error'))
         <div class="mb-4 p-4 rounded-xl flex items-center gap-3 border" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">
-            <i class="fas fa-circle-exclamation text-rose-600 text-lg"></i>
+            <x-lucide-circle-alert class="text-rose-600 text-lg" />
             <span class="text-sm font-semibold">{{ session('error') }}</span>
         </div>
         @endif
@@ -588,7 +588,7 @@
                 {{-- Tahap 1: Pengajuan --}}
                 <div class="stepper-step completed">
                     <div class="stepper-icon-circle">
-                        <i class="fas fa-check"></i>
+                        <x-lucide-check />
                     </div>
                     <div>
                         <div class="stepper-title">1. Pengajuan Proyek</div>
@@ -607,9 +607,9 @@
                 <div class="stepper-step {{ $isApproved ? 'completed' : ($isRejected ? 'rejected' : ($isStep2Active ? 'active' : 'pending')) }}">
                     <div class="stepper-icon-circle">
                         @if($isApproved)
-                            <i class="fas fa-check"></i>
+                            <x-lucide-check />
                         @elseif($isRejected)
-                            <i class="fas fa-xmark"></i>
+                            <x-lucide-x />
                         @else
                             <span>2</span>
                         @endif
@@ -637,7 +637,7 @@
                 <div class="stepper-step {{ $isStep3Completed ? 'completed' : ($isStep3Active ? 'active' : 'pending') }}">
                     <div class="stepper-icon-circle">
                         @if($isStep3Completed)
-                            <i class="fas fa-check"></i>
+                            <x-lucide-check />
                         @else
                             <span>3</span>
                         @endif
@@ -666,9 +666,9 @@
                 <div class="stepper-step {{ $isFulfilled ? 'completed' : ($isPartiallyFulfilled ? 'active' : 'pending') }}">
                     <div class="stepper-icon-circle">
                         @if($isFulfilled)
-                            <i class="fas fa-check-double"></i>
+                            <x-lucide-check-check />
                         @elseif($isPartiallyFulfilled)
-                            <i class="fas fa-truck-ramp-box"></i>
+                            <x-lucide-package-check />
                         @else
                             <span>4</span>
                         @endif
@@ -695,7 +695,7 @@
         <div class="mb-4 p-4 rounded-xl border flex items-center justify-between gap-4 flex-wrap" style="background:#ecfdf5;border-color:#6ee7b7;">
             <div class="flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
-                    <i class="fas fa-truck-fast"></i>
+                    <x-lucide-truck />
                 </div>
                 <div>
                     <h4 class="text-sm font-bold text-emerald-950 m-0">
@@ -708,7 +708,7 @@
             </div>
             @if($canReceiveDist)
             <a href="{{ route('distributions.show', $inTransitDist) }}" class="btn-dossier-success">
-                <i class="fas fa-boxes-packing"></i>
+                <x-lucide-boxes />
                 <span>Konfirmasi Penerimaan Barang</span>
             </a>
             @endif
@@ -720,7 +720,7 @@
         <div class="mb-4 p-4 rounded-xl border flex items-center justify-between gap-4 flex-wrap" style="background:#fffbeb;border-color:#fcd34d;">
             <div class="flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
-                    <i class="fas fa-cart-shopping"></i>
+                    <x-lucide-shopping-cart />
                 </div>
                 <div>
                     <h4 class="text-sm font-bold text-amber-950 m-0">
@@ -733,7 +733,7 @@
             </div>
             @if($canCreatePo)
             <a href="{{ route('purchase-orders.create', ['from_mr_id' => $materialRequest->id]) }}" class="btn-dossier-primary" style="background:#ea580c;border-color:#c2410c;">
-                <i class="fas fa-cart-plus"></i>
+                <x-lucide-shopping-cart />
                 <span>Terbitkan PO Vendor Sekarang</span>
             </a>
             @endif
@@ -744,7 +744,7 @@
         @if($materialRequest->rejection_reason)
         <div class="mb-4 p-4 rounded-xl border flex items-center gap-3.5" style="background:#fef2f2;border-color:#fca5a5;">
             <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">
-                <i class="fas fa-circle-xmark"></i>
+                <x-lucide-circle-x />
             </div>
             <div>
                 <h4 class="text-sm font-bold text-rose-950 m-0">Permohonan PO Lapangan Ditolak</h4>
@@ -760,7 +760,7 @@
             <div class="dossier-card">
                 <div class="dossier-card-head">
                     <h3>
-                        <i class="fas fa-location-dot text-blue-600"></i>
+                        <x-lucide-map-pin class="text-blue-600" />
                         <span>Informasi Proyek &amp; Jalur Logistik</span>
                     </h3>
                 </div>
@@ -768,7 +768,7 @@
                     <div class="dossier-meta-list">
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-building text-slate-400"></i> Proyek Pemohon
+                                <x-lucide-building-2 class="text-slate-400" /> Proyek Pemohon
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->toWarehouse?->project ? $materialRequest->toWarehouse->project->name : ($materialRequest->toWarehouse?->name ?? '-') }}
@@ -776,7 +776,7 @@
                         </div>
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-warehouse text-slate-400"></i> Gudang Proyek
+                                <x-lucide-warehouse class="text-slate-400" /> Gudang Proyek
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->toWarehouse?->name ?? '-' }}
@@ -784,7 +784,7 @@
                         </div>
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-dolly text-slate-400"></i> Sumber Material
+                                <x-lucide-package-check class="text-slate-400" /> Sumber Material
                             </span>
                             <span class="dossier-meta-value">
                                 @if($materialRequest->fromWarehouse)
@@ -800,13 +800,13 @@
                         </div>
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-calendar-day text-slate-400"></i> Tgl Dibutuhkan
+                                <x-lucide-calendar-days class="text-slate-400" /> Tgl Dibutuhkan
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->needed_at ? \Carbon\Carbon::parse($materialRequest->needed_at)->format('d F Y') : '-' }}
                                 @if($materialRequest->is_overdue)
                                     <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:2px 7px;border-radius:6px;font-size:10.5px;margin-left:4px;">
-                                        <i class="fas fa-clock me-1"></i>Terlambat
+                                        <x-lucide-clock class="me-1" />Terlambat
                                     </span>
                                 @endif
                             </span>
@@ -814,7 +814,7 @@
                         @if($materialRequest->notes)
                         <div style="margin-top:6px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
                             <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:3px;">
-                                <i class="fas fa-quote-left text-slate-400 me-1"></i> Catatan Tambahan Pemohon
+                                <x-lucide-quote class="text-slate-400 me-1" /> Catatan Tambahan Pemohon
                             </div>
                             <div style="font-size:12.5px;color:#0f172a;font-weight:500;line-height:1.4;">
                                 {{ $materialRequest->notes }}
@@ -829,7 +829,7 @@
             <div class="dossier-card">
                 <div class="dossier-card-head">
                     <h3>
-                        <i class="fas fa-user-shield text-indigo-600"></i>
+                        <x-lucide-shield-check class="text-indigo-600" />
                         <span>Otoritas &amp; Dokumen Terkait</span>
                     </h3>
                 </div>
@@ -837,7 +837,7 @@
                     <div class="dossier-meta-list">
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-user text-slate-400"></i> Pemohon
+                                <x-lucide-user class="text-slate-400" /> Pemohon
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->requestedBy?->name ?? '-' }}
@@ -848,7 +848,7 @@
                         </div>
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-clock text-slate-400"></i> Waktu Pengajuan
+                                <x-lucide-clock class="text-slate-400" /> Waktu Pengajuan
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->created_at ? $materialRequest->created_at->format('d/m/Y H:i') : '-' }} WIB
@@ -856,7 +856,7 @@
                         </div>
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-signature text-slate-400"></i> Disetujui Oleh
+                                <x-lucide-signature class="text-slate-400" /> Disetujui Oleh
                             </span>
                             <span class="dossier-meta-value">
                                 @if($materialRequest->approvedBy)
@@ -873,14 +873,14 @@
                         {{-- Dokumen Pengadaan Terhubung --}}
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <i class="fas fa-file-invoice text-slate-400"></i> Dokumen Terhubung
+                                <x-lucide-receipt class="text-slate-400" /> Dokumen Terhubung
                             </span>
                             <span class="dossier-meta-value">
                                 @if($relatedPos->isNotEmpty())
                                     <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;">
                                         @foreach($relatedPos as $po)
                                             <a href="{{ route('purchase-orders.show', $po) }}" class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;text-decoration:none;" title="Buka Purchase Order">
-                                                <i class="fas fa-file-lines me-1"></i>{{ $po->po_number }}
+                                                <x-lucide-file-text class="me-1" />{{ $po->po_number }}
                                             </a>
                                         @endforeach
                                     </div>
@@ -888,7 +888,7 @@
                                     <div style="display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;">
                                         @foreach($materialRequest->distributions as $dst)
                                             <a href="{{ route('distributions.show', $dst) }}" class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;text-decoration:none;" title="Buka Surat Jalan">
-                                                <i class="fas fa-truck me-1"></i>{{ $dst->distribution_number }}
+                                                <x-lucide-truck class="me-1" />{{ $dst->distribution_number }}
                                             </a>
                                         @endforeach
                                     </div>
@@ -908,7 +908,7 @@
             <div class="dossier-table-toolbar">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:14px;">
-                        <i class="fas fa-boxes-stacked"></i>
+                        <x-lucide-boxes />
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.2px;">
@@ -962,7 +962,7 @@
                                     {{ $item->displayName() }}
                                     @if($isCustom)
                                         <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                            <i class="fas fa-tag me-1"></i>Input Manual
+                                            <x-lucide-tag class="me-1" />Input Manual
                                         </span>
                                     @endif
                                 </div>
@@ -977,7 +977,7 @@
                                     @endif
                                     @if($item->specification)
                                         <div style="color:#334155;margin-top:2px;font-weight:500;">
-                                            <i class="fas fa-info-circle me-1 text-slate-400"></i>{{ $item->specification }}
+                                            <x-lucide-info class="me-1 text-slate-400" />{{ $item->specification }}
                                         </div>
                                     @endif
                                 </div>
@@ -1004,7 +1004,7 @@
                             <td style="text-align:center;font-size:12px;">
                                 @if($item->usage_date)
                                     <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #e2e8f0;padding:4px 8px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-calendar-day me-1 text-slate-400"></i>{{ \Carbon\Carbon::parse($item->usage_date)->format('d/m/Y') }}
+                                        <x-lucide-calendar-days class="me-1 text-slate-400" />{{ \Carbon\Carbon::parse($item->usage_date)->format('d/m/Y') }}
                                     </span>
                                 @else
                                     <span style="color:#94a3b8;">—</span>
@@ -1013,7 +1013,7 @@
                             <td>
                                 @if($item->usage_location)
                                     <span style="font-weight:600;color:#0f172a;">
-                                        <i class="fas fa-location-dot me-1 text-blue-500"></i>{{ $item->usage_location }}
+                                        <x-lucide-map-pin class="me-1 text-blue-500" />{{ $item->usage_location }}
                                     </span>
                                 @else
                                     <span style="color:#94a3b8;">—</span>
@@ -1054,11 +1054,11 @@
                                         </span>
                                         @if($isSufficient)
                                             <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
-                                                <i class="fas fa-check me-1"></i>Stok Cukup
+                                                <x-lucide-check class="me-1" />Stok Cukup
                                             </span>
                                         @else
                                             <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;">
-                                                <i class="fas fa-triangle-exclamation me-1"></i>Kurang
+                                                <x-lucide-triangle-alert class="me-1" />Kurang
                                             </span>
                                         @endif
                                     </div>
@@ -1073,7 +1073,7 @@
                                     </span>
                                 @elseif($received >= $approved && $approved > 0)
                                     <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:800;">
-                                        <i class="fas fa-check me-1"></i>Lengkap
+                                        <x-lucide-check class="me-1" />Lengkap
                                     </span>
                                 @elseif($received > 0)
                                     <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:10px;font-weight:700;">
@@ -1101,7 +1101,7 @@
         <div class="dossier-card mb-4">
             <div class="dossier-card-head">
                 <h3>
-                    <i class="fas fa-truck-fast text-emerald-600"></i>
+                    <x-lucide-truck class="text-emerald-600" />
                     <span>Riwayat Pengiriman Surat Jalan (Distribusi Antar Gudang)</span>
                 </h3>
                 <span class="badge" style="background:#ecfdf5;color:#047857;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #a7f3d0;">
@@ -1126,8 +1126,8 @@
                         @php
                             $distBadge = match($dist->status) {
                                 'draft'      => '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Draft</span>',
-                                'in_transit' => '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-truck me-1"></i> Dalam Pengiriman</span>',
-                                'completed'  => '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Selesai Diterima</span>',
+                                'in_transit' => '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><x-lucide-truck class="me-1" /> Dalam Pengiriman</span>',
+                                'completed'  => '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><x-lucide-check class="me-1" /> Selesai Diterima</span>',
                                 'cancelled'  => '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Dibatalkan</span>',
                                 default      => '<span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">'.$dist->status.'</span>',
                             };
@@ -1151,7 +1151,7 @@
                             <td style="text-align:center;">
                                 <a href="{{ route('distributions.show', $dist) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
                                     <span>Buka</span>
-                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                    <x-lucide-arrow-right class="text-[10px]" />
                                 </a>
                             </td>
                         </tr>
@@ -1167,7 +1167,7 @@
         <div class="dossier-card mb-4">
             <div class="dossier-card-head">
                 <h3>
-                    <i class="fas fa-dolly text-blue-600"></i>
+                    <x-lucide-package-check class="text-blue-600" />
                     <span>Riwayat Penerimaan Barang Masuk (Goods Receipts / GR)</span>
                 </h3>
                 <span class="badge" style="background:#eff6ff;color:#1e40af;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #bfdbfe;">
@@ -1206,7 +1206,7 @@
                             <td><strong style="color:#0f172a;">{{ $gr->received_by_name ?? ($gr->receivedBy?->name ?? '-') }}</strong></td>
                             <td style="text-align:center;">
                                 @if($gr->status === 'confirmed')
-                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Dikonfirmasi</span>
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><x-lucide-check class="me-1" /> Dikonfirmasi</span>
                                 @else
                                     <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Draft</span>
                                 @endif
@@ -1214,7 +1214,7 @@
                             <td style="text-align:center;">
                                 <a href="{{ route('goods-receipts.show', $gr) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
                                     <span>Buka</span>
-                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                    <x-lucide-arrow-right class="text-[10px]" />
                                 </a>
                             </td>
                         </tr>
@@ -1230,7 +1230,7 @@
         <div class="dossier-card mb-4">
             <div class="dossier-card-head">
                 <h3>
-                    <i class="fas fa-clipboard-check text-purple-600"></i>
+                    <x-lucide-clipboard-check class="text-purple-600" />
                     <span>Riwayat Pemakaian Material di Lapangan (Material Usage)</span>
                 </h3>
                 <span class="badge" style="background:#f5f3ff;color:#5b21b6;font-weight:700;font-size:11px;padding:3px 9px;border-radius:12px;border:1px solid #ddd6fe;">
@@ -1264,7 +1264,7 @@
                             <td style="color:#475569;">{{ $usage->job_section ?? '-' }}</td>
                             <td style="text-align:center;">
                                 @if($usage->status === 'completed')
-                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><i class="fas fa-check me-1"></i> Selesai</span>
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:700;"><x-lucide-check class="me-1" /> Selesai</span>
                                 @else
                                     <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:3px 8px;border-radius:8px;font-weight:600;">Dibatalkan</span>
                                 @endif
@@ -1272,7 +1272,7 @@
                             <td style="text-align:center;">
                                 <a href="{{ route('material-usages.show', $usage) }}" class="btn-dossier-secondary" style="padding:4px 10px;font-size:11.5px;">
                                     <span>Buka</span>
-                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                    <x-lucide-arrow-right class="text-[10px]" />
                                 </a>
                             </td>
                         </tr>
@@ -1291,7 +1291,7 @@
             <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:16px 20px;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div style="width:36px;height:36px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:16px;">
-                        <i class="fas fa-circle-xmark"></i>
+                        <x-lucide-circle-x />
                     </div>
                     <div>
                         <h4 style="font-size:15px;font-weight:800;color:#991b1b;margin:0;">Tolak PO Lapangan</h4>
@@ -1299,7 +1299,7 @@
                     </div>
                 </div>
                 <button class="btn-close-modal" onclick="document.getElementById('rejectModal').classList.remove('show')">
-                    <i class="fas fa-times"></i>
+                    <x-lucide-x />
                 </button>
             </div>
             <form method="POST" action="{{ route('material-requests.reject', $materialRequest) }}">
@@ -1315,7 +1315,7 @@
                     <button type="button" class="btn-dossier-secondary"
                         onclick="document.getElementById('rejectModal').classList.remove('show')">Batal</button>
                     <button type="submit" class="btn-dossier-secondary" style="background:#dc2626;color:#ffffff;border-color:#b91c1c;font-weight:700;">
-                        <i class="fas fa-xmark me-1"></i> Tolak Permohonan
+                        <x-lucide-x class="me-1" /> Tolak Permohonan
                     </button>
                 </div>
             </form>

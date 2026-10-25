@@ -131,28 +131,28 @@
             <div>
                 <div class="breadcrumb" style="margin-bottom:4px;font-size:12px;">
                     <a href="{{ route('materials.index') }}">Material</a>
-                    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+                    <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
                     <a href="{{ route('materials.show', $material) }}">{{ $material->name }}</a>
-                    <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+                    <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
                     <span>Edit</span>
                 </div>
                 <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-pen-to-square text-primary"></i> Edit Material: {{ $material->name }}
+                    <x-lucide-square-pen class="text-primary" /> Edit Material: {{ $material->name }}
                 </h2>
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('materials.show', $material) }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-eye"></i> Lihat Detail
+                    <x-lucide-eye /> Lihat Detail
                 </a>
                 <a href="{{ route('materials.index') }}" class="btn btn-light border" style="font-size:12.5px;color:#475569;border-radius:7px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-arrow-left"></i> Kembali
+                    <x-lucide-arrow-left /> Kembali
                 </a>
             </div>
         </div>
 
         @if (isset($errors) && $errors->any())
         <div class="alert alert-danger mb-4" style="border-radius:8px;padding:12px 16px;font-size:13px;">
-            <i class="fas fa-circle-exclamation me-2"></i>
+            <x-lucide-circle-alert class="me-2" />
             <strong>Terdapat kesalahan input:</strong>
             <ul style="margin:4px 0 0 16px;padding:0;">
                 @foreach ($errors->all() as $err)
@@ -173,7 +173,7 @@
                 <div class="edit-card">
                     <div class="edit-card-header">
                         <div class="edit-card-title">
-                            <i class="fas fa-layer-group text-primary"></i> 1. Klasifikasi Material
+                            <x-lucide-layers class="text-primary" /> 1. Klasifikasi Material
                         </div>
                     </div>
                     <div class="edit-card-body">
@@ -186,7 +186,7 @@
                                     </label>
                                     @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
                                     <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;white-space:nowrap;" title="Hapus kategori yang dipilih jika salah memasukkan">
-                                        <i class="fas fa-trash-can me-1"></i> Hapus Kategori
+                                        <x-lucide-trash-2 class="me-1" /> Hapus Kategori
                                     </button>
                                     @endif
                                 </div>
@@ -257,7 +257,7 @@
                 <div class="edit-card">
                     <div class="edit-card-header">
                         <div class="edit-card-title">
-                            <i class="fas fa-cube text-primary"></i> 2. Informasi & Identitas Material
+                            <x-lucide-box class="text-primary" /> 2. Informasi & Identitas Material
                         </div>
                     </div>
                     <div class="edit-card-body">
@@ -347,17 +347,17 @@
                 <div class="edit-card">
                     <div class="edit-card-header">
                         <div class="edit-card-title">
-                            <i class="fas fa-calendar-alt text-primary"></i> 3. Tahap Kedatangan Barang
+                            <x-lucide-calendar class="text-primary" /> 3. Tahap Kedatangan Barang
                         </div>
                         <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:32px;font-size:12px;font-weight:600;padding:0 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fas fa-plus"></i> Tambah Tahap
+                            <x-lucide-plus /> Tambah Tahap
                         </button>
                     </div>
 
                     <div class="edit-card-body">
                         {{-- Info Note Bar --}}
                         <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:14px;font-size:12px;color:#475569;">
-                            <i class="fas fa-circle-info text-primary" style="font-size:15px;flex-shrink:0;"></i>
+                            <x-lucide-info class="text-primary" style="font-size:15px;flex-shrink:0;" />
                             <span>Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat barang diterima.</span>
                         </div>
 
@@ -383,7 +383,7 @@
                         {{-- Empty State (Shown if no rows) --}}
                         <div id="stages_empty" style="display:none;padding:32px 16px;text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
                             <div style="width:42px;height:42px;border-radius:50%;background:#e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;margin-bottom:10px;">
-                                <i class="fas fa-calendar-plus" style="font-size:18px;"></i>
+                                <x-lucide-calendar-plus style="font-size:18px;" />
                             </div>
                             <div style="font-size:13.5px;font-weight:600;color:#334155;">Belum ada jadwal tahap kedatangan</div>
                             <div style="font-size:12px;color:#64748b;margin-top:4px;max-width:440px;margin-left:auto;margin-right:auto;">
@@ -399,7 +399,7 @@
                                 <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong></div>
                             </div>
                             <div class="text-muted" style="font-size:11.5px;">
-                                <i class="fas fa-lock text-muted me-1"></i> Terkunci otomatis sebagai <strong>Rencana</strong>
+                                <x-lucide-lock class="text-muted me-1" /> Terkunci otomatis sebagai <strong>Rencana</strong>
                             </div>
                         </div>
                     </div>
@@ -414,7 +414,7 @@
                 <div class="edit-card">
                     <div class="edit-card-header">
                         <div class="edit-card-title">
-                            <i class="fas fa-circle-info text-primary"></i> Ringkasan Material
+                            <x-lucide-info class="text-primary" /> Ringkasan Material
                         </div>
                     </div>
                     <div class="edit-card-body">
@@ -468,7 +468,7 @@
                 <div class="edit-card">
                     <div class="edit-card-header">
                         <div class="edit-card-title">
-                            <i class="fas fa-floppy-disk text-primary"></i> Aksi Perubahan
+                            <x-lucide-save class="text-primary" /> Aksi Perubahan
                         </div>
                     </div>
                     <div class="edit-card-body">
@@ -477,11 +477,11 @@
                         </p>
 
                         <button type="submit" class="btn btn-primary w-full" style="height:42px;font-size:13.5px;font-weight:700;border-radius:8px;box-shadow:0 3px 8px rgba(37,99,235,0.28);display:flex;align-items:center;justify-content:center;gap:8px;">
-                            <i class="fas fa-check"></i> Simpan Perubahan
+                            <x-lucide-check /> Simpan Perubahan
                         </button>
 
                         <a href="{{ route('materials.show', $material) }}" class="btn btn-light border w-full mt-2.5" style="height:38px;font-size:13px;font-weight:600;border-radius:8px;color:#64748b;display:flex;align-items:center;justify-content:center;gap:6px;">
-                            <i class="fas fa-times"></i> Batal
+                            <x-lucide-x /> Batal
                         </a>
                     </div>
                 </div>
@@ -764,12 +764,12 @@
             var statusBadge = (statusVal === 'received')
                 ? `<div style="display:inline-flex;flex-direction:column;gap:3px;">
                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;width:fit-content;">
-                           <i class="fas fa-circle-check text-success"></i> Sudah Masuk
+                           <x-lucide-circle-check class="text-success" /> Sudah Masuk
                        </span>
-                       ${data.received_gr ? `<span style="font-size:10px;color:#059669;font-weight:600;"><i class="fas fa-file-invoice me-1"></i> GR #${escapeHtml(data.received_gr)}</span>` : ''}
+                       ${data.received_gr ? `<span style="font-size:10px;color:#059669;font-weight:600;"><x-lucide-receipt class="me-1" /> GR #${escapeHtml(data.received_gr)}</span>` : ''}
                    </div>`
                 : `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;" title="Status terkunci otomatis sebagai Rencana dan berubah ke Sudah Masuk saat barang diterima">
-                       <i class="fas fa-clock text-warning"></i> Rencana
+                       <x-lucide-clock class="text-warning" /> Rencana
                    </span>`;
 
             tr.innerHTML = `
@@ -806,7 +806,7 @@
                             onclick="removeStageRow(${stageIndex})"
                             title="Hapus baris tahap"
                             class="btn-delete-stage">
-                        <i class="fas fa-trash-can" style="font-size:12px;"></i>
+                        <x-lucide-trash-2 style="font-size:12px;" />
                     </button>
                 </td>
             `;

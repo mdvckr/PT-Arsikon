@@ -94,7 +94,7 @@
         {{-- Breadcrumb --}}
         <div class="breadcrumb no-print" style="margin-bottom:6px;">
             <a href="{{ route('materials.index') }}" class="text-slate-500 hover:text-primary">Material</a>
-            <span class="breadcrumb-sep mx-1.5 text-slate-400"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <span class="breadcrumb-sep mx-1.5 text-slate-400"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span class="text-slate-700 font-medium">{{ $material->name }}</span>
         </div>
 
@@ -119,14 +119,14 @@
             <div class="flex flex-wrap items-center gap-2">
                 @can('edit materials')
                 <a href="{{ route('materials.edit', $material) }}" class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-edit"></i> Edit
+                    <x-lucide-pencil /> Edit
                 </a>
                 @endcan
                 <button type="button" class="btn btn-primary" onclick="printMaterial()" id="btn-print-material" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-print"></i> Cetak / Print
+                    <x-lucide-printer /> Cetak / Print
                 </button>
                 <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-arrow-left"></i> Kembali
+                    <x-lucide-arrow-left /> Kembali
                 </a>
             </div>
         </div>
@@ -155,7 +155,7 @@
                 <div class="detail-card">
                     <div class="detail-card-header">
                         <div class="detail-card-title">
-                            <i class="fas fa-warehouse text-primary"></i> Stok per Lokasi / Gudang
+                            <x-lucide-warehouse class="text-primary" /> Stok per Lokasi / Gudang
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -203,7 +203,7 @@
                 <div class="detail-card">
                     <div class="detail-card-header">
                         <div class="detail-card-title">
-                            <i class="fas fa-list text-primary"></i> Riwayat Mutasi Stok (20 Terakhir)
+                            <x-lucide-list class="text-primary" /> Riwayat Mutasi Stok (20 Terakhir)
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -265,7 +265,7 @@
                 <div class="detail-card">
                     <div class="detail-card-header">
                         <div class="detail-card-title">
-                            <i class="fas fa-cube text-primary"></i> Informasi Material
+                            <x-lucide-box class="text-primary" /> Informasi Material
                         </div>
                     </div>
                     <div class="detail-card-body">
@@ -305,7 +305,7 @@
                 <div class="detail-card">
                     <div class="detail-card-header">
                         <div class="detail-card-title">
-                            <i class="fas fa-calendar-alt text-primary"></i> Tahap Kedatangan Barang
+                            <x-lucide-calendar class="text-primary" /> Tahap Kedatangan Barang
                         </div>
                     </div>
                     <div class="detail-card-body">
@@ -318,9 +318,13 @@
                                         @if(!empty($stg['date']))
                                         <span class="text-muted" style="font-size:11px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
                                         @endif
-                                        <div style="font-size:11px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};font-weight:600;margin-top:2px;">
-                                            <i class="fas {{ $isReceived ? 'fa-circle-check' : 'fa-clock' }} me-1"></i>
-                                            {{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}
+                                        <div style="font-size:11px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};font-weight:600;margin-top:2px;display:flex;align-items:center;gap:4px;">
+                                            @if($isReceived)
+                                                <x-lucide-circle-check class="w-3.5 h-3.5" />
+                                            @else
+                                                <x-lucide-clock class="w-3.5 h-3.5" />
+                                            @endif
+                                            <span>{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}</span>
                                         </div>
                                     </div>
                                     <div style="font-weight:700;font-size:13px;color:#0f172a;">

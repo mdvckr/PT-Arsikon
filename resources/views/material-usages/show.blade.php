@@ -70,19 +70,19 @@
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('material-usages.index') }}">Pemakaian Material</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Detail #{{ $materialUsage->usage_number }}</span>
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if ($errors->any())
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i>
+        <x-lucide-circle-alert />
         @foreach ($errors->all() as $error)
             {{ $error }}
         @endforeach
@@ -93,7 +93,7 @@
     <div class="flex items-center justify-between mb-3 page-actions-header">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <a href="{{ route('material-usages.index') }}" class="btn btn-light border btn-sm" style="border-radius:6px;padding:5px 10px;font-size:11.5px;color:#475569;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
+                <x-lucide-arrow-left class="me-1" /> Kembali
             </a>
             <div>
                 <h2 class="fw-700" style="font-size:15px;color:#0f172a;margin:0;display:inline-flex;align-items:center;gap:6px;">
@@ -102,11 +102,11 @@
             </div>
             @if($materialUsage->status === 'cancelled')
                 <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                    <i class="fas fa-ban me-1"></i> Dibatalkan
+                    <x-lucide-ban class="me-1" /> Dibatalkan
                 </span>
             @else
                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                    <i class="fas fa-check-circle me-1"></i> Selesai
+                    <x-lucide-circle-check class="me-1" /> Selesai
                 </span>
             @endif
         </div>
@@ -114,7 +114,7 @@
         <div style="display:flex;align-items:center;gap:6px;">
             @if($materialUsage->status !== 'cancelled')
             <a href="{{ route('material-usages.print', $materialUsage) }}" target="_blank" class="btn btn-primary btn-sm" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                <i class="fas fa-print"></i> Cetak Bon
+                <x-lucide-printer /> Cetak Bon
             </a>
             @endif
         </div>
@@ -122,7 +122,7 @@
 
     @if($materialUsage->status === 'cancelled')
     <div class="alert alert-danger mb-3" style="display:flex;align-items:center;gap:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:8px;padding:10px 14px;">
-        <i class="fas fa-ban" style="font-size:16px;color:#dc2626;"></i>
+        <x-lucide-ban style="font-size:16px;color:#dc2626;" />
         <div>
             <strong style="color:#991b1b;font-size:12.5px;">Transaksi Ini Telah Dibatalkan</strong>
             <div class="text-muted" style="font-size:11px;margin-top:1px;">
@@ -139,7 +139,7 @@
 
     @if($materialUsage->materialRequest)
     <div class="alert alert-info mb-3" style="display:flex;align-items:center;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;">
-        <i class="fas fa-file-circle-check text-primary" style="font-size:14px;"></i>
+        <x-lucide-file-check class="text-primary" style="font-size:14px;" />
         <div style="font-size:12px;color:#334155;">
             Pengeluaran ini terikat dengan PO Lapangan 
             <a href="{{ route('material-requests.show', $materialUsage->materialRequest) }}" class="fw-700 text-primary" style="text-decoration:underline;">
@@ -156,7 +156,7 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;{{ $materialUsage->status === 'cancelled' ? 'opacity:0.75;' : '' }}">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+                        <x-lucide-boxes class="text-primary" style="font-size:13px;" />
                         <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Rincian Material yang Dikeluarkan</span>
                     </div>
                     <span class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:10.5px;padding:2px 8px;border-radius:12px;border:1px solid #bfdbfe;">
@@ -218,14 +218,14 @@
         <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-circle-info text-primary" style="font-size:13px;"></i>
+                    <x-lucide-info class="text-primary" style="font-size:13px;" />
                     <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Bon Pengeluaran</span>
                 </div>
                 <div class="card-body" style="padding:12px 14px;">
                     @php
                         $statusBadge = $materialUsage->status === 'cancelled'
-                            ? '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><i class="fas fa-ban me-1"></i> Dibatalkan</span>'
-                            : '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><i class="fas fa-check-circle me-1"></i> Selesai</span>';
+                            ? '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><x-lucide-ban class="me-1" /> Dibatalkan</span>'
+                            : '<span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:1px 6px;border-radius:12px;font-weight:600;"><x-lucide-circle-check class="me-1" /> Selesai</span>';
 
                         $infoRows = [
                             ['No. Bon', $materialUsage->usage_number, 'font-weight:700;color:#0f172a;'],
@@ -282,7 +282,7 @@
                 @can('cancel material usages')
                 <div class="card" style="border:1px solid #fecaca;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(220,38,38,0.05);overflow:hidden;">
                     <div class="card-header" style="background:#fef2f2;border-bottom:1px solid #fecaca;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-ban" style="color:#dc2626;font-size:12px;"></i>
+                        <x-lucide-ban style="color:#dc2626;font-size:12px;" />
                         <span class="card-title" style="font-size:12px;font-weight:700;color:#991b1b;">Batalkan Pengeluaran Ini</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
@@ -302,7 +302,7 @@
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:12px;font-weight:600;border-radius:6px;"
                                 onclick="return confirm('Batalkan pengeluaran material ini? Stok akan dikembalikan ke gudang asal.')">
-                                <i class="fas fa-ban me-1"></i> Batalkan Pengeluaran
+                                <x-lucide-ban class="me-1" /> Batalkan Pengeluaran
                             </button>
                         </form>
                     </div>

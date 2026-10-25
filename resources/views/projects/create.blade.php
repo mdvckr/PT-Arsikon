@@ -4,8 +4,8 @@
     <div class="project-edit-container">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
-            <a href="{{ route('projects.index') }}"><i class="fas fa-folder" style="font-size:12px;"></i> Data Proyek</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <a href="{{ route('projects.index') }}"><x-lucide-folder style="font-size:12px;" /> Data Proyek</a>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span style="color:#1e293b;font-weight:600;">Tambah Baru</span>
         </div>
 
@@ -15,7 +15,7 @@
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2">
                         <div class="icon-circle icon-circle-primary">
-                            <i class="fas fa-folder-plus"></i>
+                            <x-lucide-folder-plus />
                         </div>
                         <div>
                             <span class="card-title" style="font-size:16px;">Form Tambah Proyek Baru</span>
@@ -23,7 +23,7 @@
                         </div>
                     </div>
                     <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i> Kembali
+                        <x-lucide-arrow-left /> Kembali
                     </a>
                 </div>
             </div>
@@ -32,7 +32,7 @@
                 @if (isset($errors) && $errors->any())
                     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
                         <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada pengisian form:
+                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
                         </strong>
                         <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
                             @foreach ($errors->all() as $error)
@@ -48,7 +48,7 @@
                     <!-- SECTION 1: IDENTITAS PROYEK -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-file-contract text-primary"></i>
+                            <x-lucide-file-text class="text-primary" />
                             <h3 class="section-title">Informasi Utama Proyek</h3>
                         </div>
 
@@ -58,7 +58,7 @@
                                     Kode Proyek <span class="text-muted" style="font-size:12px;font-weight:normal;">(Otomatis dibuat jika kosong)</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-barcode input-icon"></i>
+                                    <x-lucide-barcode class="input-icon" />
                                     <input type="text" id="projectCode" name="code" value="{{ old('code') }}" class="form-control with-icon" placeholder="Contoh: PRJ-005">
                                 </div>
                             </div>
@@ -68,7 +68,7 @@
                                     Nama Proyek <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-building input-icon"></i>
+                                    <x-lucide-building-2 class="input-icon" />
                                     <input type="text" id="projectName" name="name" value="{{ old('name') }}" class="form-control with-icon" placeholder="Nama proyek pembangunan..." required>
                                 </div>
                             </div>
@@ -80,7 +80,7 @@
                     <!-- SECTION 2: JADWAL & STATUS -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-calendar-check text-warning"></i>
+                            <x-lucide-calendar-check class="text-warning" />
                             <h3 class="section-title">Jadwal & Status Pelaksanaan</h3>
                         </div>
 
@@ -90,7 +90,7 @@
                                     Tanggal Mulai <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-calendar-day input-icon"></i>
+                                    <x-lucide-calendar-days class="input-icon" />
                                     <input type="date" id="startDate" name="start_date" value="{{ old('start_date', date('Y-m-d')) }}" class="form-control with-icon" required>
                                 </div>
                             </div>
@@ -100,7 +100,7 @@
                                     Estimasi Tanggal Selesai
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-flag-checkered input-icon"></i>
+                                    <x-lucide-flag class="input-icon" />
                                     <input type="date" id="endDate" name="end_date" value="{{ old('end_date') }}" class="form-control with-icon">
                                 </div>
                             </div>
@@ -111,7 +111,7 @@
                                 Status Pengerjaan Proyek <span class="text-danger">*</span>
                             </label>
                             <div class="input-icon-wrap">
-                                <i class="fas fa-bars-progress input-icon"></i>
+                                <x-lucide-list-todo class="input-icon" />
                                 <select id="projectStatus" name="status" class="form-control with-icon" required>
                                     <option value="planning" {{ old('status') == 'planning' ? 'selected' : '' }}>📋 Perencanaan (Planning)</option>
                                     <option value="ongoing" {{ old('status', 'ongoing') == 'ongoing' ? 'selected' : '' }}>⚡ Sedang Berjalan (Ongoing / Active)</option>
@@ -127,7 +127,7 @@
                     <!-- SECTION 3: LOKASI & DETAIL -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-map-location-dot text-danger"></i>
+                            <x-lucide-map-pin class="text-danger" />
                             <h3 class="section-title">Lokasi & Keterangan Tambahan</h3>
                         </div>
 
@@ -136,7 +136,7 @@
                                 Lokasi Proyek
                             </label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
-                                <i class="fas fa-location-dot input-icon" style="top:12px;"></i>
+                                <x-lucide-map-pin class="input-icon" style="top:12px;" />
                                 <textarea id="projectLocation" name="location" class="form-control with-icon" rows="2" placeholder="Alamat atau lokasi proyek site (kabupaten, kota, provinsi)...">{{ old('location') }}</textarea>
                             </div>
                         </div>
@@ -146,7 +146,7 @@
                                 Deskripsi & Catatan Proyek
                             </label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
-                                <i class="fas fa-align-left input-icon" style="top:12px;"></i>
+                                <x-lucide-align-left class="input-icon" style="top:12px;" />
                                 <textarea id="projectDesc" name="description" class="form-control with-icon" rows="3" placeholder="Informasi ringkas mengenai spesifikasi pengerjaan proyek...">{{ old('description') }}</textarea>
                             </div>
                         </div>
@@ -157,7 +157,7 @@
                         <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
                             <div class="flex items-center gap-2">
                                 <div style="width:34px;height:34px;border-radius:8px;background:rgba(234,88,12,0.12);color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:16px;">
-                                    <i class="fas fa-warehouse"></i>
+                                    <x-lucide-warehouse />
                                 </div>
                                 <div>
                                     <h3 class="section-title" style="margin:0;font-size:15px;color:#0f172a;">Gudang Site Logistik Terpadu</h3>
@@ -177,7 +177,7 @@
                                         Nama Gudang Site
                                     </label>
                                     <div class="input-icon-wrap">
-                                        <i class="fas fa-warehouse input-icon"></i>
+                                        <x-lucide-warehouse class="input-icon" />
                                         <input type="text" id="whName" name="warehouse_name" value="{{ old('warehouse_name') }}" class="form-control with-icon" placeholder="Otomatis: Gudang Site [Nama Proyek]">
                                     </div>
                                     <span class="text-muted" style="font-size:11.5px;">Otomatis terisi mengikuti nama proyek bila dikosongkan.</span>
@@ -188,7 +188,7 @@
                                         Kode Gudang Site
                                     </label>
                                     <div class="input-icon-wrap">
-                                        <i class="fas fa-barcode input-icon"></i>
+                                        <x-lucide-barcode class="input-icon" />
                                         <input type="text" id="whCode" name="warehouse_code" value="{{ old('warehouse_code') }}" class="form-control with-icon" placeholder="Otomatis (contoh: W-PRJ-005)">
                                     </div>
                                     <span class="text-muted" style="font-size:11.5px;">Otomatis dibuat dari kode proyek bila dikosongkan.</span>
@@ -200,7 +200,7 @@
                                     Alamat / Titik Gudang Site
                                 </label>
                                 <div class="input-icon-wrap" style="align-items:flex-start;">
-                                    <i class="fas fa-location-arrow input-icon" style="top:12px;"></i>
+                                    <x-lucide-navigation class="input-icon" style="top:12px;" />
                                     <textarea id="whAddress" name="warehouse_address" class="form-control with-icon" rows="2" placeholder="Otomatis mengambil dari lokasi proyek bila dikosongkan...">{{ old('warehouse_address') }}</textarea>
                                 </div>
                             </div>
@@ -211,10 +211,10 @@
                     <div class="form-actions-bar">
                         <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
                             <button type="submit" class="btn btn-primary btn-submit-form">
-                                <i class="fas fa-plus-circle"></i> <span id="btnSubmitLabel">Simpan Proyek & Gudang Sekaligus</span>
+                                <x-lucide-circle-plus /> <span id="btnSubmitLabel">Simpan Proyek & Gudang Sekaligus</span>
                             </button>
                             <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <i class="fas fa-xmark"></i> Batal
+                                <x-lucide-x /> Batal
                             </a>
                         </div>
                     </div>

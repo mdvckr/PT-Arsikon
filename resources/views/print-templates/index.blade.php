@@ -682,7 +682,7 @@
                                     const sizeMB = (convertedFile.size / (1024 * 1024)).toFixed(2);
                                     document.getElementById('previewFilename').innerText = `${file.name} ➔ ${convertedFileName}`;
                                     document.getElementById('previewSpecs').innerText = `${sizeMB} MB • ${canvas.width} × ${canvas.height} px`;
-                                    document.getElementById('previewQualityBadge').innerHTML = '<span class="badge badge-success" style="font-size:11px;"><i class="fas fa-circle-check"></i> PDF Berhasil Dikonversi ke 300 DPI (Cetak Tajam)</span>';
+                                    document.getElementById('previewQualityBadge').innerHTML = '<span class="badge badge-success" style="font-size:11px;"><x-lucide-circle-check /> PDF Berhasil Dikonversi ke 300 DPI (Cetak Tajam)</span>';
 
                                     document.getElementById('dropzoneLoading').style.display = 'none';
                                     document.getElementById('dropzoneFilled').style.display = 'block';
@@ -722,11 +722,11 @@
 
                     const qualityDiv = document.getElementById('previewQualityBadge');
                     if (width >= 2000) {
-                        qualityDiv.innerHTML = '<span class="badge badge-success" style="font-size:11px;"><i class="fas fa-circle-check"></i> 300 DPI Standar Cetak Tajam</span>';
+                        qualityDiv.innerHTML = '<span class="badge badge-success" style="font-size:11px;"><x-lucide-circle-check /> 300 DPI Standar Cetak Tajam</span>';
                     } else if (width >= 1000) {
-                        qualityDiv.innerHTML = '<span class="badge badge-warning" style="font-size:11px;"><i class="fas fa-circle-exclamation"></i> Resolusi Sedang (Disarankan ≥2000px)</span>';
+                        qualityDiv.innerHTML = '<span class="badge badge-warning" style="font-size:11px;"><x-lucide-circle-alert /> Resolusi Sedang (Disarankan ≥2000px)</span>';
                     } else {
-                        qualityDiv.innerHTML = '<span class="badge badge-danger" style="font-size:11px;"><i class="fas fa-triangle-exclamation"></i> Resolusi Rendah (Bisa pecah)</span>';
+                        qualityDiv.innerHTML = '<span class="badge badge-danger" style="font-size:11px;"><x-lucide-triangle-alert /> Resolusi Rendah (Bisa pecah)</span>';
                     }
 
                     document.getElementById('dropzoneEmpty').style.display = 'none';

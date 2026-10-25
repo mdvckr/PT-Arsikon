@@ -8,7 +8,7 @@
     <div class="flex justify-between items-center mb-4">
         <div>
             <a href="{{ route('purchase-orders.index') }}" class="text-muted" style="font-size:13px;">
-                <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar PO
+                <x-lucide-arrow-left class="me-1" /> Kembali ke Daftar PO
             </a>
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin-top:4px;">
                 Purchase Order {{ $purchaseOrder->po_number }}
@@ -25,21 +25,21 @@
                 {{-- Opsi Cetak Ganda untuk Admin PO / Admin Pusat / Owner --}}
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'official']) }}" target="_blank"
                    class="btn" style="background:#0f766e;color:#fff;font-weight:600;" title="Cetak PO Resmi dengan harga untuk Supplier / Keuangan">
-                    <i class="fas fa-file-invoice-dollar me-1"></i> Cetak PO Resmi (Harga)
+                    <x-lucide-file-spreadsheet class="me-1" /> Cetak PO Resmi (Harga)
                 </a>
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
                    class="btn" style="background:#475569;color:#fff;font-weight:600;" title="Cetak PO Lapangan / Gudang tanpa harga (Rp 0) untuk bagian penerimaan barang di proyek">
-                    <i class="fas fa-file-shield me-1"></i> Cetak PO Lapangan (Tanpa Harga)
+                    <x-lucide-shield-check class="me-1" /> Cetak PO Lapangan (Tanpa Harga)
                 </a>
             @else
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
                    class="btn" style="background:#475569;color:#fff;font-weight:600;" title="Cetak PO Lapangan (Tanpa Harga)">
-                    <i class="fas fa-print me-1"></i> Cetak PO Lapangan
+                    <x-lucide-printer class="me-1" /> Cetak PO Lapangan
                 </a>
             @endif
 
             <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> Catat Nota Harian Baru
+                <x-lucide-plus class="me-1" /> Catat Nota Harian Baru
             </a>
 
             @if($purchaseOrder->status === 'draft')
@@ -47,7 +47,7 @@
                     <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-success" onclick="return confirm('Setujui PO ini?')">
-                            <i class="fas fa-check me-1"></i> Setujui PO
+                            <x-lucide-check class="me-1" /> Setujui PO
                         </button>
                     </form>
                 @endif
@@ -57,7 +57,7 @@
                 <form action="{{ route('purchase-orders.send', $purchaseOrder) }}" method="POST">
                     @csrf
                     <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim PO ini ke Supplier?')">
-                        <i class="fas fa-paper-plane me-1"></i> Kirim ke Supplier
+                        <x-lucide-send class="me-1" /> Kirim ke Supplier
                     </button>
                 </form>
             @endif
@@ -74,7 +74,7 @@
             @if(in_array($purchaseOrder->status, ['sent', 'partial_received']) && $purchaseOrder->outstanding > 0)
                 @if((auth()->user()->can('close purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
                     <button type="button" class="btn btn-outline-warning" onclick="promptShortClose()">
-                        <i class="fas fa-ban me-1"></i> Short Close
+                        <x-lucide-ban class="me-1" /> Short Close
                     </button>
                     <form id="shortCloseForm" action="{{ route('purchase-orders.close', $purchaseOrder) }}" method="POST" style="display:none;">
                         @csrf
@@ -96,36 +96,36 @@
 
     @if(session('error'))
         <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
-            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+            <x-lucide-circle-alert class="me-2" />{{ session('error') }}
         </div>
     @endif
 
     @if(session('success'))
         <div class="alert alert-success mb-4" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
-            <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+            <x-lucide-circle-check class="me-2" />{{ session('success') }}
         </div>
     @endif
 
     @if(session('show_print_prompt'))
         <div style="background:#eff6ff;border:1.5px solid #3b82f6;color:#1e40af;padding:14px 18px;border-radius:8px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div>
-                <i class="fas fa-print me-2"></i>
+                <x-lucide-printer class="me-2" />
                 <strong>PO berhasil dibuat!</strong> Apakah Anda ingin mencetak dokumen Purchase Order ini?
             </div>
             <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
                 @if($canViewPrice)
                     <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'official']) }}" target="_blank"
                        style="background:#0f766e;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                        <i class="fas fa-file-invoice-dollar"></i> Cetak Resmi (Harga)
+                        <x-lucide-file-spreadsheet /> Cetak Resmi (Harga)
                     </a>
                     <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
                        style="background:#475569;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                        <i class="fas fa-file-shield"></i> Cetak Lapangan (Tanpa Harga)
+                        <x-lucide-shield-check /> Cetak Lapangan (Tanpa Harga)
                     </a>
                 @else
                     <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'blind']) }}" target="_blank"
                        style="background:#475569;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                        <i class="fas fa-print"></i> Cetak PO Lapangan
+                        <x-lucide-printer /> Cetak PO Lapangan
                     </a>
                 @endif
                 <button onclick="this.parentElement.parentElement.remove()"
@@ -170,11 +170,11 @@
                 <span class="text-muted block text-xs">Penanggung Risiko Pengiriman:</span>
                 @if($purchaseOrder->risk_bearer === 'buyer')
                     <span class="badge" style="background:#fee2e2;color:#991b1b;font-weight:600;font-size:11.5px;">
-                        <i class="fas fa-shield-alt me-1"></i> Pembeli (PT Arsikon)
+                        <x-lucide-shield class="me-1" /> Pembeli (PT Arsikon)
                     </span>
                 @else
                     <span class="badge" style="background:#ecfdf5;color:#065f46;font-weight:600;font-size:11.5px;">
-                        <i class="fas fa-truck me-1"></i> Vendor / Supplier
+                        <x-lucide-truck class="me-1" /> Vendor / Supplier
                     </span>
                 @endif
             </div>
@@ -197,7 +197,7 @@
             <div>
                 <span class="text-muted block text-xs">Dari PO Lapangan:</span>
                 <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#2563eb;text-decoration:none;font-weight:700;">
-                    <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                    <x-lucide-clipboard-check class="me-1" />#{{ $linkedMr->request_number }}
                 </a>
                 <span class="block text-xs text-muted">{{ $linkedMr->toWarehouse?->project?->name ?? $linkedMr->toWarehouse?->name }}</span>
             </div>
@@ -210,14 +210,14 @@
         <div class="card mb-6" style="padding:16px 20px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div style="font-size:13px; color:#1e293b;">
-                    <i class="fas fa-receipt text-primary me-2"></i>
+                    <x-lucide-receipt class="text-primary me-2" />
                     PO ini terhubung dengan <strong>{{ $purchaseOrder->receipts->count() }} Nota Pembelian Fisik</strong>.
                     Ringkasan finansial dan riwayat pembayaran ditampilkan langsung pada halaman Nota Pembelian.
                 </div>
                 <div class="flex gap-2">
                     @foreach($purchaseOrder->receipts as $rc)
                         <a href="{{ route('purchase-receipts.show', $rc) }}" class="btn btn-sm btn-primary" style="font-size:12px; font-weight:600;">
-                            <i class="fas fa-file-invoice me-1"></i> Buka Nota #{{ $rc->receipt_number ?? $rc->id }}
+                            <x-lucide-receipt class="me-1" /> Buka Nota #{{ $rc->receipt_number ?? $rc->id }}
                         </a>
                     @endforeach
                 </div>
@@ -240,7 +240,7 @@
         <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
             <div>
                 <h3 style="font-size:16px; font-weight:700; color:#0f172a;" class="flex items-center gap-2">
-                    <i class="fas fa-coins text-primary"></i> Ringkasan Finansial & Nilai Sah Tagihan PO
+                    <x-lucide-coins class="text-primary" /> Ringkasan Finansial & Nilai Sah Tagihan PO
                 </h3>
                 <p class="text-muted" style="font-size:12.5px; margin-top:2px;">
                     Pembayaran tagihan dihitung berdasarkan nilai sah barang yang telah diterima di gudang (GR) atau bukti nota fisik lapangan.
@@ -249,15 +249,15 @@
             <div>
                 @if($hasPayableProof && $poPayableRemaining > 0)
                     <a href="{{ route('payments.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary" style="font-size:12.5px; font-weight:700; padding:7px 14px; border-radius:6px;">
-                        <i class="fas fa-credit-card me-1"></i> Ajukan Pembayaran
+                        <x-lucide-credit-card class="me-1" /> Ajukan Pembayaran
                     </a>
                 @elseif(! $hasPayableProof)
                     <span class="badge" style="background:#f1f5f9; color:#64748b; font-size:11.5px; padding:6px 10px; border:1px solid #cbd5e1;">
-                        <i class="fas fa-clock me-1"></i> Belum ada Bukti GR / Nota Pembelian
+                        <x-lucide-clock class="me-1" /> Belum ada Bukti GR / Nota Pembelian
                     </span>
                 @else
                     <span class="badge" style="background:#dcfce7; color:#15803d; font-size:11.5px; padding:6px 10px; border:1px solid #bbf7d0;">
-                        <i class="fas fa-check-double me-1"></i> Nilai Tagihan Lunas / Penuh Diajukan
+                        <x-lucide-check-check class="me-1" /> Nilai Tagihan Lunas / Penuh Diajukan
                     </span>
                 @endif
             </div>
@@ -305,7 +305,7 @@
         @if(!empty($withheldData['items']))
             <div class="mt-3" style="background:#fff5f5; border:1px solid #fed7d7; border-radius:8px; padding:12px 14px;">
                 <div style="font-size:12px; font-weight:700; color:#991b1b; margin-bottom:6px;" class="flex items-center gap-1">
-                    <i class="fas fa-circle-exclamation"></i> Rincian Nilai Tertahan (Unresolved / Rusak / Tanggungan Vendor / Belum Tiba):
+                    <x-lucide-circle-alert /> Rincian Nilai Tertahan (Unresolved / Rusak / Tanggungan Vendor / Belum Tiba):
                 </div>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     @foreach($withheldData['items'] as $wh)
@@ -328,7 +328,7 @@
         @if($purchaseOrder->payments && $purchaseOrder->payments->count() > 0)
             <div class="mt-4 pt-3" style="border-top:1px solid #e2e8f0;">
                 <h4 style="font-size:13.5px; font-weight:700; color:#334155; margin-bottom:10px;">
-                    <i class="fas fa-history me-1"></i> Riwayat Pembayaran PO:
+                    <x-lucide-history class="me-1" /> Riwayat Pembayaran PO:
                 </h4>
                 <div class="table-wrap">
                     <table class="data-table" style="background:#fff; font-size:12px;">
@@ -356,7 +356,7 @@
                                     </td>
                                     <td>
                                         <a href="{{ route('payments.show', $pmt) }}" class="btn btn-xs btn-secondary">
-                                            <i class="fas fa-eye"></i> Detail
+                                            <x-lucide-eye /> Detail
                                         </a>
                                     </td>
                                 </tr>
@@ -405,26 +405,26 @@
                             @if($item->materialRequestItem && $item->materialRequestItem->materialRequest)
                                 <div class="mt-1">
                                     <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:500;">
-                                        <i class="fas fa-link me-1"></i> Dari Permintaan: #{{ $item->materialRequestItem->materialRequest->request_number }} ({{ $item->materialRequestItem->materialRequest->fromWarehouse?->name }})
+                                        <x-lucide-link class="me-1" /> Dari Permintaan: #{{ $item->materialRequestItem->materialRequest->request_number }} ({{ $item->materialRequestItem->materialRequest->fromWarehouse?->name }})
                                     </span>
                                 </div>
                             @elseif($item->isCustom())
                                 <div class="mt-1">
                                     <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:500;">
-                                        <i class="fas fa-tag me-1"></i> Barang Baru / Pengadaan Khusus
+                                        <x-lucide-tag class="me-1" /> Barang Baru / Pengadaan Khusus
                                     </span>
                                 </div>
                             @endif
 
                             @if($item->notes)
                                 <div class="mt-1" style="font-size:11.5px;color:#475569;">
-                                    <i class="fas fa-note-sticky text-amber-600 me-1"></i> Catatan: <em>{{ $item->notes }}</em>
+                                    <x-lucide-sticky-note class="text-amber-600 me-1" /> Catatan: <em>{{ $item->notes }}</em>
                                 </div>
                             @endif
 
                             @if($item->deliverySchedules && $item->deliverySchedules->count() > 0)
                                 <div class="mt-2" style="font-size:11px; background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid #e2e8f0;">
-                                    <span style="color:#475569; font-weight:600;"><i class="fas fa-calendar-days me-1"></i> Jadwal Kedatangan:</span>
+                                    <span style="color:#475569; font-weight:600;"><x-lucide-calendar-days class="me-1" /> Jadwal Kedatangan:</span>
                                     <div class="mt-1" style="display:flex; flex-direction:column; gap:3px;">
                                         @foreach($item->deliverySchedules as $sch)
                                             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
@@ -488,12 +488,12 @@
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h3 style="font-size:17px;font-weight:700;color:#0369a1;" class="flex items-center gap-2">
-                    <i class="fas fa-receipt text-sky-600"></i> Riwayat Nota Pembelian Harian (Hari 1, Hari 2, dst.)
+                    <x-lucide-receipt class="text-sky-600" /> Riwayat Nota Pembelian Harian (Hari 1, Hari 2, dst.)
                 </h3>
                 <p class="text-muted" style="font-size:13px;">Daftar pengeluaran dan nota fisik harian yang dicatat untuk PO ini.</p>
             </div>
             <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i> Tambah Nota Hari Ini
+                <x-lucide-plus class="me-1" /> Tambah Nota Hari Ini
             </a>
         </div>
 
@@ -528,7 +528,7 @@
                         <td>
                             @if($receipt->image_path)
                                 <a href="{{ asset('storage/' . $receipt->image_path) }}" target="_blank" class="btn btn-xs btn-outline-info" style="font-size:11px;padding:2px 6px;">
-                                    <i class="fas fa-file-image me-1"></i> Lihat Foto
+                                    <x-lucide-file-image class="me-1" /> Lihat Foto
                                 </a>
                             @else
                                 <span class="text-muted" style="font-size:12px;">Tanpa Foto</span>
@@ -537,7 +537,7 @@
                         <td class="text-muted" style="font-size:12px;">{{ $receipt->creator?->name ?? '-' }}</td>
                         <td>
                             <a href="{{ route('purchase-receipts.show', $receipt) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail Nota">
-                                <i class="fas fa-eye"></i>
+                                <x-lucide-eye />
                             </a>
                         </td>
                     </tr>

@@ -719,8 +719,8 @@
 
     {{-- Breadcrumb --}}
     <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('goods-receipts.index') }}"><i class="fas fa-truck-ramp-box" style="font-size:11px;"></i> Penerimaan Barang</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <a href="{{ route('goods-receipts.index') }}"><x-lucide-package-check style="font-size:11px;" /> Penerimaan Barang</a>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Catat Penerimaan Baru</span>
     </div>
 
@@ -728,7 +728,7 @@
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
             <h2 class="fw-700" style="font-size:18px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-dolly text-primary"></i> Catat Penerimaan Barang & Alat Masuk
+                <x-lucide-package-check class="text-primary" /> Catat Penerimaan Barang & Alat Masuk
             </h2>
             <p class="text-muted" style="font-size:12.5px;margin-top:2px;margin-bottom:0;">
                 Input kedatangan fisik material dan alat kerja dari supplier atau PO dalam satu sesi dokumen penerimaan.
@@ -736,14 +736,14 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary btn-sm" style="border-radius:6px;font-size:12px;">
-                <i class="fas fa-arrow-left"></i> Kembali
+                <x-lucide-arrow-left /> Kembali
             </a>
         </div>
     </div>
 
     @if (isset($errors) && $errors->any())
     <div class="alert alert-danger mb-3" style="border-radius:8px;padding:12px 14px;font-size:13px;">
-        <i class="fas fa-circle-exclamation" style="font-size:16px;"></i>
+        <x-lucide-circle-alert style="font-size:16px;" />
         <div>
             <strong style="display:block;margin-bottom:4px;">Terdapat kesalahan pengisian data:</strong>
             <ul style="margin:0;padding-left:18px;line-height:1.5;">
@@ -761,7 +761,7 @@
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                 <div style="display:flex;align-items:flex-start;gap:12px;">
                     <div style="width:38px;height:38px;border-radius:9px;background:#2563eb;color:#ffffff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(37,99,235,0.3);">
-                        <i class="fas fa-truck-fast" style="font-size:16px;"></i>
+                        <x-lucide-truck style="font-size:16px;" />
                     </div>
                     <div>
                         <h4 style="font-size:13.5px;font-weight:700;color:#1e3a8a;margin:0 0 3px 0;">
@@ -788,7 +788,7 @@
                         <span style="color:#64748b;">• Supir: {{ $dist->driver_name ?? '-' }} ({{ $dist->vehicle_number ?? '-' }})</span>
                     </div>
                     <a href="{{ route('distributions.show', $dist) }}" class="btn btn-sm btn-primary" style="font-size:11.5px;font-weight:700;padding:5px 14px;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                        <i class="fas fa-boxes-packing me-1"></i> Terima Surat Jalan Ini
+                        <x-lucide-boxes class="me-1" /> Terima Surat Jalan Ini
                     </a>
                 </div>
                 @endforeach
@@ -808,20 +808,20 @@
                     {{-- Judul & Filter Tab (Material sendiri, Alat sendiri, Semua) --}}
                     <div class="flex items-center gap-3 flex-wrap receipt-header-title-box">
                         <div style="display:flex;align-items:center;gap:6px;">
-                            <i class="fas fa-boxes-stacked text-primary" style="font-size:15px;"></i>
+                            <x-lucide-boxes class="text-primary" style="font-size:15px;" />
                             <span class="card-title" style="font-size:14px;font-weight:700;color:#1e293b;">Rincian Barang & Alat Diterima</span>
                         </div>
 
                         {{-- Filter Tabs (Material sendiri & Alat sendiri) --}}
                         <div class="flex items-center gap-1 receipt-tabs-wrap" style="background:#e2e8f0;padding:3px;border-radius:8px;">
                             <button type="button" class="btn-tab-filter active" id="tab-btn-all" onclick="filterItemsTab('all')">
-                                <i class="fas fa-list"></i> Semua <span class="count-badge" id="count-all">0</span>
+                                <x-lucide-list /> Semua <span class="count-badge" id="count-all">0</span>
                             </button>
                             <button type="button" class="btn-tab-filter" id="tab-btn-material" onclick="filterItemsTab('material')">
-                                <i class="fas fa-box" style="color:#2563eb;"></i> Material <span class="count-badge" id="count-material">0</span>
+                                <x-lucide-package style="color:#2563eb;" /> Material <span class="count-badge" id="count-material">0</span>
                             </button>
                             <button type="button" class="btn-tab-filter" id="tab-btn-tool" onclick="filterItemsTab('tool')">
-                                <i class="fas fa-helmet-safety" style="color:#d97706;"></i> Alat <span class="count-badge" id="count-tool">0</span>
+                                <x-lucide-hard-hat style="color:#d97706;" /> Alat <span class="count-badge" id="count-tool">0</span>
                             </button>
                         </div>
                     </div>
@@ -829,13 +829,13 @@
                     {{-- Tombol Tambah & Tarik dari Jadwal --}}
                     <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
                         <button type="button" class="btn btn-sm btn-info btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#0891b2;border:none;">
-                            <i class="fas fa-calendar-check me-1"></i> Tarik dari Jadwal Kedatangan <span class="badge" id="badgeSchedCount" style="background:rgba(255,255,255,0.25);font-size:11px;margin-left:3px;display:none;">0</span>
+                            <x-lucide-calendar-check class="me-1" /> Tarik dari Jadwal Kedatangan <span class="badge" id="badgeSchedCount" style="background:rgba(255,255,255,0.25);font-size:11px;margin-left:3px;display:none;">0</span>
                         </button>
                         <button type="button" class="btn btn-sm btn-primary btn-add-mat" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;">
-                            <i class="fas fa-box-open me-1"></i> + Material
+                            <x-lucide-package-open class="me-1" /> + Material
                         </button>
                         <button type="button" class="btn btn-sm btn-warning btn-add-tool" id="btnAddTool" onclick="addRow('tool')" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 14px;color:#ffffff;background:#d97706;">
-                            <i class="fas fa-helmet-safety me-1"></i> + Alat
+                            <x-lucide-hard-hat class="me-1" /> + Alat
                         </button>
                     </div>
                 </div>
@@ -843,12 +843,12 @@
                 {{-- Fast 1-Click Scheduled Import Banner --}}
                 <div id="scheduledBanner" style="display:none;margin:12px 18px 0;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:#166534;">
-                        <i class="fas fa-bolt text-warning" style="font-size:16px;"></i>
+                        <x-lucide-zap class="text-warning" style="font-size:16px;" />
                         <span>Terdeteksi <strong id="scheduledBannerCount">0</strong> barang dalam jadwal rencana kedatangan.</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <button type="button" class="btn btn-sm btn-success" onclick="autoImportAllScheduled()" style="font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                            <i class="fas fa-check-double me-1"></i> Tarik Semua Otomatis (Cepat)
+                            <x-lucide-check-check class="me-1" /> Tarik Semua Otomatis (Cepat)
                         </button>
                         <button type="button" class="btn btn-sm btn-light border" onclick="openScheduledModal()" style="font-size:11.5px;padding:5px 10px;border-radius:6px;">
                             Pilih Satuan
@@ -896,7 +896,7 @@
                 {{-- Header --}}
                 <div style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:14px 22px;display:flex;align-items:center;gap:12px;">
                     <div style="width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas fa-clipboard-list" style="color:#93c5fd;font-size:15px;"></i>
+                        <x-lucide-clipboard-list style="color:#93c5fd;font-size:15px;" />
                     </div>
                     <div>
                         <div style="font-size:14px;font-weight:700;color:#f1f5f9;letter-spacing:0.2px;">Data Sesi Penerimaan</div>
@@ -912,7 +912,7 @@
                         <div class="session-field-group">
                             <div class="group-label" style="color:#2563eb;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#eff6ff;display:inline-flex;align-items:center;justify-content:center;">
-                                    <i class="fas fa-calendar-alt" style="font-size:11px;color:#2563eb;"></i>
+                                    <x-lucide-calendar style="font-size:11px;color:#2563eb;" />
                                 </span>
                                 Waktu &amp; Lokasi
                             </div>
@@ -922,7 +922,7 @@
                                     Tanggal Terima <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-calendar-day input-icon"></i>
+                                    <x-lucide-calendar-days class="input-icon" />
                                     <input type="date" id="receiptDateInput" name="received_at"
                                         value="{{ old('received_at', date('Y-m-d')) }}"
                                         class="form-control" required onchange="onDateChanged()">
@@ -933,11 +933,11 @@
                                 <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                                     <span>Gudang Tujuan <span class="text-danger">*</span></span>
                                     <span id="warehouseLockBadge" style="display:none;font-size:10.5px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:2px 8px;border-radius:4px;align-items:center;gap:4px;">
-                                        <i class="fas fa-lock"></i> Terkunci Sesuai Tahapan
+                                        <x-lucide-lock /> Terkunci Sesuai Tahapan
                                     </span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-warehouse input-icon" id="warehouseInputIcon"></i>
+                                    <x-lucide-warehouse class="input-icon" id="warehouseInputIcon" />
                                     <select name="warehouse_id" id="warehouseSelect" class="form-control @error('warehouse_id') is-invalid @enderror" required onchange="onUserWarehouseChange(this)">
                                         <option value="">— Pilih Gudang —</option>
                                         @foreach($warehouses as $wh)
@@ -956,7 +956,7 @@
                         <div class="session-field-group">
                             <div class="group-label" style="color:#059669;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;">
-                                    <i class="fas fa-building" style="font-size:11px;color:#059669;"></i>
+                                    <x-lucide-building-2 style="font-size:11px;color:#059669;" />
                                 </span>
                                 Pemasok &amp; Dokumen PO
                             </div>
@@ -967,7 +967,7 @@
                                 </label>
                                 <input type="hidden" name="supplier_id" id="supplierIdHidden" value="{{ old('supplier_id') }}">
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-store input-icon"></i>
+                                    <x-lucide-store class="input-icon" />
                                     <input type="text"
                                         id="supplierNameInput"
                                         name="supplier_name"
@@ -985,7 +985,7 @@
                                     @endforeach
                                 </datalist>
                                 <div id="supplierHint" style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
-                                    <i class="fas fa-circle-info" style="color:#94a3b8;"></i>
+                                    <x-lucide-info style="color:#94a3b8;" />
                                     Pilih dari daftar atau ketik supplier baru — akan otomatis terdaftar
                                 </div>
                                 @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
@@ -998,7 +998,7 @@
                                     <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Permintaan Proyek)</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-clipboard-check input-icon"></i>
+                                    <x-lucide-clipboard-check class="input-icon" />
                                     <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
                                         <option value="">— Pilih PO Lapangan (Opsional) —</option>
                                         @foreach($materialRequests as $mr)
@@ -1021,7 +1021,7 @@
                                     </select>
                                 </div>
                                 <div id="mrInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
-                                    <i class="fas fa-circle-check me-1"></i>
+                                    <x-lucide-circle-check class="me-1" />
                                     <span id="mrBannerText"></span>
                                 </div>
                             </div>
@@ -1032,7 +1032,7 @@
                                     <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-file-contract input-icon"></i>
+                                    <x-lucide-file-text class="input-icon" />
                                     <select id="poSelect" name="purchase_order_id" class="form-control" onchange="onPoSelectChange(this.value)">
                                         <option value="">— Tanpa PO (Pembelian Langsung) —</option>
                                         @foreach($purchaseOrders as $po)
@@ -1053,7 +1053,7 @@
                                     </select>
                                 </div>
                                 <div id="poInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#eff6ff;border-radius:7px;border:1px solid #bfdbfe;font-size:11px;color:#1d4ed8;line-height:1.5;">
-                                    <i class="fas fa-link me-1"></i>
+                                    <x-lucide-link class="me-1" />
                                     <span id="poBannerText"></span>
                                 </div>
                             </div>
@@ -1063,7 +1063,7 @@
                         <div class="session-field-group">
                             <div class="group-label" style="color:#d97706;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#fffbeb;display:inline-flex;align-items:center;justify-content:center;">
-                                    <i class="fas fa-user-tie" style="font-size:11px;color:#d97706;"></i>
+                                    <x-lucide-user-check style="font-size:11px;color:#d97706;" />
                                 </span>
                                 Penerima &amp; Referensi
                             </div>
@@ -1074,7 +1074,7 @@
                                     <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Wajib)</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-user-check input-icon"></i>
+                                    <x-lucide-user-check class="input-icon" />
                                     <input type="text" name="received_by_name"
                                         id="receivedByNameInput"
                                         value="{{ old('received_by_name', auth()->user()->name) }}"
@@ -1082,7 +1082,7 @@
                                         placeholder="Nama lengkap penerima barang...">
                                 </div>
                                 <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
-                                    <i class="fas fa-circle-info" style="color:#94a3b8;"></i>
+                                    <x-lucide-info style="color:#94a3b8;" />
                                     Terisi otomatis nama Anda — ubah jika penerima orang lain
                                 </div>
                             </div>
@@ -1092,7 +1092,7 @@
                                     No. Surat Jalan / Faktur Vendor
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-hashtag input-icon"></i>
+                                    <x-lucide-hash class="input-icon" />
                                     <input type="text" name="invoice_number" value="{{ old('invoice_number') }}"
                                         class="form-control" placeholder="Contoh: SJ-2026/09/001">
                                 </div>
@@ -1101,7 +1101,7 @@
                             <div class="mb-0">
                                 <label class="form-label">Catatan Penerimaan</label>
                                 <div style="position:relative;">
-                                    <i class="fas fa-note-sticky" style="position:absolute;left:11px;top:11px;color:#94a3b8;font-size:12px;pointer-events:none;"></i>
+                                    <x-lucide-sticky-note style="position:absolute;left:11px;top:11px;color:#94a3b8;font-size:12px;pointer-events:none;" />
                                     <textarea name="notes" class="form-control" rows="2"
                                         style="padding-left:34px !important;"
                                         placeholder="Keterangan pengiriman, supir, nomor plat armada...">{{ old('notes') }}</textarea>
@@ -1115,15 +1115,15 @@
                 {{-- ─── Submit Bar ─── --}}
                 <div class="submit-bar">
                     <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-shield-halved" style="color:#94a3b8;"></i>
+                        <x-lucide-shield style="color:#94a3b8;" />
                         Data akan disimpan sebagai <strong style="color:#334155;">Draft</strong> — dapat dikonfirmasi setelah diperiksa
                     </div>
                     <div style="display:flex;align-items:center;gap:10px;">
                         <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary" style="font-size:13px;padding:9px 18px;border-radius:8px;font-weight:600;">
-                            <i class="fas fa-arrow-left me-1"></i> Kembali
+                            <x-lucide-arrow-left class="me-1" /> Kembali
                         </a>
                         <button type="submit" class="save-btn">
-                            <i class="fas fa-floppy-disk me-2"></i> Simpan Penerimaan (Draft)
+                            <x-lucide-save class="me-2" /> Simpan Penerimaan (Draft)
                         </button>
                     </div>
                 </div>
@@ -1137,7 +1137,7 @@
         <div class="scheduled-modal-box" style="max-width:680px;">
             <div class="scheduled-modal-header">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-calendar-check text-primary" style="font-size:18px;"></i>
+                    <x-lucide-calendar-check class="text-primary" style="font-size:18px;" />
                     <div>
                         <h4 class="fw-700" style="font-size:15px;margin:0;color:#0f172a;">Jadwal Kedatangan Barang & Alat</h4>
                         <p class="text-muted" style="font-size:11.5px;margin:1px 0 0 0;">Pilih item yang tiba untuk langsung dimasukkan tanpa ketik ulang.</p>
@@ -1150,10 +1150,10 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;">
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <button type="button" id="btnSchedAll" class="btn btn-sm btn-primary" onclick="setModalFilter('all')" style="font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 10px;">
-                            <i class="fas fa-list-check me-1"></i> Semua Rencana (<span id="countSchedAll">0</span>)
+                            <x-lucide-list-checks class="me-1" /> Semua Rencana (<span id="countSchedAll">0</span>)
                         </button>
                         <button type="button" id="btnSchedToday" class="btn btn-sm btn-light border" onclick="setModalFilter('today')" style="font-size:11.5px;font-weight:600;border-radius:6px;padding:4px 10px;">
-                            <i class="fas fa-calendar-day me-1"></i> Hari Ini (<span id="countSchedToday">0</span>)
+                            <x-lucide-calendar-days class="me-1" /> Hari Ini (<span id="countSchedToday">0</span>)
                         </button>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;">
@@ -1164,7 +1164,7 @@
 
                 <div id="scheduledItemsList">
                     <div class="text-center p-4 text-muted" style="font-size:13px;">
-                        <i class="fas fa-spinner fa-spin me-1"></i> Memuat daftar jadwal kedatangan...
+                        <x-lucide-loader-2 class="me-1 animate-spin" /> Memuat daftar jadwal kedatangan...
                     </div>
                 </div>
             </div>
@@ -1172,13 +1172,13 @@
             <div class="scheduled-modal-footer" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #e2e8f0;background:#f8fafc;">
                 <div>
                     <button type="button" class="btn btn-sm btn-light border" onclick="toggleSelectAllScheduled()" style="font-size:11.5px;padding:4px 10px;">
-                        <i class="fas fa-check-square me-1"></i> Pilih / Batal Semua
+                        <x-lucide-square-check class="me-1" /> Pilih / Batal Semua
                     </button>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <button type="button" class="btn btn-secondary btn-sm" onclick="closeScheduledModal()" style="font-size:12px;">Batal</button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="applySelectedScheduledItems()" style="font-size:12px;font-weight:700;">
-                        <i class="fas fa-check-double me-1"></i> Masukkan Barang Terpilih
+                        <x-lucide-check-check class="me-1" /> Masukkan Barang Terpilih
                     </button>
                 </div>
             </div>

@@ -144,13 +144,13 @@
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
         <a href="{{ route('tool-assignments.index') }}">Peminjaman Alat</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Peminjaman per Jumlah Alat</span>
     </div>
 
     @if ($errors->has('quantities'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-triangle-exclamation"></i> {{ $errors->first('quantities') }}
+        <x-lucide-triangle-alert /> {{ $errors->first('quantities') }}
     </div>
     @endif
 
@@ -161,7 +161,7 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-screwdriver-wrench text-primary" style="font-size:13px;"></i>
+                        <x-lucide-wrench class="text-primary" style="font-size:13px;" />
                         <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Daftar Stok Alat Tersedia</span>
                     </div>
                     <div>
@@ -174,7 +174,7 @@
                 <div class="card-body" style="padding:12px 14px;">
                     {{-- Search Box --}}
                     <div style="position:relative;margin-bottom:10px;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:11px;" />
                         <input type="text" id="toolSearch" class="form-control" placeholder="Cari nama alat, kode, atau kategori..." oninput="filterTools()" style="padding-left:30px;height:32px;border-radius:6px;font-size:12px;border-color:#cbd5e1;">
                     </div>
 
@@ -194,7 +194,7 @@
                                     <td colspan="3" style="padding:6px 10px !important;">
                                         <div class="flex items-center justify-between" style="width:100%;">
                                             <div class="flex items-center" style="gap:6px;">
-                                                <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
+                                                <x-lucide-chevron-down class="cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;" />
                                                 <span class="fw-700" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;color:#1e293b;">{{ $category->name }}</span>
                                                 <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">{{ $category->tools->count() }} alat</span>
                                             </div>
@@ -222,7 +222,7 @@
                                     </td>
                                     <td style="text-align:center;padding:6px 8px;" class="tool-table-cell">
                                         <span class="badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
-                                            <i class="fas fa-check" style="font-size:8.5px;"></i> {{ $tool->stock_available }} Ready
+                                            <x-lucide-check style="font-size:8.5px;" /> {{ $tool->stock_available }} Ready
                                         </span>
                                     </td>
                                     <td style="text-align:center;padding:6px 8px;" class="tool-table-cell">
@@ -253,7 +253,7 @@
                                     <td colspan="3" style="padding:6px 10px !important;">
                                         <div class="flex items-center justify-between" style="width:100%;">
                                             <div class="flex items-center" style="gap:6px;">
-                                                <i class="fas fa-chevron-down cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;"></i>
+                                                <x-lucide-chevron-down class="cat-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;" />
                                                 <span class="fw-700" style="font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;color:#1e293b;">Lainnya</span>
                                                 <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600;">{{ $uncategorizedTools->count() }} alat</span>
                                             </div>
@@ -281,7 +281,7 @@
                                     </td>
                                     <td style="text-align:center;padding:6px 8px;" class="tool-table-cell">
                                         <span class="badge" style="background:#ecfdf5;color:#047857;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;">
-                                            <i class="fas fa-check" style="font-size:8.5px;"></i> {{ $tool->stock_available }} Ready
+                                            <x-lucide-check style="font-size:8.5px;" /> {{ $tool->stock_available }} Ready
                                         </span>
                                     </td>
                                     <td style="text-align:center;padding:6px 8px;" class="tool-table-cell">
@@ -309,7 +309,7 @@
                                 @if($toolCategories->isEmpty() && $uncategorizedTools->isEmpty())
                                 <tr>
                                     <td colspan="3" style="text-align:center;padding:28px 16px;color:#94a3b8;">
-                                        <i class="fas fa-inbox" style="font-size:24px;margin-bottom:6px;display:block;color:#cbd5e1;"></i>
+                                        <x-lucide-inbox style="font-size:24px;margin-bottom:6px;display:inline-block;color:#cbd5e1;" />
                                         <div style="font-weight:600;font-size:12.5px;color:#64748b;">Tidak ada stok alat tersedia</div>
                                     </td>
                                 </tr>
@@ -323,7 +323,7 @@
             <!-- Right: Borrowing info form -->
             <div class="card sticky-sidebar" id="formCard" style="position:sticky;top:20px;border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-clipboard-user text-primary" style="font-size:13px;"></i>
+                    <x-lucide-clipboard-pen class="text-primary" style="font-size:13px;" />
                     <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Peminjaman</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
@@ -383,7 +383,7 @@
                     </div>
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <button type="submit" id="btnSubmitAssignment" class="btn btn-primary w-full" style="justify-content:center;padding:9px;font-size:13px;font-weight:600;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                            <i class="fas fa-paper-plane me-1"></i> Ajukan Peminjaman
+                            <x-lucide-send class="me-1" /> Ajukan Peminjaman
                         </button>
                         <a href="{{ route('tool-assignments.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center;padding:7px;font-size:12px;font-weight:500;border-radius:6px;color:#64748b;">
                             Batal
@@ -397,7 +397,7 @@
     {{-- Floating Action Bar for Mobile View --}}
     <div id="mobileSummaryBar" style="display:none;position:fixed;bottom:14px;left:14px;right:14px;z-index:99;background:#0f172a;color:#ffffff;border-radius:10px;padding:10px 14px;box-shadow:0 8px 20px -3px rgba(0,0,0,0.3);align-items:center;justify-content:space-between;gap:10px;">
         <div style="display:flex;align-items:center;gap:6px;">
-            <i class="fas fa-boxes-stacked text-primary" style="font-size:13px;"></i>
+            <x-lucide-boxes class="text-primary" style="font-size:13px;" />
             <span style="font-size:12px;font-weight:600;"><span id="mobileUnitCount">0</span> Unit Dipilih</span>
         </div>
         <button type="button" onclick="scrollToForm()" class="btn btn-sm btn-primary" style="padding:5px 12px;font-size:11.5px;font-weight:600;border-radius:5px;box-shadow:none;">
@@ -531,7 +531,7 @@
             const btn = document.getElementById('btnSubmitAssignment');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengajukan...';
+                btn.innerHTML = '<x-lucide-loader-2 class="me-1 animate-spin" /> Mengajukan...';
             }
         });
 

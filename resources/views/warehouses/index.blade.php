@@ -6,7 +6,7 @@
         <div class="warehouse-header-title">
             <div class="flex items-center gap-2">
                 <div class="icon-circle icon-circle-orange">
-                    <i class="fas fa-warehouse"></i>
+                    <x-lucide-warehouse />
                 </div>
                 <div>
                     <h2 class="fw-800" style="font-size:22px;color:#0f172a;line-height:1.2;">Data Gudang & Lokasi</h2>
@@ -17,10 +17,10 @@
         @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
         <div class="warehouse-header-action flex items-center gap-2">
             <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-add-wh">
-                <i class="fas fa-plus-circle"></i> Tambah Gudang
+                <x-lucide-circle-plus /> Tambah Gudang
             </a>
             <a href="{{ route('projects.create') }}" class="btn btn-secondary" style="border-radius:9px;font-size:13px;padding:9px 15px;">
-                <i class="fas fa-folder-plus text-primary"></i> Tambah Proyek Terpadu
+                <x-lucide-folder-plus class="text-primary" /> Tambah Proyek Terpadu
             </a>
         </div>
         @endif
@@ -29,12 +29,12 @@
     <!-- TAB SWITCHER GUDANG & PROYEK -->
     <div class="flex items-center gap-2 mb-4" style="background:#f1f5f9;padding:5px;border-radius:12px;width:fit-content;border:1px solid #e2e8f0;">
         <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-primary" style="border-radius:9px;font-weight:700;padding:8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-            <i class="fas fa-warehouse"></i>
+            <x-lucide-warehouse />
             <span>Data Gudang</span>
             <span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Warehouse::count() }}</span>
         </a>
         <a href="{{ route('projects.index') }}" class="btn btn-sm" style="border-radius:9px;font-weight:600;padding:8px 18px;display:flex;align-items:center;gap:8px;color:#475569;background:transparent;border:none;">
-            <i class="fas fa-building-columns"></i>
+            <x-lucide-landmark />
             <span>Data Proyek</span>
             <span class="badge" style="background:#e2e8f0;color:#334155;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Project::count() }}</span>
         </a>
@@ -45,7 +45,7 @@
                 <div class="wh-search-input-wrap">
                     <label class="form-label" style="font-size:12px;margin-bottom:4px;">Cari Gudang</label>
                     <div class="input-icon-wrap">
-                        <i class="fas fa-magnifying-glass input-icon"></i>
+                        <x-lucide-search class="input-icon" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control with-icon" placeholder="Nama, kode, atau alamat gudang...">
                     </div>
                 </div>
@@ -53,7 +53,7 @@
                 <div class="wh-select-wrap">
                     <label class="form-label" style="font-size:12px;margin-bottom:4px;">Tipe Gudang</label>
                     <div class="input-icon-wrap">
-                        <i class="fas fa-layer-group input-icon"></i>
+                        <x-lucide-layers class="input-icon" />
                         <select name="type" class="form-control with-icon" onchange="this.form.submit()">
                             <option value="">Semua Tipe</option>
                             <option value="main" {{ request('type') === 'main' || request('type') === 'central' ? 'selected' : '' }}>Gudang Pusat</option>
@@ -65,7 +65,7 @@
                 <div class="wh-select-wrap">
                     <label class="form-label" style="font-size:12px;margin-bottom:4px;">Status Operasional</label>
                     <div class="input-icon-wrap">
-                        <i class="fas fa-toggle-on input-icon"></i>
+                        <x-lucide-toggle-right class="input-icon" />
                         <select name="status" class="form-control with-icon" onchange="this.form.submit()">
                             <option value="">Semua Status</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
@@ -76,11 +76,11 @@
 
                 <div class="wh-btn-filter-wrap">
                     <button type="submit" class="btn btn-primary" title="Terapkan Filter" style="height:38px;">
-                        <i class="fas fa-filter"></i> Filter
+                        <x-lucide-filter /> Filter
                     </button>
                     @if(request()->hasAny(['search', 'type', 'status']))
                     <a href="{{ route('warehouses.index') }}" class="btn btn-secondary" title="Reset Pencarian" style="height:38px;">
-                        <i class="fas fa-rotate-left"></i> Reset
+                        <x-lucide-rotate-ccw /> Reset
                     </a>
                     @endif
                 </div>
@@ -112,12 +112,16 @@
                         <td>
                             <div class="flex items-center gap-3">
                                 <div class="wh-item-icon {{ $isCentral ? 'central' : 'project' }}">
-                                    <i class="fas {{ $isCentral ? 'fa-building' : 'fa-helmet-safety' }}"></i>
+                                    @if($isCentral)
+                                        <x-lucide-building-2 />
+                                    @else
+                                        <x-lucide-hard-hat />
+                                    @endif
                                 </div>
                                 <div>
                                     <div class="fw-700" style="color:#0f172a;font-size:13.5px;">{{ $wh->name }}</div>
                                     <div class="text-muted" style="font-size:11.5px;font-family:monospace;margin-top:1px;">
-                                        <i class="fas fa-barcode" style="font-size:10px;"></i> {{ $wh->code ?: '-' }}
+                                        <x-lucide-barcode style="font-size:10px;" /> {{ $wh->code ?: '-' }}
                                     </div>
                                 </div>
                             </div>
@@ -125,23 +129,23 @@
                         <td>
                             @if($isCentral)
                                 <span class="badge badge-primary wh-badge-pill">
-                                    <i class="fas fa-building"></i> Gudang Pusat
+                                    <x-lucide-building-2 /> Gudang Pusat
                                 </span>
                             @else
                                 <span class="badge badge-info wh-badge-pill">
-                                    <i class="fas fa-person-digging"></i> Gudang Proyek
+                                    <x-lucide-hard-hat /> Gudang Proyek
                                 </span>
                             @endif
                         </td>
                         <td>
                             @if($wh->project)
                                 <div class="flex items-center gap-2">
-                                    <i class="fas fa-folder-open text-warning" style="font-size:13px;"></i>
+                                    <x-lucide-folder-open class="text-warning" style="font-size:13px;" />
                                     <span class="fw-600" style="color:#1e293b;font-size:13px;">{{ $wh->project->name }}</span>
                                 </div>
                             @elseif($isCentral)
                                 <span class="text-muted" style="font-size:12px;">
-                                    <i class="fas fa-star text-warning" style="font-size:10px;"></i> Sentral Kantor Pusat
+                                    <x-lucide-star class="text-warning" style="font-size:10px;" /> Sentral Kantor Pusat
                                 </span>
                             @else
                                 <span class="text-muted" style="font-size:12px;">-</span>
@@ -149,23 +153,23 @@
                         </td>
                         <td>
                             <div class="flex items-start gap-1 text-muted" style="font-size:12px;max-width:240px;line-height:1.4;">
-                                <i class="fas fa-location-dot text-danger" style="margin-top:2px;font-size:11px;flex-shrink:0;"></i>
+                                <x-lucide-map-pin class="text-danger" style="margin-top:2px;font-size:11px;flex-shrink:0;" />
                                 <span>{{ $wh->address ?: ($wh->location ?: 'Lokasi Sentral Jakarta') }}</span>
                             </div>
                         </td>
                         <td>
                             <span class="badge badge-secondary" style="font-weight:600;font-size:11.5px;">
-                                <i class="fas fa-box" style="font-size:10px;"></i> {{ $wh->inventories_count ?? 0 }} Item
+                                <x-lucide-package style="font-size:10px;" /> {{ $wh->inventories_count ?? 0 }} Item
                             </span>
                         </td>
                         <td>
                             @if($wh->is_active)
                                 <span class="badge badge-success">
-                                    <i class="fas fa-circle-check" style="font-size:10px;"></i> Aktif
+                                    <x-lucide-circle-check style="font-size:10px;" /> Aktif
                                 </span>
                             @else
                                 <span class="badge badge-danger">
-                                    <i class="fas fa-circle-xmark" style="font-size:10px;"></i> Nonaktif
+                                    <x-lucide-circle-x style="font-size:10px;" /> Nonaktif
                                 </span>
                             @endif
                         </td>
@@ -173,13 +177,13 @@
                             <div class="flex items-center justify-center gap-1">
                                 @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('warehouses.edit', $wh) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Data Gudang">
-                                    <i class="fas fa-pen-to-square"></i>
+                                    <x-lucide-square-pen />
                                 </a>
                                 <form method="POST" action="{{ route('warehouses.destroy', $wh) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gudang {{ addslashes($wh->name) }}?')">
                                     @csrf 
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-danger btn-icon" title="Hapus Gudang">
-                                        <i class="fas fa-trash-can"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                 </form>
                                 @endif
@@ -191,7 +195,7 @@
                         <td colspan="7" class="text-center p-5">
                             <div class="empty-state" style="padding:24px 10px;">
                                 <div style="width:60px;height:60px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;color:#94a3b8;font-size:24px;">
-                                    <i class="fas fa-warehouse"></i>
+                                    <x-lucide-warehouse />
                                 </div>
                                 <h4 class="fw-700" style="color:#1e293b;font-size:15px;margin-bottom:4px;">Tidak Ada Data Gudang</h4>
                                 <p class="text-muted" style="font-size:13px;max-width:360px;margin:0 auto 16px auto;">
@@ -203,11 +207,11 @@
                                 </p>
                                 @if(request()->hasAny(['search', 'type', 'status']))
                                     <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-rotate-left"></i> Bersihkan Filter
+                                        <x-lucide-rotate-ccw /> Bersihkan Filter
                                     </a>
                                 @elseif(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                     <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-plus"></i> Tambah Gudang Pertama
+                                        <x-lucide-plus /> Tambah Gudang Pertama
                                     </a>
                                 @endif
                             </div>

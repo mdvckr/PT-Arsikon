@@ -263,7 +263,7 @@
         <!-- Rincian Material Master -->
         @php $masterItems = $materialUsage->items->filter(fn($i) => !$i->isCustom()); @endphp
         @php $customItems = $materialUsage->items->filter(fn($i) => $i->isCustom()); @endphp
-        <h4 style="color:#2563eb;margin:0 0 8px;font-size:13px;"><i class="fas fa-boxes-stacked"></i> Daftar Material (Master)</h4>
+        <h4 style="color:#2563eb;margin:0 0 8px;font-size:13px;"><x-lucide-boxes /> Daftar Material (Master)</h4>
         <table class="items-table">
             <thead>
                 <tr>
@@ -292,7 +292,7 @@
         </table>
 
         @if($customItems->count() > 0)
-        <h4 style="color:#c2410c;margin:16px 0 8px;font-size:13px;border-bottom:2px solid #c2410c;padding-bottom:4px;"><i class="fas fa-pen-nib"></i> Daftar Barang Baru (Custom)</h4>
+        <h4 style="color:#c2410c;margin:16px 0 8px;font-size:13px;border-bottom:2px solid #c2410c;padding-bottom:4px;"><x-lucide-pen-tool /> Daftar Barang Baru (Custom)</h4>
         <table class="items-table" style="border-top:3px double #c2410c;">
             <thead>
                 <tr>

@@ -4,8 +4,8 @@
     <div class="user-edit-container">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
-            <a href="{{ route('users.index') }}"><i class="fas fa-users" style="font-size:12px;"></i> Data Pengguna</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <a href="{{ route('users.index') }}"><x-lucide-users style="font-size:12px;" /> Data Pengguna</a>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span style="color:#1e293b;font-weight:600;">Edit Pengguna</span>
         </div>
 
@@ -20,24 +20,24 @@
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <h2 class="user-banner-title">{{ $user->name }}</h2>
                             @if($user->is_active)
-                                <span class="badge badge-success"><i class="fas fa-circle-check" style="font-size:10px;"></i> Akun Aktif</span>
+                                <span class="badge badge-success"><x-lucide-circle-check style="font-size:10px;" /> Akun Aktif</span>
                             @else
-                                <span class="badge badge-danger"><i class="fas fa-circle-xmark" style="font-size:10px;"></i> Nonaktif</span>
+                                <span class="badge badge-danger"><x-lucide-circle-x style="font-size:10px;" /> Nonaktif</span>
                             @endif
                         </div>
                         <div class="user-banner-meta">
-                            <span><i class="fas fa-envelope text-muted"></i> {{ $user->email }}</span>
+                            <span><x-lucide-mail class="text-muted" /> {{ $user->email }}</span>
                             <span class="meta-dot">&bull;</span>
-                            <span><i class="fas fa-id-badge text-muted"></i> ID: #{{ $user->id }}</span>
+                            <span><x-lucide-id-card class="text-muted" /> ID: #{{ $user->id }}</span>
                             @if($user->roles->count() > 0)
                                 <span class="meta-dot">&bull;</span>
-                                <span class="text-primary fw-600"><i class="fas fa-shield-halved"></i> {{ $user->roles->pluck('name')->implode(', ') }}</span>
+                                <span class="text-primary fw-600"><x-lucide-shield /> {{ $user->roles->pluck('name')->implode(', ') }}</span>
                             @endif
                         </div>
                     </div>
                     <div class="user-banner-action">
                         <a href="{{ route('users.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Kembali
+                            <x-lucide-arrow-left /> Kembali
                         </a>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
             <div class="card-header user-form-header">
                 <div class="flex items-center gap-2">
                     <div class="icon-circle icon-circle-warning">
-                        <i class="fas fa-user-pen"></i>
+                        <x-lucide-user-pen />
                     </div>
                     <div>
                         <span class="card-title" style="font-size:16px;">Formulir Perubahan Data</span>
@@ -62,7 +62,7 @@
                 @if (isset($errors) && $errors->any())
                     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
                         <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada pengisian form:
+                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
                         </strong>
                         <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
                             @foreach ($errors->all() as $error)
@@ -79,7 +79,7 @@
                     <!-- SECTION 1: IDENTITAS UTAMA -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-user-circle text-primary"></i>
+                            <x-lucide-user class="text-primary" />
                             <h3 class="section-title">Informasi Akun</h3>
                         </div>
 
@@ -89,7 +89,7 @@
                                     Nama Lengkap <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-user input-icon"></i>
+                                    <x-lucide-user class="input-icon" />
                                     <input type="text" id="userName" name="name" value="{{ old('name', $user->name) }}" class="form-control with-icon" placeholder="Contoh: Budi Santoso" required>
                                 </div>
                             </div>
@@ -99,7 +99,7 @@
                                     Alamat Email <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-envelope input-icon"></i>
+                                    <x-lucide-mail class="input-icon" />
                                     <input type="email" id="userEmail" name="email" value="{{ old('email', $user->email) }}" class="form-control with-icon" placeholder="nama@arsikon.co.id" required>
                                 </div>
                             </div>
@@ -110,7 +110,7 @@
                                 Status Akun
                             </label>
                             <div class="input-icon-wrap">
-                                <i class="fas fa-toggle-on input-icon"></i>
+                                <x-lucide-toggle-right class="input-icon" />
                                 <select id="userActive" name="is_active" class="form-control with-icon">
                                     <option value="1" {{ old('is_active', $user->is_active ? '1' : '0') == '1' ? 'selected' : '' }}>🟢 Aktif (Bisa Login)</option>
                                     <option value="0" {{ old('is_active', $user->is_active ? '1' : '0') == '0' ? 'selected' : '' }}>🔴 Nonaktif (Akses Ditutup)</option>
@@ -124,11 +124,11 @@
                     <!-- SECTION 2: KEAMANAN & PASSWORD -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-lock text-warning"></i>
+                            <x-lucide-lock class="text-warning" />
                             <h3 class="section-title">Keamanan & Password</h3>
                         </div>
                         <p class="text-muted" style="font-size:12.5px;margin-bottom:14px;background:#f8fafc;padding:8px 12px;border-radius:6px;border-left:3px solid #f59e0b;">
-                            <i class="fas fa-info-circle text-warning"></i> Biarkan kedua kolom di bawah <strong>kosong</strong> apabila pengguna tidak ingin mengubah kata sandi saat ini.
+                            <x-lucide-info class="text-warning" /> Biarkan kedua kolom di bawah <strong>kosong</strong> apabila pengguna tidak ingin mengubah kata sandi saat ini.
                         </p>
 
                         <div class="grid grid-2 responsive-grid">
@@ -137,7 +137,7 @@
                                     Password Baru
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-key input-icon"></i>
+                                    <x-lucide-key-round class="input-icon" />
                                     <input type="password" id="userPassword" name="password" class="form-control with-icon" placeholder="Minimal 8 karakter">
                                 </div>
                             </div>
@@ -147,7 +147,7 @@
                                     Konfirmasi Password Baru
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-check-double input-icon"></i>
+                                    <x-lucide-check-check class="input-icon" />
                                     <input type="password" id="userPasswordConfirm" name="password_confirmation" class="form-control with-icon" placeholder="Ulangi password baru">
                                 </div>
                             </div>
@@ -160,12 +160,12 @@
                     <div class="form-section mb-4">
                         <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
                             <div class="section-title-wrap mb-0">
-                                <i class="fas fa-shield-halved text-purple"></i>
+                                <x-lucide-shield class="text-purple" />
                                 <h3 class="section-title">Role / Jabatan Pengguna <span class="text-danger">*</span></h3>
                             </div>
                             @if(auth()->user()->hasAnyRole(['Admin Pusat', 'Owner']))
                             <a href="{{ route('roles.index') }}" target="_blank" class="role-manage-link" title="Buka kelola jabatan di tab baru">
-                                <i class="fas fa-sliders"></i> Kelola Jabatan
+                                <x-lucide-sliders-horizontal /> Kelola Jabatan
                             </a>
                             @endif
                         </div>
@@ -176,14 +176,14 @@
                             @foreach($roles as $role)
                             @php
                                 $roleConfig = match($role->name) {
-                                    'Owner' => ['icon' => 'fa-crown', 'color' => '#7c3aed', 'bg' => 'rgba(124,58,237,0.1)', 'desc' => 'Pemilik Sistem (Akses penuh tanpa batas ke seluruh modul)'],
-                                    'Admin Pusat' => ['icon' => 'fa-building-shield', 'color' => '#d97706', 'bg' => 'rgba(217,119,6,0.1)', 'desc' => 'Kantor Pusat (Full kontrol user, gudang, jabatan, master data & logistik)'],
-                                    'Admin Gudang Pusat' => ['icon' => 'fa-warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
-                                    'Admin Gudang Proyek' => ['icon' => 'fa-helmet-safety', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
-                                    'Admin PO' => ['icon' => 'fa-file-invoice-dollar', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Pengadaan Pusat & Purchase Order (Pemasok, harga resmi, pembayaran vendor)'],
-                                    'Admin PO Proyek' => ['icon' => 'fa-receipt', 'color' => '#0284c7', 'bg' => 'rgba(2,132,199,0.1)', 'desc' => 'Site Proyek - Khusus Pengisian Nota Harian (Bon belanja toko, harga PO dirahasiakan)'],
-                                    'Karyawan' => ['icon' => 'fa-user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
-                                    default => ['icon' => 'fa-id-card', 'color' => '#64748b', 'bg' => 'rgba(100,116,139,0.1)', 'desc' => 'Hak akses jabatan khusus'],
+                                    'Owner' => ['icon' => 'crown', 'color' => '#7c3aed', 'bg' => 'rgba(124,58,237,0.1)', 'desc' => 'Pemilik Sistem (Akses penuh tanpa batas ke seluruh modul)'],
+                                    'Admin Pusat' => ['icon' => 'shield-check', 'color' => '#d97706', 'bg' => 'rgba(217,119,6,0.1)', 'desc' => 'Kantor Pusat (Full kontrol user, gudang, jabatan, master data & logistik)'],
+                                    'Admin Gudang Pusat' => ['icon' => 'warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
+                                    'Admin Gudang Proyek' => ['icon' => 'hard-hat', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
+                                    'Admin PO' => ['icon' => 'file-spreadsheet', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Pengadaan Pusat & Purchase Order (Pemasok, harga resmi, pembayaran vendor)'],
+                                    'Admin PO Proyek' => ['icon' => 'receipt', 'color' => '#0284c7', 'bg' => 'rgba(2,132,199,0.1)', 'desc' => 'Site Proyek - Khusus Pengisian Nota Harian (Bon belanja toko, harga PO dirahasiakan)'],
+                                    'Karyawan' => ['icon' => 'user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
+                                    default => ['icon' => 'id-card', 'color' => '#64748b', 'bg' => 'rgba(100,116,139,0.1)', 'desc' => 'Hak akses jabatan khusus'],
                                 };
                                 $isChecked = in_array($role->name, old('roles', $userRoles));
                             @endphp
@@ -193,7 +193,7 @@
                                         {{ $isChecked ? 'checked' : '' }} onchange="this.closest('.role-card-item').classList.toggle('active', this.checked)">
                                 </div>
                                 <div class="role-card-icon" style="background:{{ $roleConfig['bg'] }};color:{{ $roleConfig['color'] }};">
-                                    <i class="fas {{ $roleConfig['icon'] }}"></i>
+                                    <x-dynamic-component :component="'lucide-'.$roleConfig['icon']" class="w-4 h-4" />
                                 </div>
                                 <div class="role-card-details">
                                     <div class="role-card-name">{{ $role->name }}</div>
@@ -209,7 +209,7 @@
                     <!-- SECTION 4: PENUGASAN GUDANG AKSES -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-boxes-stacked text-info"></i>
+                            <x-lucide-boxes class="text-info" />
                             <h3 class="section-title">Penugasan Akses Gudang</h3>
                         </div>
                         <p class="text-muted" style="font-size:12.5px;margin-bottom:12px;">Pilih lokasi gudang yang diizinkan untuk dikelola atau dilihat oleh pengguna ini.</p>
@@ -228,13 +228,13 @@
                                     <div class="wh-select-header">
                                         <span class="wh-name">{{ $wh->name }}</span>
                                         @if($isCentral)
-                                            <span class="badge badge-primary wh-badge"><i class="fas fa-building"></i> Pusat</span>
+                                            <span class="badge badge-primary wh-badge"><x-lucide-building-2 /> Pusat</span>
                                         @else
-                                            <span class="badge badge-info wh-badge"><i class="fas fa-person-digging"></i> Proyek</span>
+                                            <span class="badge badge-info wh-badge"><x-lucide-hard-hat /> Proyek</span>
                                         @endif
                                     </div>
                                     <div class="wh-location text-muted">
-                                        <i class="fas fa-location-dot" style="font-size:11px;"></i> {{ $wh->address ?: 'Lokasi Sentral Jakarta' }}
+                                        <x-lucide-map-pin style="font-size:11px;" /> {{ $wh->address ?: 'Lokasi Sentral Jakarta' }}
                                     </div>
                                 </div>
                             </label>
@@ -250,10 +250,10 @@
                     <div class="form-actions-bar">
                         <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
                             <button type="submit" class="btn btn-primary btn-submit-form">
-                                <i class="fas fa-floppy-disk"></i> Simpan Perubahan
+                                <x-lucide-save /> Simpan Perubahan
                             </button>
                             <a href="{{ route('users.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <i class="fas fa-xmark"></i> Batal
+                                <x-lucide-x /> Batal
                             </a>
                         </div>
                     </div>

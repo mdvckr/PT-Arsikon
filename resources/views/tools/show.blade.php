@@ -7,7 +7,7 @@
         {{-- Breadcrumb --}}
         <div class="breadcrumb no-print" style="margin-bottom:6px;font-size:12px;">
             <a href="{{ route('tools.index') }}" class="text-slate-500 hover:text-primary">Alat</a>
-            <span class="breadcrumb-sep mx-1.5 text-slate-400"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+            <span class="breadcrumb-sep mx-1.5 text-slate-400"><x-lucide-chevron-right style="font-size:9px;" /></span>
             <span class="text-slate-700 font-medium">{{ $tool->name }}</span>
         </div>
 
@@ -31,7 +31,7 @@
                     @endif
                     @if($tool->isOwnedByCentral())
                     <span class="badge text-xs font-semibold px-2.5 py-1 rounded" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
-                        <i class="fas fa-building me-1"></i> Milik Pusat
+                        <x-lucide-building-2 class="me-1" /> Milik Pusat
                     </span>
                     @endif
                 </div>
@@ -42,14 +42,14 @@
             <div class="flex flex-wrap items-center gap-2">
                 @can('edit tools')
                 <a href="{{ route('tools.edit', $tool) }}" class="btn btn-secondary" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-pen" style="font-size:12px;"></i> Edit
+                    <x-lucide-pencil style="font-size:12px;" /> Edit
                 </a>
                 @endcan
                 <button type="button" class="btn btn-primary" onclick="printTool()" id="btn-print-tool" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-print" style="font-size:12px;"></i> Cetak / Print
+                    <x-lucide-printer style="font-size:12px;" /> Cetak / Print
                 </button>
                 <a href="{{ route('tools.index') }}" class="btn btn-light border" style="height:36px;padding:0 14px;font-size:13px;font-weight:600;border-radius:6px;color:#475569;display:inline-flex;align-items:center;gap:6px;">
-                    <i class="fas fa-arrow-left" style="font-size:12px;"></i> Kembali
+                    <x-lucide-arrow-left style="font-size:12px;" /> Kembali
                 </a>
             </div>
         </div>
@@ -75,7 +75,7 @@
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                     <div class="fw-700" style="font-size:14px;color:#0f172a;">
-                        <i class="fas fa-warehouse me-1 text-primary"></i> Stok per Lokasi / Gudang
+                        <x-lucide-warehouse class="me-1 text-primary" /> Stok per Lokasi / Gudang
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -117,7 +117,7 @@
                                     @endphp
                                     @if($invDamaged > 0 || $invMaint > 0)
                                         <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:700;padding:2px 7px;border-radius:4px;font-size:11px;">
-                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ number_format($invDamaged + $invMaint, 0, ',', '.') }} unit
+                                            <x-lucide-triangle-alert class="me-1" />{{ number_format($invDamaged + $invMaint, 0, ',', '.') }} unit
                                         </span>
                                     @else
                                         <span class="text-muted" style="font-size:12px;font-weight:normal;">0 unit</span>
@@ -156,7 +156,7 @@
                                     @endphp
                                     @if($tDamaged > 0 || $tMaint > 0)
                                         <span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:700;padding:2px 7px;border-radius:4px;font-size:11px;">
-                                            <i class="fas fa-triangle-exclamation me-1"></i>{{ number_format($tDamaged + $tMaint, 0, ',', '.') }} unit
+                                            <x-lucide-triangle-alert class="me-1" />{{ number_format($tDamaged + $tMaint, 0, ',', '.') }} unit
                                         </span>
                                     @else
                                         <span class="text-muted" style="font-size:12px;font-weight:normal;">0 unit</span>
@@ -176,7 +176,7 @@
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                     <div class="fw-700" style="font-size:14px;color:#0f172a;">
-                        <i class="fas fa-hand-holding me-1 text-primary"></i> Riwayat Peminjaman (10 Terakhir)
+                        <x-lucide-hand class="me-1 text-primary" /> Riwayat Peminjaman (10 Terakhir)
                     </div>
                     <a href="{{ route('tool-assignments.index') }}" class="btn btn-sm btn-light border no-print" style="font-size:11.5px;padding:3px 10px;height:auto;color:#475569;">
                         Lihat Semua Peminjaman
@@ -202,7 +202,7 @@
                                     <div class="text-muted" style="font-size:11px;display:flex;align-items:center;gap:6px;margin-top:2px;">
                                         <span style="font-family:monospace;font-weight:600;color:#64748b;">{{ $assign->assignment_number }}</span>
                                         @if($assign->location_display && $assign->location_display !== '-')
-                                        <span>· <i class="fas fa-location-dot me-1"></i>{{ $assign->location_display }}</span>
+                                        <span>· <x-lucide-map-pin class="me-1" />{{ $assign->location_display }}</span>
                                         @endif
                                     </div>
                                 </td>
@@ -249,7 +249,7 @@
                                     @endphp
                                     @if($targetLoanId)
                                     <a href="{{ route('tool-assignments.show', $targetLoanId) }}" class="btn btn-sm btn-light border" style="font-size:11px;padding:3px 8px;border-radius:4px;color:#334155;" title="Lihat Detail Peminjaman">
-                                        <i class="fas fa-eye"></i> Detail
+                                        <x-lucide-eye /> Detail
                                     </a>
                                     @endif
                                 </td>
@@ -266,7 +266,7 @@
             <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;overflow:hidden;">
                 <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                     <div class="fw-700" style="font-size:14px;color:#0f172a;">
-                        <i class="fas fa-wrench me-1 text-primary"></i> Riwayat Maintenance (5 Terakhir)
+                        <x-lucide-wrench class="me-1 text-primary" /> Riwayat Maintenance (5 Terakhir)
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -312,11 +312,11 @@
         <div class="card" style="border:1px solid #e2e8f0;box-shadow:none;border-radius:8px;position:sticky;top:20px;">
             <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
                 <div class="fw-700" style="font-size:14px;color:#0f172a;">
-                    <i class="fas fa-screwdriver-wrench me-1 text-primary"></i> Informasi Alat
+                    <x-lucide-wrench class="me-1 text-primary" /> Informasi Alat
                 </div>
                 @can('edit tools')
                 <a href="{{ route('tools.edit', $tool) }}" class="btn btn-sm btn-light border no-print" style="font-size:11.5px;padding:3px 8px;border-radius:4px;color:#334155;">
-                    <i class="fas fa-pen me-1"></i> Edit
+                    <x-lucide-pencil class="me-1" /> Edit
                 </a>
                 @endcan
             </div>
@@ -356,9 +356,9 @@
                             @elseif($type === 'badge')
                                 <span class="badge" style="{{ $style }}">{{ $value }}</span>
                             @elseif($type === 'size_badge')
-                                <span class="badge bg-light text-dark border"><i class="fas fa-ruler-combined me-1"></i>{{ $value }}</span>
+                                <span class="badge bg-light text-dark border"><x-lucide-ruler class="me-1" />{{ $value }}</span>
                             @elseif($type === 'central_badge')
-                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;"><i class="fas fa-building me-1"></i>{{ $value }}</span>
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:600;"><x-lucide-building-2 class="me-1" />{{ $value }}</span>
                             @else
                                 {{ $value }}
                             @endif
@@ -370,7 +370,7 @@
                 {{-- Status Stok Card (Ringkasan Stok Bulk) --}}
                 <div class="mt-4 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
                     <div class="fw-700 mb-2" style="font-size:12.5px;color:#334155;display:flex;align-items:center;gap:6px;">
-                        <i class="fas fa-boxes-stacked text-primary"></i> Ringkasan Stok Bulk
+                        <x-lucide-boxes class="text-primary" /> Ringkasan Stok Bulk
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
                         <div class="p-2 rounded" style="background:#ffffff;border:1px solid #e2e8f0;">
@@ -396,7 +396,7 @@
                 @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
                 <div class="mt-3">
                     <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">
-                        <i class="fas fa-truck-ramp-box me-1 text-primary"></i> Tahap Kedatangan
+                        <x-lucide-package-check class="me-1 text-primary" /> Tahap Kedatangan
                     </div>
                     <div style="display:flex;flex-direction:column;gap:5px;">
                         @foreach($tool->incoming_stages as $stg)
@@ -422,7 +422,7 @@
 
                 @if($tool->notes)
                 <div class="mt-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:12.5px;">
-                    <div class="fw-600 mb-1" style="font-size:12px;color:#334155;"><i class="fas fa-note-sticky text-muted me-1"></i> Catatan / Keterangan:</div>
+                    <div class="fw-600 mb-1" style="font-size:12px;color:#334155;"><x-lucide-sticky-note class="text-muted me-1" /> Catatan / Keterangan:</div>
                     <div style="color:#475569;line-height:1.5;">{{ $tool->notes }}</div>
                 </div>
                 @endif

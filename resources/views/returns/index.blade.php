@@ -7,7 +7,7 @@
             <p class="text-muted" style="font-size:13px;margin-top:2px;">Kelola pengembalian sisa material atau barang rusak dari proyek ke Gudang Pusat</p>
         </div>
         <a href="{{ route('returns.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Ajukan Pengembalian
+            <x-lucide-plus /> Ajukan Pengembalian
         </a>
     </div>
 
@@ -60,13 +60,13 @@
                         $statusMap = [
                             'pending'  => ['badge-warning', 'clock', 'Pending'],
                             'approved' => ['badge-primary', 'truck', 'Disetujui'],
-                            'received' => ['badge-success', 'check-double', 'Diterima'],
-                            'rejected' => ['badge-danger', 'times-circle', 'Ditolak'],
+                            'received' => ['badge-success', 'check-check', 'Diterima'],
+                            'rejected' => ['badge-danger', 'circle-x', 'Ditolak'],
                         ];
                     @endphp
                     @forelse($returns as $r)
                         @php
-                            [$cls, $icon, $label] = $statusMap[$r->status] ?? ['badge-gray', 'question', ucfirst($r->status)];
+                            [$cls, $icon, $label] = $statusMap[$r->status] ?? ['badge-gray', 'help-circle', ucfirst($r->status)];
                             $reasonText = $reasonMap[$r->reason] ?? ucfirst($r->reason ?? 'Lainnya');
                         @endphp
                         <tr>
@@ -82,12 +82,12 @@
                             <td>{{ $r->requester->name ?? '-' }}</td>
                             <td>
                                 <span class="badge {{ $cls }}">
-                                    <i class="fas fa-{{ $icon }}"></i> {{ $label }}
+                                    <x-dynamic-component :component="'lucide-'.$icon" class="w-3.5 h-3.5 inline-block" /> {{ $label }}
                                 </span>
                             </td>
                             <td style="text-align:right;">
                                 <a href="{{ route('returns.show', $r) }}" class="btn btn-sm btn-secondary btn-icon" title="Lihat Detail">
-                                    <i class="fas fa-eye"></i>
+                                    <x-lucide-eye />
                                 </a>
                             </td>
                         </tr>

@@ -328,8 +328,8 @@
         
         {{-- Breadcrumb --}}
         <div class="notif-breadcrumb">
-            <a href="{{ route('dashboard') }}"><i class="fas fa-home me-1"></i> Dashboard</a>
-            <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
+            <a href="{{ route('dashboard') }}"><x-lucide-home class="me-1" /> Dashboard</a>
+            <x-lucide-chevron-right class="text-[10px] text-slate-400" />
             <span style="color:#0f172a;font-weight:700;">Pusat Pemberitahuan</span>
         </div>
 
@@ -338,7 +338,7 @@
             <div class="notif-title-area">
                 <h1>
                     <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base shrink-0 border border-blue-100">
-                        <i class="fas fa-bell"></i>
+                        <x-lucide-bell />
                     </div>
                     <span>Pusat Pemberitahuan</span>
                 </h1>
@@ -351,7 +351,7 @@
             <form method="POST" action="{{ route('notifications.markAllAsRead') }}" style="margin:0;">
                 @csrf
                 <button type="submit" class="btn-notif-action btn-notif-primary" style="height:36px;padding:0 16px;box-shadow:0 1px 2px rgba(37,99,235,0.2);" onclick="return confirm('Tandai semua notifikasi telah dibaca?')">
-                    <i class="fas fa-check-double"></i>
+                    <x-lucide-check-check />
                     <span>Tandai Semua Dibaca</span>
                 </button>
             </form>
@@ -363,17 +363,17 @@
             {{-- Tabs --}}
             <div class="notif-tabs-segment">
                 <button type="button" class="notif-tab-btn active" data-filter="all" onclick="filterNotifs('all', this)">
-                    <i class="fas fa-inbox"></i>
+                    <x-lucide-inbox />
                     <span>Semua</span>
                     <span class="notif-tab-badge">{{ $totalCount }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" data-filter="unread" onclick="filterNotifs('unread', this)">
-                    <i class="fas fa-envelope"></i>
+                    <x-lucide-mail />
                     <span>Belum Dibaca</span>
                     <span class="notif-tab-badge {{ $unreadCount > 0 ? 'badge-active-unread' : '' }}">{{ $unreadCount }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" data-filter="read" onclick="filterNotifs('read', this)">
-                    <i class="fas fa-envelope-open"></i>
+                    <x-lucide-mail-open />
                     <span>Sudah Dibaca</span>
                     <span class="notif-tab-badge">{{ $readCount }}</span>
                 </button>
@@ -381,7 +381,7 @@
 
             {{-- Live Search --}}
             <div class="notif-search-wrap">
-                <i class="fas fa-search notif-search-icon"></i>
+                <x-lucide-search class="notif-search-icon" />
                 <input type="text" id="notifSearchInput" placeholder="Cari notifikasi atau nomor PO..." onkeyup="searchNotifs(this.value)">
             </div>
         </div>
@@ -405,37 +405,37 @@
                     $categoryLabel = 'Informasi';
 
                     if ($type === 'stock_alert' || str_contains(strtolower($title), 'stok')) {
-                        $icon = 'triangle-exclamation';
+                        $icon = 'triangle-alert';
                         $iconColor = '#dc2626';
                         $iconBg = '#fef2f2';
                         $badgeStyle = 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;';
                         $categoryLabel = 'Peringatan Stok';
                     } elseif ($type === 'approval_needed' || str_contains(strtolower($title), 'approval') || str_contains(strtolower($title), 'persetujuan')) {
-                        $icon = 'hourglass-half';
+                        $icon = 'hourglass';
                         $iconColor = '#d97706';
                         $iconBg = '#fffbeb';
                         $badgeStyle = 'background:#fffbeb;color:#92400e;border:1px solid #fde68a;';
                         $categoryLabel = 'Persetujuan';
                     } elseif (str_contains(strtolower($title), 'surat jalan') || str_contains(strtolower($title), 'pengiriman')) {
-                        $icon = 'truck-fast';
+                        $icon = 'truck';
                         $iconColor = '#2563eb';
                         $iconBg = '#eff6ff';
                         $badgeStyle = 'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;';
                         $categoryLabel = 'Surat Jalan';
                     } elseif (str_contains(strtolower($title), 'pengeluaran') || str_contains(strtolower($title), 'pemakaian')) {
-                        $icon = 'file-invoice';
+                        $icon = 'receipt';
                         $iconColor = '#ea580c';
                         $iconBg = '#fff7ed';
                         $badgeStyle = 'background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;';
                         $categoryLabel = 'Pemakaian Material';
                     } elseif (str_contains(strtolower($title), 'penerimaan') || str_contains(strtolower($title), 'masuk') || str_contains(strtolower($title), 'gr')) {
-                        $icon = 'dolly';
+                        $icon = 'package-check';
                         $iconColor = '#059669';
                         $iconBg = '#ecfdf5';
                         $badgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;';
                         $categoryLabel = 'Penerimaan Barang';
                     } elseif (str_contains(strtolower($title), 'peminjaman') || str_contains(strtolower($title), 'alat')) {
-                        $icon = 'screwdriver-wrench';
+                        $icon = 'wrench';
                         $iconColor = '#7c3aed';
                         $iconBg = '#f5f3ff';
                         $badgeStyle = 'background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;';
@@ -452,7 +452,7 @@
                 <div class="notif-feed-card {{ $isUnread ? 'is-unread' : 'is-read' }}" data-status="{{ $isUnread ? 'unread' : 'read' }}">
                     {{-- Left Squircle Icon --}}
                     <div class="notif-squircle-icon" style="background:{{ $iconBg }};color:{{ $iconColor }};border:1px solid {{ $iconColor }}25;">
-                        <i class="fas fa-{{ $icon }}"></i>
+                        <x-dynamic-component :component="'lucide-'.$icon" class="w-4 h-4" />
                     </div>
 
                     {{-- Content --}}
@@ -471,13 +471,13 @@
                                 </span>
                                 @else
                                 <span style="font-size:11px;color:#94a3b8;font-weight:600;">
-                                    <i class="fas fa-check text-slate-400 me-1"></i> Dibaca
+                                    <x-lucide-check class="text-slate-400 me-1" /> Dibaca
                                 </span>
                                 @endif
                             </div>
 
                             <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;font-weight:500;">
-                                <i class="far fa-clock" style="font-size:10.5px;color:#94a3b8;"></i>
+                                <x-lucide-clock style="font-size:10.5px;color:#94a3b8;" />
                                 <strong style="color:#0f172a;">{{ $notif->created_at->diffForHumans() }}</strong>
                                 <span style="color:#cbd5e1;">&bull;</span>
                                 <span>{{ $notif->created_at->format('d/m/Y H:i') }}</span>
@@ -499,7 +499,7 @@
                             @if($link)
                             <a href="{{ $link }}" class="btn-notif-action btn-notif-primary">
                                 <span>Buka Berkas</span>
-                                <i class="fas fa-arrow-right text-[10px]"></i>
+                                <x-lucide-arrow-right class="text-[10px]" />
                             </a>
                             @endif
 
@@ -507,7 +507,7 @@
                             <form method="POST" action="{{ route('notifications.markAsRead', $notif->id) }}" style="margin:0;">
                                 @csrf
                                 <button type="submit" class="btn-notif-action btn-notif-ghost" title="Tandai Sudah Dibaca">
-                                    <i class="fas fa-check text-emerald-600"></i>
+                                    <x-lucide-check class="text-emerald-600" />
                                     <span>Tandai Dibaca</span>
                                 </button>
                             </form>
@@ -518,14 +518,14 @@
             @empty
                 <div class="notif-empty-box">
                     <div style="width:56px;height:56px;border-radius:16px;background:#f1f5f9;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;">
-                        <i class="fas fa-bell-slash"></i>
+                        <x-lucide-bell-off />
                     </div>
                     <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px;">Kotak Masuk Bersih</h3>
                     <p style="font-size:13px;color:#64748b;max-width:360px;margin:0 auto 20px;line-height:1.5;">
                         Tidak ada notifikasi baru saat ini. Semua pembaruan permohonan, persetujuan, dan pengiriman material akan langsung muncul di sini.
                     </p>
                     <a href="{{ route('dashboard') }}" class="btn-notif-action btn-notif-ghost" style="height:36px;padding:0 16px;">
-                        <i class="fas fa-arrow-left"></i>
+                        <x-lucide-arrow-left />
                         <span>Kembali ke Dashboard</span>
                     </a>
                 </div>
@@ -535,7 +535,7 @@
         {{-- Filter Empty State (Shown via JS when search / filter produces 0 results) --}}
         <div id="filterEmptyNotice" class="notif-empty-box" style="display:none;margin-top:14px;">
             <div style="width:50px;height:50px;border-radius:14px;background:#ecfdf5;color:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">
-                <i class="fas fa-check-circle"></i>
+                <x-lucide-circle-check />
             </div>
             <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:4px;">Tidak Ada Notifikasi Sesuai Filter</h4>
             <p style="font-size:12.5px;color:#64748b;margin:0;">

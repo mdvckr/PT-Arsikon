@@ -331,7 +331,7 @@
     <div class="print-toolbar">
         <div class="toolbar-left">
             <a href="{{ route('distributions.show', $distribution) }}" class="btn-toolbar back">
-                <i class="fas fa-arrow-left"></i> Kembali ke Detail
+                <x-lucide-arrow-left /> Kembali ke Detail
             </a>
             <label class="toggle-kop-label" title="Centang untuk menyertakan background Kop Resmi PT Arsikon saat mencetak">
                 <input type="checkbox" id="toggleKopCheckbox" checked onchange="toggleKopBackground(this)">
@@ -340,7 +340,7 @@
         </div>
         <div class="toolbar-right">
             <button type="button" class="btn-toolbar print" onclick="window.print()">
-                <i class="fas fa-print"></i> Cetak Dokumen (A4)
+                <x-lucide-printer /> Cetak Dokumen (A4)
             </button>
         </div>
     </div>
@@ -411,7 +411,7 @@
         {{-- TABEL ITEM MASTER --}}
         @if($masterItems->isNotEmpty())
         <div class="section-label">
-            <i class="fas fa-boxes-stacked" style="color:#2563eb;font-size:11px;"></i>
+            <x-lucide-boxes style="color:#2563eb;font-size:11px;" />
             Daftar Material & Alat Kerja (Master Inventori)
         </div>
         <table class="table-items">
@@ -458,7 +458,7 @@
         {{-- TABEL ITEM CUSTOM / TAMBAHAN --}}
         @if($customItems->isNotEmpty())
         <div class="section-label" style="color:#c2410c;">
-            <i class="fas fa-pen-nib" style="font-size:11px;"></i>
+            <x-lucide-pen-tool style="font-size:11px;" />
             Daftar Barang / Alat Tambahan (Custom Non-Master)
         </div>
         <table class="table-items">

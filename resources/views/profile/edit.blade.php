@@ -265,14 +265,26 @@
             position: relative;
         }
 
-        .input-icon-group i.input-icon {
+        .input-icon-group i.input-icon,
+        .input-icon-group svg.input-icon {
             position: absolute;
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: #94a3b8;
-            font-size: 13px;
+            width: 15px !important;
+            height: 15px !important;
+            max-width: 15px !important;
+            max-height: 15px !important;
             pointer-events: none;
+            stroke-width: 2;
+        }
+
+        .toggle-password-btn svg {
+            width: 16px !important;
+            height: 16px !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
         }
 
         .input-icon-group .form-control {
@@ -370,7 +382,7 @@
             <div>
                 <div class="flex items-center gap-2 text-muted" style="font-size:12px;margin-bottom:4px;">
                     <a href="{{ route('dashboard') }}" style="color:#64748b;text-decoration:none;">Beranda</a>
-                    <i class="fas fa-chevron-right" style="font-size:9px;"></i>
+                    <x-lucide-chevron-right style="font-size:9px;" />
                     <span style="color:#ea580c;font-weight:600;">Pengaturan Profil</span>
                 </div>
                 <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0;">
@@ -383,7 +395,7 @@
 
             <div class="flex items-center gap-2">
                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:600;">
-                    <i class="fas fa-shield-check me-1"></i> Akun Terverifikasi
+                    <x-lucide-shield-check class="me-1" /> Akun Terverifikasi
                 </span>
             </div>
         </div>
@@ -392,7 +404,7 @@
         @if (session('status') === 'profile-updated')
         <div class="alert alert-success mb-3 flex items-center justify-between" style="border-radius:8px;padding:12px 16px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;font-size:12.5px;">
             <div class="flex items-center gap-2">
-                <i class="fas fa-circle-check" style="font-size:16px;color:#10b981;"></i>
+                <x-lucide-circle-check style="font-size:16px;color:#10b981;" />
                 <span>Informasi profil Anda berhasil diperbarui.</span>
             </div>
             <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#047857;cursor:pointer;">&times;</button>
@@ -402,7 +414,7 @@
         @if (session('status') === 'password-updated')
         <div class="alert alert-success mb-3 flex items-center justify-between" style="border-radius:8px;padding:12px 16px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;font-size:12.5px;">
             <div class="flex items-center gap-2">
-                <i class="fas fa-key" style="font-size:16px;color:#10b981;"></i>
+                <x-lucide-key-round style="font-size:16px;color:#10b981;" />
                 <span>Kata sandi Anda berhasil diperbarui. Gunakan kata sandi baru untuk login berikutnya.</span>
             </div>
             <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#047857;cursor:pointer;">&times;</button>
@@ -412,7 +424,7 @@
         @if ($errors->any())
         <div class="alert alert-danger mb-3" style="border-radius:8px;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:12.5px;">
             <div class="flex items-center gap-2 mb-1" style="font-weight:700;">
-                <i class="fas fa-triangle-exclamation"></i>
+                <x-lucide-triangle-alert />
                 <span>Terdapat kesalahan pada input Anda:</span>
             </div>
             <ul style="margin:0;padding-left:20px;font-size:12px;">
@@ -449,7 +461,7 @@
                     <div class="identity-body">
                         <h2 class="identity-name">{{ $user->name }}</h2>
                         <div class="identity-email">
-                            <i class="fas fa-envelope" style="font-size:11px;"></i>
+                            <x-lucide-mail style="font-size:11px;" />
                             <span>{{ $user->email }}</span>
                         </div>
 
@@ -458,31 +470,31 @@
                             @forelse($user->roles as $role)
                                 @if($role->name === 'Owner')
                                     <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fed7aa;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-crown me-1"></i> Owner
+                                        <x-lucide-crown class="me-1" /> Owner
                                     </span>
                                 @elseif($role->name === 'Admin Pusat')
                                     <span class="badge" style="background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-user-shield me-1"></i> Admin Pusat
+                                        <x-lucide-shield-check class="me-1" /> Admin Pusat
                                     </span>
                                 @elseif($role->name === 'Admin Gudang Pusat')
                                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-building me-1"></i> Admin Gudang Pusat
+                                        <x-lucide-building-2 class="me-1" /> Admin Gudang Pusat
                                     </span>
                                 @elseif($role->name === 'Admin Gudang Proyek')
                                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-helmet-safety me-1"></i> Admin Gudang Proyek
+                                        <x-lucide-hard-hat class="me-1" /> Admin Gudang Proyek
                                     </span>
                                 @elseif($role->name === 'Admin PO')
                                     <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-truck-ramp-box me-1"></i> Admin PO
+                                        <x-lucide-package-check class="me-1" /> Admin PO
                                     </span>
                                 @elseif($role->name === 'Admin PO Proyek')
                                     <span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-receipt me-1"></i> Admin PO Proyek
+                                        <x-lucide-receipt class="me-1" /> Admin PO Proyek
                                     </span>
                                 @else
                                     <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;">
-                                        <i class="fas fa-id-badge me-1"></i> {{ $role->name }}
+                                        <x-lucide-id-card class="me-1" /> {{ $role->name }}
                                     </span>
                                 @endif
                             @empty
@@ -494,28 +506,28 @@
                         <div class="identity-meta-list">
                             <div class="meta-list-row">
                                 <span class="meta-list-label">
-                                    <i class="fas fa-id-badge text-primary" style="font-size:11px;"></i> ID Akun
+                                    <x-lucide-id-card class="text-primary" style="font-size:11px;" /> ID Akun
                                 </span>
                                 <span class="meta-list-val">#USR-{{ str_pad($user->id, 4, '0', STR_PAD_LEFT) }}</span>
                             </div>
 
                             <div class="meta-list-row">
                                 <span class="meta-list-label">
-                                    <i class="fas fa-calendar-check text-success" style="font-size:11px;"></i> Terdaftar Sejak
+                                    <x-lucide-calendar-check class="text-success" style="font-size:11px;" /> Terdaftar Sejak
                                 </span>
                                 <span class="meta-list-val">{{ $user->created_at ? $user->created_at->format('d M Y') : '—' }}</span>
                             </div>
 
                             <div class="meta-list-row">
                                 <span class="meta-list-label">
-                                    <i class="fas fa-clock-rotate-left text-warning" style="font-size:11px;"></i> Terakhir Diubah
+                                    <x-lucide-history class="text-warning" style="font-size:11px;" /> Terakhir Diubah
                                 </span>
                                 <span class="meta-list-val">{{ $user->updated_at ? $user->updated_at->diffForHumans() : '—' }}</span>
                             </div>
 
                             <div class="meta-list-row">
                                 <span class="meta-list-label">
-                                    <i class="fas fa-shield text-info" style="font-size:11px;"></i> Status Keamanan
+                                    <x-lucide-shield class="text-info" style="font-size:11px;" /> Status Keamanan
                                 </span>
                                 <span class="badge" style="background:#ecfdf5;color:#059669;font-size:10.5px;padding:2px 6px;border-radius:4px;font-weight:600;">Normal</span>
                             </div>
@@ -525,7 +537,7 @@
                             <form method="POST" action="{{ route('logout') }}" style="margin:0;">
                                 @csrf
                                 <button type="submit" class="btn btn-danger w-full" onclick="return confirm('Apakah Anda yakin ingin keluar dari sesi akun ini?')" style="width:100%;justify-content:center;padding:9px;font-size:12.5px;font-weight:600;border-radius:8px;background:#ef4444;color:#ffffff;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;box-shadow:0 2px 4px rgba(239,68,68,0.25);">
-                                    <i class="fas fa-right-from-bracket fa-flip-horizontal"></i>
+                                    <x-lucide-log-out style="transform: scaleX(-1);" />
                                     <span>Keluar dari Akun (Logout)</span>
                                 </button>
                             </form>
@@ -537,7 +549,7 @@
                 <div class="profile-card">
                     <div class="profile-card-header">
                         <div class="profile-card-title">
-                            <i class="fas fa-warehouse text-primary" style="font-size:13px;"></i>
+                            <x-lucide-warehouse class="text-primary" style="font-size:13px;" />
                             <span>Wewenang Gudang</span>
                         </div>
                         <span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10.5px;font-weight:700;border-radius:10px;padding:2px 7px;">
@@ -549,7 +561,7 @@
                         @if($user->hasAnyRole(['Owner', 'Admin Pusat']))
                             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;font-size:11.5px;color:#1e40af;line-height:1.45;">
                                 <div class="flex items-center gap-2 mb-1" style="font-weight:700;">
-                                    <i class="fas fa-crown text-warning"></i>
+                                    <x-lucide-crown class="text-warning" />
                                     <span>Hak Akses Menyeluruh (Global)</span>
                                 </div>
                                 Akun Anda memiliki izin administratif penuh untuk memantau dan mengelola seluruh Gudang Pusat serta Gudang Proyek PT Arsikon.
@@ -559,7 +571,11 @@
                             <div class="wh-badge-item">
                                 <div style="display:flex;align-items:center;gap:8px;">
                                     <div class="wh-icon-box {{ $wh->is_central ? 'wh-icon-central' : 'wh-icon-project' }}">
-                                        <i class="fas {{ $wh->is_central ? 'fa-warehouse' : 'fa-building-shield' }}"></i>
+                                        @if($wh->is_central)
+                                            <x-lucide-warehouse class="w-3.5 h-3.5" />
+                                        @else
+                                            <x-lucide-shield-check class="w-3.5 h-3.5" />
+                                        @endif
                                     </div>
                                     <div>
                                         <div style="font-weight:600;color:#0f172a;font-size:12px;">{{ $wh->name }}</div>
@@ -572,13 +588,13 @@
                             </div>
                             @empty
                             <div class="text-center text-muted" style="padding:16px 0;font-size:12px;">
-                                <i class="fas fa-circle-info mb-1" style="font-size:18px;color:#cbd5e1;display:block;"></i>
+                                <x-lucide-info class="mb-1" style="font-size:18px;color:#cbd5e1;display:block;" />
                                 Belum ada penugasan gudang spesifik untuk akun ini.
                             </div>
                             @endforelse
 
                             <div style="margin-top:10px;font-size:11px;color:#94a3b8;line-height:1.35;">
-                                <i class="fas fa-lock me-1"></i> Penugasan gudang & hak akses akun dikelola oleh <strong>Owner / Super Admin</strong>.
+                                <x-lucide-lock class="me-1" /> Penugasan gudang & hak akses akun dikelola oleh <strong>Owner / Super Admin</strong>.
                             </div>
                         @endif
                     </div>
@@ -594,7 +610,7 @@
                     <div class="profile-card-header">
                         <div>
                             <div class="profile-card-title">
-                                <i class="fas fa-user-pen text-primary" style="font-size:13px;"></i>
+                                <x-lucide-user-pen class="text-primary" style="font-size:13px;" />
                                 <span>Informasi Pribadi & Jabatan</span>
                             </div>
                             <div class="profile-card-desc">Informasi akun pengguna, peran / jabatan resmi di PT Arsikon, dan kontak utama</div>
@@ -613,14 +629,14 @@
                                         Nama Lengkap <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-icon-group">
-                                        <i class="fas fa-user input-icon"></i>
+                                        <x-lucide-user class="input-icon" />
                                         <input type="text" id="profile_name" name="name" class="form-control" 
                                             value="{{ old('name', $user->name) }}" required autocomplete="name"
                                             placeholder="Masukkan nama lengkap...">
                                     </div>
                                     @if ($errors->get('name'))
                                         <div class="field-error-msg">
-                                            <i class="fas fa-circle-exclamation"></i>
+                                            <x-lucide-circle-alert />
                                             <span>{{ $errors->first('name') }}</span>
                                         </div>
                                     @endif
@@ -632,14 +648,14 @@
                                         Alamat Email <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-icon-group">
-                                        <i class="fas fa-envelope input-icon"></i>
+                                        <x-lucide-mail class="input-icon" />
                                         <input type="email" id="profile_email" name="email" class="form-control" 
                                             value="{{ old('email', $user->email) }}" required autocomplete="username"
                                             placeholder="nama@arsikon.co.id">
                                     </div>
                                     @if ($errors->get('email'))
                                         <div class="field-error-msg">
-                                            <i class="fas fa-circle-exclamation"></i>
+                                            <x-lucide-circle-alert />
                                             <span>{{ $errors->first('email') }}</span>
                                         </div>
                                     @endif
@@ -655,31 +671,31 @@
                                             @forelse($user->roles as $role)
                                                 @if($role->name === 'Owner')
                                                     <span class="badge" style="background:#fef3c7;color:#92400e;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;border:1px solid #fde68a;">
-                                                        <i class="fas fa-crown me-1"></i> Owner / Direksi (Super Admin)
+                                                        <x-lucide-crown class="me-1" /> Owner / Direksi (Super Admin)
                                                     </span>
                                                 @elseif($role->name === 'Admin Pusat')
                                                     <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;border:1px solid #bfdbfe;">
-                                                        <i class="fas fa-user-shield me-1"></i> Admin Pusat (Kantor Pusat - Full Akses)
+                                                        <x-lucide-shield-check class="me-1" /> Admin Pusat (Kantor Pusat - Full Akses)
                                                     </span>
                                                 @elseif($role->name === 'Admin Gudang Pusat')
                                                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;">
-                                                        <i class="fas fa-building me-1"></i> Admin Gudang Pusat (Sentral Logistik)
+                                                        <x-lucide-building-2 class="me-1" /> Admin Gudang Pusat (Sentral Logistik)
                                                     </span>
                                                 @elseif($role->name === 'Admin Gudang Proyek')
                                                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;">
-                                                        <i class="fas fa-helmet-safety me-1"></i> Admin Gudang Proyek (Logistik Lapangan)
+                                                        <x-lucide-hard-hat class="me-1" /> Admin Gudang Proyek (Logistik Lapangan)
                                                     </span>
                                                 @elseif($role->name === 'Admin PO')
                                                     <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;border:1px solid #a7f3d0;">
-                                                        <i class="fas fa-truck-ramp-box me-1"></i> Admin Pengadaan (PO & Pembelian)
+                                                        <x-lucide-package-check class="me-1" /> Admin Pengadaan (PO & Pembelian)
                                                     </span>
                                                 @elseif($role->name === 'Karyawan')
                                                     <span class="badge" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0;font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;">
-                                                        <i class="fas fa-user me-1"></i> Karyawan Lapangan / Petugas
+                                                        <x-lucide-user class="me-1" /> Karyawan Lapangan / Petugas
                                                     </span>
                                                 @else
                                                     <span class="badge badge-secondary" style="font-size:12px;font-weight:700;padding:5px 12px;border-radius:6px;">
-                                                        <i class="fas fa-id-badge me-1"></i> {{ ucfirst($role->name) }}
+                                                        <x-lucide-id-card class="me-1" /> {{ ucfirst($role->name) }}
                                                     </span>
                                                 @endif
                                             @empty
@@ -687,21 +703,21 @@
                                             @endforelse
                                         </div>
                                         <span style="font-size:11px;color:#94a3b8;display:inline-flex;align-items:center;gap:4px;">
-                                            <i class="fas fa-lock"></i> Dikelola oleh Admin Pusat
+                                            <x-lucide-lock /> Dikelola oleh Admin Pusat
                                         </span>
                                     </div>
                                     <div style="font-size:11.5px;color:#64748b;margin-top:5px;">
-                                        <i class="fas fa-info-circle me-1" style="font-size:11px;"></i> Jabatan Anda menentukan tingkat wewenang dan modul yang dapat Anda akses di dalam sistem PT Arsikon.
+                                        <x-lucide-info class="me-1" style="font-size:11px;" /> Jabatan Anda menentukan tingkat wewenang dan modul yang dapat Anda akses di dalam sistem PT Arsikon.
                                     </div>
                                 </div>
                             </div>
 
                             <div class="flex items-center justify-between pt-2" style="border-top:1px solid #f1f5f9;">
                                 <span style="font-size:11.5px;color:#94a3b8;">
-                                    <i class="fas fa-shield-halved me-1"></i> Perubahan data akan langsung diterapkan ke sistem
+                                    <x-lucide-shield class="me-1" /> Perubahan data akan langsung diterapkan ke sistem
                                 </span>
                                 <button type="submit" class="btn btn-primary" style="padding:7px 18px;font-size:12.5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                                    <i class="fas fa-floppy-disk"></i> Simpan Perubahan
+                                    <x-lucide-save /> Simpan Perubahan
                                 </button>
                             </div>
                         </form>
@@ -714,7 +730,7 @@
                     <div class="profile-card-header">
                         <div>
                             <div class="profile-card-title">
-                                <i class="fas fa-key text-warning" style="font-size:13px;"></i>
+                                <x-lucide-key-round class="text-warning" style="font-size:13px;" />
                                 <span>Ganti Kata Sandi</span>
                             </div>
                             <div class="profile-card-desc">Gunakan kombinasi kata sandi yang kuat dan unik demi keamanan data akun</div>
@@ -732,16 +748,17 @@
                                     Kata Sandi Saat Ini <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-group">
-                                    <i class="fas fa-lock input-icon"></i>
+                                    <x-lucide-lock class="input-icon" />
                                     <input type="password" id="update_password_current_password" name="current_password" 
                                         class="form-control" autocomplete="current-password" placeholder="Ketik kata sandi saat ini...">
                                     <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('update_password_current_password', this)">
-                                        <i class="fas fa-eye"></i>
+                                        <span class="eye-open"><x-lucide-eye /></span>
+                                        <span class="eye-closed" style="display:none;"><x-lucide-eye-off /></span>
                                     </button>
                                 </div>
                                 @if ($errors->updatePassword->get('current_password'))
                                     <div class="field-error-msg">
-                                        <i class="fas fa-circle-exclamation"></i>
+                                        <x-lucide-circle-alert />
                                         <span>{{ $errors->updatePassword->first('current_password') }}</span>
                                     </div>
                                 @endif
@@ -754,16 +771,17 @@
                                         Kata Sandi Baru <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-icon-group">
-                                        <i class="fas fa-shield-keyhole input-icon"></i>
+                                        <x-lucide-shield-check class="input-icon" />
                                         <input type="password" id="update_password_password" name="password" 
                                             class="form-control" autocomplete="new-password" placeholder="Minimal 8 karakter...">
                                         <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('update_password_password', this)">
-                                            <i class="fas fa-eye"></i>
+                                            <span class="eye-open"><x-lucide-eye /></span>
+                                            <span class="eye-closed" style="display:none;"><x-lucide-eye-off /></span>
                                         </button>
                                     </div>
                                     @if ($errors->updatePassword->get('password'))
                                         <div class="field-error-msg">
-                                            <i class="fas fa-circle-exclamation"></i>
+                                            <x-lucide-circle-alert />
                                             <span>{{ $errors->updatePassword->first('password') }}</span>
                                         </div>
                                     @endif
@@ -775,16 +793,17 @@
                                         Ulangi Kata Sandi Baru <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-icon-group">
-                                        <i class="fas fa-check-double input-icon"></i>
+                                        <x-lucide-check-check class="input-icon" />
                                         <input type="password" id="update_password_password_confirmation" name="password_confirmation" 
                                             class="form-control" autocomplete="new-password" placeholder="Ketik ulang kata sandi baru...">
                                         <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('update_password_password_confirmation', this)">
-                                            <i class="fas fa-eye"></i>
+                                            <span class="eye-open"><x-lucide-eye /></span>
+                                            <span class="eye-closed" style="display:none;"><x-lucide-eye-off /></span>
                                         </button>
                                     </div>
                                     @if ($errors->updatePassword->get('password_confirmation'))
                                         <div class="field-error-msg">
-                                            <i class="fas fa-circle-exclamation"></i>
+                                            <x-lucide-circle-alert />
                                             <span>{{ $errors->updatePassword->first('password_confirmation') }}</span>
                                         </div>
                                     @endif
@@ -793,11 +812,11 @@
 
                             <div class="flex items-center justify-between pt-2" style="border-top:1px solid #f1f5f9;">
                                 <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;">
-                                    <i class="fas fa-info-circle text-primary"></i>
+                                    <x-lucide-info class="text-primary" />
                                     <span>Gunakan minimal 8 karakter kombinasi huruf dan angka.</span>
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="padding:7px 18px;font-size:12.5px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                                    <i class="fas fa-shield-halved"></i> Perbarui Kata Sandi
+                                    <x-lucide-shield /> Perbarui Kata Sandi
                                 </button>
                             </div>
                         </form>
@@ -809,7 +828,7 @@
                     <div class="profile-card-header" style="background:#fff1f2;border-bottom-color:#fecaca;">
                         <div>
                             <div class="profile-card-title" style="color:#991b1b;">
-                                <i class="fas fa-triangle-exclamation text-danger" style="font-size:13px;"></i>
+                                <x-lucide-triangle-alert class="text-danger" style="font-size:13px;" />
                                 <span>Zona Bahaya: Hapus Akun</span>
                             </div>
                             <div class="profile-card-desc" style="color:#b91c1c;">
@@ -821,7 +840,7 @@
                     <div class="profile-card-body" style="background:#ffffff;">
                         @if($user->hasRole('Owner'))
                             <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:12px;color:#991b1b;display:flex;align-items:center;gap:10px;">
-                                <i class="fas fa-shield-alt" style="font-size:20px;color:#dc2626;flex-shrink:0;"></i>
+                                <x-lucide-shield style="font-size:20px;color:#dc2626;flex-shrink:0;" />
                                 <div>
                                     <strong>Akun Utama Dilindungi:</strong> Akun berstatus <strong>Owner / Pemilik Sistem</strong> tidak dapat dihapus melalui formulir mandiri demi menjaga stabilitas data dan riwayat audit perusahaan.
                                 </div>
@@ -832,7 +851,7 @@
                                     Setelah akun Anda dihapus, semua data sesi login dan wewenang akses akan dicabut secara permanen. Harap pastikan kembali sebelum melanjutkan.
                                 </div>
                                 <button type="button" onclick="openDeleteAccountModal()" class="btn btn-danger" style="padding:7px 16px;font-size:12px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                                    <i class="fas fa-trash-can"></i> Hapus Akun Saya
+                                    <x-lucide-trash-2 /> Hapus Akun Saya
                                 </button>
                             </div>
                         @endif
@@ -852,7 +871,7 @@
             <div style="padding:16px 20px;background:#fef2f2;border-bottom:1px solid #fee2e2;display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <div style="width:32px;height:32px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;color:#dc2626;">
-                        <i class="fas fa-triangle-exclamation"></i>
+                        <x-lucide-triangle-alert />
                     </div>
                     <div>
                         <h3 style="font-size:14px;font-weight:700;color:#991b1b;margin:0;">Konfirmasi Penghapusan Akun</h3>
@@ -876,16 +895,17 @@
                             Kata Sandi Anda <span class="text-danger">*</span>
                         </label>
                         <div class="input-icon-group">
-                            <i class="fas fa-lock input-icon"></i>
+                            <x-lucide-lock class="input-icon" />
                             <input type="password" id="delete_modal_password" name="password" 
                                 class="form-control" required placeholder="Masukkan kata sandi untuk konfirmasi...">
                             <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('delete_modal_password', this)">
-                                <i class="fas fa-eye"></i>
+                                <span class="eye-open"><x-lucide-eye /></span>
+                                <span class="eye-closed" style="display:none;"><x-lucide-eye-off /></span>
                             </button>
                         </div>
                         @if ($errors->userDeletion->get('password'))
                             <div class="field-error-msg">
-                                <i class="fas fa-circle-exclamation"></i>
+                                <x-lucide-circle-alert />
                                 <span>{{ $errors->userDeletion->first('password') }}</span>
                             </div>
                         @endif
@@ -897,7 +917,7 @@
                         Batal
                     </button>
                     <button type="submit" class="btn btn-danger" style="padding:7px 16px;font-size:12px;font-weight:600;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-trash-can"></i> Ya, Hapus Akun
+                        <x-lucide-trash-2 /> Ya, Hapus Akun
                     </button>
                 </div>
             </form>
@@ -909,16 +929,17 @@
     <script>
         function togglePassVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
             if (!input) return;
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                if (eyeOpen) eyeOpen.style.display = 'none';
+                if (eyeClosed) eyeClosed.style.display = 'inline-flex';
             } else {
                 input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                if (eyeOpen) eyeOpen.style.display = 'inline-flex';
+                if (eyeClosed) eyeClosed.style.display = 'none';
             }
         }
 

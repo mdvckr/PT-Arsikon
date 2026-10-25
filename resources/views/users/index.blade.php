@@ -9,10 +9,10 @@
         @if(auth()->user()->can('create users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
         <div class="flex items-center gap-2">
             <a href="{{ route('roles.index') }}" class="btn btn-secondary" style="font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-id-badge"></i> Kelola Jabatan
+                <x-lucide-id-card /> Kelola Jabatan
             </a>
             <a href="{{ route('users.create') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-plus"></i> Tambah Pengguna
+                <x-lucide-plus /> Tambah Pengguna
             </a>
         </div>
         @endif
@@ -25,7 +25,7 @@
                 <div style="flex:1;min-width:220px;">
                     <label class="form-label" style="font-size:12px;font-weight:600;color:#475569;">Cari Pengguna</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                        <x-lucide-search style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" style="padding-left:34px;" placeholder="Nama atau email pengguna...">
                     </div>
                 </div>
@@ -40,11 +40,11 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="btn btn-secondary" style="height:38px;">
-                        <i class="fas fa-filter"></i> Filter
+                        <x-lucide-filter /> Filter
                     </button>
                     @if(request('search') || request('role'))
                     <a href="{{ route('users.index') }}" class="btn btn-secondary" style="height:38px;" title="Reset Filter">
-                        <i class="fas fa-rotate-left"></i>
+                        <x-lucide-rotate-ccw />
                     </a>
                     @endif
                 </div>
@@ -87,17 +87,17 @@
                             <div class="flex gap-1" style="flex-wrap:wrap;">
                                 @foreach($user->roles as $role)
                                     @if($role->name === 'Owner')
-                                        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;"><i class="fas fa-crown"></i> Owner</span>
+                                        <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;"><x-lucide-crown /> Owner</span>
                                     @elseif($role->name === 'Admin Pusat')
-                                        <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;"><i class="fas fa-user-shield"></i> Admin Pusat</span>
+                                        <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;"><x-lucide-shield-check /> Admin Pusat</span>
                                     @elseif($role->name === 'Admin Gudang Pusat')
-                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><i class="fas fa-building"></i> Admin Gudang Pusat</span>
+                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-building-2 /> Admin Gudang Pusat</span>
                                     @elseif($role->name === 'Admin Gudang Proyek')
-                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><i class="fas fa-helmet-safety"></i> Admin Gudang Proyek</span>
+                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-hard-hat /> Admin Gudang Proyek</span>
                                     @elseif($role->name === 'Admin PO')
-                                        <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;"><i class="fas fa-truck-ramp-box"></i> Admin PO</span>
+                                        <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;"><x-lucide-package-check /> Admin PO</span>
                                     @elseif($role->name === 'Admin PO Proyek')
-                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;"><i class="fas fa-receipt"></i> Admin PO Proyek</span>
+                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;"><x-lucide-receipt /> Admin PO Proyek</span>
                                     @else
                                         <span class="badge badge-secondary" style="font-size:11px;font-weight:600;">{{ ucfirst($role->name) }}</span>
                                     @endif
@@ -107,14 +107,18 @@
                         <td style="vertical-align:middle;">
                             @if($user->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <span class="badge" style="background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:11px;">
-                                    <i class="fas fa-globe text-primary"></i> Multi-Gudang (Penuh)
+                                    <x-lucide-globe class="text-primary" /> Multi-Gudang (Penuh)
                                 </span>
                             @elseif($user->warehouses->count() > 0)
                                 <div class="flex gap-1" style="flex-wrap:wrap;">
                                     @foreach($user->warehouses as $wh)
-                                        <span class="badge badge-gray" style="font-size:11px;">
-                                            <i class="{{ $wh->is_central ? 'fas fa-building' : 'fas fa-location-dot' }}" style="font-size:9px;"></i>
-                                            {{ $wh->name }}
+                                        <span class="badge badge-gray" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                                            @if($wh->is_central)
+                                                <x-lucide-building-2 style="width:10px;height:10px;" />
+                                            @else
+                                                <x-lucide-map-pin style="width:10px;height:10px;" />
+                                            @endif
+                                            <span>{{ $wh->name }}</span>
                                         </span>
                                     @endforeach
                                 </div>
@@ -125,11 +129,11 @@
                         <td style="text-align:center;vertical-align:middle;">
                             @if($user->is_active)
                                 <span class="badge badge-success" style="font-size:11px;">
-                                    <i class="fas fa-check-circle" style="font-size:9.5px;"></i> Aktif
+                                    <x-lucide-circle-check style="font-size:9.5px;" /> Aktif
                                 </span>
                             @else
                                 <span class="badge badge-danger" style="font-size:11px;">
-                                    <i class="fas fa-times-circle" style="font-size:9.5px;"></i> Nonaktif
+                                    <x-lucide-circle-x style="font-size:9.5px;" /> Nonaktif
                                 </span>
                             @endif
                         </td>
@@ -137,7 +141,7 @@
                             <div class="flex gap-1" style="justify-content:center;">
                                 @if(auth()->user()->can('edit users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Pengguna">
-                                    <i class="fas fa-pen"></i>
+                                    <x-lucide-pencil />
                                 </a>
                                 @endif
                                 @if((auth()->user()->can('delete users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])) && $user->id !== auth()->id())
@@ -145,7 +149,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus Pengguna">
-                                        <i class="fas fa-trash"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                 </form>
                                 @elseif($user->id === auth()->id())

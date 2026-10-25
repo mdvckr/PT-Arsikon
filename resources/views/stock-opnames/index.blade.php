@@ -8,7 +8,7 @@
         </div>
         @can('create stock opname')
         <a href="{{ route('stock-opnames.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Buat Stock Opname
+            <x-lucide-plus /> Buat Stock Opname
         </a>
         @endcan
     </div>
@@ -39,18 +39,18 @@
                         <td>{{ \Carbon\Carbon::parse($op->opname_date)->format('d/m/Y') }}</td>
                         <td>
                             @if($op->status === 'open')
-                                <span class="badge badge-warning"><i class="fas fa-clock"></i> Open</span>
+                                <span class="badge badge-warning"><x-lucide-clock /> Open</span>
                             @elseif($op->status === 'approved')
-                                <span class="badge badge-success"><i class="fas fa-check-double"></i> Disetujui</span>
+                                <span class="badge badge-success"><x-lucide-check-check /> Disetujui</span>
                             @else
-                                <span class="badge badge-danger"><i class="fas fa-xmark"></i> Ditolak</span>
+                                <span class="badge badge-danger"><x-lucide-x /> Ditolak</span>
                             @endif
                         </td>
                         <td>{{ $op->creator?->name ?? '-' }}</td>
                         <td>{{ $op->approver?->name ?? '-' }}</td>
                         <td>
                             <a href="{{ route('stock-opnames.show', $op) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail">
-                                <i class="fas fa-eye"></i>
+                                <x-lucide-eye />
                             </a>
                         </td>
                     </tr>

@@ -33,15 +33,15 @@
     @endpush
 
     <div class="breadcrumb mb-2" style="font-size:12px;">
-        <a href="{{ route('goods-receipts.index') }}"><i class="fas fa-truck-ramp-box" style="font-size:11px;"></i> Logistik & Penerimaan</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:9px;"></i></span>
+        <a href="{{ route('goods-receipts.index') }}"><x-lucide-package-check style="font-size:11px;" /> Logistik & Penerimaan</a>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
         <span>Kehilangan Barang Transit</span>
     </div>
 
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
             <h2 class="fw-700" style="font-size:18px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-triangle-exclamation text-warning"></i> Kehilangan Barang di Perjalanan (Transit Loss)
+                <x-lucide-triangle-alert class="text-warning" /> Kehilangan Barang di Perjalanan (Transit Loss)
             </h2>
             <p class="text-muted" style="font-size:12.5px;margin-top:2px;margin-bottom:0;">
                 Daftar selisih barang hilang saat pengiriman vendor dengan bukti surat jalan dan penelusuran klaim.
@@ -49,20 +49,20 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary btn-sm" style="border-radius:6px;font-size:12px;">
-                <i class="fas fa-arrow-left"></i> Kembali ke Penerimaan
+                <x-lucide-arrow-left /> Kembali ke Penerimaan
             </a>
         </div>
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:8px;padding:10px 14px;font-size:12.5px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:8px;padding:10px 14px;font-size:12.5px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -86,7 +86,7 @@
                 </div>
                 <div style="display:flex;gap:6px;">
                     <button type="submit" class="btn btn-primary btn-sm" style="height:36px;padding:0 14px;">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     @if(request()->anyFilled(['search', 'status']))
                     <a href="{{ route('transit-losses.index') }}" class="btn btn-light border btn-sm" style="height:36px;padding:0 12px;">Reset</a>
@@ -150,7 +150,7 @@
                             <div style="margin-top:4px;display:flex;align-items:center;gap:6px;">
                                 @if($loss->evidence_path)
                                     <a href="{{ asset('storage/' . $loss->evidence_path) }}" target="_blank" class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;text-decoration:none;">
-                                        <i class="fas fa-file-arrow-down me-1"></i> Lihat Bukti
+                                        <x-lucide-file-down class="me-1" /> Lihat Bukti
                                     </a>
                                 @endif
                                 <span class="text-muted" style="font-size:10px;">Oleh: {{ $loss->recordedByUser?->name ?? 'User' }}</span>
@@ -159,19 +159,19 @@
                         <td style="text-align:center;">
                             @if($loss->status === 'recorded')
                                 <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;">
-                                    <i class="fas fa-clock me-1"></i> Recorded
+                                    <x-lucide-clock class="me-1" /> Recorded
                                 </span>
                             @elseif($loss->status === 'claim_filed')
                                 <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;">
-                                    <i class="fas fa-file-contract me-1"></i> Claim Filed
+                                    <x-lucide-file-text class="me-1" /> Claim Filed
                                 </span>
                             @elseif($loss->status === 'recovered')
                                 <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;">
-                                    <i class="fas fa-circle-check me-1"></i> Recovered
+                                    <x-lucide-circle-check class="me-1" /> Recovered
                                 </span>
                             @elseif($loss->status === 'written_off')
                                 <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;">
-                                    <i class="fas fa-ban me-1"></i> Written Off
+                                    <x-lucide-ban class="me-1" /> Written Off
                                 </span>
                             @endif
                         </td>
@@ -180,7 +180,7 @@
                                 <form method="POST" action="{{ route('transit-losses.approve', $loss) }}" style="display:inline-block;margin:0;">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-success" style="font-size:11.5px;padding:3px 8px;border-radius:5px;" onclick="return confirm('Setujui laporan kehilangan ini? Kuota PO akan dipotong dan dinyatakan hilang sah.')">
-                                        <i class="fas fa-check me-1"></i> Setujui
+                                        <x-lucide-check class="me-1" /> Setujui
                                     </button>
                                 </form>
                             @elseif($loss->status === 'claim_filed' && auth()->user()->can('approve transit losses'))

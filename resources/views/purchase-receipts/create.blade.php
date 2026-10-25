@@ -3,7 +3,7 @@
 
     <div class="mb-4">
         <a href="{{ route('purchase-receipts.index') }}" class="text-muted" style="font-size:13px;">
-            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Nota
+            <x-lucide-arrow-left class="me-1" /> Kembali ke Daftar Nota
         </a>
         <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin-top:4px;">Pencatatan Nota Pembelian Harian</h2>
         <p class="text-muted" style="font-size:13px;">Pencatatan belanja operasional langsung di proyek (Bon toko, material darurat, konsumsi/BBM).</p>
@@ -45,7 +45,7 @@
                     </select>
                     <input type="hidden" name="project_name" id="project_name_input" value="{{ old('project_name', $selectedProject?->name ?? '') }}">
                     <small id="project_balance_info" class="text-muted block mt-1" style="font-size:11.5px;color:#047857;font-weight:600;">
-                        <i class="fas fa-wallet text-emerald-600 me-1"></i> Saldo Kas Proyek: <span id="display_project_balance">Rp {{ number_format($currentBalance ?? 0, 0, ',', '.') }}</span>
+                        <x-lucide-wallet class="text-emerald-600 me-1" /> Saldo Kas Proyek: <span id="display_project_balance">Rp {{ number_format($currentBalance ?? 0, 0, ',', '.') }}</span>
                     </small>
                 </div>
 
@@ -72,7 +72,7 @@
                     <label class="form-label font-semibold">Status Pembayaran Nota <span class="text-danger">*</span></label>
                     <input type="hidden" name="payment_status" value="paid">
                     <div class="form-control" style="background:#ecfdf5;color:#065f46;font-weight:700;display:flex;align-items:center;gap:6px;border-color:#a7f3d0;cursor:default;">
-                        <i class="fas fa-circle-check text-emerald-600"></i>
+                        <x-lucide-circle-check class="text-emerald-600" />
                         <span>Sudah Dibayar (Instan - Potong Kas)</span>
                     </div>
                     <small class="text-muted" style="font-size:11px;margin-top:2px;display:block;">Saldo kas proyek otomatis terpotong saat nota disimpan.</small>
@@ -101,7 +101,7 @@
                     <p class="text-muted" style="font-size:12px;">Tambahkan barang sesuai bon / faktur toko fisik.</p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" onclick="addItemRow()">
-                    <i class="fas fa-plus me-1"></i> Tambah Baris Barang
+                    <x-lucide-plus class="me-1" /> Tambah Baris Barang
                 </button>
             </div>
 
@@ -151,7 +151,7 @@
                                     </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removeRow(this)" title="Hapus Baris">
-                                            <i class="fas fa-trash"></i>
+                                            <x-lucide-trash-2 />
                                         </button>
                                     </td>
                                 </tr>
@@ -179,7 +179,7 @@
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removeRow(this)" title="Hapus Baris">
-                                        <i class="fas fa-trash"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                 </td>
                             </tr>
@@ -223,7 +223,7 @@
             {{-- Alert Dinamis jika Saldo Kurang --}}
             <div id="saldo_warning_alert" class="alert alert-danger mt-3" style="display:none;background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-triangle-exclamation" style="font-size:18px;"></i>
+                    <x-lucide-triangle-alert style="font-size:18px;" />
                     <div>
                         <strong style="font-size:13px;display:block;">Peringatan: Saldo Kas Proyek Tidak Mencukupi!</strong>
                         <span style="font-size:12px;" id="saldo_warning_text"></span>
@@ -235,7 +235,7 @@
         <div class="flex justify-end gap-3 mb-6">
             <a href="{{ route('purchase-receipts.index') }}" class="btn btn-light">Batal</a>
             <button type="submit" id="submit_btn" class="btn btn-primary" style="padding:10px 24px;font-weight:700;">
-                <i class="fas fa-save me-1"></i> Simpan & Potong Saldo Kas
+                <x-lucide-save class="me-1" /> Simpan & Potong Saldo Kas
             </button>
         </div>
     </form>
@@ -299,7 +299,7 @@
                 }
                 if (indicator) {
                     indicator.style.background = 'rgba(239, 68, 68, 0.4)';
-                    indicator.innerHTML = '<i class="fas fa-triangle-exclamation text-red-200"></i> Saldo Kurang!';
+                    indicator.innerHTML = '<x-lucide-triangle-alert class="text-red-200" /> Saldo Kurang!';
                 }
                 if (submitBtn) {
                     submitBtn.classList.remove('btn-primary');
@@ -309,7 +309,7 @@
                 if (warnAlert) warnAlert.style.display = 'none';
                 if (indicator) {
                     indicator.style.background = 'rgba(255, 255, 255, 0.18)';
-                    indicator.innerHTML = '<i class="fas fa-bolt text-amber-300"></i> Pembayaran Instan (Potong Kas)';
+                    indicator.innerHTML = '<x-lucide-zap class="text-amber-300" /> Pembayaran Instan (Potong Kas)';
                 }
                 if (submitBtn) {
                     submitBtn.classList.remove('btn-danger');
@@ -359,7 +359,7 @@
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removeRow(this)" title="Hapus Baris">
-                        <i class="fas fa-trash"></i>
+                        <x-lucide-trash-2 />
                     </button>
                 </td>
             `;

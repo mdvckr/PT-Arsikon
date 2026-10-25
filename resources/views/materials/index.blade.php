@@ -75,11 +75,11 @@
                 @endphp
                 @if($currentWhObj)
                     <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;" title="Gudang: {{ $currentWhObj->name }}">
-                        <i class="fas fa-warehouse text-primary" style="font-size:10px;"></i> {{ $currentWhObj->name }}{{ $currentWhObj->is_central ? ' (Pusat)' : ' (Proyek)' }}
+                        <x-lucide-warehouse class="text-primary" style="font-size:10px;" /> {{ $currentWhObj->name }}{{ $currentWhObj->is_central ? ' (Pusat)' : ' (Proyek)' }}
                     </span>
                 @elseif(($selectedWarehouseId ?? null) === 'all')
                     <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:3.5px 9px;border-radius:6px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px;">
-                        <i class="fas fa-boxes-stacked text-primary" style="font-size:10px;"></i> Semua Gudang (Konsolidasi)
+                        <x-lucide-boxes class="text-primary" style="font-size:10px;" /> Semua Gudang (Konsolidasi)
                     </span>
                 @endif
             </div>
@@ -88,7 +88,7 @@
         @can('create materials')
         <div>
             <a href="{{ route('materials.create') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
-                <i class="fas fa-plus"></i> Tambah Material
+                <x-lucide-plus /> Tambah Material
             </a>
         </div>
         @endcan
@@ -102,7 +102,7 @@
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control"
                         placeholder="Cari material berdasarkan nama, SKU, atau ukuran..."
                         style="height:38px;border-radius:6px;font-size:13px;padding-left:34px;border:1px solid #cbd5e1;">
-                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;"></i>
+                    <x-lucide-search style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;" />
                 </div>
                 @if($isGlobalAccess || $accessibleWarehouses->count() > 1)
                 <div style="min-width:220px;">
@@ -124,7 +124,7 @@
                 @if($isFiltered)
                 <div>
                     <a href="{{ route('materials.index') }}" class="btn btn-light border" style="height:38px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;color:#64748b;background:#ffffff;" title="Reset Filter">
-                        <i class="fas fa-times"></i> Reset
+                        <x-lucide-x /> Reset
                     </a>
                 </div>
                 @endif
@@ -173,7 +173,7 @@
                         <td colspan="10" style="padding:9px 16px !important;">
                             <div class="flex items-center justify-between" style="gap:10px;">
                                 <div class="flex items-center" style="gap:8px;">
-                                    <i class="fas fa-chevron-down group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
+                                    <x-lucide-chevron-down class="group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true" />
                                     <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">
                                         {{ $category->name }}
                                     </span>
@@ -184,7 +184,7 @@
                                 <div class="flex items-center" style="gap:6px;">
                                     @can('create materials')
                                     <a href="{{ route('materials.create', ['category_id' => $category->id]) }}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #cbd5e1;color:#2563eb;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);" title="Tambah Material pada {{ $category->name }}" onclick="event.stopPropagation();">
-                                        <i class="fas fa-plus" style="font-size:9.5px;"></i> Tambah
+                                        <x-lucide-plus style="font-size:9.5px;" /> Tambah
                                     </a>
                                     @endcan
                                     @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
@@ -192,7 +192,7 @@
                                         onclick="event.stopPropagation(); openDeleteCategoryModal({{ $category->id }}, '{{ addslashes($category->name) }}', {{ $totalMaterials }})" 
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;box-shadow:0 1px 2px rgba(0,0,0,0.04);cursor:pointer;" 
                                         title="Hapus Kategori {{ $category->name }} jika salah memasukkan">
-                                        <i class="fas fa-trash-can" style="font-size:10px;"></i> Hapus
+                                        <x-lucide-trash-2 style="font-size:10px;" /> Hapus
                                     </button>
                                     @endif
                                 </div>
@@ -207,7 +207,7 @@
                         <td colspan="10" style="padding:7px 16px 7px 34px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
-                                    <i class="fas fa-chevron-down subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true"></i>
+                                    <x-lucide-chevron-down class="subgroup-chev" style="font-size:9px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true" />
                                     <span class="fw-600" style="font-size:12.5px;color:#334155;">
                                         {{ $typeName }}
                                     </span>
@@ -221,7 +221,7 @@
                                         onclick="event.stopPropagation(); openDeleteGroupModal({{ $category->id }}, '{{ addslashes($category->name) }}', '{{ addslashes($typeName) }}', {{ $materialsInType->count() }})" 
                                         style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;cursor:pointer;" 
                                         title="Hapus kelompok {{ $typeName }} jika salah memasukkan">
-                                        <i class="fas fa-trash-can" style="font-size:9.5px;"></i> Hapus Kelompok
+                                        <x-lucide-trash-2 style="font-size:9.5px;" /> Hapus Kelompok
                                     </button>
                                     @endif
                                     
@@ -276,14 +276,18 @@
                                         $bg = $isReceived ? '#f0fdf4' : '#fffbeb';
                                         $border = $isReceived ? '#bbf7d0' : '#fde68a';
                                         $color = $isReceived ? '#166534' : '#92400e';
-                                        $icon = $isReceived ? 'fa-check-circle' : 'fa-clock';
+                                        $icon = $isReceived ? 'circle-check' : 'clock';
                                         $iconColor = $isReceived ? '#16a34a' : '#d97706';
                                         $statusLabel = $isReceived ? 'Masuk' : 'Rencana';
                                         $stageDate = !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') : null;
                                     @endphp
                                     <span style="display:inline-flex;align-items:center;gap:3.5px;padding:2.5px 7px;border-radius:5px;font-size:10.5px;font-weight:500;background:{{ $bg }};border:1px solid {{ $border }};color:{{ $color }};"
                                           title="{{ $stg['stage'] ?? 'T1' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $unitAbbr }} ({{ $statusLabel }}){{ $stageDate ? ' · '.$stageDate : '' }}{{ !empty($stg['notes']) ? ' · '.$stg['notes'] : '' }}">
-                                        <i class="fas {{ $icon }}" style="font-size:9.5px;color:{{ $iconColor }};"></i>
+                                        @if($isReceived)
+                                            <x-lucide-circle-check style="width:10px;height:10px;color:{{ $iconColor }};" />
+                                        @else
+                                            <x-lucide-clock style="width:10px;height:10px;color:{{ $iconColor }};" />
+                                        @endif
                                         <strong style="font-weight:700;">{{ $stg['stage'] ?? 'T1' }}</strong>:
                                         <span>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</span>
                                         <span style="font-size:9.5px;opacity:0.9;">({{ $statusLabel }})</span>
@@ -306,23 +310,23 @@
                                             onmouseover="this.style.opacity='0.85';"
                                             onmouseout="this.style.opacity='1';">
                                         @if($allReceived)
-                                            <i class="fas fa-check-circle" style="font-size:9.5px;color:#16a34a;"></i>
+                                            <x-lucide-circle-check style="font-size:9.5px;color:#16a34a;" />
                                             <span><strong style="font-weight:700;">{{ $stageCount }}/{{ $stageCount }}</strong> Masuk</span>
                                             <span style="color:#86efac;">•</span>
                                             <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
                                         @elseif($recCount === 0)
-                                            <i class="fas fa-clock" style="font-size:9.5px;color:#d97706;"></i>
+                                            <x-lucide-clock style="font-size:9.5px;color:#d97706;" />
                                             <span><strong style="font-weight:700;">{{ $stageCount }}</strong> Tahap Rencana</span>
                                             <span style="color:#cbd5e1;">•</span>
                                             <span style="font-weight:600;color:#92400e;">{{ number_format($planQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
                                         @else
-                                            <i class="fas fa-layer-group" style="font-size:9.5px;color:#64748b;"></i>
-                                            <span style="color:#166534;font-weight:600;"><i class="fas fa-check-circle" style="font-size:9px;color:#16a34a;margin-right:2px;"></i>{{ $recCount }}/{{ $stageCount }} Masuk</span>
+                                            <x-lucide-layers style="font-size:9.5px;color:#64748b;" />
+                                            <span style="color:#166534;font-weight:600;"><x-lucide-circle-check style="font-size:9px;color:#16a34a;margin-right:2px;" />{{ $recCount }}/{{ $stageCount }} Masuk</span>
                                             <span style="color:#cbd5e1;">•</span>
                                             <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }}</span>
                                             <span style="font-size:9.5px;color:#92400e;font-weight:500;">(+{{ number_format($planQty, 0, ',', '.') }})</span>
                                         @endif
-                                        <i class="fas fa-search-plus" style="font-size:8.5px;color:#94a3b8;margin-left:2px;" title="Lihat rincian tahapan"></i>
+                                        <x-lucide-zoom-in style="font-size:8.5px;color:#94a3b8;margin-left:2px;" title="Lihat rincian tahapan" />
                                     </button>
                                 @endif
                             @else
@@ -380,11 +384,11 @@
                         <td style="text-align:center;padding:8px 12px;vertical-align:middle;white-space:nowrap;width:110px;">
                             <div class="action-btn-group">
                                 <a href="{{ route('materials.show', $m) }}" class="action-btn action-btn-view" title="Detail Material">
-                                    <i class="fas fa-eye"></i>
+                                    <x-lucide-eye />
                                 </a>
                                 @can('edit materials')
                                 <a href="{{ route('materials.edit', $m) }}" class="action-btn action-btn-edit" title="Edit Material">
-                                    <i class="fas fa-pen"></i>
+                                    <x-lucide-pencil />
                                 </a>
                                 @endcan
                                 @can('delete materials')
@@ -392,7 +396,7 @@
                                     onsubmit="return confirm('Hapus material {{ addslashes($m->name) }}?')" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="action-btn action-btn-delete" title="Hapus Material">
-                                        <i class="fas fa-trash-can"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                 </form>
                                 @endcan
@@ -406,7 +410,7 @@
                         <td colspan="10" style="padding:48px 20px;text-align:center;">
                             <div class="empty-custom-box" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:360px;margin:0 auto;">
                                 <div style="width:56px;height:56px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;color:#94a3b8;">
-                                    <i class="fas fa-boxes-stacked" style="font-size:22px !important;color:#94a3b8 !important;"></i>
+                                    <x-lucide-boxes style="font-size:22px !important;color:#94a3b8 !important;" />
                                 </div>
                                 <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:0 0 6px 0;">Belum Ada Material</h3>
                                 <p class="text-muted" style="font-size:13px;line-height:1.5;margin:0 0 16px 0;">
@@ -418,7 +422,7 @@
                                 </p>
                                 @can('create materials')
                                 <a href="{{ route('materials.create') }}" class="btn btn-primary" style="height:36px;padding:0 18px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
-                                    <i class="fas fa-plus" style="font-size:11px !important;line-height:1 !important;"></i>
+                                    <x-lucide-plus style="font-size:11px !important;line-height:1 !important;" />
                                     <span>Tambah Material</span>
                                 </a>
                                 @endcan
@@ -438,14 +442,14 @@
             <div style="background:#f8fafc;padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
                 <div>
                     <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;">
-                        <i class="fas fa-calendar-alt" style="color:#475569;"></i>
+                        <x-lucide-calendar style="color:#475569;" />
                         <span>Jadwal & Tahapan Kedatangan</span>
                     </div>
                     <div id="modalMaterialName" style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px;"></div>
                     <div id="modalMaterialSku" style="font-size:11px;color:#64748b;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;margin-top:1px;"></div>
                 </div>
                 <button type="button" onclick="closeStagesModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;font-size:14px;line-height:1;border-radius:4px;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
-                    <i class="fas fa-times"></i>
+                    <x-lucide-x />
                 </button>
             </div>
 
@@ -486,7 +490,7 @@
                 <div style="padding:16px 20px;border-bottom:1px solid #fee2e2;background:#fef2f2;display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <div style="width:36px;height:36px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">
-                            <i class="fas fa-trash-can"></i>
+                            <x-lucide-trash-2 />
                         </div>
                         <div>
                             <div class="fw-700" style="font-size:15px;color:#991b1b;">Hapus Kategori Material</div>
@@ -494,7 +498,7 @@
                         </div>
                     </div>
                     <button type="button" onclick="closeDeleteCategoryModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1;padding:4px;">
-                        <i class="fas fa-times"></i>
+                        <x-lucide-x />
                     </button>
                 </div>
 
@@ -518,7 +522,7 @@
                     {{-- Case 2: Kategori ada isinya --}}
                     <div id="delHasItemsSection" style="display:none;">
                         <div style="padding:10px 12px;border-radius:6px;background:#fffbeb;border:1px solid #fef3c7;color:#92400e;font-size:12px;line-height:1.45;margin-bottom:14px;">
-                            <i class="fas fa-triangle-exclamation me-1" style="color:#d97706;"></i>
+                            <x-lucide-triangle-alert class="me-1" style="color:#d97706;" />
                             Kategori ini masih memiliki <strong id="delCountHighlight">0</strong> material. Agar data stok dan riwayat tetap utuh, pilih kategori pengganti untuk memindahkan seluruh material:
                         </div>
 
@@ -541,7 +545,7 @@
                         Batal
                     </button>
                     <button type="submit" id="delSubmitBtn" class="btn btn-danger" style="height:36px;padding:0 16px;border-radius:6px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-trash-can"></i> Hapus Kategori
+                        <x-lucide-trash-2 /> Hapus Kategori
                     </button>
                 </div>
             </form>
@@ -560,7 +564,7 @@
                 <div style="padding:16px 20px;border-bottom:1px solid #fee2e2;background:#fef2f2;display:flex;align-items:center;justify-content:space-between;">
                     <div style="display:flex;align-items:center;gap:10px;">
                         <div style="width:36px;height:36px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">
-                            <i class="fas fa-trash-can"></i>
+                            <x-lucide-trash-2 />
                         </div>
                         <div>
                             <div class="fw-700" style="font-size:15px;color:#991b1b;">Hapus Kelompok Material</div>
@@ -568,7 +572,7 @@
                         </div>
                     </div>
                     <button type="button" onclick="closeDeleteGroupModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1;padding:4px;">
-                        <i class="fas fa-times"></i>
+                        <x-lucide-x />
                     </button>
                 </div>
 
@@ -617,7 +621,7 @@
                         Batal
                     </button>
                     <button type="submit" class="btn btn-danger" style="height:36px;padding:0 16px;border-radius:6px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-                        <i class="fas fa-trash-can"></i> Proses Hapus Kelompok
+                        <x-lucide-trash-2 /> Proses Hapus Kelompok
                     </button>
                 </div>
             </form>
@@ -658,12 +662,12 @@
                 emptySec.style.display = 'none';
                 hasItemsSec.style.display = 'block';
                 countHigh.textContent = itemCount;
-                submitBtn.innerHTML = '<i class="fas fa-right-left"></i> Pindahkan & Hapus';
+                submitBtn.innerHTML = '<x-lucide-arrow-left-right /> Pindahkan & Hapus';
                 if (targetSelect) targetSelect.required = true;
             } else {
                 emptySec.style.display = 'block';
                 hasItemsSec.style.display = 'none';
-                submitBtn.innerHTML = '<i class="fas fa-trash-can"></i> Ya, Hapus Kategori';
+                submitBtn.innerHTML = '<x-lucide-trash-2 /> Ya, Hapus Kategori';
                 if (targetSelect) targetSelect.required = false;
             }
 
@@ -737,7 +741,9 @@
                 var statusBg = isReceived ? '#f0fdf4' : '#fffbeb';
                 var statusBorder = isReceived ? '#bbf7d0' : '#fde68a';
                 var statusColor = isReceived ? '#166534' : '#92400e';
-                var icon = isReceived ? 'fa-check' : 'fa-clock';
+                var iconSvg = isReceived
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></svg>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
                 var iconColor = isReceived ? '#16a34a' : '#d97706';
                 var dateFormatted = stg.date ? formatDate(stg.date) : null;
 
@@ -746,7 +752,7 @@
                 row.innerHTML = `
                     <div style="display:flex;align-items:flex-start;gap:9px;">
                         <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${statusBg};color:${iconColor};border:1px solid ${statusBorder};font-size:9.5px;margin-top:1px;flex-shrink:0;">
-                            <i class="fas ${icon}"></i>
+                            ${iconSvg}
                         </span>
                         <div>
                             <div style="display:flex;align-items:center;gap:6px;">
@@ -755,8 +761,8 @@
                                     ${statusLabel}
                                 </span>
                             </div>
-                            ${dateFormatted ? `<div style="font-size:11px;color:#64748b;margin-top:2px;"><i class="far fa-calendar-alt" style="font-size:10px;margin-right:4px;"></i>${dateFormatted}</div>` : ''}
-                            ${stg.notes ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;"><i class="far fa-sticky-note" style="font-size:10px;margin-right:4px;"></i>${stg.notes}</div>` : ''}
+                            ${dateFormatted ? `<div style="font-size:11px;color:#64748b;margin-top:2px;"><x-lucide-calendar style="font-size:10px;margin-right:4px;" />${dateFormatted}</div>` : ''}
+                            ${stg.notes ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;"><x-lucide-sticky-note style="font-size:10px;margin-right:4px;" />${stg.notes}</div>` : ''}
                         </div>
                     </div>
                     <div style="text-align:right;white-space:nowrap;padding-top:1px;">

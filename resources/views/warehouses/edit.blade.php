@@ -4,8 +4,8 @@
     <div class="warehouse-edit-container">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
-            <a href="{{ route('warehouses.index') }}"><i class="fas fa-warehouse" style="font-size:12px;"></i> Data Gudang</a>
-            <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+            <a href="{{ route('warehouses.index') }}"><x-lucide-warehouse style="font-size:12px;" /> Data Gudang</a>
+            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
             <span style="color:#1e293b;font-weight:600;">Edit Gudang</span>
         </div>
 
@@ -19,35 +19,39 @@
             <div class="card-body" style="padding: 20px 24px;">
                 <div class="warehouse-banner-flex">
                     <div class="warehouse-icon-badge {{ $isCentral ? 'central' : 'project' }}">
-                        <i class="fas {{ $isCentral ? 'fa-building' : 'fa-helmet-safety' }}"></i>
+                        @if($isCentral)
+                            <x-lucide-building-2 />
+                        @else
+                            <x-lucide-hard-hat />
+                        @endif
                     </div>
                     <div class="warehouse-banner-info">
                         <div class="flex items-center gap-2 flex-wrap mb-1">
                             <h2 class="warehouse-banner-title">{{ $warehouse->name }}</h2>
                             @if($isCentral)
-                                <span class="badge badge-primary"><i class="fas fa-building"></i> Gudang Pusat</span>
+                                <span class="badge badge-primary"><x-lucide-building-2 /> Gudang Pusat</span>
                             @else
-                                <span class="badge badge-info"><i class="fas fa-person-digging"></i> Gudang Proyek</span>
+                                <span class="badge badge-info"><x-lucide-hard-hat /> Gudang Proyek</span>
                             @endif
                             @if($warehouse->is_active)
-                                <span class="badge badge-success"><i class="fas fa-circle-check" style="font-size:10px;"></i> Aktif</span>
+                                <span class="badge badge-success"><x-lucide-circle-check style="font-size:10px;" /> Aktif</span>
                             @else
-                                <span class="badge badge-danger"><i class="fas fa-circle-xmark" style="font-size:10px;"></i> Nonaktif</span>
+                                <span class="badge badge-danger"><x-lucide-circle-x style="font-size:10px;" /> Nonaktif</span>
                             @endif
                         </div>
                         <div class="warehouse-banner-meta">
-                            <span><i class="fas fa-barcode text-muted"></i> {{ $warehouse->code ?: '-' }}</span>
+                            <span><x-lucide-barcode class="text-muted" /> {{ $warehouse->code ?: '-' }}</span>
                             @if($warehouse->project)
                                 <span class="meta-dot">&bull;</span>
-                                <span><i class="fas fa-folder-open text-warning"></i> Proyek: <strong>{{ $warehouse->project->name }}</strong></span>
+                                <span><x-lucide-folder-open class="text-warning" /> Proyek: <strong>{{ $warehouse->project->name }}</strong></span>
                             @endif
                             <span class="meta-dot">&bull;</span>
-                            <span><i class="fas fa-box text-muted"></i> {{ $warehouse->inventories()->count() }} Item Material</span>
+                            <span><x-lucide-package class="text-muted" /> {{ $warehouse->inventories()->count() }} Item Material</span>
                         </div>
                     </div>
                     <div class="warehouse-banner-action">
                         <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Kembali
+                            <x-lucide-arrow-left /> Kembali
                         </a>
                     </div>
                 </div>
@@ -59,7 +63,7 @@
             <div class="card-header warehouse-form-header">
                 <div class="flex items-center gap-2">
                     <div class="icon-circle icon-circle-warning">
-                        <i class="fas fa-pen-to-square"></i>
+                        <x-lucide-square-pen />
                     </div>
                     <div>
                         <span class="card-title" style="font-size:16px;">Formulir Perubahan Data Gudang</span>
@@ -72,7 +76,7 @@
                 @if (isset($errors) && $errors->any())
                     <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
                         <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <i class="fas fa-triangle-exclamation"></i> Terdapat kesalahan pada pengisian form:
+                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
                         </strong>
                         <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
                             @foreach ($errors->all() as $error)
@@ -89,7 +93,7 @@
                     <!-- SECTION 1: IDENTITAS GUDANG -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-warehouse text-primary"></i>
+                            <x-lucide-warehouse class="text-primary" />
                             <h3 class="section-title">Identitas Gudang</h3>
                         </div>
 
@@ -99,7 +103,7 @@
                                     Kode Gudang <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-barcode input-icon"></i>
+                                    <x-lucide-barcode class="input-icon" />
                                     <input type="text" id="whCode" name="code" value="{{ old('code', $warehouse->code) }}" class="form-control with-icon" required placeholder="mis. W-CENTRAL">
                                 </div>
                             </div>
@@ -109,7 +113,7 @@
                                     Nama Gudang <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-building input-icon"></i>
+                                    <x-lucide-building-2 class="input-icon" />
                                     <input type="text" id="whName" name="name" value="{{ old('name', $warehouse->name) }}" class="form-control with-icon" required placeholder="mis. Gudang Sentral Jakarta">
                                 </div>
                             </div>
@@ -121,7 +125,7 @@
                     <!-- SECTION 2: TIPE & PENUGASAN PROYEK -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-layer-group text-warning"></i>
+                            <x-lucide-layers class="text-warning" />
                             <h3 class="section-title">Tipe Gudang & Relasi Proyek</h3>
                         </div>
 
@@ -131,7 +135,7 @@
                                     Tipe Gudang <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-tag input-icon"></i>
+                                    <x-lucide-tag class="input-icon" />
                                     <select name="type" class="form-control with-icon" id="warehouseType" required onchange="toggleProject()">
                                         <option value="central" {{ $currentType == 'central' ? 'selected' : '' }}>🏢 Gudang Pusat (Central)</option>
                                         <option value="project" {{ $currentType == 'project' ? 'selected' : '' }}>🏗️ Gudang Proyek (Project Site)</option>
@@ -144,7 +148,7 @@
                                     Terkait Proyek <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-building-columns input-icon"></i>
+                                    <x-lucide-landmark class="input-icon" />
                                     <input type="text" 
                                            id="projectNameInput" 
                                            name="project_name" 
@@ -168,7 +172,7 @@
                                     Status Operasional
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <i class="fas fa-toggle-on input-icon"></i>
+                                    <x-lucide-toggle-right class="input-icon" />
                                     <select name="is_active" id="whActive" class="form-control with-icon">
                                         <option value="1" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '1' ? 'selected' : '' }}>🟢 Aktif (Siap Operasional)</option>
                                         <option value="0" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '0' ? 'selected' : '' }}>🔴 Nonaktif (Operasional Ditutup)</option>
@@ -183,7 +187,7 @@
                     <!-- SECTION 3: LOKASI & ALAMAT -->
                     <div class="form-section mb-4">
                         <div class="section-title-wrap">
-                            <i class="fas fa-location-dot text-danger"></i>
+                            <x-lucide-map-pin class="text-danger" />
                             <h3 class="section-title">Lokasi & Alamat Gudang</h3>
                         </div>
 
@@ -192,7 +196,7 @@
                                 Alamat Lengkap
                             </label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
-                                <i class="fas fa-map-pin input-icon" style="top:12px;"></i>
+                                <x-lucide-map-pin class="input-icon" style="top:12px;" />
                                 <textarea id="whAddress" name="address" class="form-control with-icon" rows="3" placeholder="Alamat lengkap lokasi gudang atau instruksi akses pengiriman...">{{ old('address', $warehouse->address ?? $warehouse->location) }}</textarea>
                             </div>
                         </div>
@@ -202,10 +206,10 @@
                     <div class="form-actions-bar">
                         <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
                             <button type="submit" class="btn btn-primary btn-submit-form">
-                                <i class="fas fa-floppy-disk"></i> Simpan Perubahan
+                                <x-lucide-save /> Simpan Perubahan
                             </button>
                             <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <i class="fas fa-xmark"></i> Batal
+                                <x-lucide-x /> Batal
                             </a>
                         </div>
                     </div>

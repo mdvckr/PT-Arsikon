@@ -33,8 +33,8 @@
                     <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control">
                 </div>
                 <div class="flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Cari</button>
-                    <a href="{{ route('audit-logs.index') }}" class="btn btn-secondary"><i class="fas fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-primary"><x-lucide-search /> Cari</button>
+                    <a href="{{ route('audit-logs.index') }}" class="btn btn-secondary"><x-lucide-rotate-ccw /></a>
                 </div>
             </form>
         </div>
@@ -92,7 +92,7 @@
                                 <div>{{ $log->new_values['summary'] }}</div>
                                 @if(!empty($log->new_values['severity']) && in_array($log->new_values['severity'], ['warning', 'critical']))
                                     <span class="badge {{ $log->new_values['severity'] === 'critical' ? 'badge-danger' : 'badge-warning' }}" style="font-size:10px;padding:2px 6px;margin-top:3px;display:inline-block;">
-                                        <i class="fas fa-shield-halved"></i> {{ strtoupper($log->new_values['severity']) }}
+                                        <x-lucide-shield /> {{ strtoupper($log->new_values['severity']) }}
                                     </span>
                                 @endif
                             @else
@@ -105,7 +105,7 @@
                     <tr>
                         <td colspan="6">
                             <div class="empty-state">
-                                <i class="fas fa-shield-halved"></i>
+                                <x-lucide-shield />
                                 <h3>Belum Ada Log</h3>
                                 <p>Aktivitas sistem akan tercatat di sini.</p>
                             </div>

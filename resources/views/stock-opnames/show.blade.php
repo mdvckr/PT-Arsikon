@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('stock-opnames.index') }}">Stock Opname</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>{{ $stockOpname->opname_number }}</span>
     </div>
 
@@ -11,13 +11,13 @@
 
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-list-check text-primary"></i> <span class="card-title">Hasil Audit (Diskrepansi)</span>
+                <x-lucide-list-checks class="text-primary" /> <span class="card-title">Hasil Audit (Diskrepansi)</span>
                 @if($stockOpname->status === 'open')
                     @can('approve stock opname')
                     <form method="POST" action="{{ route('stock-opnames.approve', $stockOpname) }}" class="ms-auto">
                         @csrf
                         <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Konfirmasi audit ini? Stok sistem akan Disesuaikan secara otomatis mengikuti stok fisik.')">
-                            <i class="fas fa-check-circle"></i> Setujui & Sesuaikan Stok
+                            <x-lucide-circle-check /> Setujui & Sesuaikan Stok
                         </button>
                     </form>
                     @endcan
@@ -39,7 +39,7 @@
                         @php
                             $diff = $item->difference;
                             $diffColor = $diff > 0 ? 'text-success' : ($diff < 0 ? 'text-danger' : 'text-muted');
-                            $diffIcon = $diff > 0 ? 'fa-arrow-up' : ($diff < 0 ? 'fa-arrow-down' : 'fa-minus');
+                            $diffIcon = $diff > 0 ? 'arrow-up' : ($diff < 0 ? 'arrow-down' : 'minus');
                         @endphp
                         <tr>
                             <td>
@@ -50,7 +50,7 @@
                             <td class="fw-700">{{ number_format($item->physical_quantity, 2) }} {{ $item->inventory?->material?->unit?->abbreviation }}</td>
                             <td class="{{ $diffColor }} fw-600">
                                 @if($diff != 0)
-                                <i class="fas {{ $diffIcon }}"></i> {{ number_format(abs($diff), 2) }}
+                                <x-dynamic-component :component="'lucide-'.$diffIcon" class="w-3.5 h-3.5 inline-block" /> {{ number_format(abs($diff), 2) }}
                                 @else
                                 -
                                 @endif
@@ -67,7 +67,7 @@
 
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-file-alt text-primary"></i> <span class="card-title">Informasi Dokumen</span>
+                <x-lucide-file-text class="text-primary" /> <span class="card-title">Informasi Dokumen</span>
             </div>
             <div class="card-body">
                 @php

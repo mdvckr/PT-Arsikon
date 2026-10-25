@@ -3,7 +3,7 @@
 
     <div class="mb-4">
         <a href="{{ route('purchase-orders.index') }}" class="text-muted" style="font-size:13px;">
-            <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar PO
+            <x-lucide-arrow-left class="me-1" /> Kembali ke Daftar PO
         </a>
         <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin-top:4px;">Buat Purchase Order (PO)</h2>
     </div>
@@ -23,7 +23,7 @@
         @if(isset($selectedMR) && $selectedMR)
         <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:10px;">
-                <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
+                <x-lucide-boxes style="font-size:18px;color:#d97706;" />
                 <div>
                     <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #{{ $selectedMR->request_number }}</strong>
                     <span style="font-size:11.5px;color:#b45309;">
@@ -69,7 +69,7 @@
                     <div id="manual_supplier_container" class="mt-2" style="{{ old('supplier_name') && !old('supplier_id') ? 'display:block;' : 'display:none;' }}">
                         <div style="background:#fefce8;border:1px solid #fef08a;border-radius:6px;padding:8px 10px;font-size:12px;">
                             <label class="text-amber-800 font-semibold block mb-1">
-                                <i class="fas fa-store me-1"></i> Nama Toko / Supplier Bebas: <span class="text-danger">*</span>
+                                <x-lucide-store class="me-1" /> Nama Toko / Supplier Bebas: <span class="text-danger">*</span>
                             </label>
                             <input type="text" name="supplier_name" id="supplier_name_input" value="{{ old('supplier_name') }}" class="form-control form-control-sm" placeholder="Contoh: Toko Bangunan Berkah, Depot Pasir Jaya...">
                         </div>
@@ -121,7 +121,7 @@
 
                 <div>
                     <label class="form-label font-semibold">
-                        <i class="fas fa-location-dot text-danger me-1"></i> Alamat Pengiriman (Tujuan Proyek / Gudang) <span class="text-danger">*</span>
+                        <x-lucide-map-pin class="text-danger me-1" /> Alamat Pengiriman (Tujuan Proyek / Gudang) <span class="text-danger">*</span>
                     </label>
                     <select name="delivery_warehouse_id" id="delivery_warehouse_select" class="form-control" onchange="updateDeliveryAddressInfo(this)" required>
                         <option value="">-- Pilih Tujuan Pengiriman --</option>
@@ -142,7 +142,7 @@
                         @endforeach
                     </select>
                     <div id="delivery_address_preview" class="mt-2" style="font-size:11.5px;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;color:#0369a1;display:none;line-height:1.5;">
-                        <i class="fas fa-truck-ramp-box me-1"></i> <span id="delivery_address_text"></span>
+                        <x-lucide-package-check class="me-1" /> <span id="delivery_address_text"></span>
                     </div>
                 </div>
 
@@ -171,7 +171,7 @@
                     <p class="text-muted text-xs">Pilih dari Master Material terdaftar atau dari PO Lapangan (barang baru/manual proyek).</p>
                 </div>
                 <button type="button" class="btn btn-sm btn-secondary" onclick="addPoRow()">
-                    <i class="fas fa-plus me-1"></i> Tambah Item
+                    <x-lucide-plus class="me-1" /> Tambah Item
                 </button>
             </div>
 
@@ -242,7 +242,7 @@
                                     <input type="text" name="items[{{ $idx }}][notes]" value="{{ old('items.'.$idx.'.notes', $prItem->notes ?? '') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
                                 </td>
                             </tr>
                             @endforeach
@@ -270,7 +270,7 @@
                                         @endif
                                     </div>
                                     <div style="font-size:11px;color:#64748b;margin-top:2px;">
-                                        <i class="fas fa-link me-1"></i> Dari PO Lapangan <strong>#{{ $selectedMR->request_number }}</strong> (Gudang: {{ $selectedMR->toWarehouse?->name }})
+                                        <x-lucide-link class="me-1" /> Dari PO Lapangan <strong>#{{ $selectedMR->request_number }}</strong> (Gudang: {{ $selectedMR->toWarehouse?->name }})
                                     </div>
                                 </td>
                                 <td>
@@ -290,7 +290,7 @@
                                     <input type="text" name="items[{{ $idx }}][notes]" value="{{ old('items.'.$idx.'.notes', $mrItem->notes ?? '') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
                                 </td>
                             </tr>
                             @endforeach
@@ -349,7 +349,7 @@
                                     <input type="text" name="items[0][notes]" value="{{ old('items.0.notes') }}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
                                 </td>
                             </tr>
                         @endif
@@ -361,7 +361,7 @@
         <div class="flex justify-end gap-3 mb-6">
             <a href="{{ route('purchase-orders.index') }}" class="btn btn-light">Batal</a>
             <button type="submit" class="btn btn-primary" style="padding:10px 24px;">
-                <i class="fas fa-save me-1"></i> Simpan Purchase Order
+                <x-lucide-save class="me-1" /> Simpan Purchase Order
             </button>
         </div>
     </form>
@@ -435,7 +435,7 @@
                 bannerContainer.innerHTML = `
                     <div class="alert alert-warning mb-4" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:12px 16px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                            <i class="fas fa-boxes-packing" style="font-size:18px;color:#d97706;"></i>
+                            <x-lucide-boxes style="font-size:18px;color:#d97706;" />
                             <div>
                                 <strong style="font-size:13px;display:block;">Pengadaan Barang Langsung dari PO Lapangan #${mrData.request_number}</strong>
                                 <span style="font-size:11.5px;color:#b45309;">
@@ -483,7 +483,7 @@
                             ${item.is_custom ? '<span class="badge" style="background:#fef3c7;color:#92400e;font-size:9.5px;padding:1px 5px;border-radius:3px;font-weight:600;">Custom</span>' : ''}
                         </div>
                         <div style="font-size:11px;color:#64748b;margin-top:2px;">
-                            <i class="fas fa-link me-1"></i> Dari PO Lapangan <strong>#${mrNum}</strong> (${projName})
+                            <x-lucide-link class="me-1" /> Dari PO Lapangan <strong>#${mrNum}</strong> (${projName})
                             ${item.notes ? '<span class="text-muted ms-1">| Catatan MR: ' + item.notes + '</span>' : ''}
                         </div>
                     </td>
@@ -504,7 +504,7 @@
                         <input type="text" name="items[${idx}][notes]" value="${safeNotes}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -577,7 +577,7 @@
                 extraContainer.style.display = 'block';
                 extraContainer.innerHTML = `
                     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 10px;font-size:12px;color:#1e40af;">
-                        <i class="fas fa-info-circle me-1"></i>
+                        <x-lucide-info class="me-1" />
                         <strong>Item PO Lapangan (MR #${mrNum}):</strong> "${customName}" untuk <em>${warehouse}</em>.
                         <div class="mt-1 flex items-center gap-2">
                             <span>Koreksi Satuan jika perlu:</span>
@@ -590,7 +590,7 @@
                 extraContainer.innerHTML = `
                     <div style="background:#fefce8;border:1px solid #fef08a;border-radius:6px;padding:8px 10px;font-size:12px;">
                         <span class="text-amber-800 font-semibold block mb-1">
-                            <i class="fas fa-edit me-1"></i> Tentukan Nama Barang & Satuan Baru:
+                            <x-lucide-pencil class="me-1" /> Tentukan Nama Barang & Satuan Baru:
                         </span>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" class="form-control form-control-sm" placeholder="Nama barang yang dibeli..." required oninput="syncManualName(this)">
@@ -663,7 +663,7 @@
                     <input type="text" name="items[${poRowIdx}][notes]" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><i class="fas fa-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
                 </td>
             `;
             tbody.appendChild(newRow);

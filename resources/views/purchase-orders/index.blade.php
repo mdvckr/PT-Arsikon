@@ -12,14 +12,14 @@
         </div>
         <div class="flex gap-2">
             <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> Buat PO Baru
+                <x-lucide-plus class="me-1" /> Buat PO Baru
             </a>
         </div>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success mb-4" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
-            <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+            <x-lucide-circle-check class="me-2" />{{ session('success') }}
         </div>
     @endif
 
@@ -27,7 +27,7 @@
         <div class="flex flex-wrap justify-between items-center gap-3">
             <div>
                 <span class="font-bold text-slate-800" style="font-size:16px;">
-                    <i class="fas fa-layer-group text-primary me-2"></i>Daftar Purchase Order per Tanggal
+                    <x-lucide-layers class="text-primary me-2" />Daftar Purchase Order per Tanggal
                 </span>
                 <p class="text-muted text-xs mb-0">Pesanan dikelompokkan berdasarkan tanggal pembuatan/order agar rapi dan tidak menumpuk.</p>
             </div>
@@ -46,12 +46,12 @@
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. PO / Supplier / Barang..." class="form-control" style="width:230px;padding:6px 10px;font-size:13px;">
 
                 <button type="submit" class="btn btn-secondary btn-sm" title="Cari">
-                    <i class="fas fa-search"></i>
+                    <x-lucide-search />
                 </button>
 
                 @if(request('date') || request('status') || request('search'))
                     <a href="{{ route('purchase-orders.index') }}" class="btn btn-light btn-sm" title="Reset Filter">
-                        <i class="fas fa-times me-1"></i> Reset
+                        <x-lucide-x class="me-1" /> Reset
                     </a>
                 @endif
             </form>
@@ -62,10 +62,10 @@
     @if(isset($groupedPOs) && $groupedPOs->isNotEmpty())
         <div class="flex justify-end mb-3 gap-2">
             <button type="button" class="btn btn-sm btn-light" onclick="toggleAllGroups(true)">
-                <i class="fas fa-expand-alt me-1"></i> Buka Semua
+                <x-lucide-maximize-2 class="me-1" /> Buka Semua
             </button>
             <button type="button" class="btn btn-sm btn-light" onclick="toggleAllGroups(false)">
-                <i class="fas fa-compress-alt me-1"></i> Lipat Semua
+                <x-lucide-minimize-2 class="me-1" /> Lipat Semua
             </button>
         </div>
 
@@ -89,7 +89,7 @@
                         
                         <div class="flex items-center gap-3">
                             <span class="text-primary font-bold" style="font-size:15px;">
-                                <i class="fas fa-calendar-day me-2 text-primary"></i>{{ $dateTitle }}
+                                <x-lucide-calendar-days class="me-2 text-primary" />{{ $dateTitle }}
                             </span>
                             @if($isToday)
                                 <span class="badge badge-primary" style="font-size:11px;">Hari Ini</span>
@@ -121,7 +121,7 @@
                             @endif
 
                             <button type="button" class="btn btn-sm btn-icon text-muted" id="btn-{{ $groupId }}" style="width:28px;height:28px;">
-                                <i class="fas fa-chevron-up transition-transform duration-200" id="icon-{{ $groupId }}"></i>
+                                <x-lucide-chevron-up class="transition-transform duration-200" id="icon-{{ $groupId }}" />
                             </button>
                         </div>
                     </div>
@@ -160,7 +160,7 @@
                                         @if($linkedMr)
                                             <div style="font-size:10px;margin-top:2px;">
                                                 <a href="{{ route('material-requests.show', $linkedMr) }}" style="color:#1d4ed8;text-decoration:none;font-weight:600;" title="PO Lapangan">
-                                                    <i class="fas fa-clipboard-check me-1"></i>#{{ $linkedMr->request_number }}
+                                                    <x-lucide-clipboard-check class="me-1" />#{{ $linkedMr->request_number }}
                                                 </a>
                                             </div>
                                         @endif
@@ -179,7 +179,7 @@
                                         <div class="space-y-1">
                                             @foreach($po->items->take(3) as $poItem)
                                                 <div class="text-xs flex items-center gap-1">
-                                                    <i class="fas fa-check-circle text-primary" style="font-size:9px;"></i>
+                                                    <x-lucide-circle-check class="text-primary" style="font-size:9px;" />
                                                     <span>{{ $poItem->displayName() }}</span>
                                                     <span class="text-muted">({{ number_format($poItem->quantity, 2, ',', '.') }} {{ $poItem->displayUnit() }})</span>
                                                     @if($poItem->material_request_item_id)
@@ -224,22 +224,22 @@
                                     <td style="text-align:center;">
                                         <div class="flex justify-center gap-1">
                                             <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail PO">
-                                                <i class="fas fa-eye"></i>
+                                                <x-lucide-eye />
                                             </a>
                                             @if($canViewPrice)
                                                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'official']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#0f766e;" title="Cetak PO Resmi (Harga)">
-                                                    <i class="fas fa-print"></i>
+                                                    <x-lucide-printer />
                                                 </a>
                                                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'blind']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#475569;" title="Cetak PO Lapangan (Tanpa Harga / Rp 0)">
-                                                    <i class="fas fa-file-shield"></i>
+                                                    <x-lucide-shield-check />
                                                 </a>
                                             @else
                                                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'blind']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#475569;" title="Cetak PO Lapangan">
-                                                    <i class="fas fa-print"></i>
+                                                    <x-lucide-printer />
                                                 </a>
                                             @endif
                                             <a href="{{ route('purchase-receipts.create', ['po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary btn-icon" title="Tambah Nota Harian">
-                                                <i class="fas fa-receipt"></i>
+                                                <x-lucide-receipt />
                                             </a>
                                         </div>
                                     </td>
@@ -259,12 +259,12 @@
         @endif
     @else
         <div class="card text-center py-8" style="padding:40px 20px;">
-            <i class="fas fa-file-invoice text-muted mb-3" style="font-size:36px;color:#94a3b8;"></i>
+            <x-lucide-receipt class="text-muted mb-3" style="font-size:36px;color:#94a3b8;" />
             <h4 class="font-semibold text-slate-700 mb-1">Belum Ada Purchase Order</h4>
             <p class="text-muted text-sm mb-4">Tidak ada PO yang sesuai dengan filter atau belum ada PO yang dibuat.</p>
             <div>
                 <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> Buat PO Pertama
+                    <x-lucide-plus class="me-1" /> Buat PO Pertama
                 </a>
             </div>
         </div>
@@ -278,10 +278,10 @@
 
             if (el.style.display === 'none') {
                 el.style.display = 'block';
-                if (icon) icon.className = 'fas fa-chevron-up transition-transform duration-200';
+                if (icon) icon.style.transform = 'rotate(0deg)';
             } else {
                 el.style.display = 'none';
-                if (icon) icon.className = 'fas fa-chevron-down transition-transform duration-200';
+                if (icon) icon.style.transform = 'rotate(180deg)';
             }
         }
 
@@ -290,9 +290,7 @@
                 content.style.display = show ? 'block' : 'none';
             });
             document.querySelectorAll('[id^="icon-group-"]').forEach(function(icon) {
-                icon.className = show
-                    ? 'fas fa-chevron-up transition-transform duration-200'
-                    : 'fas fa-chevron-down transition-transform duration-200';
+                icon.style.transform = show ? 'rotate(0deg)' : 'rotate(180deg)';
             });
         }
     </script>

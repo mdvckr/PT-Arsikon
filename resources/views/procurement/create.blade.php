@@ -3,7 +3,7 @@
 
     <div class="breadcrumb">
         <a href="{{ route('procurement.index') }}">Permintaan Pengadaan</a>
-        <span class="breadcrumb-sep"><i class="fas fa-chevron-right" style="font-size:10px;"></i></span>
+        <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>Buat Baru</span>
     </div>
 
@@ -59,7 +59,7 @@
                 <div class="po-table-header">
                     <div class="po-table-title">Daftar Item yang Dibutuhkan</div>
                     <button type="button" class="po-add-btn" onclick="addRow()">
-                        <i class="fas fa-plus"></i> Tambah Baris
+                        <x-lucide-plus /> Tambah Baris
                     </button>
                 </div>
 
@@ -97,7 +97,7 @@
                                 </td>
                                 <td class="col-action">
                                     <button type="button" class="po-del-btn" onclick="removeRow(0)" disabled title="Hapus">
-                                        <i class="fas fa-trash-alt"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                 </td>
                             </tr>
@@ -105,7 +105,7 @@
                         <tfoot>
                             <tr class="po-total-row">
                                 <td colspan="3" style="text-align:right;font-weight:600;color:#1e40af;">
-                                    <i class="fas fa-calculator"></i> Est. Total:
+                                    <x-lucide-calculator /> Est. Total:
                                 </td>
                                 <td colspan="3">
                                     <span id="grandTotal" class="po-grand-total">Rp 0</span>
@@ -132,10 +132,10 @@
                 </div>
                 <div class="po-action-buttons">
                     <a href="{{ route('procurement.index') }}" class="po-btn-cancel">
-                        <i class="fas fa-times"></i> Batal
+                        <x-lucide-x /> Batal
                     </a>
                     <button type="submit" class="po-btn-submit">
-                        <i class="fas fa-paper-plane"></i> Ajukan PR
+                        <x-lucide-send /> Ajukan PR
                     </button>
                 </div>
             </div>
@@ -188,7 +188,7 @@
                 <td class="col-qty"><input type="number" name="items[${idx}][quantity]" class="po-input" min="0.01" step="0.01" value="1" required oninput="updateTotal()"></td>
                 <td class="col-price"><input type="number" name="items[${idx}][estimated_price]" class="po-input" min="0" step="100" value="0" placeholder="0" oninput="updateTotal()"></td>
                 <td class="col-notes"><input type="text" name="items[${idx}][notes]" class="po-input" placeholder="Opsional"></td>
-                <td class="col-action"><button type="button" class="po-del-btn" onclick="removeRow(${idx})" title="Hapus"><i class="fas fa-trash-alt"></i></button></td>`;
+                <td class="col-action"><button type="button" class="po-del-btn" onclick="removeRow(${idx})" title="Hapus"><x-lucide-trash-2 /></button></td>`;
             document.getElementById('itemsBody').appendChild(tr);
             requestAnimationFrame(() => tr.classList.remove('po-row-new'));
             updateRowNumbers();

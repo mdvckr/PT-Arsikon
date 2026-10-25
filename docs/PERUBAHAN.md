@@ -1200,3 +1200,19 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
      - `npm run build`: Berhasil mengompilasi bundel Vite (`public/build/assets/app-*.css` & `app-*.js`) bebas error.
   3. **Pembersihan Cache Laravel**:
      - `php artisan view:clear`, `php artisan route:clear`, `php artisan config:clear`, dan `php artisan cache:clear`: Seluruh cache sukses dikosongkan.
+### T18. Modernisasi Total Ikon Seluruh Antarmuka (Blade Lucide Outline Icons)
+- **Tujuan**:
+  - Mengganti 100% ikon lawas Font Awesome (solid `fa-*`) di seluruh antarmuka aplikasi menjadi ikon outline modern (Lucide SVG) via paket `mallardduck/blade-lucide-icons`.
+  - Menjaga keselarasan desain antara sidebar, topbar, kartu KPI, dashboard, tabel master data, formulir transaksi, alert, toast notifikasi, dan modal interaktif.
+
+- **Acceptance Criteria (Definition of Done — DoD)**:
+  1. **DoD 1 (Eliminasi 100% Ikon Lama)**: Seluruh tag `<i class="fas fa-*">` dan `<i class="fa-solid fa-*">` di seluruh 76 berkas tampilan `resources/views/` digantikan sepenuhnya dengan komponen Blade Lucide Icons (`<x-lucide-* />` atau `<x-dynamic-component :component="'lucide-'.$icon" />`).
+  2. **DoD 2 (Gaya Visual & Spesifikasi SVG Proporsional)**: Seluruh SVG Lucide mewarisi stroke `2`, `stroke-linecap: round`, `stroke-linejoin: round`, serta ukuran proporsional yang rapi pada tombol (`.btn svg`), lencana (`.badge svg`), kartu metrik (`.stat-icon svg`), kartu dashboard, dan input formulir tanpa distorsi tampilan.
+  3. **DoD 3 (Interaktivitas JavaScript Terintegrasi)**: Seluruh skrip DOM interaktif (toggle intip kata sandi pada login & profil, accordion tanggal PO, dan toggle kartu metrik harian pada daily log) diperbarui agar berinteraksi secara mulus dengan elemen SVG Lucide.
+  4. **DoD 4 (Integritas Pengujian Otomatis)**: Seluruh test suite (`SidebarIconsTest`, `SidebarNavigationTest`, `GlobalUIIconsTest`) lulus 100% dengan total 19 test passed (212 assertions) bebas regresi.
+
+- **Ringkasan Perubahan**:
+  - Pemasangan dan konfigurasi paket `mallardduck/blade-lucide-icons` (2.160+ ikon outline SVG).
+  - Modernisasi global di `resources/views/layouts/app.blade.php`: token styling universal SVG, mobile toggle menu, lonceng notifikasi, lipatan chevron accordion, dan flash alert.
+  - Modernisasi seluruh berkas view di `resources/views/` (Dashboard, Material, Alat, Inventori, PO, GR, MR, Pemakaian, Distribusi, Retur, Daily Log, Stock Opname, Role, User, Gudang, Profil).
+  - Penambahan feature test komprehensif `tests/Feature/GlobalUIIconsTest.php`.

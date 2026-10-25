@@ -90,20 +90,20 @@
         </div>
         @can('create tool assignments')
         <a href="{{ route('tool-assignments.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Pinjamkan Alat
+            <x-lucide-plus class="me-1" /> Pinjamkan Alat
         </a>
         @endcan
     </div>
 
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -113,7 +113,7 @@
                 <div class="filter-col" style="flex: 2; min-width: 220px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. pinjam, peminjam, nama alat..." style="padding-left:28px !important;">
                     </div>
                 </div>
@@ -131,11 +131,11 @@
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     @if(request()->anyFilled(['search', 'status']))
                     <a href="{{ route('tool-assignments.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <i class="fas fa-rotate-left" style="font-size:11px;"></i>
+                        <x-lucide-rotate-ccw style="font-size:11px;" />
                     </a>
                     @endif
                 </div>
@@ -170,7 +170,7 @@
                         <td style="padding:8px 10px;">
                             <div class="fw-600" style="color:#0f172a;font-size:12px;">{{ $loan->borrower_name }}</div>
                             @if($loan->borrower_phone)
-                            <div class="text-muted" style="font-size:10.5px;"><i class="fas fa-phone" style="font-size:8.5px;"></i> {{ $loan->borrower_phone }}</div>
+                            <div class="text-muted" style="font-size:10.5px;"><x-lucide-phone style="font-size:8.5px;" /> {{ $loan->borrower_phone }}</div>
                             @endif
                         </td>
                         <td style="padding:8px 10px;">
@@ -185,7 +185,7 @@
                                 $totalUnits = $loan->items->sum('quantity');
                             @endphp
                             <div class="fw-600" style="font-size:11.5px;color:#1e293b;">
-                                <i class="fas fa-toolbox text-muted me-1"></i> {{ $itemCount }} Jenis ({{ $totalUnits }} Unit)
+                                <x-lucide-wrench class="text-muted me-1" /> {{ $itemCount }} Jenis ({{ $totalUnits }} Unit)
                             </div>
                             <div class="text-muted" style="font-size:10.5px;line-height:1.3;">
                                 @foreach($loan->items->take(2) as $it)
@@ -205,7 +205,7 @@
                                 @endphp
                                 <span class="{{ $isOverdue ? 'text-danger fw-700' : '' }}">
                                     {{ $expDate->format('d/m/Y') }}
-                                    @if($isOverdue) <i class="fas fa-exclamation-triangle" style="font-size:10px;"></i> @endif
+                                    @if($isOverdue) <x-lucide-triangle-alert style="font-size:10px;" /> @endif
                                 </span>
                             @else
                                 <span class="text-muted">-</span>
@@ -238,14 +238,16 @@
                         </td>
                         <td class="nowrap text-center">
                             <a href="{{ route('tool-assignments.show', $loan->id) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
-                                <i class="fas fa-eye" style="font-size:11px;"></i>
+                                <x-lucide-eye style="font-size:11px;" />
                             </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" style="text-align:center;padding:32px 16px;color:#94a3b8;">
-                            <i class="fas fa-inbox" style="font-size:26px;color:#cbd5e1;margin-bottom:6px;display:block;"></i>
+                        <td colspan="8" style="text-align:center;padding:36px 16px;color:#94a3b8;">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:10px;color:#94a3b8;">
+                                <x-lucide-inbox style="width:24px;height:24px;" />
+                            </div>
                             <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada catatan peminjaman alat</div>
                         </td>
                     </tr>

@@ -8,13 +8,13 @@
         </div>
         @can("create procurement")
         <a href="{{ route('material-requests.create') }}" class="btn btn-primary" style="font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;">
-            <i class="fas fa-plus me-1"></i> Buat PO Lapangan Baru
+            <x-lucide-plus class="me-1" /> Buat PO Lapangan Baru
         </a>
         @endcan
     </div>
 
     <div class="alert alert-info mb-3" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:10px 14px;border-radius:8px;font-size:12.5px;display:flex;align-items:center;gap:10px;">
-        <i class="fas fa-circle-info" style="font-size:16px;color:#2563eb;"></i>
+        <x-lucide-info style="font-size:16px;color:#2563eb;" />
         <div>
             Halaman ini merupakan <strong>arsip data</strong> Permintaan Pengadaan (PR). Untuk seluruh kebutuhan material dan pengadaan proyek terkini, alur telah dipusatkan melalui formulir <strong><a href="{{ route('material-requests.create') }}" style="color:#1d4ed8;text-decoration:underline;font-weight:600;">PO Lapangan</a></strong>.
         </div>
@@ -33,7 +33,7 @@
                     <option value="po_created" {{ request("status")==="po_created"?"selected":"" }}>PO Dibuat</option>
                 </select>
                 <input type="text" name="search" value="{{ request("search") }}" placeholder="Cari nomor PR..." class="form-control" style="width:200px;padding:6px 10px;font-size:13px;">
-                <button class="btn btn-secondary btn-sm"><i class="fas fa-search"></i></button>
+                <button class="btn btn-secondary btn-sm"><x-lucide-search /></button>
             </form>
         </div>
         <div class="table-wrap">
@@ -53,12 +53,12 @@
                         <td class="text-muted" style="font-size:12px;">{{ $pr->created_at->format("d M Y") }}</td>
                         <td>
                             <a href="{{ route("procurement.show", $pr) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail">
-                                <i class="fas fa-eye"></i>
+                                <x-lucide-eye />
                             </a>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8"><div class="empty-state"><i class="fas fa-clipboard-list"></i><h3>Belum ada permintaan pengadaan</h3></div></td></tr>
+                    <tr><td colspan="8"><div class="empty-state"><x-lucide-clipboard-list /><h3>Belum ada permintaan pengadaan</h3></div></td></tr>
                     @endforelse
                 </tbody>
             </table>

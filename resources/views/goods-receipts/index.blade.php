@@ -87,7 +87,7 @@
     <div class="flex items-center justify-between mb-3 page-header-flex">
         <div>
             <h2 class="fw-700" style="font-size:16px;color:#0f172a;margin:0;display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-truck-ramp-box text-primary" style="font-size:15px;"></i>
+                <x-lucide-package-check class="text-primary" style="font-size:15px;" />
                 Penerimaan Barang Supplier
             </h2>
             <p class="text-muted" style="font-size:12px;margin-top:2px;margin-bottom:0;">
@@ -96,7 +96,7 @@
         </div>
         @can('create goods receipts')
         <a href="{{ route('goods-receipts.create') }}" class="btn btn-primary btn-sm" style="border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            <i class="fas fa-plus me-1"></i> Catat Penerimaan
+            <x-lucide-plus class="me-1" /> Catat Penerimaan
         </a>
         @endcan
     </div>
@@ -104,13 +104,13 @@
     {{-- Alerts --}}
     @if (session('success'))
     <div class="alert alert-success mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-check"></i> {{ session('success') }}
+        <x-lucide-circle-check /> {{ session('success') }}
     </div>
     @endif
 
     @if (session('error'))
     <div class="alert alert-danger mb-3" style="border-radius:6px;padding:8px 12px;font-size:12px;">
-        <i class="fas fa-circle-exclamation"></i> {{ session('error') }}
+        <x-lucide-circle-alert /> {{ session('error') }}
     </div>
     @endif
 
@@ -121,7 +121,7 @@
                 <div class="filter-col" style="flex: 2; min-width: 220px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Pencarian</label>
                     <div style="position:relative;">
-                        <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;"></i>
+                        <x-lucide-search style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}"
                             class="form-control" placeholder="No. tanda terima, invoice, atau supplier..." style="padding-left:28px !important;">
                     </div>
@@ -152,10 +152,10 @@
 
                 <div style="display:flex;gap:6px;">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter me-1"></i> Filter
+                        <x-lucide-filter class="me-1" /> Filter
                     </button>
                     <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary" title="Reset Filter" style="padding:0 12px !important;">
-                        <i class="fas fa-rotate-left"></i>
+                        <x-lucide-rotate-ccw />
                     </a>
                 </div>
             </form>
@@ -183,13 +183,13 @@
                     <tr>
                         <td class="nowrap">
                             <a href="{{ route('goods-receipts.show', $r) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <i class="fas fa-receipt text-primary" style="font-size:11px;"></i>
+                                <x-lucide-receipt class="text-primary" style="font-size:11px;" />
                                 {{ $r->receipt_number }}
                             </a>
                         </td>
                         <td>
                             <div class="fw-600" style="font-size:12px;color:#0f172a;display:flex;align-items:center;gap:5px;">
-                                <i class="fas fa-building text-muted" style="font-size:10px;"></i>
+                                <x-lucide-building-2 class="text-muted" style="font-size:10px;" />
                                 {{ $r->supplier?->name ?? '—' }}
                             </div>
                         </td>
@@ -204,7 +204,7 @@
                             </div>
                         </td>
                         <td class="nowrap text-muted" style="font-size:12px;">
-                            <i class="fas fa-calendar text-muted me-1" style="font-size:10.5px;"></i>
+                            <x-lucide-calendar class="text-muted me-1" style="font-size:10.5px;" />
                             {{ $r->receipt_date ? \Carbon\Carbon::parse($r->receipt_date)->format('d/m/Y') : '—' }}
                         </td>
                         <td>
@@ -219,7 +219,7 @@
                         <td>
                             @if($r->purchaseOrder)
                                 <a href="{{ route('purchase-orders.show', $r->purchaseOrder) }}" class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:10.5px;padding:3px 7px;border-radius:4px;text-decoration:none;font-weight:600;">
-                                    <i class="fas fa-file-invoice me-1"></i> #{{ $r->purchaseOrder->po_number }}
+                                    <x-lucide-receipt class="me-1" /> #{{ $r->purchaseOrder->po_number }}
                                 </a>
                             @else
                                 <span class="text-muted" style="font-size:11.5px;">— Non-PO —</span>
@@ -228,7 +228,7 @@
                             @if($r->materialRequest)
                                 <div style="margin-top:4px;">
                                     <a href="{{ route('material-requests.show', $r->materialRequest) }}" class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:4px;text-decoration:none;font-weight:600;" title="PO Lapangan">
-                                        <i class="fas fa-clipboard-check me-1"></i> #{{ $r->materialRequest->request_number }}
+                                        <x-lucide-clipboard-check class="me-1" /> #{{ $r->materialRequest->request_number }}
                                     </a>
                                 </div>
                             @endif
@@ -236,11 +236,11 @@
                         <td style="text-align:center;" class="nowrap">
                             @if($r->status === 'confirmed')
                                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                                    <i class="fas fa-circle-check me-1"></i> Dikonfirmasi
+                                    <x-lucide-circle-check class="me-1" /> Dikonfirmasi
                                 </span>
                             @else
                                 <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;">
-                                    <i class="fas fa-clock me-1"></i> Draft
+                                    <x-lucide-clock class="me-1" /> Draft
                                 </span>
                             @endif
                         </td>
@@ -248,7 +248,7 @@
                             <a href="{{ route('goods-receipts.show', $r) }}"
                                 class="btn btn-sm btn-light border" title="Lihat Rincian Penerimaan"
                                 style="width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:11px;color:#475569;">
-                                <i class="fas fa-eye"></i>
+                                <x-lucide-eye />
                             </a>
                         </td>
                     </tr>
@@ -256,7 +256,7 @@
                     <tr>
                         <td colspan="8">
                             <div class="empty-state" style="padding:36px 16px;text-align:center;">
-                                <i class="fas fa-truck-ramp-box" style="font-size:32px;color:#cbd5e1;margin-bottom:8px;"></i>
+                                <x-lucide-package-check style="font-size:32px;color:#cbd5e1;margin-bottom:8px;" />
                                 <h3 style="font-size:14px;color:#475569;margin-bottom:3px;">Belum Ada Data Penerimaan Barang</h3>
                                 <p style="font-size:12px;color:#94a3b8;margin:0;">Catat penerimaan barang baru dari supplier dengan klik tombol di atas.</p>
                             </div>

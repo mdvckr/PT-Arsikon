@@ -84,24 +84,24 @@
             <div style="display:inline-flex;background:#f1f5f9;border-radius:6px;border:1px solid #cbd5e1;padding:2px;align-items:center;margin-right:4px;">
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'official']) }}" 
                    style="text-decoration:none;padding:5px 12px;font-size:11.5px;font-weight:700;border-radius:4px;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;{{ !$hidePrice ? 'background:#0f766e;color:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.1);' : 'color:#475569;' }}">
-                    <i class="fas fa-file-invoice-dollar"></i> Cetak Resmi (Dengan Harga)
+                    <x-lucide-file-spreadsheet /> Cetak Resmi (Dengan Harga)
                 </a>
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'blind']) }}" 
                    style="text-decoration:none;padding:5px 12px;font-size:11.5px;font-weight:700;border-radius:4px;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;{{ $hidePrice ? 'background:#334155;color:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.1);' : 'color:#475569;' }}">
-                    <i class="fas fa-file-shield"></i> Cetak Lapangan (Tanpa Harga / Rp 0)
+                    <x-lucide-shield-check /> Cetak Lapangan (Tanpa Harga / Rp 0)
                 </a>
             </div>
         @else
             <span style="background:#fee2e2;color:#991b1b;padding:5px 10px;border-radius:5px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;border:1px solid #fca5a5;">
-                <i class="fas fa-shield-halved"></i> Mode Lapangan (Harga Dirahasiakan)
+                <x-lucide-shield /> Mode Lapangan (Harga Dirahasiakan)
             </span>
         @endif
 
         <button class="btn-print" onclick="window.print()">
-            <i class="fas fa-print"></i> Cetak Dokumen
+            <x-lucide-printer /> Cetak Dokumen
         </button>
         <button class="btn-close" onclick="window.history.back()">
-            <i class="fas fa-xmark"></i> Tutup
+            <x-lucide-x /> Tutup
         </button>
     </div>
 
@@ -138,7 +138,7 @@
                 <div class="doc-title">PURCHASE<br>ORDER</div>
                 @if($hidePrice)
                     <div class="doc-subtitle-blind">
-                        <i class="fas fa-shield-alt"></i> PO LAPANGAN / GUDANG<br>(TANPA HARGA / Rp 0)
+                        <x-lucide-shield /> PO LAPANGAN / GUDANG<br>(TANPA HARGA / Rp 0)
                     </div>
                 @endif
             </div>
@@ -253,7 +253,7 @@
             @endif
             @if($hidePrice)
                 <div style="margin-top:4px;padding:3px 6px;background:#f8fafc;border:1px dashed #94a3b8;font-size:10px;color:#334155;">
-                    <i class="fas fa-shield-alt text-slate-500"></i> <strong>Catatan Penerimaan:</strong> Dokumen PO ini dicetak khusus untuk bagian penerimaan barang di proyek/gudang. Seluruh nominal harga beli dirahasiakan (Rp 0).
+                    <x-lucide-shield class="text-slate-500" /> <strong>Catatan Penerimaan:</strong> Dokumen PO ini dicetak khusus untuk bagian penerimaan barang di proyek/gudang. Seluruh nominal harga beli dirahasiakan (Rp 0).
                 </div>
             @endif
         </div>

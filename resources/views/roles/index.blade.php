@@ -10,7 +10,7 @@
         </div>
         <div>
             <button type="button" class="btn btn-primary" onclick="openCreateRoleModal()">
-                <i class="fas fa-plus"></i> Tambah Jabatan Kustom
+                <x-lucide-plus /> Tambah Jabatan Kustom
             </button>
         </div>
     </div>
@@ -18,14 +18,14 @@
     {{-- Alert Messages --}}
     @if(session('success'))
         <div class="alert alert-success mb-3" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;">
-            <i class="fas fa-circle-check" style="font-size:16px;"></i>
+            <x-lucide-circle-check style="font-size:16px;" />
             <span style="font-size:13px;font-weight:600;">{{ session('success') }}</span>
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-danger mb-3" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;">
-            <i class="fas fa-triangle-exclamation" style="font-size:16px;"></i>
+            <x-lucide-triangle-alert style="font-size:16px;" />
             <span style="font-size:13px;font-weight:600;">{{ session('error') }}</span>
         </div>
     @endif
@@ -45,7 +45,7 @@
     <div class="card mb-4" style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);border:1px solid #e2e8f0;border-left:4px solid #0284c7;">
         <div class="card-body" style="padding:16px 20px;display:flex;align-items:flex-start;gap:14px;">
             <div style="width:40px;height:40px;border-radius:10px;background:#0284c7;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <i class="fas fa-shield-halved" style="font-size:18px;"></i>
+                <x-lucide-shield style="font-size:18px;" />
             </div>
             <div style="font-size:12.5px;color:#1e293b;line-height:1.5;">
                 <div style="font-weight:700;font-size:13.5px;color:#0f172a;margin-bottom:2px;">Arsitektur Hak Akses Terpadu (Single Source of Truth)</div>
@@ -59,11 +59,11 @@
         <div class="card-body" style="padding:14px 18px;">
             <form method="GET" action="{{ route('roles.index') }}" style="display:flex;gap:12px;align-items:center;">
                 <div style="position:relative;flex:1;">
-                    <i class="fas fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                    <x-lucide-search style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;" />
                     <input type="text" name="search" class="form-control" placeholder="Cari nama jabatan..." value="{{ request('search') }}" style="padding-left:36px;font-size:13px;">
                 </div>
                 <button type="submit" class="btn btn-secondary" style="font-size:13px;">
-                    <i class="fas fa-filter"></i> Filter
+                    <x-lucide-filter /> Filter
                 </button>
                 @if(request('search'))
                     <a href="{{ route('roles.index') }}" class="btn btn-light" style="font-size:13px;">Reset</a>
@@ -95,7 +95,7 @@
                             'category'    => 'Jabatan Kustom',
                             'badge_color' => '#0f766e',
                             'badge_bg'    => '#ccfbf1',
-                            'icon'        => 'fa-user-tag',
+                            'icon'        => 'tag',
                             'description' => 'Jabatan operasional tambahan yang didefinisikan secara khusus.',
                         ];
                     @endphp
@@ -109,8 +109,8 @@
                                     </span>
                                 </div>
                                 <div>
-                                    <span class="badge" style="background:{{ $meta['badge_bg'] }};color:{{ $meta['badge_color'] }};border:1px solid {{ $meta['badge_color'] }}33;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:6px;">
-                                        <i class="fas {{ $meta['icon'] }}" style="margin-right:4px;"></i> {{ $meta['category'] }}
+                                    <span class="badge" style="background:{{ $meta['badge_bg'] }};color:{{ $meta['badge_color'] }};border:1px solid {{ $meta['badge_color'] }}33;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
+                                        <x-dynamic-component :component="'lucide-'.$meta['icon']" style="width:11px;height:11px;" /> {{ $meta['category'] }}
                                     </span>
                                 </div>
                             </div>
@@ -120,22 +120,22 @@
                         </td>
                         <td style="text-align:center;vertical-align:middle;">
                             <a href="{{ route('users.index', ['role' => $role->name]) }}" class="badge badge-secondary" style="font-size:12px;font-weight:600;text-decoration:none;padding:5px 10px;" title="Lihat pengguna dengan jabatan {{ $role->name }}">
-                                <i class="fas fa-users" style="font-size:10.5px;margin-right:4px;"></i> {{ $role->users_count }} Pengguna
+                                <x-lucide-users style="font-size:10.5px;margin-right:4px;" /> {{ $role->users_count }} Pengguna
                             </a>
                         </td>
                         <td style="text-align:center;vertical-align:middle;">
                             <button type="button" class="btn btn-sm btn-light" onclick="viewPermissionsModal('{{ $role->id }}')" style="font-size:11.5px;font-weight:600;border:1px solid #cbd5e1;padding:4px 10px;border-radius:6px;cursor:pointer;">
-                                <i class="fas fa-key" style="color:#0284c7;margin-right:4px;"></i> {{ $role->permissions_count }} Izin Akses
+                                <x-lucide-key-round style="color:#0284c7;margin-right:4px;" /> {{ $role->permissions_count }} Izin Akses
                             </button>
                         </td>
                         <td style="text-align:center;vertical-align:middle;">
                             @if($isProtected)
                                 <span class="badge badge-success" style="font-size:11px;padding:4px 9px;">
-                                    <i class="fas fa-lock" style="font-size:9.5px;margin-right:3px;"></i> Sistem Inti
+                                    <x-lucide-lock style="font-size:9.5px;margin-right:3px;" /> Sistem Inti
                                 </span>
                             @else
                                 <span class="badge badge-info" style="font-size:11px;padding:4px 9px;">
-                                    <i class="fas fa-puzzle-piece" style="font-size:9.5px;margin-right:3px;"></i> Kustom
+                                    <x-lucide-puzzle style="font-size:9.5px;margin-right:3px;" /> Kustom
                                 </span>
                             @endif
                         </td>
@@ -143,18 +143,18 @@
                             <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
                                 @if(!$isProtected)
                                     <button type="button" class="btn btn-sm btn-secondary btn-icon" onclick="openEditRoleModal('{{ $role->id }}', '{{ addslashes($role->name) }}')" title="Edit Hak Akses">
-                                        <i class="fas fa-pen-to-square"></i>
+                                        <x-lucide-square-pen />
                                     </button>
                                     <form method="POST" action="{{ route('roles.destroy', $role) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jabatan kustom {{ addslashes($role->name) }}?');" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus Jabatan">
-                                            <i class="fas fa-trash"></i>
+                                            <x-lucide-trash-2 />
                                         </button>
                                     </form>
                                 @else
                                     <span class="text-muted" style="font-size:11px;font-style:italic;background:#f8fafc;padding:3px 8px;border-radius:4px;border:1px solid #e2e8f0;" title="Jabatan sistem inti dilindungi dari penghapusan">
-                                        <i class="fas fa-shield-halved" style="color:#94a3b8;margin-right:2px;"></i> Terkunci
+                                        <x-lucide-shield style="color:#94a3b8;margin-right:2px;" /> Terkunci
                                     </span>
                                 @endif
                             </div>
@@ -175,7 +175,7 @@
         <div style="background:#fff;border-radius:14px;width:100%;max-width:540px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;max-height:90vh;display:flex;flex-direction:column;">
             <div style="padding:16px 22px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
                 <h3 style="font-size:16px;font-weight:700;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                    <i class="fas fa-id-badge text-primary"></i> Tambah Jabatan Kustom Baru
+                    <x-lucide-id-card class="text-primary" /> Tambah Jabatan Kustom Baru
                 </h3>
                 <button type="button" onclick="closeCreateRoleModal()" style="border:none;background:none;font-size:20px;color:#94a3b8;cursor:pointer;">&times;</button>
             </div>
@@ -202,7 +202,7 @@
 
                 <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #e2e8f0;padding:14px 22px;background:#f8fafc;">
                     <button type="button" onclick="closeCreateRoleModal()" class="btn btn-secondary" style="font-size:13px;">Batal</button>
-                    <button type="submit" class="btn btn-primary" style="font-size:13px;"><i class="fas fa-save"></i> Simpan Jabatan</button>
+                    <button type="submit" class="btn btn-primary" style="font-size:13px;"><x-lucide-save /> Simpan Jabatan</button>
                 </div>
             </form>
         </div>
@@ -229,15 +229,19 @@
         </div>
     </div>
 
-    {{-- Data script JSON untuk modal interaktif --}}
-    <script>
-        const ROLES_DATA = @json($roles->mapWithKeys(fn($r) => [
+    @php
+        $rolesDataJson = $roles->mapWithKeys(fn($r) => [
             $r->id => [
                 'id' => $r->id,
                 'name' => $r->name,
-                'permissions' => $r->permissions->pluck('name')->toArray(),
+                'permissions' => $r->permissions->pluck('name')->values()->all(),
             ]
-        ]));
+        ])->all();
+    @endphp
+
+    {{-- Data script JSON untuk modal interaktif --}}
+    <script>
+        const ROLES_DATA = @json($rolesDataJson);
 
         const GROUPED_PERMISSIONS = @json($groupedPermissions);
 
@@ -276,7 +280,7 @@
 
                 header.innerHTML = `
                     <div style="font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:6px;">
-                        <i class="fas ${groupData.icon}" style="color:#0284c7;"></i> ${groupName}
+                        <span style="width:6px;height:6px;border-radius:50%;background:#0284c7;display:inline-block;"></span> ${groupName}
                     </div>
                     <span style="font-size:11px;font-weight:600;color:${matchingPerms.length > 0 ? '#0284c7' : '#94a3b8'};">
                         ${matchingPerms.length} / ${groupData.permissions.length} Aktif
@@ -304,12 +308,12 @@
                         pill.style.color = '#0369a1';
                         pill.style.border = '1px solid #bae6fd';
                         pill.style.fontWeight = '600';
-                        pill.innerHTML = `<i class="fas fa-check" style="font-size:9px;"></i> ${p.name}`;
+                        pill.innerHTML = `<x-lucide-check style="font-size:9px;" /> ${p.name}`;
                     } else {
                         pill.style.background = '#f8fafc';
                         pill.style.color = '#94a3b8';
                         pill.style.border = '1px solid #e2e8f0';
-                        pill.innerHTML = `<i class="fas fa-xmark" style="font-size:9px;"></i> ${p.name}`;
+                        pill.innerHTML = `<x-lucide-x style="font-size:9px;" /> ${p.name}`;
                     }
                     pillsContainer.appendChild(pill);
                 });

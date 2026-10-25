@@ -11,11 +11,11 @@
         {{-- Kategori Section --}}
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-tags text-primary"></i>
+                <x-lucide-tags class="text-primary" />
                 <span class="card-title">Kategori</span>
                 @can('create categories')
                 <button class="btn btn-sm btn-primary" onclick="document.getElementById('modalAddCategory').classList.add('show')">
-                    <i class="fas fa-plus"></i> Tambah
+                    <x-lucide-plus /> Tambah
                 </button>
                 @endcan
             </div>
@@ -43,12 +43,12 @@
                                 <div class="flex gap-1">
                                     @can('edit categories')
                                     <button class="btn btn-sm btn-warning btn-icon" onclick="editCategory({{ $cat->id }}, '{{ addslashes($cat->name) }}', '{{ addslashes($cat->description) }}')">
-                                        <i class="fas fa-pen"></i>
+                                        <x-lucide-pencil />
                                     </button>
                                     @endcan
                                     @can('delete categories')
                                     <button type="button" class="btn btn-sm btn-danger btn-icon" onclick="openDeleteCategory({{ $cat->id }}, '{{ addslashes($cat->name) }}', {{ $cat->materials_count + $cat->tools_count }})" title="Hapus Kategori">
-                                        <i class="fas fa-trash"></i>
+                                        <x-lucide-trash-2 />
                                     </button>
                                     @endcan
                                 </div>
@@ -68,11 +68,11 @@
         {{-- Satuan Section --}}
         <div class="card">
             <div class="card-header">
-                <i class="fas fa-weight-scale text-primary"></i>
+                <x-lucide-scale class="text-primary" />
                 <span class="card-title">Satuan (Unit)</span>
                 @can('create categories')
                 <button class="btn btn-sm btn-primary" onclick="document.getElementById('modalAddUnit').classList.add('show')">
-                    <i class="fas fa-plus"></i> Tambah
+                    <x-lucide-plus /> Tambah
                 </button>
                 @endcan
             </div>
@@ -96,13 +96,13 @@
                                 <div class="flex gap-1">
                                     @can('edit categories')
                                     <button class="btn btn-sm btn-warning btn-icon" onclick="editUnit({{ $unit->id }}, '{{ addslashes($unit->name) }}', '{{ addslashes($unit->abbreviation) }}')">
-                                        <i class="fas fa-pen"></i>
+                                        <x-lucide-pencil />
                                     </button>
                                     @endcan
                                     @can('delete categories')
                                     <form method="POST" action="{{ route('units.destroy', $unit) }}" onsubmit="return confirm('Hapus satuan ini?')">
                                         @csrf @method('DELETE')
-                                        <button class="btn btn-sm btn-danger btn-icon"><i class="fas fa-trash"></i></button>
+                                        <button class="btn btn-sm btn-danger btn-icon"><x-lucide-trash-2 /></button>
                                     </form>
                                     @endcan
                                 </div>
@@ -125,8 +125,8 @@
     <div class="modal-overlay" id="modalAddCategory">
         <div class="modal-box">
             <div class="modal-header">
-                <i class="fas fa-plus text-primary"></i> <span class="modal-title">Tambah Kategori</span>
-                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+                <x-lucide-plus class="text-primary" /> <span class="modal-title">Tambah Kategori</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><x-lucide-x /></button>
             </div>
             <form method="POST" action="{{ route('categories.store') }}">
                 @csrf
@@ -150,8 +150,8 @@
     <div class="modal-overlay" id="modalEditCategory">
         <div class="modal-box">
             <div class="modal-header">
-                <i class="fas fa-pen text-warning"></i> <span class="modal-title">Edit Kategori</span>
-                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+                <x-lucide-pencil class="text-warning" /> <span class="modal-title">Edit Kategori</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><x-lucide-x /></button>
             </div>
             <form method="POST" id="formEditCategory">
                 @csrf @method('PUT')
@@ -176,8 +176,8 @@
     <div class="modal-overlay" id="modalAddUnit">
         <div class="modal-box">
             <div class="modal-header">
-                <i class="fas fa-plus text-primary"></i> <span class="modal-title">Tambah Satuan</span>
-                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+                <x-lucide-plus class="text-primary" /> <span class="modal-title">Tambah Satuan</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><x-lucide-x /></button>
             </div>
             <form method="POST" action="{{ route('units.store') }}">
                 @csrf
@@ -201,8 +201,8 @@
     <div class="modal-overlay" id="modalEditUnit">
         <div class="modal-box">
             <div class="modal-header">
-                <i class="fas fa-pen text-warning"></i> <span class="modal-title">Edit Satuan</span>
-                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+                <x-lucide-pencil class="text-warning" /> <span class="modal-title">Edit Satuan</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><x-lucide-x /></button>
             </div>
             <form method="POST" id="formEditUnit">
                 @csrf @method('PUT')
@@ -227,8 +227,8 @@
     <div class="modal-overlay" id="modalDeleteCategory">
         <div class="modal-box">
             <div class="modal-header" style="background:#fef2f2;border-bottom:1px solid #fee2e2;">
-                <i class="fas fa-trash-can text-danger"></i> <span class="modal-title" style="color:#991b1b;">Hapus Kategori</span>
-                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><i class="fas fa-times"></i></button>
+                <x-lucide-trash-2 class="text-danger" /> <span class="modal-title" style="color:#991b1b;">Hapus Kategori</span>
+                <button class="btn-close-modal" onclick="this.closest('.modal-overlay').classList.remove('show')"><x-lucide-x /></button>
             </div>
             <form method="POST" id="formDeleteCategory">
                 @csrf @method('DELETE')
@@ -245,7 +245,7 @@
 
                     <div id="delHasItemsNotice" style="display:none;">
                         <div class="alert alert-warning mb-3" style="font-size:12.5px;">
-                            <i class="fas fa-triangle-exclamation"></i>
+                            <x-lucide-triangle-alert />
                             <div>Kategori ini masih memiliki item di dalamnya. Pilih kategori tujuan untuk memindahkan seluruh item sebelum kategori dihapus:</div>
                         </div>
 

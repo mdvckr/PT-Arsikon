@@ -208,7 +208,7 @@
     <div class="container">
         <div class="card">
             <div class="badge-icon">
-                <i class="fa-solid fa-shield-halved"></i>
+                <x-lucide-shield />
             </div>
 
             <div class="code">HTTP 429 &bull; Rate Limit Reached</div>
@@ -228,12 +228,12 @@
 
             <div class="actions">
                 <button type="button" class="btn btn-primary" id="retryButton" onclick="window.location.reload();" disabled>
-                    <i class="fa-solid fa-rotate-right"></i>
+                    <x-lucide-rotate-cw />
                     <span>Coba Lagi Sekarang</span>
                 </button>
 
                 <a href="{{ url('/') }}" class="btn btn-secondary">
-                    <i class="fa-solid fa-house"></i>
+                    <x-lucide-home class="w-4 h-4 inline-block me-1" />
                     <span>Beranda</span>
                 </a>
             </div>
@@ -280,7 +280,7 @@
                 remaining--;
                 setTimeout(updateDisplay, 1000);
             }
-
+            
             updateDisplay();
         })();
     </script>
