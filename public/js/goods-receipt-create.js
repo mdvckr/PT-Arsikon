@@ -168,11 +168,16 @@ function addRow(type, opts) {
         ? '<span class="badge" style="background:rgba(217,119,6,0.12);color:#b45309;font-weight:700;"><i class="fas fa-helmet-safety"></i> Alat</span>'
         : '<span class="badge" style="background:rgba(37,99,235,0.12);color:#2563eb;font-weight:700;"><i class="fas fa-box"></i> Material</span>';
 
+    const isRequired = (!customName && !targetId) ? 'required' : '';
+
     const poItemInput = opts.purchase_order_item_id
         ? '<input type="hidden" name="items[' + idx + '][purchase_order_item_id]" value="' + opts.purchase_order_item_id + '">' : '';
 
     const mrItemInput = opts.material_request_item_id
         ? '<input type="hidden" name="items[' + idx + '][material_request_item_id]" value="' + opts.material_request_item_id + '">' : '';
+
+    const schedInput = opts.po_delivery_schedule_id
+        ? '<input type="hidden" name="items[' + idx + '][po_delivery_schedule_id]" value="' + opts.po_delivery_schedule_id + '">' : '';
 
     const poNum = opts.purchase_order_number || opts.po_number || '';
     const poBadge = poNum
@@ -187,6 +192,8 @@ function addRow(type, opts) {
         ? '<input type="hidden" name="items[' + idx + '][custom_item_name]" value="' + escHtml(customName) + '">' : '';
     const customUnitInput = (opts.unit_abbr || opts.unit || opts.abbr)
         ? '<input type="hidden" name="items[' + idx + '][custom_item_unit]" value="' + escHtml(opts.unit_abbr || opts.unit || opts.abbr) + '">' : '';
+    const customTypeInput = (opts.custom_item_type || opts.type)
+        ? '<input type="hidden" name="items[' + idx + '][type]" value="' + escHtml(opts.custom_item_type || opts.type) + '">' : '';
 
     const typeInput = '<input type="hidden" name="items[' + idx + '][item_type]" value="' + (isTool ? 'tool' : 'material') + '">';
     const selectName = isTool ? ('items[' + idx + '][tool_id]') : ('items[' + idx + '][material_id]');
@@ -218,14 +225,14 @@ function addRow(type, opts) {
 
     const row = '<tr id="row-' + idx + '" class="item-row" data-type="' + (isTool ? 'tool' : 'material') + '">'
         + '<td class="col-type" style="vertical-align:top;padding-top:10px;">'
-        + typeInput + poItemInput + mrItemInput + customNameInput + customUnitInput
+        + typeInput + poItemInput + mrItemInput + schedInput + customNameInput + customUnitInput + customTypeInput
         + '<input type="hidden" name="items[' + idx + '][stage_reference]" id="stage-input-' + idx + '" value="' + escHtml(stageRef) + '">'
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="' + (opts.unit_price || 0) + '">'
         + typeBadge + poBadge + mrBadge + '</td>'
 
         + '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
-        + '<select name="' + selectName + '" class="form-control item-select" required '
+        + '<select name="' + selectName + '" class="form-control item-select" ' + isRequired + ' '
         + 'onchange="onItemChange(this,' + idx + ',' + (isTool ? 'true' : 'false') + ')" '
         + 'style="font-weight:600;font-size:12.5px;">'
         + '<option value="">' + defaultPrompt + '</option>' + optionsHtml
@@ -689,11 +696,16 @@ function loadPoItems(poId) {
                         material_id: item.material_id,
                         tool_id: item.tool_id,
                         material_name: item.material_name,
+                        custom_item_name: item.custom_item_name,
+                        custom_item_unit: item.custom_item_unit,
+                        custom_item_type: item.custom_item_type,
                         unit_abbr: item.unit_abbr,
                         purchase_order_item_id: item.purchase_order_item_id,
                         purchase_order_number: data.po_number,
                         supplier_name: data.supplier_name,
                         material_request_item_id: item.material_request_item_id,
+                        po_delivery_schedule_id: item.po_delivery_schedule_id,
+                        stage_reference: item.stage_reference,
                         qty_shipped: targetQty,
                         quantity: targetQty,
                         qty_missing: 0,
@@ -745,21 +757,20 @@ function onMrSelectChange(mrId) {
         onUserWarehouseChange(whSelect);
     }
 
-    // 2. Muat seluruh item dari MR ini sehingga SEMUA barang (item 1 dan item 2) muncul!
-    loadMrItems(mrId);
+    // 2. Muat item MR (dengan filter PO jika poSelect sudah ada nilainya)
+    const poSelect = document.getElementById('poSelect');
+    const currentPoId = poSelect ? poSelect.value : null;
+    loadMrItems(mrId, currentPoId || null);
 }
 
 function onPoSelectChange(poId) {
     const mrSelect = document.getElementById('mrSelect');
     const mrId = mrSelect ? mrSelect.value : null;
 
-    if (!poId && mrId) {
-        // User memilih kembali opsi "Muat Semua Barang PO Lapangan (Semua Vendor)"
-        loadMrItems(mrId);
-        return;
-    }
-
-    if (poId) {
+    if (mrId) {
+        // Jika ada PO Lapangan aktif, filter item MR sesuai PO Vendor yang dipilih
+        loadMrItems(mrId, poId || null);
+    } else if (poId) {
         loadPoItems(poId);
     }
 }
@@ -771,10 +782,12 @@ function loadMrItems(mrId, filterPoId) {
     const bannerText = document.getElementById('mrBannerText');
     if (banner && bannerText) {
         banner.style.display = 'block';
-        bannerText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengambil seluruh data barang PO Lapangan...';
+        bannerText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengambil data barang PO Lapangan...';
     }
 
-    fetch(grConfig.mrItemsUrl + '/' + mrId)
+    const fetchUrl = grConfig.mrItemsUrl + '/' + mrId + (filterPoId ? '?purchase_order_id=' + encodeURIComponent(filterPoId) : '');
+
+    fetch(fetchUrl)
         .then(function(r) {
             if (!r.ok) throw new Error('HTTP error ' + r.status);
             return r.json();
@@ -794,8 +807,15 @@ function loadMrItems(mrId, filterPoId) {
                 let poOptionsHtml = '<option value="">-- Muat Semua Barang PO Lapangan (Semua Vendor) --</option>';
                 data.purchase_orders.forEach(function(po) {
                     const isSelected = (filterPoId && filterPoId == po.id) ? ' selected' : '';
+                    let statusLabel = '';
+                    if (po.unreceived_count != null && po.unreceived_count > 0) {
+                        statusLabel = ' [' + po.unreceived_count + ' item belum masuk]';
+                    } else if (po.status === 'received') {
+                        statusLabel = ' [Sudah Lengkap Diterima]';
+                    }
                     poOptionsHtml += '<option value="' + po.id + '" data-mr-id="' + data.material_request_id + '"' + isSelected + '>'
                         + '#' + escHtml(po.po_number) + ' • ' + escHtml(po.supplier_name || 'Vendor') 
+                        + statusLabel
                         + (po.items_summary ? ' (' + escHtml(po.items_summary) + ')' : '')
                         + '</option>';
                 });
@@ -805,30 +825,27 @@ function loadMrItems(mrId, filterPoId) {
                 }
             }
 
-            // Tentukan items yang akan ditampilkan: filter jika memilih PO spesifik
             let displayItems = data.items || [];
-            if (filterPoId) {
-                displayItems = displayItems.filter(function(it) {
-                    return it.purchase_order_id == filterPoId;
-                });
-            }
 
-            // Auto-fill supplier jika ada
-            if (filterPoId && data.purchase_orders) {
-                const activePo = data.purchase_orders.find(function(p) { return p.id == filterPoId; });
-                if (activePo && activePo.supplier_name) {
-                    setSupplierByName(activePo.supplier_name, activePo.supplier_id || '');
-                }
-            } else if (data.supplier_name) {
+            // Auto-fill supplier jika ada di respons PO spesifik atau jika hanya 1 PO
+            if (data.supplier_name) {
                 setSupplierByName(data.supplier_name, data.supplier_id || '');
+            } else if (!filterPoId) {
+                // Multi-vendor: kosongkan agar user tidak salah mengira Vendor A yang datang
+                const supInput = document.getElementById('supplierNameInput');
+                const supHidden = document.getElementById('supplierIdHidden');
+                if (supInput) supInput.value = '';
+                if (supHidden) supHidden.value = '';
             }
 
             // Tampilkan Banner Info PO Lapangan
             if (banner && bannerText) {
                 banner.style.display = 'block';
                 let msg = '<i class="fas fa-check-circle me-1"></i> Terhubung dengan PO Lapangan <strong>#' + escHtml(data.mr_number) + '</strong> (' + escHtml(data.warehouse_name || '-') + ').';
-                if (data.purchase_orders && data.purchase_orders.length > 1) {
-                    msg += ' <span class="badge" style="background:#eff6ff;color:#1e40af;margin-left:4px;">' + data.purchase_orders.length + ' PO Vendor Terhubung</span>';
+                if (filterPoId && data.supplier_name) {
+                    msg += ' <span class="badge" style="background:#eff6ff;color:#1e40af;margin-left:4px;">PO Vendor: ' + escHtml(data.supplier_name) + '</span>';
+                } else if (data.purchase_orders && data.purchase_orders.length > 1) {
+                    msg += ' <span class="badge" style="background:#fef3c7;color:#92400e;margin-left:4px;">' + data.purchase_orders.length + ' PO Vendor Terhubung</span>';
                 }
                 msg += ' Menampilkan ' + displayItems.length + ' jenis barang.';
                 bannerText.innerHTML = msg;
@@ -844,11 +861,16 @@ function loadMrItems(mrId, filterPoId) {
                         material_id: item.material_id,
                         tool_id: item.tool_id,
                         material_name: item.material_name,
+                        custom_item_name: item.custom_item_name,
+                        custom_item_unit: item.custom_item_unit,
+                        custom_item_type: item.custom_item_type,
                         unit_abbr: item.unit_abbr,
                         material_request_item_id: item.material_request_item_id,
                         purchase_order_item_id: item.purchase_order_item_id,
                         purchase_order_number: item.purchase_order_number,
                         supplier_name: item.supplier_name,
+                        po_delivery_schedule_id: item.po_delivery_schedule_id,
+                        stage_reference: item.stage_reference,
                         qty_shipped: targetQty,
                         quantity: targetQty,
                         qty_missing: 0,
@@ -859,6 +881,9 @@ function loadMrItems(mrId, filterPoId) {
                 });
             } else {
                 addRow('material');
+                if (banner && bannerText) {
+                    bannerText.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a;"></i> Seluruh item pada PO ini sudah diterima lengkap!';
+                }
             }
         })
         .catch(function(err) {
@@ -1355,7 +1380,11 @@ document.addEventListener('DOMContentLoaded', function() {
         ? grConfig.selectedPoId
         : (poSelect ? poSelect.value : '');
 
-    if (initialMrId) {
+    if (initialMrId && initialPoId) {
+        if (mrSelect) mrSelect.value = initialMrId;
+        if (poSelect) poSelect.value = initialPoId;
+        loadMrItems(initialMrId, initialPoId);
+    } else if (initialMrId) {
         if (mrSelect) mrSelect.value = initialMrId;
         onMrSelectChange(initialMrId);
     } else if (initialPoId) {

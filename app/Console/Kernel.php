@@ -17,6 +17,27 @@ class Kernel extends ConsoleKernel
 
         // T17: Pemeriksaan harian peminjaman alat overdue dan notifikasi satu kali
         $schedule->command('tools:check-overdue-loans')->daily();
+
+        // Otomatisasi Audit & Laporan Terpadu
+        $schedule->command('audit:daily-reminders')
+                 ->dailyAt('08:00')
+                 ->timezone('Asia/Jakarta')
+                 ->withoutOverlapping();
+
+        $schedule->command('audit:monthly-report')
+                 ->monthlyOn(1, '08:00')
+                 ->timezone('Asia/Jakarta')
+                 ->withoutOverlapping();
+
+        $schedule->command('audit:automate --type=daily')
+                 ->dailyAt('08:00')
+                 ->timezone('Asia/Jakarta')
+                 ->withoutOverlapping();
+
+        $schedule->command('audit:automate --type=monthly')
+                 ->monthlyOn(1, '07:00')
+                 ->timezone('Asia/Jakarta')
+                 ->withoutOverlapping();
     }
 
     /**

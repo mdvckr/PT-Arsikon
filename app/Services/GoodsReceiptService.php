@@ -494,9 +494,22 @@ class GoodsReceiptService
                 }
             }
 
-            // Update status PO jika ada
-            if ($receipt->purchase_order_id) {
-                $this->updatePurchaseOrderStatus($receipt->purchase_order_id);
+            // Update status seluruh PO yang terhubung dengan penerimaan ini
+            $affectedPoIds = collect([$receipt->purchase_order_id]);
+            foreach ($receipt->items as $gri) {
+                if ($gri->purchaseOrderItem?->purchase_order_id) {
+                    $affectedPoIds->push($gri->purchaseOrderItem->purchase_order_id);
+                }
+            }
+            $affectedPoIds = $affectedPoIds->filter()->unique()->values();
+
+            // Jika header receipt belum ada PO tapi seluruh item berasal dari 1 PO yang sama, kaitkan header ke PO tersebut
+            if (!$receipt->purchase_order_id && $affectedPoIds->count() === 1) {
+                $receipt->update(['purchase_order_id' => $affectedPoIds->first()]);
+            }
+
+            foreach ($affectedPoIds as $poId) {
+                $this->updatePurchaseOrderStatus($poId);
             }
 
             // Tandai GR sebagai confirmed
@@ -513,9 +526,9 @@ class GoodsReceiptService
                 route('goods-receipts.show', $receipt)
             );
 
-            // Notifikasi spesifik ke Purchasing / Admin PO jika berasal dari PO
-            if ($receipt->purchase_order_id) {
-                $po = PurchaseOrder::find($receipt->purchase_order_id);
+            // Notifikasi spesifik ke Purchasing / Admin PO untuk setiap PO yang menerima barang
+            foreach ($affectedPoIds as $poId) {
+                $po = PurchaseOrder::find($poId);
                 if ($po) {
                     NotificationHelper::notifyPurchasingAdmins(
                         "Barang PO Diterima: #{$po->po_number}",

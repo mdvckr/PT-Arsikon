@@ -10,7 +10,17 @@
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Purchase Order (PO)</h2>
             <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian ke Supplier</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
+            <a href="{{ route('purchase-orders.weekly-report') }}" 
+               target="_blank" 
+               class="btn btn-secondary border shadow-sm flex items-center gap-1.5 font-semibold text-slate-800"
+               style="background:#f8fafc;border-color:#cbd5e1;"
+               title="Cetak Rekapitulasi Surat PO Minggu Berjalan">
+                <x-lucide-printer class="text-primary w-4 h-4" />
+                <span>Cetak PO Minggu Ini</span>
+                <span class="badge badge-primary text-xs ml-1" style="font-size:10.5px;padding:2px 6px;">W{{ \Carbon\Carbon::now()->weekOfMonth }}</span>
+            </a>
+
             <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
                 <x-lucide-plus class="me-1" /> Buat PO Baru
             </a>

@@ -13,6 +13,7 @@ use App\Http\Controllers\ToolAssignmentController;
 use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportAndAuditController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
@@ -132,12 +133,29 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/inventory/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
     Route::delete('/inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
 
-    // Reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/stock', [ReportController::class, 'stockReport'])->name('reports.stock');
-    Route::get('/reports/mutation', [ReportController::class, 'mutationReport'])->name('reports.mutation');
-    Route::get('/reports/discrepancy', [ReportController::class, 'discrepancyReport'])->name('reports.discrepancy');
-    Route::get('/reports/tools', [ReportController::class, 'toolReport'])->name('reports.tools');
+    // Reports & Audit Terpadu
+    Route::get('/reports', [ReportAndAuditController::class, 'index'])->name('reports.index');
+    Route::get('/reports/stock', [ReportAndAuditController::class, 'materialStock'])->name('reports.stock');
+    Route::get('/reports/mutation', [ReportAndAuditController::class, 'stockMutation'])->name('reports.mutation');
+    Route::get('/reports/discrepancy', [ReportAndAuditController::class, 'opnameDiscrepancy'])->name('reports.discrepancy');
+    Route::get('/reports/tools', [ReportAndAuditController::class, 'toolStatus'])->name('reports.tools');
+    Route::get('/reports/procurement-audit', [ReportAndAuditController::class, 'procurementAudit'])->name('reports.procurement-audit');
+    Route::post('/reports/findings/{finding}/action-plan', [ReportAndAuditController::class, 'submitActionPlan'])->name('reports.submit-action');
+    Route::patch('/reports/findings/{finding}/status', [ReportAndAuditController::class, 'updateFindingStatus'])->name('reports.findings.update-status');
+    Route::post('/reports/action-plans/{actionPlan}/verify', [ReportAndAuditController::class, 'verifyActionPlan'])->name('reports.verify-action');
+
+    // Alias routes per spesifikasi /laporan-audit
+    Route::prefix('laporan-audit')->group(function () {
+        Route::get('/', [ReportAndAuditController::class, 'index']);
+        Route::get('/stok-material', [ReportAndAuditController::class, 'materialStock'])->name('reports.material-stock');
+        Route::get('/mutasi-stok', [ReportAndAuditController::class, 'stockMutation'])->name('reports.stock-mutation');
+        Route::get('/diskrepansi-opname', [ReportAndAuditController::class, 'opnameDiscrepancy'])->name('reports.opname-discrepancy');
+        Route::get('/status-alat', [ReportAndAuditController::class, 'equipmentStatus'])->name('reports.equipment-status');
+        Route::get('/audit-pengadaan-po', [ReportAndAuditController::class, 'procurementAudit'])->name('reports.procurement-audit-alias');
+        Route::post('/temuan/{finding}/tindak-lanjut', [ReportAndAuditController::class, 'submitActionPlan']);
+        Route::patch('/findings/{finding}/status', [ReportAndAuditController::class, 'updateFindingStatus'])->name('findings.update-status');
+        Route::post('/tindak-lanjut/{actionPlan}/verifikasi', [ReportAndAuditController::class, 'verifyActionPlan']);
+    });
 
     // Audit Logs
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
@@ -149,6 +167,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
 
     // Purchase Orders (Hanya Admin Pusat, Admin PO, Owner, po_lapangan, dan po_nota_harian / admin-po-nota untuk read-only)
     Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|po_lapangan|po_nota_harian|admin-po-nota|admin_pusat']], function () {
+        Route::get('/purchase-orders/report/weekly',            [PurchaseOrderController::class, 'weeklyReport'])->name('purchase-orders.weekly-report');
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show','edit','update']);
         Route::get('/purchase-orders/{purchaseOrder}/print',   [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
         Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');

@@ -11,6 +11,8 @@ use App\Models\GoodsReceipt;
 use App\Models\Supplier;
 use App\Models\Material;
 use App\Models\PurchaseReceipt;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1019,6 +1021,131 @@ class PurchaseOrderController extends Controller
 
         $po = $purchaseOrder;
         return view('purchase-orders.print', compact('po', 'hidePrice', 'isBlind', 'userCanViewPrice'));
+    }
+
+    /**
+     * Rekapitulasi Purchase Order Mingguan (Weekly Grouping)
+     * Mendukung Native Web Print View & Direct DomPDF export.
+     */
+    public function weeklyReport(Request $request)
+    {
+        $user = auth()->user();
+        $userCanViewPrice = $user ? $user->canViewPoPrice() : false;
+
+        // 1. Tentukan tanggal acuan
+        $now = Carbon::now('Asia/Jakarta');
+        $targetDate = $request->filled('date')
+            ? Carbon::parse($request->query('date'), 'Asia/Jakarta')
+            : $now;
+
+        // 2. Tentukan batasan tanggal Senin s.d Minggu
+        $startOfWeek = $targetDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $endOfWeek   = $targetDate->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $weekNumber  = $targetDate->weekOfMonth;
+        $isoWeek     = $targetDate->isoWeek();
+        $monthNumber = $targetDate->month;
+        $yearNumber  = $targetDate->year;
+
+        // Navigasi minggu
+        $prevWeekDate    = $startOfWeek->copy()->subDays(7)->format('Y-m-d');
+        $nextWeekDate    = $startOfWeek->copy()->addDays(7)->format('Y-m-d');
+        $currentWeekDate = $now->format('Y-m-d');
+
+        // 3. Query Purchase Orders dengan relasi optimal
+        $query = PurchaseOrder::with([
+            'supplier',
+            'creator',
+            'approver',
+            'deliveryWarehouse.project',
+            'materialRequest.toWarehouse.project',
+            'procurementRequest.project',
+            'items.material.unit',
+            'items.tool',
+            'receipts',
+        ])
+        ->whereBetween('order_date', [$startOfWeek->format('Y-m-d'), $endOfWeek->format('Y-m-d')]);
+
+        // Filter status jika dipilih
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        // Filter proyek jika dipilih
+        if ($request->filled('project_id')) {
+            $projectId = $request->query('project_id');
+            $query->where(function ($q) use ($projectId) {
+                $q->whereHas('deliveryWarehouse', fn($w) => $w->where('project_id', $projectId))
+                  ->orWhereHas('materialRequest.toWarehouse', fn($tw) => $tw->where('project_id', $projectId))
+                  ->orWhereHas('procurementRequest', fn($pr) => $pr->where('project_id', $projectId));
+            });
+        }
+
+        $orders = $query->orderBy('order_date', 'asc')->orderBy('id', 'asc')->get();
+
+        // 4. Penegakan Kerahasiaan Harga (Blind PO Security)
+        $requestedMode = $request->query('mode', 'official');
+        if ($request->has('blind') || $request->has('hide_price')) {
+            $requestedMode = 'blind';
+        }
+        $isBlind = (!$userCanViewPrice) || ($requestedMode === 'blind');
+        $hidePrice = $isBlind;
+
+        if ($hidePrice) {
+            foreach ($orders as $order) {
+                $order->total_amount = 0;
+                $order->paid_amount = 0;
+                if ($order->items) {
+                    foreach ($order->items as $item) {
+                        $item->unit_price = 0;
+                        $item->subtotal = 0;
+                        $item->total_price = 0;
+                    }
+                }
+            }
+        }
+
+        // 5. Metadata Periode & Proyek
+        $projects = \App\Models\Project::orderBy('name')->get();
+
+        $bulanId = [
+            1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',
+            7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember',
+        ];
+        $bulanStart = $bulanId[$startOfWeek->month] ?? '';
+        $bulanEnd   = $bulanId[$endOfWeek->month] ?? '';
+        $periodLabel = "Minggu ke-{$weekNumber} ({$startOfWeek->format('d')} {$bulanStart} — {$endOfWeek->format('d')} {$bulanEnd} {$endOfWeek->format('Y')})";
+        $reportTitle = "REKAPITULASI PURCHASE ORDER MINGGUAN — " . $startOfWeek->format('Y');
+        $grandTotal  = $hidePrice ? 0 : $orders->sum('total_amount');
+        $printedAt   = Carbon::now('Asia/Jakarta')->translatedFormat('d F Y H:i') . ' WIB';
+
+        $viewData = compact(
+            'orders', 'targetDate', 'startOfWeek', 'endOfWeek',
+            'weekNumber', 'isoWeek', 'monthNumber', 'yearNumber',
+            'periodLabel', 'reportTitle', 'isBlind', 'hidePrice',
+            'userCanViewPrice', 'grandTotal', 'printedAt', 'bulanId',
+            'prevWeekDate', 'nextWeekDate', 'currentWeekDate', 'projects'
+        );
+
+        // 6. Jika parameter format=pdf, render melalui DomPDF
+        if ($request->query('format') === 'pdf') {
+            @ini_set('memory_limit', '512M');
+            $pdf = Pdf::loadView('purchase-orders.print-weekly-pdf', $viewData)
+                ->setPaper('a4', 'landscape')
+                ->setOption([
+                    'dpi' => 120,
+                    'defaultFont' => 'Helvetica',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => false,
+                ]);
+
+            $fileName = "Rekap-PO-Minggu-{$weekNumber}-{$yearNumber}.pdf";
+            return $request->query('action') === 'download'
+                ? $pdf->download($fileName)
+                : $pdf->stream($fileName);
+        }
+
+        // Default: Tampilkan Layar Cetak Interaktif (Native Print Engine)
+        return view('purchase-orders.print-weekly', $viewData);
     }
 
 

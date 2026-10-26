@@ -372,7 +372,9 @@
         $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
         $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) || auth()->user()->can('create purchase orders');
         $relatedPos = $materialRequest->items->flatMap->purchaseOrderItems->map->purchaseOrder->filter()->unique('id');
-        $sentPo = $relatedPos->firstWhere('status', 'sent') ?? $relatedPos->firstWhere('status', 'partial_received') ?? $relatedPos->first();
+        $sentPo = $relatedPos->first(fn($p) => in_array($p->status, ['sent', 'partial_received', 'approved']))
+            ?? $relatedPos->first(fn($p) => $p->status !== 'received' && $p->status !== 'cancelled')
+            ?? $relatedPos->first();
         $inTransitDist = $materialRequest->distributions->firstWhere('status', 'in_transit');
         $canReceiveGr = auth()->user()->can('create goods receipts');
         $canReceiveDist = $inTransitDist && $inTransitDist->canUserReceive(auth()->user());

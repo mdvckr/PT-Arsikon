@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class StockOpnameService
 {
-    public function __construct(protected StockService $stockService)
-    {
+    public function __construct(
+        protected StockService $stockService,
+        protected ?AuditAutomationService $auditService = null
+    ) {
+        $this->auditService = $auditService ?? app(AuditAutomationService::class);
     }
 
     /**
@@ -107,10 +110,18 @@ class StockOpnameService
 
         return DB::transaction(function () use ($opname, $approvedBy) {
             $warehouse = $opname->warehouse;
+            $totalDiscrepancyValue = 0;
+            $hasDiscrepancy = false;
 
             foreach ($opname->items as $item) {
                 $difference = (float) $item->qty_difference;
                 $material = $item->material;
+
+                if ($difference != 0) {
+                    $hasDiscrepancy = true;
+                    $unitPrice = (float) ($material?->unit_price ?? 0);
+                    $totalDiscrepancyValue += abs($difference) * $unitPrice;
+                }
 
                 if ($difference > 0) {
                     // Physical > System: Add stock adjustment
@@ -143,7 +154,21 @@ class StockOpnameService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
+            if ($hasDiscrepancy && $this->auditService) {
+                $picUserId = $opname->conducted_by_user_id ?: $approvedBy->id;
+                $this->auditService->createFromOpnameDiscrepancy($opname, $totalDiscrepancyValue, $picUserId);
+            }
+
             return $opname->fresh(['items.material', 'approvedBy']);
         });
+    }
+
+    /**
+     * Helper alias for controller compatibility
+     */
+    public function approve(StockOpname $opname, int|User $approver): StockOpname
+    {
+        $user = $approver instanceof User ? $approver : User::findOrFail($approver);
+        return $this->approveOpname($opname, $user);
     }
 }

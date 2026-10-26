@@ -1198,9 +1198,11 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
        `Tests: 9 passed (28 assertions)` — Seluruh guard RBAC dan security header berstatus HIJAU (PASS).
   2. **Kompilasi Frontend**:
      - `npm run build`: Berhasil mengompilasi bundel Vite (`public/build/assets/app-*.css` & `app-*.js`) bebas error.
-  3. **Pembersihan Cache Laravel**:
-     - `php artisan view:clear`, `php artisan route:clear`, `php artisan config:clear`, dan `php artisan cache:clear`: Seluruh cache sukses dikosongkan.
-### T18. Modernisasi Total Ikon Seluruh Antarmuka (Blade Lucide Outline Icons)
+      - `php artisan view:clear`, `php artisan route:clear`, `php artisan config:clear`, dan `php artisan cache:clear`: Seluruh cache sukses dikosongkan.
+
+---
+
+## 24. Modernisasi Total Ikon Seluruh Antarmuka (Blade Lucide Outline Icons) (T41)
 - **Tujuan**:
   - Mengganti 100% ikon lawas Font Awesome (solid `fa-*`) di seluruh antarmuka aplikasi menjadi ikon outline modern (Lucide SVG) via paket `mallardduck/blade-lucide-icons`.
   - Menjaga keselarasan desain antara sidebar, topbar, kartu KPI, dashboard, tabel master data, formulir transaksi, alert, toast notifikasi, dan modal interaktif.
@@ -1216,3 +1218,127 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   - Modernisasi global di `resources/views/layouts/app.blade.php`: token styling universal SVG, mobile toggle menu, lonceng notifikasi, lipatan chevron accordion, dan flash alert.
   - Modernisasi seluruh berkas view di `resources/views/` (Dashboard, Material, Alat, Inventori, PO, GR, MR, Pemakaian, Distribusi, Retur, Daily Log, Stock Opname, Role, User, Gudang, Profil).
   - Penambahan feature test komprehensif `tests/Feature/GlobalUIIconsTest.php`.
+
+---
+
+## 25. Cetak PDF & Laporan Mingguan Purchase Order (Weekly Grouping & DomPDF Export) (T42)
+- **Konteks & Masalah**:
+  1. Bagian pengadaan kantor pusat dan manajemen proyek membutuhkan rekapitulasi berkala Purchase Order (PO) yang dikelompokkan per minggu kerja ISO (Senin — Minggu), bulan, dan tahun kalender.
+  2. Kebutuhan ekspor dokumen PDF resmi berkop korporat PT Arsikon dengan format cetak profesional (A4 Landscape) yang siap diarsipkan atau diserahkan kepada pimpinan/auditor.
+  3. Kebijakan perlindungan kerahasiaan harga vendor (*Blind PO Print*): personil logistik atau pihak lapangan yang mencetak laporan tidak boleh melihat nominal harga satuan dan total rupiah (disamarkan menjadi Rp 0).
+- **Implementasi & Perubahan Berkas**:
+  1. **Skema Database & Migrasi**:
+     - Kolom `week_number` (tinyint unsigned), `month` (tinyint unsigned), `year` (smallint unsigned), dan `iso_week` (varchar 10) beserta indeks komposit `idx_po_weekly_grouping` disatukan langsung ke dalam skema utama `database/migrations/2026_01_01_000004_create_procurement_purchasing_tables.php`.
+  2. **Model Eloquent (`app/Models/PurchaseOrder.php`)**:
+     - Atribut `$fillable` diperbarui dengan `week_number`, `month`, `year`, `iso_week`.
+     - Model boot hook `creating` dan `saving` secara otomatis menghitung dan mengisi nomor minggu ISO (`W01` - `W53`), bulan, dan tahun dari tanggal `order_date` (atau fallback `created_at`).
+  3. **Backend Controller & Routing (`app/Http/Controllers/PurchaseOrderController.php` & `routes/web.php`)**:
+     - Mendaftarkan rute `GET /purchase-orders/weekly-report` (`purchase-orders.weeklyReport`).
+     - Method `weeklyReport()` memfilter PO per tahun, bulan, dan minggu kalender, mendukung navigasi *Minggu Sebelumnya* dan *Minggu Berikutnya*, serta melompat ke tanggal tertentu via parameter `?date=YYYY-MM-DD`.
+     - Dukungan ekspor instan PDF via query parameter `?export=pdf`.
+     - Perlindungan harga: pengguna dengan role non-pusat atau parameter `?blind=1` secara otomatis menerima laporan bertopeng (*masked prices*) di mana seluruh nominal harga satuan dan total bernilai `Rp 0`.
+  4. **Antarmuka Tampilan & Template PDF DomPDF**:
+     - `resources/views/purchase-orders/weekly-report.blade.php`: Halaman laporan mingguan interaktif dilengkapi 4 kartu metrik (Total PO Mingguan, Total Nominal, Total Item Terpesan, Rata-rata Hari Pengiriman), filter tanggal, badge status pengiriman, dan tombol cetak PDF.
+     - `resources/views/purchase-orders/print-weekly-pdf.blade.php`: Tata letak PDF beresolusi cetak tinggi (A4 Landscape) dengan tipografi presisi, header resmi PT Arsikon, tabel rincian item tiap PO, serta kolom tanda tangan pengesahan (Dibuat Oleh, Diperiksa, Disetujui).
+     - `resources/views/purchase-orders/index.blade.php`: Penyematan tombol aksi cepat **"Laporan Mingguan PO"** berikon kalender mingguan.
+  5. **Pengujian Otomatis**:
+     - `tests/Feature/PurchaseOrderWeeklyReportTest.php`: 5 kasus uji lulus 100% (18 assertions) memverifikasi:
+       - Auto-populate kolom weekly grouping pada event model save.
+       - Filter minggu berjalan untuk Admin PO.
+       - Penyamaran harga (*blind price masking*) untuk personil non-pusat.
+       - Navigasi dan filter tanggal spesifik.
+       - Ekspor PDF DomPDF (HTTP 200, Content-Type `application/pdf`).
+
+---
+
+## 26. Perbaikan Alur Penerimaan Barang Multi-PO & Multi-Vendor (Goods Receipt Overhaul) (T43)
+- **Konteks & Masalah**:
+  1. Dalam satu PO Lapangan (Material Request), proyek dapat meminta bermacam-macam barang yang pengadaannya dipecah ke beberapa Purchase Order (PO) vendor berbeda (misalnya: semen ke Supplier A, besi ke Supplier B).
+  2. Saat barang tiba di proyek dan dicatat melalui form Penerimaan Barang (`/goods-receipts/create`), dropdown PO sempat mengalami kendala memuat rincian barang pesanan secara dinamis.
+  3. Alur status penerimaan belum terkontrol presisi: sistem sebelumnya berisiko menganggap PO Lapangan telah selesai (`fulfilled`) begitu ada satu kali penerimaan barang, padahal barang dari vendor lain belum dikirim atau kuantitas barang yang tiba baru sebagian.
+- **Implementasi & Perubahan Berkas**:
+  1. **Pembaruan Logika AJAX Klien (`public/js/goods-receipt-create.js`)**:
+     - Menghubungkan event pemilihan PO vendor dengan endpoint AJAX `/goods-receipts/po-items/{id}`.
+     - Memuat otomatis seluruh baris item pesanan PO terkait, menampilkan nomor PO Lapangan referensi, nama material/alat, kuantitas tersisa (`qty_remaining = qty_ordered - qty_received`), dan satuan.
+     - Mengisi otomatis default kuantitas terima (`qty_received`) sebesar sisa barang yang belum tiba, disertai validasi batas maksimal agar pengguna tidak dapat menerima melebihi sisa pesanan.
+  2. **Controller Penerimaan Barang (`app/Http/Controllers/GoodsReceiptController.php`)**:
+     - Method `getPoItems()`: Menghitung secara real-time sisa kuantitas pesanan yang belum diterima untuk setiap baris item PO, memfilter item yang sudah lunas terkirim, dan menyajikan metadata proyek serta PO Lapangan.
+  3. **Backend Service Penerimaan (`app/Services/GoodsReceiptService.php`)**:
+     - Mengakumulasikan `qty_received` pada setiap `purchase_order_items`.
+     - Pengendalian status Purchase Order (PO):
+       - Jika masih ada kuantitas atau baris item yang belum tiba, PO berstatus `partial_received`.
+       - Hanya jika seluruh item PO telah tiba 100%, status PO berubah menjadi `received`.
+     - Pengendalian status PO Lapangan (MR):
+       - Mengevaluasi seluruh item pada PO Lapangan dan seluruh PO vendor yang terikat.
+       - Jika sebagian barang sudah diterima namun ada barang lain yang belum tiba, status PO Lapangan dipertahankan pada status transisi `partially_fulfilled`.
+       - Hanya jika seluruh item pesanan dari seluruh vendor telah tiba lengkap di gudang proyek, status PO Lapangan berubah menjadi `fulfilled`.
+     - Menambah stok gudang penerima pada tabel `inventories` dan mencatat mutasi stok `purchase_receipt` dengan referensi nomor dokumen GR yang valid.
+  4. **Antarmuka Rincian PO Lapangan (`resources/views/material-requests/show.blade.php`)**:
+     - Menampilkan rekapitulasi status kedatangan multi-vendor dan tabel riwayat Goods Receipt terhubung.
+  5. **Pengujian Otomatis**:
+     - `tests/Feature/GoodsReceiptMultiPoVendorTest.php`: 1 skenario komprehensif siklus penuh (32 assertions) lulus 100%:
+       - PO Lapangan dengan 2 item berbeda dialokasikan ke 2 vendor terpisah (Vendor Semen & Vendor Besi).
+       - Penerimaan parsial barang pertama (PO 1) memicu status PO 1 menjadi `partial_received` dan PO Lapangan tetap `partially_fulfilled`.
+       - Penerimaan penuh barang pertama menyelesaikan PO 1 (`received`), namun PO Lapangan tetap `partially_fulfilled` karena barang kedua belum tiba.
+       - Penerimaan barang kedua (PO 2) menyelesaikan seluruh pengadaan, mengubah PO 2 menjadi `received` dan PO Lapangan resmi menjadi `fulfilled`.
+
+---
+
+## 27. Sistem Laporan Terpadu & Otomatisasi Audit Bulanan / Harian (T44)
+- **Rujukan**: Dokumen perencanaan `docs/rencana_pengembangan_modul_audit_notifikasi.md` dan `docs/rencana_pengembangan_modul_audit_notifikasi (1).md`.
+- **Konteks & Masalah**:
+  1. Selisih fisik pada Stock Opname dan keterlambatan pengiriman barang oleh vendor sebelumnya ditangani secara manual tanpa tindak lanjut terstruktur (*Corrective Action Plan*) dan tanpa eskalasi penanggung jawab (PIC).
+  2. Manajemen eksekutif (Owner & Direksi) belum memiliki rekapitulasi berkala otomatis mengenai tingkat keparahan temuan, estimasi kerugian finansial, dan efektivitas tindak lanjut audit.
+  3. Halaman pelaporan dan audit sebelumnya terpisah-pisah sehingga membutuhkan konsolidasi menjadi satu pusat kendali pelaporan operasional terpadu (*Unified Reporting & Audit Hub*).
+- **Implementasi & Perubahan Berkas**:
+  1. **Konsolidasi Migrasi Skema Audit (`database/migrations/2026_10_26_000002_create_audit_findings_and_reports_tables.php`)**:
+     - Berdasarkan instruksi pengguna, seluruh tabel dan kolom audit digabungkan ke dalam 1 file migrasi tunggal:
+       - Tabel `audit_findings`: Kode temuan sekuensial (`finding_code`, misal: `AUD-202610-0001`), sumber temuan (`source_type`: `inventory_discrepancy`, `po_delay`, `manual_audit`), judul, deskripsi, tingkat keparahan (`severity`: `low`, `medium`, `high`, `critical`), estimasi dampak finansial rupiah (`financial_impact`), penanggung jawab (`assigned_to`), batas waktu perbaikan (`due_date`), status (`open`, `in_progress`, `resolved`, `closed`), dan referensi relasi (warehouse, project, material, purchase order).
+       - Tabel `audit_action_plans`: Rencana perbaikan (`action_description`), PIC pelaksana (`pic_user_id`), target tanggal (`target_date`), catatan penyelesaian (`resolution_notes`), status verifikasi, dan stempel verifikasi oleh Admin Pusat (`verified_by`, `verified_at`).
+       - Tabel `monthly_audit_reports`: Rekapitulasi bulanan eksekutif (`report_code`: `MAR-YYYYMM-XXXX`), periode bulan/tahun, metrik total temuan, temuan kritis, total dampak finansial, ringkasan eksekutif, rekomendasi sistem, dan payload JSON komprehensif.
+  2. **Model Eloquent Terkait**:
+     - `app/Models/AuditFinding.php`: Relasi lengkap (`warehouse`, `project`, `material`, `purchaseOrder`, `assignedUser`, `actionPlans`), helper badge severity dan status, serta query scope (`open`, `critical`, `overdue`).
+     - `app/Models/AuditActionPlan.php`: Relasi ke `auditFinding`, `picUser`, `verifierUser`.
+     - `app/Models/MonthlyAuditReport.php`: Relasi ke `generatorUser` dan casting otomatis `report_payload` menjadi array.
+  3. **Service Otomatisasi Audit (`app/Services/AuditAutomationService.php`)**:
+     - `createFromOpnameDiscrepancy()` & `recordOpnameDiscrepancy()`: Terpicu secara otomatis saat persetujuan Stock Opname (`StockOpnameService::approveOpname()`) mendeteksi selisih antara stok fisik dan stok sistem. Menghitung dampak finansial berdasarkan harga satuan material dan menerbitkan tiket audit otomatis.
+     - `createFromPurchaseOrderIssue()` & `recordPoDelay()`: Mendeteksi Purchase Order yang terlambat tiba melewati jadwal atau tanggal perkiraan kedatangan, membuat temuan audit berkode unik, dan menghitung nominal keterlambatan.
+  4. **Sistem Notifikasi Email & Mailables (`app/Mail/` & `resources/views/emails/`)**:
+     - `app/Mail/AuditFindingAssignedMail.php`: Email pemberitahuan penugasan temuan audit kepada PIC.
+     - `app/Mail/AuditDeadlineReminderMail.php` & `AuditReminderMail.php`: Email peringatan pengingat batas waktu penyelesaian action plan (D-3, D-1, Hari-H, dan status Overdue).
+     - `app/Mail/MonthlyAuditSummaryMail.php` & `MonthlyAuditExecutiveSummaryMail.php`: Rekapitulasi laporan audit eksekutif bulanan otomatis untuk Owner dan Admin Pusat.
+     - Template email Blade: `resources/views/emails/audit_assigned.blade.php`, `audit_reminder.blade.php`, dan `monthly_audit_summary.blade.php`.
+  5. **Artisan Console Commands & Penjadwalan Otomatis (Scheduler)**:
+     - `app/Console/Commands/RunAuditAutomationCommand.php` (`audit:automate`): Eksekusi harian untuk memindai seluruh PO yang mengalami keterlambatan pengiriman dan menerbitkan temuan audit otomatis.
+     - `app/Console/Commands/SendDailyAuditReminders.php` (`audit:daily-reminders`): Eksekusi harian untuk mengirimkan email pengingat otomatis kepada PIC action plan yang mendekati batas waktu atau terlambat.
+     - `app/Console/Commands/GenerateMonthlyAuditReport.php` (`audit:monthly-report`): Eksekusi otomatis pada tanggal 1 setiap bulan untuk menyusun draf laporan audit eksekutif bulanan periode sebelumnya.
+     - `app/Console/Kernel.php`: Pendaftaran ketiga command ke dalam scheduler Laravel (`dailyAt('07:00')`, `dailyAt('08:00')`, dan `monthlyOn(1, '01:00')`).
+  6. **Controller & Antarmuka Pusat Laporan Terpadu (`ReportAndAuditController.php`)**:
+     - `routes/web.php`: Pendaftaran rute `/reports`, `/reports/procurement-audit`, `/reports/audit-findings/store`, `/reports/audit-findings/{finding}/assign`, `/reports/audit-findings/{finding}/action-plans`, `/reports/action-plans/{plan}/verify`, dan `/reports/monthly-summary/generate`.
+     - `resources/views/reports/index.blade.php`: Portal terpadu yang memadukan:
+       - 4 Kartu KPI Utama: Total Temuan Terbuka, Temuan Kritis/Overdue, Akumulasi Dampak Finansial (Rp), dan Tindak Lanjut Aktif.
+       - 5 Tab Formulir Laporan Operasional: Laporan Stok & Mutasi, Laporan Pengadaan & PO, Laporan Logistik & Distribusi, Laporan Pemakaian Lapangan, dan Laporan Audit & Temuan.
+       - Tabel Temuan Audit Interaktif: Dilengkapi filter status/keparahan, badge visual, tombol penugasan PIC, dialog pembuatan Action Plan, dan tombol verifikasi perbaikan khusus Admin Pusat.
+     - `resources/views/reports/procurement_audit.blade.php`: Tampilan rincian audit khusus pengadaan material dan kinerja vendor.
+  7. **Pengujian Otomatis**:
+     - `tests/Feature/ReportAndAuditAutomationTest.php`: 8 kasus uji lulus 100% (40 assertions) mencakup:
+       - Pemicuan otomatis temuan audit dari selisih Stock Opname.
+       - Pemicuan otomatis audit keterlambatan PO via artisan command `audit:automate`.
+       - Penugasan PIC dan pengiriman email notifikasi.
+       - Pengajuan rencana tindak lanjut perbaikan (*action plan*).
+       - Verifikasi penyelesaian tindakan oleh Admin Pusat.
+       - Pembatasan hak akses (*separation of duties*): role non-admin dilarang memverifikasi action plan.
+       - Pembuatan laporan audit bulanan otomatis via artisan command `audit:monthly-report`.
+       - Pengiriman email reminder harian via artisan command `audit:daily-reminders`.
+
+---
+
+## 28. Konsolidasi Skema Migrasi Database (Audit & Procurement Clean Squashing)
+- **Konteks & Arahan Pengguna**:
+  - Pengguna meminta agar migrasi penambahan pengelompokan mingguan PO (`2026_10_26_000001_add_weekly_grouping_to_purchase_orders_table.php`) disatukan langsung ke dalam migrasi utama pengadaan `2026_01_01_000004_create_procurement_purchasing_tables.php`.
+  - Pengguna meminta agar keempat file migrasi audit yang terpecah (`create_audit_findings_table.php`, `create_audit_action_plans_table.php`, `create_monthly_audit_reports_table.php`, `add_fields_to_audit_findings_table.php`) dijadikan 1 file tunggal.
+- **Implementasi**:
+  1. Penyatuan kolom `week_number`, `month`, `year`, `iso_week` dan indeks komposit `idx_po_weekly_grouping` ke dalam tabel `purchase_orders` pada `2026_01_01_000004_create_procurement_purchasing_tables.php`.
+  2. Pembuatan file migrasi kanonikal tunggal untuk modul audit: `database/migrations/2026_10_26_000002_create_audit_findings_and_reports_tables.php` yang mencakup ketiga tabel terpadu: `audit_findings`, `audit_action_plans`, dan `monthly_audit_reports`.
+  3. Penghapusan seluruh file migrasi tambahan sementara yang redundan dari direktori `database/migrations/`.
+  4. Hasil: Riwayat migrasi database kembali rapi, bersih, dan bebas dari redundansi DDL alter table.

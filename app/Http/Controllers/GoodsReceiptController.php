@@ -283,25 +283,40 @@ class GoodsReceiptController extends Controller
             'items.material.unit',
             'items.material.category',
             'items.tool.category',
+            'items.deliverySchedules',
             'items.materialRequestItem.materialRequest.toWarehouse.project',
             'supplier',
             'deliveryWarehouse.project'
         ]);
 
-        $items = $purchaseOrder->items->map(function ($item) {
+        $linkedMr = $purchaseOrder->materialRequest ?? $purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first();
+        $whId = $purchaseOrder->delivery_warehouse_id ?? $linkedMr?->to_warehouse_id;
+        $whName = $purchaseOrder->deliveryWarehouse?->name ?? ($linkedMr?->toWarehouse?->project?->name ?? $linkedMr?->toWarehouse?->name);
+
+        $items = $purchaseOrder->items->map(function ($item) use ($purchaseOrder, $linkedMr) {
             $isTool = $item->isTool();
-            $mr = $item->materialRequestItem?->materialRequest ?? $item->purchaseOrder?->materialRequest;
-            $qtyRemaining = max(0, (float) $item->quantity - (float) $item->received_qty);
+            $mr = $item->materialRequestItem?->materialRequest ?? $linkedMr;
+            $qtyRemaining = max(0, (float) $item->quantity - (float) $item->received_qty - (float) $item->lost_qty - (float) $item->short_closed_qty);
+            $activeSchedule = $item->deliverySchedules->whereIn('status', ['planned', 'partial'])->sortBy('planned_date')->first();
 
             return [
                 'purchase_order_item_id'   => $item->id,
+                'purchase_order_id'        => $purchaseOrder->id,
+                'purchase_order_number'    => $purchaseOrder->po_number,
+                'supplier_id'              => $purchaseOrder->supplier_id,
+                'supplier_name'            => $purchaseOrder->supplier?->name ?? $purchaseOrder->supplier_name,
                 'material_request_item_id' => $item->material_request_item_id,
+                'po_delivery_schedule_id'  => $activeSchedule?->id,
+                'stage_reference'          => $activeSchedule?->stage_label,
                 'item_type'                => $isTool ? 'tool' : 'material',
                 'material_id'              => $item->material_id,
                 'tool_id'                  => $item->tool_id,
                 'material_name'            => $item->displayName(),
+                'custom_item_name'         => $item->custom_item_name ?? ($item->materialRequestItem?->isCustom() ? $item->materialRequestItem->custom_item_name : null),
+                'custom_item_type'         => $item->custom_item_type ?? ($item->materialRequestItem?->isCustom() ? $item->materialRequestItem->custom_item_type : null),
+                'custom_item_unit'         => $item->custom_item_unit ?? ($item->materialRequestItem?->isCustom() ? $item->materialRequestItem->custom_item_unit : null),
                 'material_code'            => $isTool ? ($item->tool?->code ?? '-') : ($item->material?->code ?? 'NON-MASTER'),
-                'category_name'            => $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Material Khusus Proyek'),
+                'category_name'            => $item->material?->category?->name ?? ($item->materialRequestItem?->displayCategoryName() ?? ($isTool ? 'Alat / Mesin' : 'Material Khusus Proyek')),
                 'unit_abbr'                => $item->displayUnit(),
                 'qty_ordered'              => (float) $item->quantity,
                 'qty_received'             => (float) $item->received_qty,
@@ -314,14 +329,13 @@ class GoodsReceiptController extends Controller
             ];
         })->values();
 
-        $linkedMr = $purchaseOrder->materialRequest ?? $purchaseOrder->items->pluck('materialRequestItem.materialRequest')->filter()->first();
-
         return response()->json([
             'po_id'               => $purchaseOrder->id,
             'po_number'           => $purchaseOrder->po_number,
             'supplier_id'         => $purchaseOrder->supplier_id,
             'supplier_name'       => $purchaseOrder->supplier?->name ?? $purchaseOrder->supplier_name,
-            'warehouse_id'        => $purchaseOrder->delivery_warehouse_id,
+            'warehouse_id'        => $whId,
+            'warehouse_name'      => $whName,
             'material_request_id' => $linkedMr?->id,
             'mr_number'           => $linkedMr?->request_number,
             'project_name'        => $linkedMr?->toWarehouse?->project?->name ?? $linkedMr?->toWarehouse?->name,
@@ -331,7 +345,7 @@ class GoodsReceiptController extends Controller
 
     // ── AJAX: Load MR Items (PO Lapangan) untuk di-prefill ke form ──────────
 
-    public function getMrItems(\App\Models\MaterialRequest $materialRequest)
+    public function getMrItems(Request $request, \App\Models\MaterialRequest $materialRequest)
     {
         $this->authorize('create goods receipts');
 
@@ -340,10 +354,91 @@ class GoodsReceiptController extends Controller
             'items.material.category',
             'items.tool.category',
             'items.purchaseOrderItems.purchaseOrder.supplier',
+            'items.purchaseOrderItems.deliverySchedules',
             'purchaseOrders.supplier',
+            'purchaseOrders.items.deliverySchedules',
             'toWarehouse.project'
         ]);
 
+        $filterPoId = $request->query('purchase_order_id', $request->query('po_id'));
+
+        // Ambil seluruh PO yang terkait dengan MR ini
+        $allLinkedPos = $materialRequest->purchaseOrders
+            ->merge($materialRequest->items->flatMap->purchaseOrderItems->map->purchaseOrder)
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        $linkedPos = $allLinkedPos->map(function ($po) {
+            $unreceivedCount = $po->items->filter(fn($it) => $it->outstanding > 0)->count();
+            return [
+                'id'               => $po->id,
+                'po_number'        => $po->po_number,
+                'supplier_id'      => $po->supplier_id,
+                'supplier_name'    => $po->supplier?->name ?? $po->supplier_name,
+                'status'           => $po->status,
+                'item_count'       => $po->items->count(),
+                'unreceived_count' => $unreceivedCount,
+                'items_summary'    => $po->items->map(fn($it) => $it->displayName())->implode(', '),
+            ];
+        });
+
+        if (!empty($filterPoId)) {
+            // FILTER SPESIFIK PO: Hanya muat item yang masuk dalam Purchase Order yang dipilih!
+            $activePo = $allLinkedPos->firstWhere('id', (int) $filterPoId) ?? PurchaseOrder::with(['supplier', 'items.deliverySchedules'])->find($filterPoId);
+
+            if ($activePo) {
+                $items = $activePo->items->map(function ($poi) use ($activePo, $materialRequest) {
+                    $isTool = $poi->isTool();
+                    $mrItem = $poi->materialRequestItem;
+                    $qtyOrdered = (float) $poi->quantity;
+                    $qtyReceived = (float) $poi->received_qty;
+                    $qtyRemaining = max(0, $qtyOrdered - $qtyReceived - (float) $poi->lost_qty - (float) $poi->short_closed_qty);
+                    $activeSchedule = $poi->deliverySchedules->whereIn('status', ['planned', 'partial'])->sortBy('planned_date')->first();
+
+                    return [
+                        'item_type'                => $isTool ? 'tool' : 'material',
+                        'material_request_item_id' => $mrItem?->id ?? $poi->material_request_item_id,
+                        'purchase_order_item_id'   => $poi->id,
+                        'purchase_order_id'        => $activePo->id,
+                        'purchase_order_number'    => $activePo->po_number,
+                        'supplier_id'              => $activePo->supplier_id,
+                        'supplier_name'            => $activePo->supplier?->name ?? $activePo->supplier_name,
+                        'po_delivery_schedule_id'  => $activeSchedule?->id,
+                        'stage_reference'          => $activeSchedule?->stage_label,
+                        'material_id'              => $poi->material_id ?? $mrItem?->material_id,
+                        'tool_id'                  => $poi->tool_id ?? $mrItem?->tool_id,
+                        'material_name'            => $poi->displayName(),
+                        'custom_item_name'         => $poi->custom_item_name ?? ($mrItem?->isCustom() ? $mrItem->custom_item_name : null),
+                        'custom_item_type'         => $poi->custom_item_type ?? ($mrItem?->isCustom() ? $mrItem->custom_item_type : null),
+                        'custom_item_unit'         => $poi->custom_item_unit ?? ($mrItem?->isCustom() ? $mrItem->custom_item_unit : null),
+                        'material_code'            => $isTool ? ($poi->tool?->code ?? '-') : ($poi->material?->code ?? 'NON-MASTER'),
+                        'category_name'            => $poi->material?->category?->name ?? ($mrItem?->displayCategoryName() ?? ($isTool ? 'Alat / Mesin' : 'Material Khusus Proyek')),
+                        'unit_abbr'                => $poi->displayUnit(),
+                        'qty_ordered'              => $qtyOrdered,
+                        'qty_received'             => $qtyReceived,
+                        'qty_remaining'            => $qtyRemaining,
+                        'unit_price'               => (float) $poi->unit_price,
+                        'mr_id'                    => $materialRequest->id,
+                        'mr_number'                => $materialRequest->request_number,
+                    ];
+                })->values();
+
+                return response()->json([
+                    'material_request_id' => $materialRequest->id,
+                    'mr_number'           => $materialRequest->request_number,
+                    'warehouse_id'        => $materialRequest->to_warehouse_id,
+                    'warehouse_name'      => $materialRequest->toWarehouse?->project?->name ?? $materialRequest->toWarehouse?->name,
+                    'purchase_order_id'   => $activePo->id,
+                    'supplier_id'         => $activePo->supplier_id,
+                    'supplier_name'       => $activePo->supplier?->name ?? $activePo->supplier_name,
+                    'purchase_orders'     => $linkedPos,
+                    'items'               => $items,
+                ]);
+            }
+        }
+
+        // Default: Muat semua item dari MR (atau jika hanya ada 1 PO terhubung)
         $items = $materialRequest->items->map(function ($item) use ($materialRequest) {
             $isTool = $item->tool_id !== null || ($item->item_type ?? '') === 'tool';
             $approved = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
@@ -351,6 +446,7 @@ class GoodsReceiptController extends Controller
             $remaining = max(0, $approved - $received);
             $linkedPoi = $item->purchaseOrderItems->first();
             $poiPo = $linkedPoi?->purchaseOrder;
+            $activeSchedule = $linkedPoi?->deliverySchedules->whereIn('status', ['planned', 'partial'])->sortBy('planned_date')->first();
 
             return [
                 'item_type'                => $isTool ? 'tool' : 'material',
@@ -360,9 +456,14 @@ class GoodsReceiptController extends Controller
                 'purchase_order_number'    => $poiPo?->po_number,
                 'supplier_id'              => $poiPo?->supplier_id,
                 'supplier_name'            => $poiPo?->supplier?->name ?? $poiPo?->supplier_name,
+                'po_delivery_schedule_id'  => $activeSchedule?->id,
+                'stage_reference'          => $activeSchedule?->stage_label,
                 'material_id'              => $item->material_id,
                 'tool_id'                  => $item->tool_id,
                 'material_name'            => $item->displayName(),
+                'custom_item_name'         => $item->isCustom() ? $item->custom_item_name : null,
+                'custom_item_type'         => $item->isCustom() ? $item->custom_item_type : null,
+                'custom_item_unit'         => $item->isCustom() ? $item->custom_item_unit : null,
                 'material_code'            => $isTool ? ($item->tool?->code ?? '-') : ($item->material?->code ?? 'NON-MASTER'),
                 'category_name'            => $item->displayCategoryName(),
                 'unit_abbr'                => $item->displayUnit(),
@@ -375,34 +476,17 @@ class GoodsReceiptController extends Controller
             ];
         })->values();
 
-        // Ambil seluruh PO yang terkait dengan MR ini (dari relasi langsung atau relasi item)
-        $linkedPos = $materialRequest->purchaseOrders
-            ->merge($materialRequest->items->flatMap->purchaseOrderItems->pluck('purchaseOrder'))
-            ->filter()
-            ->unique('id')
-            ->values()
-            ->map(function ($po) {
-                return [
-                    'id'            => $po->id,
-                    'po_number'     => $po->po_number,
-                    'supplier_id'   => $po->supplier_id,
-                    'supplier_name' => $po->supplier?->name ?? $po->supplier_name,
-                    'status'        => $po->status,
-                    'item_count'    => $po->items->count(),
-                    'items_summary' => $po->items->map(fn($it) => $it->displayName())->implode(', '),
-                ];
-            });
-
         $firstPo = $linkedPos->first();
+        $isSinglePo = ($linkedPos->count() === 1);
 
         return response()->json([
             'material_request_id' => $materialRequest->id,
             'mr_number'           => $materialRequest->request_number,
             'warehouse_id'        => $materialRequest->to_warehouse_id,
             'warehouse_name'      => $materialRequest->toWarehouse?->project?->name ?? $materialRequest->toWarehouse?->name,
-            'purchase_order_id'   => $firstPo['id'] ?? null,
-            'supplier_id'         => $firstPo['supplier_id'] ?? null,
-            'supplier_name'       => $firstPo['supplier_name'] ?? null,
+            'purchase_order_id'   => $isSinglePo ? ($firstPo['id'] ?? null) : null,
+            'supplier_id'         => $isSinglePo ? ($firstPo['supplier_id'] ?? null) : null,
+            'supplier_name'       => $isSinglePo ? ($firstPo['supplier_name'] ?? null) : null,
             'purchase_orders'     => $linkedPos,
             'items'               => $items,
         ]);

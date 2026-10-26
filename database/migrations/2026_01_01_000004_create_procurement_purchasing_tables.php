@@ -72,6 +72,10 @@ return new class extends Migration
             ])->default('draft');
             $table->enum('risk_bearer', ['vendor', 'buyer'])->default('vendor');
             $table->date('order_date');
+            $table->unsignedTinyInteger('week_number')->nullable()->comment('Minggu ke-1 s.d 5 dalam bulan');
+            $table->unsignedTinyInteger('month')->nullable()->comment('Bulan 1 s.d 12');
+            $table->unsignedSmallInteger('year')->nullable()->comment('Tahun order PO');
+            $table->unsignedTinyInteger('iso_week')->nullable()->comment('Minggu ISO-8601 (1 s.d 53)');
             $table->date('expected_delivery')->nullable();
             $table->decimal('total_amount', 15, 2)->default(0.00);
             $table->decimal('paid_amount', 15, 2)->default(0.00);
@@ -79,6 +83,9 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
+
+            $table->index(['year', 'month', 'week_number'], 'idx_po_weekly_grouping');
+            $table->index(['year', 'iso_week'], 'idx_po_iso_week');
         });
 
         // 4. Purchase Order Items (with custom item support, unit price, subtotal, and total price)

@@ -28,17 +28,36 @@ class PurchaseOrder extends Model
         'terms',
         'notes',
         'approved_at',
+        'week_number',
+        'month',
+        'year',
+        'iso_week',
     ];
 
     protected $casts = [
         'order_date' => 'date', 'expected_delivery' => 'date',
         'total_amount' => 'decimal:2', 'paid_amount' => 'decimal:2',
         'approved_at' => 'datetime',
+        'week_number' => 'integer',
+        'month' => 'integer',
+        'year' => 'integer',
+        'iso_week' => 'integer',
     ];
 
     protected static function boot()
     {
         parent::boot();
+
+        static::saving(function ($m) {
+            if ($m->order_date) {
+                $dt = \Carbon\Carbon::parse($m->order_date);
+                $m->week_number = $dt->weekOfMonth;
+                $m->month       = $dt->month;
+                $m->year        = $dt->year;
+                $m->iso_week    = $dt->isoWeek();
+            }
+        });
+
         static::creating(function ($m) {
             if (empty($m->po_number)) {
                 $year = $m->order_date ? (int) date('Y', strtotime($m->order_date)) : (int) date('Y');
