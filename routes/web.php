@@ -149,7 +149,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
 
     // Purchase Orders (Hanya Admin Pusat, Admin PO, Owner, po_lapangan, dan po_nota_harian / admin-po-nota untuk read-only)
     Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|po_lapangan|po_nota_harian|admin-po-nota|admin_pusat']], function () {
-        Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show']);
+        Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show','edit','update']);
         Route::get('/purchase-orders/{purchaseOrder}/print',   [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
         Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
@@ -189,12 +189,15 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::resource('warehouses', WarehouseController::class)->except(['show']);
     Route::resource('projects', ProjectController::class)->except(['show']);
 
-    // Print Template Manager
-    Route::resource('print-templates', PrintTemplateController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
-    Route::post('/print-templates/{printTemplate}/set-active',
-        [PrintTemplateController::class, 'setActive'])
-        ->name('print-templates.setActive');
+    // Print Template Manager (Hanya Owner, Super Admin, Admin Pusat)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin']], function () {
+        Route::resource('print-templates', PrintTemplateController::class)
+            ->only(['index', 'store', 'update', 'destroy']);
+        Route::post('/print-templates/{printTemplate}/set-active',
+            [PrintTemplateController::class, 'setActive'])
+            ->name('print-templates.setActive');
+    });
+
     Route::get('/print-templates/{printTemplate}/file',
         [PrintTemplateController::class, 'file'])
         ->name('print-templates.file')

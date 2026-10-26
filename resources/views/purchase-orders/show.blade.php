@@ -38,6 +38,14 @@
                 </a>
             @endif
 
+            @can('update', $purchaseOrder)
+                @if(!in_array($purchaseOrder->status, ['cancelled', 'closed', 'received']) && !$purchaseOrder->hasConfirmedGoodsReceipt())
+                    <a href="{{ route('purchase-orders.edit', $purchaseOrder) }}" class="btn" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;font-weight:600;" title="Edit Purchase Order">
+                        <x-lucide-pencil class="me-1" /> Edit PO
+                    </a>
+                @endif
+            @endcan
+
             <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary">
                 <x-lucide-plus class="me-1" /> Catat Nota Harian Baru
             </a>
@@ -312,7 +320,7 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; border-bottom:1px dashed #fecaca;">
                             <div>
                                 <strong>{{ $wh['item_name'] }}</strong>
-                                <span class="text-muted">({{ number_format($wh['qty'], 2, ',', '.') }} {{ $wh['unit'] }})</span>
+                                <span class="text-muted">({{ format_quantity($wh['qty']) }} {{ $wh['unit'] }})</span>
                                 &mdash; <span style="color:#7f1d1d;">{{ $wh['reason'] }}</span>
                             </div>
                             <div style="font-weight:700; color:#b91c1c;">
@@ -430,11 +438,11 @@
                                             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                                                 <span>
                                                     <strong>{{ $sch->stage_label }}:</strong>
-                                                    {{ number_format($sch->planned_qty, 2, ',', '.') }} {{ $item->displayUnit() }}
+                                                    {{ format_quantity($sch->planned_qty) }} {{ $item->displayUnit() }}
                                                     (Rencana: {{ $sch->planned_date ? $sch->planned_date->format('d/m/Y') : '-' }})
                                                 </span>
                                                 <span>
-                                                    <span class="text-success fw-semibold">{{ number_format($sch->received_qty, 2, ',', '.') }} tiba</span>
+                                                    <span class="text-success fw-semibold">{{ format_quantity($sch->received_qty) }} tiba</span>
                                                     @if($sch->status === 'received')
                                                         <span class="badge" style="background:#dcfce7;color:#166534;font-size:9.5px;">Tuntas</span>
                                                     @elseif($sch->is_late)
@@ -450,14 +458,14 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            {{ number_format($item->quantity, 2, ',', '.') }} {{ $item->displayUnit() }}
+                            {{ format_quantity($item->quantity) }} {{ $item->displayUnit() }}
                         </td>
                         @if($purchaseOrder->status !== 'draft')
                             <td class="text-center">
-                                <span class="text-success font-semibold">{{ number_format($item->received_qty, 2, ',', '.') }} diterima</span>
+                                <span class="text-success font-semibold">{{ format_quantity($item->received_qty) }} diterima</span>
                                 @if((float)$item->short_closed_qty > 0)
                                     <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10.5px;">
-                                        Ditutup: {{ number_format($item->short_closed_qty, 2, ',', '.') }}
+                                        Ditutup: {{ format_quantity($item->short_closed_qty) }}
                                     </span>
                                 @endif
                             </td>

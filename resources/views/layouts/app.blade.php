@@ -1873,10 +1873,10 @@
                     (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
-                    || ($isRoleAdminPO && (auth()->user()->can('view material requests') || auth()->user()->can('view distributions')))
+                    || ($isRoleAdminPO && auth()->user()->can('view material requests'))
                 );
                 $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*'])
-                    || ($isRoleAdminPO && request()->routeIs(['material-requests.*', 'distributions.*']));
+                    || ($isRoleAdminPO && request()->routeIs(['material-requests.*']));
             @endphp
             @if($isRoleAdminPOProyek)
                 {{-- Khusus Admin PO Proyek: Nota Harian & Kas Pembayaran Proyek --}}
@@ -1927,16 +1927,6 @@
                             <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Pembayaran
                         </a>
                         @endcan
-
-                        @can('view distributions')
-                        <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                            <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
-                        </a>
-                        @endcan
-
-                        <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                            <x-lucide-layout-template class="nav-icon" aria-hidden="true" /> Template Kop Surat
-                        </a>
                     </div>
                 </div>
                 @else
@@ -1964,7 +1954,7 @@
                         </a>
                         @endcan
 
-                        @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin PO']))
+                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat']))
                         <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
                             <x-lucide-layout-template class="nav-icon" aria-hidden="true" /> Template Kop Surat
                         </a>

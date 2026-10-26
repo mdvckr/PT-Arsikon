@@ -410,14 +410,14 @@
                     btnLogin.classList.remove('is-success');
                     btnLogin.classList.add('is-loading');
                     btnLoginIcon.style.display = 'inline-flex';
-                    btnLoginIcon.innerHTML = '<x-lucide-loader-2 class="animate-spin" />';
+                    btnLoginIcon.innerHTML = `<x-lucide-loader-2 class="animate-spin" />`;
                     btnLoginText.textContent = 'Memverifikasi...';
                 } else if (state === 'success') {
                     btnLogin.disabled = true;
                     btnLogin.classList.remove('is-loading');
                     btnLogin.classList.add('is-success');
                     btnLoginIcon.style.display = 'inline-flex';
-                    btnLoginIcon.innerHTML = '<x-lucide-circle-check />';
+                    btnLoginIcon.innerHTML = `<x-lucide-circle-check />`;
                     btnLoginText.textContent = 'Login Berhasil';
                 } else {
                     // Normal state - Tanpa icon di kondisi normal

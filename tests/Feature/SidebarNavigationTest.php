@@ -108,10 +108,10 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString('Purchase Order (PO)', $sidebar);
         $this->assertStringContainsString('Nota Pembelian Harian', $sidebar);
         $this->assertStringContainsString('Pembayaran', $sidebar);
-        $this->assertStringContainsString('Surat Jalan', $sidebar);
-        $this->assertStringContainsString('Template Kop Surat', $sidebar);
 
-        // Tidak boleh muncul di sidebar (Logistik dihapus untuk Admin PO, Teknis disatukan ke Pengadaan, tidak ada GR, tidak ada Admin Sistem, tidak ada dropdown chevron):
+        // Tidak boleh muncul di sidebar (Surat Jalan & Template Kop Surat dihapus untuk Admin PO, Logistik dihapus, Teknis disatukan ke Pengadaan, tidak ada GR, tidak ada Admin Sistem, tidak ada dropdown chevron):
+        $this->assertStringNotContainsString('Surat Jalan', $sidebar);
+        $this->assertStringNotContainsString('Template Kop Surat', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
         $this->assertStringNotContainsString('nav-section-chevron', $sidebar);

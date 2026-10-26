@@ -67,7 +67,7 @@ class RoleAndPermissionSeeder extends Seeder
             // Procurement
             'view procurement', 'create procurement', 'approve procurement',
             // Purchase Orders
-            'view purchase orders', 'create purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders', 'close purchase orders',
+            'view purchase orders', 'create purchase orders', 'edit purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders', 'close purchase orders',
             // Purchase Receipts
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             // Payments
@@ -176,11 +176,9 @@ class RoleAndPermissionSeeder extends Seeder
             'view material requests', 'approve material requests',
             'view material usages',
             'view procurement', 'create procurement',
-            'view purchase orders', 'create purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase orders', 'create purchase orders', 'edit purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
-            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
-            'create transit losses',
             'view reports',
             'view audit logs',
         ]);

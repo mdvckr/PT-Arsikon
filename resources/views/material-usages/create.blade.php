@@ -1345,7 +1345,7 @@
             const btn = form.querySelector('button[type=submit]');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<x-lucide-loader-2 class="me-1 animate-spin" /> Menyimpan...';
+                btn.innerHTML = `<x-lucide-loader-2 class="me-1 animate-spin" /> Menyimpan...`;
             }
 
             return true;

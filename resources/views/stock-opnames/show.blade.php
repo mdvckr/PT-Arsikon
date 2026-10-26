@@ -46,11 +46,11 @@
                                 <div class="fw-600">{{ $item->inventory?->material?->name ?? 'Material Dihapus' }}</div>
                                 <div class="text-muted" style="font-size:11.5px;">{{ $item->inventory?->material?->code }}</div>
                             </td>
-                            <td>{{ number_format($item->system_quantity, 2) }} {{ $item->inventory?->material?->unit?->abbreviation }}</td>
-                            <td class="fw-700">{{ number_format($item->physical_quantity, 2) }} {{ $item->inventory?->material?->unit?->abbreviation }}</td>
+                            <td>{{ format_quantity($item->system_quantity) }} {{ $item->inventory?->material?->unit?->abbreviation }}</td>
+                            <td class="fw-700">{{ format_quantity($item->physical_quantity) }} {{ $item->inventory?->material?->unit?->abbreviation }}</td>
                             <td class="{{ $diffColor }} fw-600">
                                 @if($diff != 0)
-                                <x-dynamic-component :component="'lucide-'.$diffIcon" class="w-3.5 h-3.5 inline-block" /> {{ number_format(abs($diff), 2) }}
+                                <x-dynamic-component :component="'lucide-'.$diffIcon" class="w-3.5 h-3.5 inline-block" /> {{ format_quantity(abs($diff)) }}
                                 @else
                                 -
                                 @endif

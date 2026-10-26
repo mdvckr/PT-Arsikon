@@ -181,7 +181,7 @@
                                                 <div class="text-xs flex items-center gap-1">
                                                     <x-lucide-circle-check class="text-primary" style="font-size:9px;" />
                                                     <span>{{ $poItem->displayName() }}</span>
-                                                    <span class="text-muted">({{ number_format($poItem->quantity, 2, ',', '.') }} {{ $poItem->displayUnit() }})</span>
+                                                    <span class="text-muted">({{ format_quantity($poItem->quantity) }} {{ $poItem->displayUnit() }})</span>
                                                     @if($poItem->material_request_item_id)
                                                         <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:9px;padding:1px 4px;">Dari MR</span>
                                                     @elseif($poItem->isCustom())
@@ -226,6 +226,13 @@
                                             <a href="{{ route('purchase-orders.show', $po) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail PO">
                                                 <x-lucide-eye />
                                             </a>
+                                            @can('update', $po)
+                                                @if(!in_array($po->status, ['cancelled', 'closed', 'received']) && !$po->hasConfirmedGoodsReceipt())
+                                                    <a href="{{ route('purchase-orders.edit', $po) }}" class="btn btn-sm btn-outline-warning btn-icon" title="Edit PO">
+                                                        <x-lucide-pencil />
+                                                    </a>
+                                                @endif
+                                            @endcan
                                             @if($canViewPrice)
                                                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $po->id, 'mode' => 'official']) }}" target="_blank" class="btn btn-sm btn-light border btn-icon" style="color:#0f766e;" title="Cetak PO Resmi (Harga)">
                                                     <x-lucide-printer />

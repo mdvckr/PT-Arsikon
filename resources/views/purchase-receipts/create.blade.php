@@ -299,7 +299,7 @@
                 }
                 if (indicator) {
                     indicator.style.background = 'rgba(239, 68, 68, 0.4)';
-                    indicator.innerHTML = '<x-lucide-triangle-alert class="text-red-200" /> Saldo Kurang!';
+                    indicator.innerHTML = `<x-lucide-triangle-alert class="text-red-200" /> Saldo Kurang!`;
                 }
                 if (submitBtn) {
                     submitBtn.classList.remove('btn-primary');
@@ -309,7 +309,7 @@
                 if (warnAlert) warnAlert.style.display = 'none';
                 if (indicator) {
                     indicator.style.background = 'rgba(255, 255, 255, 0.18)';
-                    indicator.innerHTML = '<x-lucide-zap class="text-amber-300" /> Pembayaran Instan (Potong Kas)';
+                    indicator.innerHTML = `<x-lucide-zap class="text-amber-300" /> Pembayaran Instan (Potong Kas)`;
                 }
                 if (submitBtn) {
                     submitBtn.classList.remove('btn-danger');

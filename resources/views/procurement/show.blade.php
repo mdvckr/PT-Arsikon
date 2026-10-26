@@ -147,7 +147,7 @@
                                 <div class="item-code">Kode: {{ $item->material->code }}</div>
                                 @endif
                             </td>
-                            <td style="text-align: right;">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                            <td style="text-align: right;">{{ format_quantity($item->quantity) }}</td>
                             <td style="text-align: right;">
                                 @if($item->estimated_price)
                                     Rp {{ number_format($item->estimated_price, 0, ',', '.') }}

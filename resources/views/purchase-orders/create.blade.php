@@ -275,7 +275,7 @@
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-1">
-                                        <input type="number" step="0.01" min="0.01" max="{{ $sisaKuota }}" name="items[{{ $idx }}][quantity]" value="{{ $sisaKuota }}" class="form-control po-qty" oninput="calcPoRow(this)" required>
+                                        <input type="number" step="0.01" min="0.01" max="{{ (float)$sisaKuota }}" name="items[{{ $idx }}][quantity]" value="{{ (float)$sisaKuota }}" class="form-control po-qty" oninput="calcPoRow(this)" required>
                                         <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">{{ $unitName }}</span>
                                     </div>
                                     <div style="font-size:10px;color:#64748b;margin-top:2px;">Sisa kuota: {{ format_quantity($sisaKuota) }}</div>

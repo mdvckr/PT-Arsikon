@@ -682,12 +682,12 @@
                 emptySec.style.display = 'none';
                 hasItemsSec.style.display = 'block';
                 countHigh.textContent = itemCount;
-                submitBtn.innerHTML = '<x-lucide-arrow-left-right /> Pindahkan & Hapus';
+                submitBtn.innerHTML = `<x-lucide-arrow-left-right /> Pindahkan & Hapus`;
                 if (targetSelect) targetSelect.required = true;
             } else {
                 emptySec.style.display = 'block';
                 hasItemsSec.style.display = 'none';
-                submitBtn.innerHTML = '<x-lucide-trash-2 /> Ya, Hapus Kategori';
+                submitBtn.innerHTML = `<x-lucide-trash-2 /> Ya, Hapus Kategori`;
                 if (targetSelect) targetSelect.required = false;
             }
 

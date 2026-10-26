@@ -54,7 +54,7 @@ class PurchaseOrderPolicy
         }
 
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'admin_pusat', 'admin', 'po_lapangan'
+            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'admin_pusat', 'admin', 'po_lapangan'
         ]) || $user->can('edit purchase orders');
     }
 

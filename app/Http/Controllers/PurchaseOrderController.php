@@ -530,6 +530,452 @@ class PurchaseOrderController extends Controller
         return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice'));
     }
 
+    public function edit(PurchaseOrder $purchaseOrder)
+    {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Role po_nota_harian hanya memiliki akses read-only pada modul Purchase Order.');
+        }
+        $this->authorize('update', $purchaseOrder);
+
+        if (in_array($purchaseOrder->status, ['cancelled', 'closed', 'received'])) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', "Purchase Order berstatus '{$purchaseOrder->status}' tidak dapat diedit.");
+        }
+
+        if ($purchaseOrder->hasConfirmedGoodsReceipt()) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', 'Purchase Order tidak dapat diedit karena sudah memiliki penerimaan barang (Goods Receipt) yang terkonfirmasi.');
+        }
+
+        if ($purchaseOrder->payments()->where('status', 'verified')->exists()) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', 'Purchase Order tidak dapat diedit karena sudah memiliki pembayaran yang terverifikasi.');
+        }
+
+        $suppliers  = Supplier::orderBy('name')->get();
+        $materials  = Material::with('unit')->orderBy('name')->get();
+        $warehouses = \App\Models\Warehouse::where('is_active', true)->orderBy('name')->get();
+
+        // Approved PRs (sertakan PR saat ini jika ada)
+        $approvedPRs = ProcurementRequest::whereIn('status', ['approved', 'partially_ordered'])
+            ->when($purchaseOrder->procurement_request_id, function($q) use ($purchaseOrder) {
+                $q->orWhere('id', $purchaseOrder->procurement_request_id);
+            })
+            ->with('items.material.unit')
+            ->get();
+
+        $selectedPR = $purchaseOrder->procurement_request_id
+            ? ProcurementRequest::with('items.material.unit')->find($purchaseOrder->procurement_request_id)
+            : null;
+
+        // Load relasi PO
+        $purchaseOrder->load([
+            'items.material.unit',
+            'items.tool',
+            'items.deliverySchedules',
+            'items.materialRequestItem.materialRequest.toWarehouse.project',
+            'supplier',
+            'deliveryWarehouse.project',
+            'materialRequest.toWarehouse.project',
+            'procurementRequest.items.material.unit',
+        ]);
+
+        // PO Lapangan (MR) yang approved atau partially_fulfilled
+        $approvedMRs = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
+            ->when($purchaseOrder->material_request_id, function($q) use ($purchaseOrder) {
+                $q->orWhere('id', $purchaseOrder->material_request_id);
+            })
+            ->with(['items.material.unit', 'items.tool', 'fromWarehouse', 'toWarehouse.project'])
+            ->latest()
+            ->get();
+
+        // Map item PO Lapangan untuk interaktivitas JS
+        $poItemQtyByMrItem = $purchaseOrder->items->pluck('quantity', 'material_request_item_id')->toArray();
+
+        $mrItemsMap = $approvedMRs->mapWithKeys(function ($mr) use ($poItemQtyByMrItem) {
+            $items = $mr->items->map(function ($it) use ($mr, $poItemQtyByMrItem) {
+                $baseApproved = (float) $it->qty_approved > 0 ? (float) $it->qty_approved : (float) $it->qty_requested;
+                $currentPoQty = (float) ($poItemQtyByMrItem[$it->id] ?? 0);
+                $sisa = ($baseApproved - (float) $it->qty_ordered) + $currentPoQty;
+
+                return [
+                    'id'               => $it->id,
+                    'material_id'      => $it->material_id,
+                    'tool_id'          => $it->tool_id,
+                    'name'             => $it->displayName(),
+                    'is_custom'        => $it->isCustom(),
+                    'custom_item_name' => $it->custom_item_name,
+                    'custom_item_type' => $it->custom_item_type,
+                    'unit'             => $it->displayUnit(),
+                    'quota'            => round(max(0, $sisa), 2),
+                    'notes'            => $it->notes,
+                    'price'            => (float) ($it->material?->unit_price ?? 0),
+                    'mr_num'           => $mr->request_number,
+                    'warehouse'        => $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name ?? 'Proyek',
+                ];
+            })->filter(fn($it) => $it['quota'] > 0)->values();
+
+            return [$mr->id => [
+                'id'              => $mr->id,
+                'request_number'  => $mr->request_number,
+                'to_warehouse_id' => $mr->to_warehouse_id,
+                'project_name'    => $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name,
+                'items'           => $items,
+            ]];
+        });
+
+        $mrCustomItems = MaterialRequestItem::whereNull('material_id')
+            ->whereHas('materialRequest', function ($q) {
+                $q->whereIn('status', ['submitted', 'approved', 'partially_fulfilled']);
+            })
+            ->with(['materialRequest.fromWarehouse', 'materialRequest.toWarehouse.project'])
+            ->latest()
+            ->get();
+
+        return view('purchase-orders.edit', compact(
+            'purchaseOrder',
+            'suppliers',
+            'materials',
+            'approvedPRs',
+            'selectedPR',
+            'approvedMRs',
+            'mrItemsMap',
+            'mrCustomItems',
+            'warehouses'
+        ));
+    }
+
+    public function update(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        if (auth()->user()?->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+            abort(403, 'Akses ditolak: Role po_nota_harian hanya memiliki akses read-only pada modul Purchase Order.');
+        }
+        $this->authorize('update', $purchaseOrder);
+
+        if (in_array($purchaseOrder->status, ['cancelled', 'closed', 'received'])) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', "Purchase Order berstatus '{$purchaseOrder->status}' tidak dapat diedit.");
+        }
+
+        if ($purchaseOrder->hasConfirmedGoodsReceipt()) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', 'Purchase Order tidak dapat diedit karena sudah memiliki penerimaan barang (Goods Receipt) yang terkonfirmasi.');
+        }
+
+        if ($purchaseOrder->payments()->where('status', 'verified')->exists()) {
+            return redirect()->route('purchase-orders.show', $purchaseOrder)
+                ->with('error', 'Purchase Order tidak dapat diedit karena sudah memiliki pembayaran yang terverifikasi.');
+        }
+
+        $validated = $request->validate([
+            'supplier_id'                      => 'nullable|exists:suppliers,id',
+            'supplier_name'                    => 'nullable|string|max:255',
+            'contact_person'                   => 'nullable|string|max:255',
+            'material_request_id'              => 'nullable|exists:material_requests,id',
+            'procurement_request_id'           => 'nullable|exists:procurement_requests,id',
+            'delivery_warehouse_id'            => 'nullable|exists:warehouses,id',
+            'risk_bearer'                      => 'nullable|in:vendor,buyer',
+            'order_date'                       => 'required|date',
+            'expected_delivery'                => 'nullable|date|after_or_equal:order_date',
+            'terms'                            => 'nullable|string',
+            'notes'                            => 'nullable|string',
+            'items'                            => 'required|array|min:1',
+            'items.*.material_id'              => 'nullable|exists:materials,id',
+            'items.*.tool_id'                  => 'nullable|exists:tools,id',
+            'items.*.custom_item_name'         => 'nullable|string|max:255',
+            'items.*.custom_item_type'         => 'nullable|string|max:100',
+            'items.*.custom_item_unit'         => 'nullable|string|max:50',
+            'items.*.material_request_item_id' => 'nullable|exists:material_request_items,id',
+            'items.*.procurement_request_item_id' => 'nullable|exists:procurement_request_items,id',
+            'items.*.quantity'                 => 'required|numeric|min:0.01',
+            'items.*.unit_price'               => 'required|numeric|min:0',
+            'items.*.notes'                    => 'nullable|string|max:500',
+            'items.*.schedules'                => 'nullable|array',
+            'items.*.schedules.*.stage_label'  => 'nullable|string|max:100',
+            'items.*.schedules.*.planned_date' => 'nullable|date',
+            'items.*.schedules.*.planned_qty'  => 'required|numeric|min:0.01',
+            'items.*.schedules.*.warehouse_id' => 'nullable|exists:warehouses,id',
+            'items.*.schedules.*.notes'        => 'nullable|string',
+        ]);
+
+        $supplierId = !empty($validated['supplier_id']) ? $validated['supplier_id'] : null;
+        $supplierName = !empty(trim($validated['supplier_name'] ?? '')) ? trim($validated['supplier_name']) : null;
+
+        if (!$supplierId && !$supplierName) {
+            return back()->withInput()->withErrors([
+                'supplier_id' => 'Silakan pilih supplier terdaftar atau ketik nama supplier baru.'
+            ]);
+        }
+
+        if ($supplierId && !$supplierName) {
+            $regSupplier = Supplier::find($supplierId);
+            $supplierName = $regSupplier?->name;
+        }
+
+        $deliveryWarehouseId = !empty($validated['delivery_warehouse_id']) ? $validated['delivery_warehouse_id'] : null;
+
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $purchaseOrder) {
+            $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+            // 1. Kembalikan kuota sebelumnya pada item MR & PR
+            foreach ($po->items()->lockForUpdate()->get() as $oldItem) {
+                if ($oldItem->material_request_item_id) {
+                    $mrItem = MaterialRequestItem::where('id', $oldItem->material_request_item_id)->lockForUpdate()->first();
+                    if ($mrItem) {
+                        $newOrdered = max(0, (float)$mrItem->qty_ordered - (float)$oldItem->quantity);
+                        $mrItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                }
+
+                if ($oldItem->procurement_request_item_id) {
+                    $prItem = ProcurementRequestItem::where('id', $oldItem->procurement_request_item_id)->lockForUpdate()->first();
+                    if ($prItem) {
+                        $newOrdered = max(0, (float)$prItem->qty_ordered - (float)$oldItem->quantity);
+                        $prItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                } elseif ($po->procurement_request_id && $oldItem->material_id) {
+                    $prItem = ProcurementRequestItem::where('procurement_request_id', $po->procurement_request_id)
+                        ->where('material_id', $oldItem->material_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if ($prItem) {
+                        $newOrdered = max(0, (float)$prItem->qty_ordered - (float)$oldItem->quantity);
+                        $prItem->update(['qty_ordered' => $newOrdered]);
+                    }
+                }
+            }
+
+            // 2. Validasi sumber pengadaan & ketersediaan kuota baru
+            foreach ($validated['items'] as $idx => $item) {
+                $hasMaterial = !empty($item['material_id']);
+                $hasTool = !empty($item['tool_id']);
+                $hasCustomName = !empty(trim($item['custom_item_name'] ?? ''));
+                if (!$hasMaterial && !$hasTool && !$hasCustomName) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "items.{$idx}.material_id" => "Baris ke-" . ($idx + 1) . ": Silakan pilih material dari master atau tentukan barang baru/custom."
+                    ]);
+                }
+
+                if ($hasTool) {
+                    $qty = $item['quantity'] ?? null;
+                    if (!is_null($qty) && fmod((float)$qty, 1) != 0) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$idx}.quantity" => "Kuantitas alat harus berupa bilangan bulat."
+                        ]);
+                    }
+                }
+
+                if (!empty($item['schedules']) && is_array($item['schedules'])) {
+                    $totalPlanned = collect($item['schedules'])->sum(fn($s) => (float)($s['planned_qty'] ?? 0));
+                    if ($totalPlanned > (float)($item['quantity'] ?? 0)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$idx}.schedules" => "Baris ke-" . ($idx + 1) . ": Total kuantitas jadwal ({$totalPlanned}) melebihi kuantitas pemesanan ({$item['quantity']})."
+                        ]);
+                    }
+                }
+
+                $mrItemId = $item['material_request_item_id'] ?? null;
+                $prItemId = $item['procurement_request_item_id'] ?? null;
+                $hasPrId  = !empty($validated['procurement_request_id']);
+
+                if (!$mrItemId && !$prItemId && !$hasPrId) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        "items.{$idx}" => "Baris ke-" . ($idx + 1) . ": Purchase Order wajib memiliki sumber pengadaan yang sah (item PO Lapangan yang telah disetujui atau Permintaan Pengadaan PR yang telah disetujui)."
+                    ]);
+                }
+
+                if ($mrItemId) {
+                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->first();
+                    if (!$mrItem) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$idx}.material_request_item_id" => "Item PO Lapangan tidak ditemukan."
+                        ]);
+                    }
+                    $approvedQty = (float) $mrItem->qty_approved > 0 ? (float) $mrItem->qty_approved : (float) $mrItem->qty_requested;
+                    $sisaKuotaMR = max(0, $approvedQty - (float) $mrItem->qty_ordered);
+                    if ((float) $item['quantity'] > $sisaKuotaMR) {
+                        $matName = $mrItem->displayName();
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota MR ({$sisaKuotaMR})."
+                        ]);
+                    }
+
+                    if (!$deliveryWarehouseId && $mrItem->materialRequest?->to_warehouse_id) {
+                        $deliveryWarehouseId = $mrItem->materialRequest->to_warehouse_id;
+                    }
+                }
+
+                if ($prItemId || $hasPrId) {
+                    if (!$prItemId && $hasPrId && $hasMaterial) {
+                        $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
+                            ->where('material_id', $item['material_id'])
+                            ->value('id');
+                    }
+
+                    if ($prItemId) {
+                        $prItem = ProcurementRequestItem::where('id', $prItemId)->lockForUpdate()->first();
+                        if (!$prItem) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                "items.{$idx}.procurement_request_item_id" => "Item Permintaan Pengadaan (PR) tidak ditemukan."
+                            ]);
+                        }
+
+                        $sisaKuota = (float) $prItem->quantity - (float) $prItem->qty_ordered;
+                        if ((float) $item['quantity'] > $sisaKuota) {
+                            $matName = $prItem->material?->name ?? 'Material';
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                "items.{$idx}.quantity" => "Jumlah pemesanan {$matName} ({$item['quantity']}) melebihi sisa kuota PR ({$sisaKuota})."
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $materialRequestId = !empty($validated['material_request_id']) ? $validated['material_request_id'] : null;
+            if (!$materialRequestId) {
+                foreach ($validated['items'] as $item) {
+                    if (!empty($item['material_request_item_id'])) {
+                        $materialRequestId = MaterialRequestItem::where('id', $item['material_request_item_id'])->value('material_request_id');
+                        if ($materialRequestId) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!$deliveryWarehouseId && $materialRequestId) {
+                $deliveryWarehouseId = \App\Models\MaterialRequest::find($materialRequestId)?->to_warehouse_id;
+            }
+
+            $oldPrId = $po->procurement_request_id;
+
+            $newStatus = $po->status;
+            if (in_array($po->status, ['approved', 'sent'])) {
+                $newStatus = 'draft';
+            }
+
+            $po->update([
+                'supplier_id'            => $supplierId,
+                'supplier_name'          => $supplierName,
+                'contact_person'         => !empty(trim($validated['contact_person'] ?? '')) ? trim($validated['contact_person']) : null,
+                'material_request_id'    => $materialRequestId,
+                'procurement_request_id' => $validated['procurement_request_id'] ?? null,
+                'delivery_warehouse_id'  => $deliveryWarehouseId,
+                'risk_bearer'            => $validated['risk_bearer'] ?? ($po->risk_bearer ?? 'vendor'),
+                'order_date'             => $validated['order_date'],
+                'expected_delivery'      => $validated['expected_delivery'] ?? null,
+                'terms'                  => $validated['terms'] ?? null,
+                'notes'                  => $validated['notes'] ?? null,
+                'status'                 => $newStatus,
+                'approved_by'            => ($newStatus === 'draft') ? null : $po->approved_by,
+                'approved_at'            => ($newStatus === 'draft') ? null : $po->approved_at,
+            ]);
+
+            // Hapus item dan jadwal lama
+            foreach ($po->items()->get() as $oldPoItem) {
+                $oldPoItem->deliverySchedules()->delete();
+                $oldPoItem->delete();
+            }
+
+            $total = 0;
+            foreach ($validated['items'] as $item) {
+                $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
+                $total += $subtotal;
+
+                $customName = !empty($item['custom_item_name']) ? trim($item['custom_item_name']) : null;
+                $customUnit = !empty($item['custom_item_unit']) ? trim($item['custom_item_unit']) : null;
+                $materialId = !empty($item['material_id']) ? $item['material_id'] : null;
+                $toolId     = !empty($item['tool_id']) ? $item['tool_id'] : null;
+                $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
+                $prItemId   = !empty($item['procurement_request_item_id']) ? $item['procurement_request_item_id'] : null;
+
+                if (!$prItemId && !empty($validated['procurement_request_id']) && $materialId) {
+                    $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
+                        ->where('material_id', $materialId)
+                        ->value('id');
+                }
+
+                if ($mrItemId) {
+                    $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->firstOrFail();
+                    $mrItem->increment('qty_ordered', (float) $item['quantity']);
+                    if (!$toolId && $mrItem->tool_id) {
+                        $toolId = $mrItem->tool_id;
+                    }
+                }
+
+                if ($prItemId) {
+                    $prItem = ProcurementRequestItem::where('id', $prItemId)->lockForUpdate()->firstOrFail();
+                    $prItem->increment('qty_ordered', (float) $item['quantity']);
+                }
+
+                $poItem = $po->items()->create([
+                    'material_id'                 => $materialId,
+                    'tool_id'                     => $toolId,
+                    'custom_item_name'            => $customName,
+                    'custom_item_type'            => $mrItem?->custom_item_type ?: ($item['custom_item_type'] ?? null),
+                    'custom_item_unit'            => $customUnit,
+                    'material_request_item_id'    => $mrItemId,
+                    'procurement_request_item_id' => $prItemId,
+                    'quantity'                    => $item['quantity'],
+                    'unit_price'                  => $item['unit_price'],
+                    'subtotal'                    => $subtotal,
+                    'unit'                        => $customUnit,
+                    'notes'                       => !empty($item['notes']) ? trim($item['notes']) : null,
+                ]);
+
+                $schedules = $item['schedules'] ?? [];
+                if (!empty($schedules)) {
+                    foreach ($schedules as $sIdx => $sch) {
+                        $poItem->deliverySchedules()->create([
+                            'stage_label'  => !empty($sch['stage_label']) ? trim($sch['stage_label']) : ('Tahap ' . ($sIdx + 1)),
+                            'planned_date' => $sch['planned_date'] ?? $po->expected_delivery,
+                            'planned_qty'  => $sch['planned_qty'],
+                            'warehouse_id' => $sch['warehouse_id'] ?? $deliveryWarehouseId,
+                            'status'       => 'planned',
+                            'notes'        => $sch['notes'] ?? null,
+                        ]);
+                    }
+                } else {
+                    $poItem->deliverySchedules()->create([
+                        'stage_label'  => 'Pengiriman Penuh',
+                        'planned_date' => $po->expected_delivery ?? now()->toDateString(),
+                        'planned_qty'  => $item['quantity'],
+                        'warehouse_id' => $deliveryWarehouseId,
+                        'status'       => 'planned',
+                    ]);
+                }
+            }
+
+            $po->update(['total_amount' => $total]);
+
+            // Sinkronkan status PR induk
+            $prsToUpdate = array_filter(array_unique([$oldPrId, $po->procurement_request_id]));
+            foreach ($prsToUpdate as $prId) {
+                $pr = ProcurementRequest::where('id', $prId)->lockForUpdate()->first();
+                if ($pr) {
+                    $totalRequested = (float) $pr->items()->sum('quantity');
+                    $totalOrdered = (float) $pr->items()->sum('qty_ordered');
+                    if ($totalOrdered >= $totalRequested && $totalRequested > 0) {
+                        $pr->update(['status' => 'fully_ordered']);
+                    } elseif ($totalOrdered > 0) {
+                        $pr->update(['status' => 'partially_ordered']);
+                    } else {
+                        $pr->update(['status' => 'approved']);
+                    }
+                }
+            }
+
+            return $po;
+        });
+
+        $msg = "PO #{$po->po_number} berhasil diperbarui.";
+        if ($po->status === 'draft' && $purchaseOrder->status !== 'draft') {
+            $msg .= " Status PO dikembalikan ke Draft untuk persetujuan ulang.";
+        }
+
+        return redirect()->route('purchase-orders.show', $po)->with('success', $msg);
+    }
+
     public function print(Request $request, PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load([

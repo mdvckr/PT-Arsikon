@@ -531,7 +531,7 @@
             const btn = document.getElementById('btnSubmitAssignment');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<x-lucide-loader-2 class="me-1 animate-spin" /> Mengajukan...';
+                btn.innerHTML = `<x-lucide-loader-2 class="me-1 animate-spin" /> Mengajukan...`;
             }
         });
 

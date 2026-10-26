@@ -162,18 +162,18 @@
         </div>
         <div class="summary-item">
             <div class="summary-label">Total Qty Diterima (Baik)</div>
-            <div class="summary-value" style="color:#15803d;">{{ number_format($totalReceived, 2, ',', '.') }}</div>
+            <div class="summary-value" style="color:#15803d;">{{ format_quantity($totalReceived) }}</div>
         </div>
         @if($totalDamaged > 0)
         <div class="summary-item">
             <div class="summary-label">Total Qty Rusak</div>
-            <div class="summary-value" style="color:#b91c1c;">{{ number_format($totalDamaged, 2, ',', '.') }}</div>
+            <div class="summary-value" style="color:#b91c1c;">{{ format_quantity($totalDamaged) }}</div>
         </div>
         @endif
         @if($totalMissing > 0)
         <div class="summary-item">
             <div class="summary-label">Total Qty Selisih/Hilang</div>
-            <div class="summary-value" style="color:#92400e;">{{ number_format($totalMissing, 2, ',', '.') }}</div>
+            <div class="summary-value" style="color:#92400e;">{{ format_quantity($totalMissing) }}</div>
         </div>
         @endif
     </div>
@@ -213,13 +213,13 @@
                     @if($item->notes)<div style="font-size:10px;color:#64748b;font-style:italic;">Ket: {{ $item->notes }}</div>@endif
                 </td>
                 <td style="font-size:10.5px;color:#475569;">{{ $item->item_code }}</td>
-                <td style="text-align:center;color:#64748b;">{{ $item->qty_shipped > 0 ? number_format($item->qty_shipped, 2, ',', '.') : '-' }}</td>
-                <td style="text-align:center;" class="qty-good">{{ number_format($item->qty_received, 2, ',', '.') }}</td>
+                <td style="text-align:center;color:#64748b;">{{ $item->qty_shipped > 0 ? format_quantity($item->qty_shipped) : '-' }}</td>
+                <td style="text-align:center;" class="qty-good">{{ format_quantity($item->qty_received) }}</td>
                 <td style="text-align:center;" class="{{ $item->qty_damaged > 0 ? 'qty-damaged' : '' }}">
-                    {{ $item->qty_damaged > 0 ? number_format($item->qty_damaged, 2, ',', '.') : '-' }}
+                    {{ $item->qty_damaged > 0 ? format_quantity($item->qty_damaged) : '-' }}
                 </td>
                 <td style="text-align:center;" class="{{ $item->qty_missing > 0 ? 'qty-missing' : '' }}">
-                    {{ $item->qty_missing > 0 ? number_format($item->qty_missing, 2, ',', '.') : '-' }}
+                    {{ $item->qty_missing > 0 ? format_quantity($item->qty_missing) : '-' }}
                     @if($item->qty_missing > 0)
                         <div style="font-size:9px;margin-top:1px;">{{ $item->missing_status === 'resolved' ? 'Selesai' : 'Belum Selesai' }}</div>
                     @endif

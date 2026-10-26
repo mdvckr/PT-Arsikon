@@ -54,10 +54,24 @@
         .dest-row { display: flex; align-items: baseline; gap: 4px; }
         .dest-label { font-weight: bold; min-width: 90px; }
         .sign-section { border-top: 1.5px solid #f5a623; display: flex; }
-        .sign-box { flex: 1; padding: 8px 12px 8px; text-align: center; border-right: 1px solid #f5a623; }
+        .sign-box { 
+            flex: 1; 
+            padding: 8px 12px 8px; 
+            text-align: center; 
+            border-right: 1px solid #f5a623; 
+            display: flex;
+            flex-direction: column;
+        }
         .sign-box:last-child { border-right: none; }
         .sign-label-top { font-size: 11px; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
-        .sign-space { height: 64px; }
+        .sign-space { 
+            height: 64px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .sign-person-name { font-size: 10px; color: #333; line-height: 1.2; margin-bottom: 2px; }
         .sign-name { border-top: 1px solid #f5a623; padding-top: 3px; font-size: 10.5px; color: #000; }
 
         .blind-watermark {
@@ -136,11 +150,6 @@
             </div>
             <div class="header-title-col {{ $hidePrice ? 'header-title-blind' : '' }}">
                 <div class="doc-title">PURCHASE<br>ORDER</div>
-                @if($hidePrice)
-                    <div class="doc-subtitle-blind">
-                        <x-lucide-shield /> PO LAPANGAN / GUDANG<br>(TANPA HARGA / Rp 0)
-                    </div>
-                @endif
             </div>
         </div>
 
@@ -251,11 +260,6 @@
             @if($cpText)
                 <div style="margin-top:3px;"><strong>Contact Person (CP) :</strong> {{ $cpText }}</div>
             @endif
-            @if($hidePrice)
-                <div style="margin-top:4px;padding:3px 6px;background:#f8fafc;border:1px dashed #94a3b8;font-size:10px;color:#334155;">
-                    <x-lucide-shield class="text-slate-500" /> <strong>Catatan Penerimaan:</strong> Dokumen PO ini dicetak khusus untuk bagian penerimaan barang di proyek/gudang. Seluruh nominal harga beli dirahasiakan (Rp 0).
-                </div>
-            @endif
         </div>
         @endif
 
@@ -284,7 +288,7 @@
                 <div class="sign-label-top">Mengetahui,</div>
                 <div class="sign-space">
                     @if($po->approver)
-                        <div style="font-size:10px;margin-top:40px;color:#333;"><strong>{{ $po->approver->name }}</strong></div>
+                        <div class="sign-person-name"><strong>{{ $po->approver->name }}</strong></div>
                     @endif
                 </div>
                 <div class="sign-name">Direksi</div>
@@ -293,7 +297,7 @@
                 <div class="sign-label-top">Pemesan,</div>
                 <div class="sign-space">
                     @if($po->creator)
-                        <div style="font-size:10px;margin-top:40px;color:#333;"><strong>{{ $po->creator->name }}</strong></div>
+                        <div class="sign-person-name"><strong>{{ $po->creator->name }}</strong></div>
                     @endif
                 </div>
                 <div class="sign-name">Purchasing</div>

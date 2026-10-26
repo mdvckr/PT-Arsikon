@@ -1070,7 +1070,7 @@
             }
 
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<x-lucide-loader-2 class="animate-spin" /> Menyimpan Surat Jalan...';
+            btnSubmit.innerHTML = `<x-lucide-loader-2 class="animate-spin" /> Menyimpan Surat Jalan...`;
         });
 
         // Initialize on load

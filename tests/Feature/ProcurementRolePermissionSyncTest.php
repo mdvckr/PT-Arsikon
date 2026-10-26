@@ -70,10 +70,12 @@ class ProcurementRolePermissionSyncTest extends TestCase
         $this->assertTrue($adminPO->hasPermissionTo('view procurement'));
         $this->assertTrue($adminPO->hasPermissionTo('create payments'));
         $this->assertTrue($adminPO->hasPermissionTo('view payments'));
-        $this->assertTrue($adminPO->hasPermissionTo('create transit losses'));
         $this->assertTrue($adminPO->hasPermissionTo('approve material requests'));
 
         // Dilarang keras (Hanya Admin Pusat / Admin):
+        $this->assertFalse($adminPO->hasPermissionTo('view distributions'));
+        $this->assertFalse($adminPO->hasPermissionTo('create distributions'));
+        $this->assertFalse($adminPO->hasPermissionTo('create transit losses'));
         $this->assertFalse($adminPO->hasPermissionTo('approve purchase orders'));
         $this->assertFalse($adminPO->hasPermissionTo('close purchase orders'));
         $this->assertFalse($adminPO->hasPermissionTo('verify payments'));

@@ -1200,7 +1200,7 @@
                     if (eyeOff) eyeOff.style.display = 'none';
                     if (toggleText) toggleText.innerText = 'Tampilkan Kartu';
                     if (filterHelp) {
-                        filterHelp.innerHTML = '<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan otomatis disembunyikan saat memfilter bagian.';
+                        filterHelp.innerHTML = `<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan otomatis disembunyikan saat memfilter bagian.`;
                     }
                 } else {
                     // Saat memilih "Semua Bagian": Tampilkan kembali kartu ringkasan secara penuh
@@ -1213,7 +1213,7 @@
                     if (eyeOff) eyeOff.style.display = 'inline-flex';
                     if (toggleText) toggleText.innerText = 'Sembunyikan Kartu';
                     if (filterHelp) {
-                        filterHelp.innerHTML = '<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
+                        filterHelp.innerHTML = `<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.`;
                     }
                 }
             }
@@ -1267,7 +1267,7 @@
                 if (eyeOff) eyeOff.style.display = 'inline-flex';
                 if (toggleText) toggleText.innerText = 'Sembunyikan Kartu';
                 if (filterHelp) {
-                    filterHelp.innerHTML = '<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.';
+                    filterHelp.innerHTML = `<x-lucide-mouse-pointer-2 class="me-1 text-primary" /> Klik kartu metrik di atas untuk otomatis menuju ke tabel rincian terkait.`;
                 }
             } else {
                 kpiGrid.style.display = 'none';
@@ -1275,7 +1275,7 @@
                 if (eyeOff) eyeOff.style.display = 'none';
                 if (toggleText) toggleText.innerText = 'Tampilkan Kartu';
                 if (filterHelp) {
-                    filterHelp.innerHTML = '<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan disembunyikan.';
+                    filterHelp.innerHTML = `<x-lucide-eye-off class="me-1 text-primary" /> Kartu ringkasan disembunyikan.`;
                 }
             }
         }
