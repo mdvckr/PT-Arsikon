@@ -255,9 +255,6 @@
                                                     <x-lucide-printer />
                                                 </a>
                                             @endif
-                                            <a href="{{ route('purchase-receipts.create', ['po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary btn-icon" title="Tambah Nota Harian">
-                                                <x-lucide-receipt />
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>

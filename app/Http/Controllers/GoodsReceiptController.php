@@ -123,7 +123,7 @@ class GoodsReceiptController extends Controller
 
         $accessibleWarehouseIds = $warehouses->pluck('id');
 
-        // PO yang statusnya bisa diterima barangnya (draft, approved, sent, atau partial_received)
+        // PO yang statusnya bisa diterima barangnya dan masih memiliki sisa barang yang belum diterima (outstanding > 0)
         $poQuery = PurchaseOrder::with([
             'supplier',
             'deliveryWarehouse.project',
@@ -131,7 +131,10 @@ class GoodsReceiptController extends Controller
             'items.tool',
             'items.materialRequestItem.materialRequest.toWarehouse.project'
         ])
-        ->whereIn('status', ['draft', 'approved', 'sent', 'partial_received']);
+        ->whereIn('status', ['draft', 'approved', 'sent', 'partial_received'])
+        ->whereHas('items', function ($iq) {
+            $iq->whereRaw('(quantity - received_qty - lost_qty - short_closed_qty) > 0');
+        });
 
         if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $poQuery->where(function ($sub) use ($accessibleWarehouseIds) {
@@ -143,7 +146,7 @@ class GoodsReceiptController extends Controller
 
         $purchaseOrders = $poQuery->orderBy('po_number')->get();
 
-        // PO Lapangan (Material Request) yang aktif dan bisa diproses penerimaannya
+        // PO Lapangan (Material Request) yang aktif dan masih memiliki item belum diterima penuh
         $mrQuery = \App\Models\MaterialRequest::with([
             'toWarehouse.project',
             'requestedBy',
@@ -151,7 +154,10 @@ class GoodsReceiptController extends Controller
             'items.purchaseOrderItems.purchaseOrder',
             'distributions' => fn($dq) => $dq->where('status', 'in_transit')
         ])
-        ->whereIn('status', ['approved', 'partially_fulfilled']);
+        ->whereIn('status', ['approved', 'partially_fulfilled'])
+        ->whereHas('items', function ($iq) {
+            $iq->whereRaw('(COALESCE(qty_approved, qty_requested) - qty_received) > 0');
+        });
 
         if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $mrQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
@@ -293,7 +299,12 @@ class GoodsReceiptController extends Controller
         $whId = $purchaseOrder->delivery_warehouse_id ?? $linkedMr?->to_warehouse_id;
         $whName = $purchaseOrder->deliveryWarehouse?->name ?? ($linkedMr?->toWarehouse?->project?->name ?? $linkedMr?->toWarehouse?->name);
 
-        $items = $purchaseOrder->items->map(function ($item) use ($purchaseOrder, $linkedMr) {
+        $items = $purchaseOrder->items
+            ->filter(function ($item) {
+                $qtyRemaining = max(0, (float) $item->quantity - (float) $item->received_qty - (float) $item->lost_qty - (float) $item->short_closed_qty);
+                return $qtyRemaining > 0;
+            })
+            ->map(function ($item) use ($purchaseOrder, $linkedMr) {
             $isTool = $item->isTool();
             $mr = $item->materialRequestItem?->materialRequest ?? $linkedMr;
             $qtyRemaining = max(0, (float) $item->quantity - (float) $item->received_qty - (float) $item->lost_qty - (float) $item->short_closed_qty);
@@ -354,6 +365,7 @@ class GoodsReceiptController extends Controller
             'items.material.category',
             'items.tool.category',
             'items.purchaseOrderItems.purchaseOrder.supplier',
+            'items.purchaseOrderItems.purchaseOrder.items.deliverySchedules',
             'items.purchaseOrderItems.deliverySchedules',
             'purchaseOrders.supplier',
             'purchaseOrders.items.deliverySchedules',
@@ -369,7 +381,18 @@ class GoodsReceiptController extends Controller
             ->unique('id')
             ->values();
 
-        $linkedPos = $allLinkedPos->map(function ($po) {
+        $linkedPos = $allLinkedPos->filter(function ($po) use ($filterPoId) {
+            // Jika user secara spesifik merequest filterPoId, izinkan PO tersebut tetap diproses
+            if (!empty($filterPoId) && $po->id == $filterPoId) {
+                return true;
+            }
+            // Saring keluar PO yang sudah berstatus received, closed, atau cancelled
+            if (in_array($po->status, ['received', 'closed', 'cancelled'])) {
+                return false;
+            }
+            // Saring keluar PO yang seluruh itemnya sudah tidak memiliki outstanding
+            return $po->items->some(fn($it) => $it->outstanding > 0);
+        })->map(function ($po) {
             $unreceivedCount = $po->items->filter(fn($it) => $it->outstanding > 0)->count();
             return [
                 'id'               => $po->id,
@@ -381,14 +404,18 @@ class GoodsReceiptController extends Controller
                 'unreceived_count' => $unreceivedCount,
                 'items_summary'    => $po->items->map(fn($it) => $it->displayName())->implode(', '),
             ];
-        });
+        })->values();
 
         if (!empty($filterPoId)) {
             // FILTER SPESIFIK PO: Hanya muat item yang masuk dalam Purchase Order yang dipilih!
             $activePo = $allLinkedPos->firstWhere('id', (int) $filterPoId) ?? PurchaseOrder::with(['supplier', 'items.deliverySchedules'])->find($filterPoId);
 
             if ($activePo) {
-                $items = $activePo->items->map(function ($poi) use ($activePo, $materialRequest) {
+                $items = $activePo->items
+                    ->filter(function ($poi) {
+                        return ((float) $poi->quantity - (float) $poi->received_qty - (float) $poi->lost_qty - (float) $poi->short_closed_qty) > 0;
+                    })
+                    ->map(function ($poi) use ($activePo, $materialRequest) {
                     $isTool = $poi->isTool();
                     $mrItem = $poi->materialRequestItem;
                     $qtyOrdered = (float) $poi->quantity;
@@ -438,8 +465,14 @@ class GoodsReceiptController extends Controller
             }
         }
 
-        // Default: Muat semua item dari MR (atau jika hanya ada 1 PO terhubung)
-        $items = $materialRequest->items->map(function ($item) use ($materialRequest) {
+        // Default: Muat semua item dari MR yang masih memiliki sisa penerimaan
+        $items = $materialRequest->items
+            ->filter(function ($item) {
+                $approved = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+                $received = (float) $item->qty_received;
+                return ($approved - $received) > 0;
+            })
+            ->map(function ($item) use ($materialRequest) {
             $isTool = $item->tool_id !== null || ($item->item_type ?? '') === 'tool';
             $approved = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
             $received = (float) $item->qty_received;

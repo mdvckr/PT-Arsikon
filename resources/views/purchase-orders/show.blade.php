@@ -46,10 +46,6 @@
                 @endif
             @endcan
 
-            <a href="{{ route('purchase-receipts.create', ['po_id' => $purchaseOrder->id]) }}" class="btn btn-primary">
-                <x-lucide-plus class="me-1" /> Catat Nota Harian Baru
-            </a>
-
             @if($purchaseOrder->status === 'draft')
                 @if((auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
                     <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">

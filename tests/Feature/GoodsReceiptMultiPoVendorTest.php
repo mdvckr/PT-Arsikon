@@ -217,6 +217,23 @@ class GoodsReceiptMultiPoVendorTest extends TestCase
         $this->assertEquals(50, (float)$mrItem1->qty_received);
         $this->assertEquals(0, (float)$mrItem3->qty_received);
 
+        // Verifikasi Dropdown PO: PO-1 (Vendor A) otomatis hilang dari pilihan PO Vendor karena sudah berstatus received
+        $resMrAfterPo1 = $this->actingAs($this->adminUser)
+            ->getJson(route('goods-receipts.mrItems', $mr));
+        $resMrAfterPo1->assertOk();
+        $linkedPosAfterPo1 = $resMrAfterPo1->json('purchase_orders');
+        $this->assertCount(1, $linkedPosAfterPo1, 'Hanya sisa 1 PO Vendor (PO-2) yang muncul di pilihan');
+        $this->assertEquals($po2->id, $linkedPosAfterPo1[0]['id']);
+
+        // Verifikasi create page: PO-1 hilang dari dropdown purchaseOrders, PO-2 dan MR tetap ada
+        $resCreatePage = $this->actingAs($this->adminUser)->get(route('goods-receipts.create'));
+        $resCreatePage->assertOk();
+        $createPos = $resCreatePage->viewData('purchaseOrders');
+        $this->assertFalse($createPos->contains('id', $po1->id), 'PO-1 yang sudah selesai diterima otomatis hilang dari dropdown');
+        $this->assertTrue($createPos->contains('id', $po2->id), 'PO-2 yang masih outstanding tetap muncul di dropdown');
+        $createMrs = $resCreatePage->viewData('materialRequests');
+        $this->assertTrue($createMrs->contains('id', $mr->id), 'MR yang masih partially_fulfilled tetap muncul di dropdown');
+
         // 7. Beberapa hari kemudian, Vendor B tiba membawa barang PO-2 (Item 3, 4, 5)
         $gr2 = $this->goodsReceiptService->create([
             'purchase_order_id'   => $po2->id,
@@ -278,5 +295,21 @@ class GoodsReceiptMultiPoVendorTest extends TestCase
         $this->assertEquals(100, (float)$mrItem3->qty_received);
         $this->assertEquals(100, (float)$mrItem4->qty_received);
         $this->assertEquals(20, (float)$mrItem5->qty_received);
+
+        // Verifikasi Dropdown PO & MR setelah seluruh penerimaan selesai:
+        // 1. PO-1 dan PO-2 otomatis hilang dari dropdown purchaseOrders
+        // 2. MR (PO Lapangan) otomatis hilang dari dropdown materialRequests karena sudah status fulfilled
+        $resFinalCreatePage = $this->actingAs($this->adminUser)->get(route('goods-receipts.create'));
+        $resFinalCreatePage->assertOk();
+        $finalPos = $resFinalCreatePage->viewData('purchaseOrders');
+        $this->assertFalse($finalPos->contains('id', $po1->id), 'PO-1 otomatis hilang setelah diterima');
+        $this->assertFalse($finalPos->contains('id', $po2->id), 'PO-2 otomatis hilang setelah diterima');
+        $finalMrs = $resFinalCreatePage->viewData('materialRequests');
+        $this->assertFalse($finalMrs->contains('id', $mr->id), 'PO Lapangan (MR) otomatis hilang setelah fulfilled');
+
+        // 3. Endpoint getMrItems mengembalikan daftar PO Vendor kosong karena seluruhnya sudah diterima
+        $resFinalMr = $this->actingAs($this->adminUser)->getJson(route('goods-receipts.mrItems', $mr));
+        $resFinalMr->assertOk();
+        $this->assertCount(0, $resFinalMr->json('purchase_orders'), 'Seluruh PO Vendor terhubung sudah selesai diterima');
     }
 }

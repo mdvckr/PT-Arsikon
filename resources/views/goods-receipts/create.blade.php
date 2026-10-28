@@ -10,21 +10,36 @@
             width: 100%;
         }
 
+        .receipt-items-table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            width: 100% !important;
+        }
+
         .receipt-items-table th {
-            padding: 10px 12px !important;
+            padding: 12px 14px !important;
             font-size: 11px !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
-            letter-spacing: 0.4px !important;
-            color: #64748b !important;
+            letter-spacing: 0.5px !important;
+            color: #475569 !important;
             background: #f8fafc !important;
             border-bottom: 2px solid #e2e8f0 !important;
             white-space: nowrap !important;
         }
 
         .receipt-items-table td {
-            padding: 8px 10px !important;
+            padding: 9px 12px !important;
             vertical-align: middle !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+
+        .receipt-items-table tbody tr.item-row {
+            transition: background-color 0.15s ease !important;
+        }
+
+        .receipt-items-table tbody tr.item-row:hover {
+            background-color: #f8fafc !important;
         }
 
         .receipt-items-table .form-control {
@@ -32,17 +47,49 @@
             padding: 6px 10px !important;
             font-size: 12.5px !important;
             line-height: 1.4 !important;
-            border-radius: 6px !important;
+            border-radius: 7px !important;
             border: 1px solid #cbd5e1 !important;
             box-sizing: border-box !important;
             background-color: #ffffff !important;
             color: #0f172a !important;
+            transition: all 0.15s ease !important;
         }
 
         .receipt-items-table .form-control:focus {
             border-color: #2563eb !important;
-            box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.14) !important;
             outline: none !important;
+        }
+
+        .receipt-items-table .qty-shipped-input {
+            background-color: #f8fafc !important;
+            border: 1.5px solid #e2e8f0 !important;
+            color: #334155 !important;
+            font-weight: 700 !important;
+            font-size: 13px !important;
+            border-radius: 7px !important;
+        }
+
+        .receipt-items-table .qty-input {
+            border: 2px solid #3b82f6 !important;
+            background-color: #ffffff !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            color: #1e3a8a !important;
+            border-radius: 7px !important;
+            box-shadow: 0 1px 3px rgba(37,99,235,0.08) !important;
+        }
+
+        .receipt-items-table .qty-input:focus {
+            border-color: #1d4ed8 !important;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.2) !important;
+        }
+
+        .receipt-items-table .qty-missing-input {
+            border: 1.5px solid #cbd5e1 !important;
+            font-weight: 700 !important;
+            font-size: 13px !important;
+            border-radius: 7px !important;
         }
 
         /* ── Session Card Premium UI ── */
@@ -269,20 +316,20 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            border-radius: 6px !important;
-            color: #dc2626 !important;
-            background: #ffffff !important;
-            border: 1px solid #fecaca !important;
-            transition: all 0.15s ease !important;
+            border-radius: 8px !important;
+            color: #ef4444 !important;
+            background: #fef2f2 !important;
+            border: 1px solid #fee2e2 !important;
+            transition: all 0.18s ease !important;
             cursor: pointer !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
         }
 
         .btn-delete-row:hover {
-            background: #fef2f2 !important;
-            border-color: #ef4444 !important;
-            color: #b91c1c !important;
-            transform: scale(1.05) !important;
+            background: #fee2e2 !important;
+            border-color: #fca5a5 !important;
+            color: #dc2626 !important;
+            transform: scale(1.08) !important;
         }
 
         /* Item Metadata & Stage Pill Styles */
@@ -1051,6 +1098,10 @@
                                         </option>
                                         @endforeach
                                     </select>
+                                </div>
+                                <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
+                                    <x-lucide-info style="color:#94a3b8;" />
+                                    Pilih PO vendor yang armadanya sedang tiba di lokasi proyek
                                 </div>
                                 <div id="poInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#eff6ff;border-radius:7px;border:1px solid #bfdbfe;font-size:11px;color:#1d4ed8;line-height:1.5;">
                                     <x-lucide-link class="me-1" />
