@@ -1924,7 +1924,7 @@
 
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Pembayaran
+                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Keuangan
                         </a>
                         @endcan
                     </div>
@@ -1950,7 +1950,7 @@
 
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Pembayaran
+                            <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Keuangan
                         </a>
                         @endcan
 
@@ -2103,25 +2103,6 @@
     <div class="main-wrapper">
         <!-- PAGE CONTENT -->
         <main class="page-content">
-            @if(session('success'))
-            <div class="alert alert-success">
-                <x-lucide-circle-check class="w-5 h-5 text-success" aria-hidden="true" />
-                <div>{{ session('success') }}</div>
-            </div>
-            @endif
-            @if(session('error'))
-            <div class="alert alert-danger">
-                <x-lucide-circle-x class="w-5 h-5 text-danger" aria-hidden="true" />
-                <div>{{ session('error') }}</div>
-            </div>
-            @endif
-            @if(session('warning'))
-            <div class="alert alert-warning">
-                <x-lucide-triangle-alert class="w-5 h-5 text-warning" aria-hidden="true" />
-                <div>{{ session('warning') }}</div>
-            </div>
-            @endif
-
             {{ $slot }}
         </main>
     </div>

@@ -89,6 +89,115 @@ class Tool extends Model
     }
 
     /**
+     * Mendapatkan rincian tahapan masuk aktif (PO Lapangan & PO Pengadaan yang sudah disetujui) untuk Alat.
+     *
+     * @param int|array|null $warehouseIds
+     * @return \Illuminate\Support\Collection
+     */
+    public function getDynamicIncomingStages($warehouseIds = null)
+    {
+        $whIds = is_array($warehouseIds) ? $warehouseIds : ($warehouseIds ? [$warehouseIds] : null);
+
+        $stages = collect();
+
+        // 1. Dari Purchase Order untuk Alat
+        $poItemsQuery = PurchaseOrderItem::where(function ($q) {
+                $q->where('tool_id', $this->id);
+                if (!empty($this->name)) {
+                    $q->orWhereRaw('LOWER(TRIM(custom_item_name)) = ?', [strtolower(trim($this->name))]);
+                }
+            })
+            ->whereHas('purchaseOrder', function ($q) use ($whIds) {
+                $q->whereIn('status', ['approved', 'sent', 'partial_received', 'partially_received']);
+                if (!empty($whIds)) {
+                    $q->where(function ($sub) use ($whIds) {
+                        $sub->whereIn('delivery_warehouse_id', $whIds)
+                            ->orWhereNull('delivery_warehouse_id');
+                    });
+                }
+            })
+            ->with(['purchaseOrder.deliveryWarehouse', 'purchaseOrder.supplier']);
+
+        foreach ($poItemsQuery->get() as $poItem) {
+            $po = $poItem->purchaseOrder;
+            if (!$po) continue;
+
+            $qtyPlanned = (int) $poItem->quantity;
+            $qtyReceived = (int) $poItem->received_qty;
+            $remaining = max(0, $qtyPlanned - $qtyReceived - (int)$poItem->lost_qty - (int)$poItem->short_closed_qty);
+
+            if ($remaining > 0 || ($qtyReceived > 0 && in_array($po->status, ['partial_received', 'partially_received']))) {
+                $stages->push([
+                    'type'           => 'PO',
+                    'stage'          => $po->po_number,
+                    'reference'      => $po->po_number,
+                    'source'         => $po->supplier?->name ?: ($po->supplier_name ?: 'Vendor PO'),
+                    'warehouse_name' => $po->deliveryWarehouse?->name,
+                    'warehouse_id'   => $po->delivery_warehouse_id,
+                    'qty'            => $remaining > 0 ? $remaining : $qtyReceived,
+                    'planned_qty'    => $qtyPlanned,
+                    'received_qty'   => $qtyReceived,
+                    'remaining_qty'  => $remaining,
+                    'date'           => $po->expected_delivery ? $po->expected_delivery->format('Y-m-d') : ($po->order_date ? $po->order_date->format('Y-m-d') : null),
+                    'status'         => $remaining <= 0 ? 'received' : ($qtyReceived > 0 ? 'partial' : 'planned'),
+                    'status_label'   => $remaining <= 0 ? 'Lengkap Masuk' : ($qtyReceived > 0 ? 'Masuk Sebagian (' . number_format($qtyReceived, 0, ',', '.') . '/' . number_format($qtyPlanned, 0, ',', '.') . ')' : 'Rencana'),
+                    'notes'          => $po->notes ?: null,
+                ]);
+            }
+        }
+
+        // 2. Dari PO Lapangan untuk Alat
+        $mrItemsQuery = MaterialRequestItem::where(function ($q) {
+                $q->where('tool_id', $this->id);
+                if (!empty($this->name)) {
+                    $q->orWhereRaw('LOWER(TRIM(custom_item_name)) = ?', [strtolower(trim($this->name))]);
+                }
+            })
+            ->whereHas('materialRequest', function ($q) use ($whIds) {
+                $q->whereIn('status', ['approved', 'partially_fulfilled']);
+                if (!empty($whIds)) {
+                    $q->where(function ($sub) use ($whIds) {
+                        $sub->whereIn('to_warehouse_id', $whIds)
+                            ->orWhereNull('to_warehouse_id');
+                    });
+                }
+            })
+            ->with(['materialRequest.toWarehouse', 'materialRequest.requestedBy']);
+
+        foreach ($mrItemsQuery->get() as $mrItem) {
+            $mr = $mrItem->materialRequest;
+            if (!$mr) continue;
+
+            $qtyApproved = (int) ($mrItem->qty_approved > 0 ? $mrItem->qty_approved : $mrItem->qty_requested);
+            $qtyReceived = (int) $mrItem->qty_received;
+            $qtyOrdered = (int) $mrItem->qty_ordered;
+
+            $unpoQty = max(0, $qtyApproved - max($qtyOrdered, $qtyReceived));
+
+            if ($unpoQty > 0) {
+                $stages->push([
+                    'type'           => 'PO Lapangan',
+                    'stage'          => $mr->request_number,
+                    'reference'      => $mr->request_number,
+                    'source'         => 'PO Lapangan (' . ($mr->requestedBy?->name ?: 'Proyek') . ')',
+                    'warehouse_name' => $mr->toWarehouse?->name,
+                    'warehouse_id'   => $mr->to_warehouse_id,
+                    'qty'            => $unpoQty,
+                    'planned_qty'    => $unpoQty,
+                    'received_qty'   => 0,
+                    'remaining_qty'  => $unpoQty,
+                    'date'           => $mr->needed_at ? $mr->needed_at->format('Y-m-d') : null,
+                    'status'         => 'planned',
+                    'status_label'   => 'Menunggu Pengadaan',
+                    'notes'          => $mr->notes ?: null,
+                ]);
+            }
+        }
+
+        return $stages;
+    }
+
+    /**
      * Accessor: aggregate total stock across all warehouses.
      */
     public function getStockTotalAttribute(): int

@@ -4,7 +4,7 @@
     <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div>
             <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Pencatatan Nota Pembelian Harian</h2>
-            <p class="text-muted" style="font-size:13px;">Daftar belanja nota fisik harian di proyek, dikelompokkan per 1 minggu & di dalamnya per hari.</p>
+            <p class="text-muted" style="font-size:13px;">Daftar belanja nota fisik harian di proyek</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             {{-- Tombol Cetak Laporan Mingguan --}}
@@ -22,6 +22,14 @@
                     title="Cetak Laporan Kas Bulanan">
                 <x-lucide-calendar /> Lap. Bulanan
             </button>
+
+            {{-- Tombol Export Excel Rekap Mingguan --}}
+            <a href="{{ route('purchase-receipts.export-weekly', request()->only(['project_id', 'date', 'search'])) }}"
+               class="btn btn-sm"
+               style="font-weight:600; background:#10b981; border:1px solid #059669; color:#fff; display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:6px;"
+               title="Export Rekap Nota ke Excel (.xlsx)">
+                <x-lucide-file-spreadsheet /> Export Excel
+            </a>
 
             {{-- Tombol Catat Nota Baru --}}
             <a href="{{ route('purchase-receipts.create') }}" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px;">
@@ -130,7 +138,14 @@
                            class="btn btn-xs"
                            style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);color:#ffffff;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"
                            title="Cetak Laporan Kas Minggu Ini">
-                            <x-lucide-printer /> Cetak Minggu Ini
+                            <x-lucide-printer /> Cetak
+                        </a>
+                        <a href="{{ route('purchase-receipts.export-weekly', array_filter(['project_id' => $projId, 'date' => $firstDate])) }}"
+                           onclick="event.stopPropagation();"
+                           class="btn btn-xs"
+                           style="background:#059669;border:1px solid #047857;color:#ffffff;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"
+                           title="Export Excel Rekap Minggu Ini (.xlsx)">
+                            <x-lucide-file-spreadsheet /> Excel
                         </a>
                     @endif
                     <x-lucide-chevron-down class="week-icon" id="week-icon-{{ $weekIdx }}" style="font-size:14px;color:#94a3b8;transition:transform 0.2s;" />

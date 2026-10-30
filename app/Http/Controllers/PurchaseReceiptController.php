@@ -9,6 +9,8 @@ use App\Models\ProjectBalanceLog;
 use App\Models\Supplier;
 use App\Models\Material;
 use App\Services\SecureUploadService;
+use App\Exports\WeeklyPurchaseReceiptExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -168,13 +170,13 @@ class PurchaseReceiptController extends Controller
         $this->authorize('create purchase receipts');
 
         $validated = $request->validate([
-            'project_id'         => 'nullable|exists:projects,id',
-            'project_name'       => 'nullable|string|max:255',
-            'supplier_name'      => 'nullable|string|max:255',
-            'receipt_number'     => 'nullable|string|max:100',
-            'receipt_date'       => 'required|date',
-            'image'              => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048'],
-            'notes'              => 'nullable|string',
+            'project_id'            => 'nullable|exists:projects,id',
+            'project_name'          => 'nullable|string|max:255',
+            'supplier_name'         => 'nullable|string|max:255',
+            'receipt_number'        => 'nullable|string|max:100',
+            'receipt_date'          => 'required|date',
+            'image'                 => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048'],
+            'notes'                 => 'nullable|string',
             'items'                 => 'required|array|min:1',
             'items.*.material_id'   => 'nullable|exists:materials,id',
             'items.*.material_name' => 'nullable|string|max:255',
@@ -182,7 +184,12 @@ class PurchaseReceiptController extends Controller
             'items.*.unit_name'     => 'nullable|string|max:50',
             'items.*.quantity'      => 'required|numeric|min:0.01',
             'items.*.unit_price'    => 'required|numeric|min:0',
+            'items.*.item_discount' => 'nullable|numeric|min:0',
             'items.*.notes'         => 'nullable|string|max:255',
+            'global_discount'       => 'nullable|numeric|min:0',
+            'shipping_fee'          => 'nullable|numeric|min:0',
+            'additional_fee'        => 'nullable|numeric|min:0',
+            'additional_fee_notes'  => 'nullable|string|max:255',
         ]);
 
         $user = auth()->user();
@@ -207,15 +214,56 @@ class PurchaseReceiptController extends Controller
             return back()->withInput()->withErrors(['project_id' => 'Proyek wajib dipilih untuk pemotongan saldo kas operasional proyek.']);
         }
 
-        // Calculate total amount from items first
-        $totalAmount = 0;
+        // Calculate zero-trust totals from items and fees
+        $itemsSubtotal = 0;
+        $processedItems = [];
         foreach ($validated['items'] as $item) {
-            $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
-            $totalAmount += $subtotal;
+            $qty = (float) $item['quantity'];
+            $price = (float) $item['unit_price'];
+            $rawItemTotal = $qty * $price;
+            $itemDiscount = isset($item['item_discount']) ? (float) $item['item_discount'] : 0.0;
+            if ($itemDiscount < 0) {
+                $itemDiscount = 0.0;
+            }
+            if ($itemDiscount > $rawItemTotal) {
+                $itemDiscount = $rawItemTotal;
+            }
+            $netItemSubtotal = $rawItemTotal - $itemDiscount;
+            $itemsSubtotal += $netItemSubtotal;
+
+            $itemName = !empty($item['item_name']) ? $item['item_name'] : (!empty($item['material_name']) ? $item['material_name'] : '-');
+            $materialName = !empty($item['material_name']) ? $item['material_name'] : $itemName;
+
+            $processedItems[] = array_merge($item, [
+                'item_name'     => $itemName,
+                'material_name' => $materialName,
+                'item_discount' => $itemDiscount,
+                'subtotal'      => $netItemSubtotal,
+            ]);
         }
 
-        if ($totalAmount <= 0) {
-            return back()->withInput()->withErrors(['items' => 'Total nominal nota harus lebih besar dari Rp 0.']);
+        $globalDiscount = isset($validated['global_discount']) ? (float) $validated['global_discount'] : 0.0;
+        if ($globalDiscount < 0) {
+            $globalDiscount = 0.0;
+        }
+        if ($globalDiscount > $itemsSubtotal) {
+            $globalDiscount = $itemsSubtotal;
+        }
+
+        $shippingFee = isset($validated['shipping_fee']) ? (float) $validated['shipping_fee'] : 0.0;
+        if ($shippingFee < 0) {
+            $shippingFee = 0.0;
+        }
+
+        $additionalFee = isset($validated['additional_fee']) ? (float) $validated['additional_fee'] : 0.0;
+        if ($additionalFee < 0) {
+            $additionalFee = 0.0;
+        }
+
+        $grandTotal = ($itemsSubtotal - $globalDiscount) + $shippingFee + $additionalFee;
+
+        if ($grandTotal <= 0) {
+            return back()->withInput()->withErrors(['items' => 'Total nominal nota bersih harus lebih besar dari Rp 0.']);
         }
 
         DB::beginTransaction();
@@ -224,13 +272,13 @@ class PurchaseReceiptController extends Controller
             $project = Project::where('id', $project->id)->lockForUpdate()->first();
             $balanceBefore = (float) $project->operational_balance;
 
-            if ($balanceBefore < ($totalAmount - 0.001)) {
+            if ($balanceBefore < ($grandTotal - 0.001)) {
                 $curSaldo = number_format($balanceBefore, 0, ',', '.');
-                $needSaldo = number_format($totalAmount, 0, ',', '.');
+                $needSaldo = number_format($grandTotal, 0, ',', '.');
                 throw new \DomainException("Saldo kas operasional proyek '{$project->name}' tidak mencukupi (Tersedia: Rp {$curSaldo}, Dibutuhkan: Rp {$needSaldo}). Silakan lakukan Top-Up Saldo terlebih dahulu.");
             }
 
-            $balanceAfter = $balanceBefore - $totalAmount;
+            $balanceAfter = $balanceBefore - $grandTotal;
             $project->update(['operational_balance' => $balanceAfter]);
 
             $imagePath = null;
@@ -247,21 +295,26 @@ class PurchaseReceiptController extends Controller
             $dayLabel = $days[$dayEnglish] ?? $dayEnglish;
 
             $receipt = PurchaseReceipt::create([
-                'purchase_order_id' => null,
-                'project_id'        => $project->id,
-                'project_name'      => $project->name,
-                'supplier_name'     => $validated['supplier_name'] ?? null,
-                'receipt_number'    => $validated['receipt_number'] ?? null,
-                'receipt_date'      => $validated['receipt_date'],
-                'day_label'         => $dayLabel,
-                'payment_status'    => 'paid',
-                'image_path'        => $imagePath,
-                'notes'             => $validated['notes'] ?? null,
-                'created_by'        => auth()->id(),
-                'total_amount'      => $totalAmount,
+                'purchase_order_id'    => null,
+                'project_id'           => $project->id,
+                'project_name'         => $project->name,
+                'supplier_name'        => $validated['supplier_name'] ?? null,
+                'receipt_number'       => $validated['receipt_number'] ?? null,
+                'receipt_date'         => $validated['receipt_date'],
+                'day_label'            => $dayLabel,
+                'payment_status'       => 'paid',
+                'image_path'           => $imagePath,
+                'items_subtotal'       => $itemsSubtotal,
+                'global_discount'      => $globalDiscount,
+                'shipping_fee'         => $shippingFee,
+                'additional_fee'       => $additionalFee,
+                'additional_fee_notes' => $validated['additional_fee_notes'] ?? null,
+                'notes'                => $validated['notes'] ?? null,
+                'created_by'           => auth()->id(),
+                'total_amount'         => $grandTotal,
             ]);
 
-            foreach ($validated['items'] as $item) {
+            foreach ($processedItems as $item) {
                 $material = !empty($item['material_id']) ? Material::find($item['material_id']) : null;
                 $materialName = !empty($item['material_name']) ? trim($item['material_name']) : ($material ? $material->name : null);
                 $itemName = !empty($item['item_name']) ? trim($item['item_name']) : ($materialName ?? 'Item Nota');
@@ -269,7 +322,6 @@ class PurchaseReceiptController extends Controller
                     $materialName = $itemName;
                 }
                 $unitName = !empty($item['unit_name']) ? trim($item['unit_name']) : ($material?->unit?->symbol ?? 'Bh');
-                $subtotal = (float)$item['quantity'] * (float)$item['unit_price'];
 
                 $receipt->items()->create([
                     'material_id'   => $item['material_id'] ?? null,
@@ -278,7 +330,8 @@ class PurchaseReceiptController extends Controller
                     'unit_name'     => $unitName,
                     'quantity'      => $item['quantity'],
                     'unit_price'    => $item['unit_price'],
-                    'subtotal'      => $subtotal,
+                    'item_discount' => $item['item_discount'],
+                    'subtotal'      => $item['subtotal'],
                     'notes'         => $item['notes'] ?? null,
                 ]);
             }
@@ -288,7 +341,7 @@ class PurchaseReceiptController extends Controller
                 'project_id'       => $project->id,
                 'user_id'          => auth()->id(),
                 'type'             => 'payment_deduction',
-                'amount'           => $totalAmount,
+                'amount'           => $grandTotal,
                 'balance_before'   => $balanceBefore,
                 'balance_after'    => $balanceAfter,
                 'reference_number' => $receipt->receipt_number ?? "NOTA-{$receipt->id}",
@@ -297,7 +350,7 @@ class PurchaseReceiptController extends Controller
 
             DB::commit();
 
-            $formattedTotal = number_format($totalAmount, 0, ',', '.');
+            $formattedTotal = number_format($grandTotal, 0, ',', '.');
             $formattedRem   = number_format($balanceAfter, 0, ',', '.');
 
             return redirect()->route('purchase-receipts.show', $receipt)
@@ -527,6 +580,57 @@ class PurchaseReceiptController extends Controller
             'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
             'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
         ));
+    }
+
+    public function exportWeekly(Request $request)
+    {
+        $this->authorize('view purchase receipts');
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        $projectId = $request->project_id;
+        if (empty($projectId) && !empty($userProjectIds)) {
+            $projectId = $userProjectIds[0];
+        }
+
+        $project = null;
+        if (!empty($projectId)) {
+            $project = Project::find($projectId);
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+            $endDate   = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+        } elseif ($request->filled('date')) {
+            $date = \Carbon\Carbon::parse($request->date);
+            $startDate = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY)->startOfDay();
+            $endDate   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY)->endOfDay();
+        } elseif ($request->filled('year') && $request->filled('week')) {
+            $date = \Carbon\Carbon::now()->setISODate((int)$request->year, (int)$request->week);
+            $startDate = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY)->startOfDay();
+            $endDate   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY)->endOfDay();
+        } else {
+            $startDate = now()->startOfWeek(\Carbon\Carbon::MONDAY)->startOfDay();
+            $endDate   = now()->endOfWeek(\Carbon\Carbon::SUNDAY)->endOfDay();
+        }
+
+        $query = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
+            ->whereBetween('receipt_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+        if ($project) {
+            $query->where('project_id', $project->id);
+        } elseif ($isRoleAdminPOProyek && !empty($userProjectIds)) {
+            $query->whereIn('project_id', $userProjectIds);
+        }
+
+        $receipts = $query->orderBy('receipt_date')->orderBy('id')->get();
+
+        $projectNameSlug = $project ? Str::slug($project->name) : 'semua-proyek';
+        $filename = "Rekap-Nota-{$projectNameSlug}-{$startDate->format('Ymd')}-sd-{$endDate->format('Ymd')}.xlsx";
+
+        return Excel::download(new WeeklyPurchaseReceiptExport($receipts, $project, $startDate, $endDate), $filename);
     }
 
     public function updateStatus(Request $request, PurchaseReceipt $purchaseReceipt)

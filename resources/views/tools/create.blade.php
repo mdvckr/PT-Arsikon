@@ -40,53 +40,6 @@
             padding: 20px;
         }
 
-        .stages-table {
-            width: 100%;
-            font-size: 12.5px;
-            border-collapse: collapse;
-            min-width: 650px;
-        }
-
-        .stages-table thead tr {
-            background: #f8fafc;
-            color: #475569;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .stages-table tbody tr {
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.15s ease;
-        }
-
-        .stages-table tbody tr:hover {
-            background: #fcfdfe;
-        }
-
-        .btn-delete-stage {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            color: #dc2626;
-            background: #ffffff;
-            border: 1px solid #fecaca;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .btn-delete-stage:hover {
-            background: #fef2f2 !important;
-            border-color: #ef4444 !important;
-            color: #b91c1c !important;
-            transform: scale(1.05);
-        }
-
         .material-form-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -192,7 +145,7 @@
                                 <select name="category_id" id="category_select" class="form-control @error('category_id') is-invalid @enderror" onchange="onCategoryChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;" required>
                                     <option value="">— Pilih Kategori —</option>
                                     @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}" {{ old('category_id', $selectedCategoryId) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                    <option value="{{ $cat->id }}" {{ old('category_id', $selectedCategoryId ?? null) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                                     @endforeach
                                     <option value="__new__">✚ Kategori Baru...</option>
                                 </select>
@@ -345,68 +298,6 @@
                                     <x-lucide-circle-check class="text-success" /> Kondisi Siap Digunakan (Baik)
                                 </div>
                                 <div class="text-muted" style="font-size:11px;margin-top:4px;">Pencatatan kondisi perorangan dapat dikelola saat peminjaman/servis.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ── CARD 4: TAHAP KEDATANGAN ALAT ── --}}
-                <div class="edit-card">
-                    <div class="edit-card-header">
-                        <div class="edit-card-title">
-                            <x-lucide-calendar class="text-primary" /> 4. Tahap Kedatangan Alat
-                        </div>
-                        <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:32px;font-size:12px;font-weight:600;padding:0 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                            <x-lucide-plus /> Tambah Tahap
-                        </button>
-                    </div>
-
-                    <div class="edit-card-body">
-                        {{-- Info Note Bar --}}
-                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:14px;font-size:12px;color:#475569;">
-                            <x-lucide-info class="text-primary" style="font-size:15px;flex-shrink:0;" />
-                            <span>Jadwal pengiriman/kedatangan alat bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat alat diterima.</span>
-                        </div>
-
-                        {{-- Table Wrapper (Hidden if no rows) --}}
-                        <div id="stages_table_wrap" class="overflow-x-auto" style="display:none;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-                            <table class="stages-table w-full min-w-[650px]" id="stages_table">
-                                <thead>
-                                    <tr>
-                                        <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
-                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
-                                        <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Unit</th>
-                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
-                                        <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
-                                        <th style="padding:10px 14px;width:50px;text-align:center;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stages_tbody">
-                                    {{-- Baris dinamis ditambahkan via JavaScript --}}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{-- Empty State (Shown if no rows) --}}
-                        <div id="stages_empty" style="display:none;padding:32px 16px;text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
-                            <div style="width:42px;height:42px;border-radius:50%;background:#e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;margin-bottom:10px;">
-                                <x-lucide-calendar-plus style="font-size:18px;" />
-                            </div>
-                            <div style="font-size:13.5px;font-weight:600;color:#334155;">Belum ada jadwal tahap kedatangan</div>
-                            <div style="font-size:12px;color:#64748b;margin-top:4px;max-width:440px;margin-left:auto;margin-right:auto;">
-                                Klik tombol <strong>Tambah Tahap</strong> di atas bila alat kerja ini didatangkan secara bertahap.
-                            </div>
-                        </div>
-
-                        {{-- Summary Bar (Hidden if no rows) --}}
-                        <div id="stages_summary_bar" style="display:none;margin-top:14px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                            <div style="display:flex;align-items:center;gap:18px;font-size:12.5px;">
-                                <div>Sudah Masuk: <strong id="summary_received" style="color:#16a34a;font-size:13px;">0</strong> Unit</div>
-                                <div>Rencana: <strong id="summary_planned" style="color:#b45309;font-size:13px;">0</strong> Unit</div>
-                                <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong> Unit</div>
-                            </div>
-                            <div class="text-muted" style="font-size:11.5px;">
-                                <x-lucide-lock class="text-muted me-1" /> Terkunci otomatis sebagai <strong>Rencana</strong>
                             </div>
                         </div>
                     </div>
@@ -671,147 +562,6 @@
             }
             if (elStock) elStock.textContent = (parseInt(stockVal) || 0) + ' Unit';
         }
-
-        // ── Incoming Stages Logic (Locked Badge) ──────────────────────────
-        var stageIndex = 0;
-
-        function checkEmptyState() {
-            var tbody   = document.getElementById('stages_tbody');
-            var empty   = document.getElementById('stages_empty');
-            var tblWrap = document.getElementById('stages_table_wrap');
-            var summary = document.getElementById('stages_summary_bar');
-            var hasRows = tbody && tbody.children.length > 0;
-
-            if (empty) empty.style.display = hasRows ? 'none' : 'block';
-            if (tblWrap) tblWrap.style.display = hasRows ? 'block' : 'none';
-            if (summary) summary.style.display = hasRows ? 'flex' : 'none';
-        }
-
-        function addStageRow(data) {
-            data = data || {};
-            var tbody   = document.getElementById('stages_tbody');
-            var tr      = document.createElement('tr');
-            tr.id       = 'stage_row_' + stageIndex;
-
-            var stageNum  = tbody.children.length + 1;
-            var stageVal  = data.stage  !== undefined ? data.stage  : 'T' + stageNum;
-            var dateVal   = data.date   || '';
-            var qtyVal    = data.qty    !== undefined ? data.qty    : '';
-            var statusVal = data.status || 'planned';
-            var notesVal  = data.notes  || '';
-
-            var statusBadge = (statusVal === 'received')
-                ? `<div style="display:inline-flex;flex-direction:column;gap:3px;">
-                       <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;width:fit-content;">
-                           <x-lucide-circle-check class="text-success" /> Sudah Masuk
-                       </span>
-                   </div>`
-                : `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;" title="Status terkunci otomatis sebagai Rencana dan berubah ke Sudah Masuk saat alat diterima">
-                       <x-lucide-clock class="text-warning" /> Rencana
-                   </span>`;
-
-            tr.innerHTML = `
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="text" name="incoming_stages[${stageIndex}][stage]" value="${stageVal}"
-                           class="form-control form-control-sm font-monospace"
-                           placeholder="T${stageNum}"
-                           style="height:36px;border-radius:6px;font-size:12.5px;font-weight:700;color:#0f172a;background:#f8fafc;width:75px;text-align:center;">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="date" name="incoming_stages[${stageIndex}][date]" value="${dateVal}"
-                           class="form-control form-control-sm"
-                           style="height:36px;border-radius:6px;font-size:12.5px;">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="number" step="1" min="1" name="incoming_stages[${stageIndex}][qty]" value="${qtyVal}"
-                           class="form-control form-control-sm stage-qty-input"
-                           placeholder="1"
-                           style="height:36px;border-radius:6px;font-size:13px;font-weight:700;text-align:right;"
-                           oninput="updateStagesSummary()">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="hidden" name="incoming_stages[${stageIndex}][status]" value="${statusVal}" class="stage-status-select">
-                    ${statusBadge}
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}"
-                           class="form-control form-control-sm"
-                           placeholder="No. SJ / Truk / Keterangan"
-                           style="height:36px;border-radius:6px;font-size:12.5px;">
-                </td>
-                <td style="padding:10px 12px;text-align:center;vertical-align:middle;">
-                    <button type="button"
-                            onclick="removeStageRow(${stageIndex})"
-                            title="Hapus baris tahap"
-                            class="btn-delete-stage">
-                        <x-lucide-trash-2 style="font-size:12px;" />
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-
-            stageIndex++;
-            updateStagesSummary();
-            checkEmptyState();
-        }
-
-        function removeStageRow(index) {
-            var row = document.getElementById('stage_row_' + index);
-            if (row) { row.remove(); updateStagesSummary(); checkEmptyState(); }
-        }
-
-        function updateStagesSummary() {
-            var tbody = document.getElementById('stages_tbody');
-            var totalReceived = 0, totalPlanned = 0;
-
-            tbody.querySelectorAll('tr').forEach(function(row) {
-                var qtyInput = row.querySelector('.stage-qty-input');
-                var statusSel = row.querySelector('.stage-status-select');
-                if (!qtyInput || !statusSel) return;
-                var qty = parseFloat(qtyInput.value) || 0;
-                if (statusSel.value === 'received') {
-                    totalReceived += qty;
-                } else {
-                    totalPlanned += qty;
-                }
-            });
-
-            var totalAll = totalReceived + totalPlanned;
-            var fmt = function(n) { return n.toLocaleString('id-ID'); };
-
-            var elRec = document.getElementById('summary_received');
-            var elPln = document.getElementById('summary_planned');
-            var elTot = document.getElementById('summary_total');
-            if (elRec) elRec.textContent = fmt(totalReceived);
-            if (elPln) elPln.textContent = fmt(totalPlanned);
-            if (elTot) elTot.textContent = fmt(totalAll);
-
-            // Sync initial_stock jika ada tahap received
-            var initStockInput = document.getElementById('initial_stock_input');
-            if (initStockInput && totalReceived > 0 && (!initStockInput.dataset.manual || initStockInput.dataset.manual === 'false')) {
-                initStockInput.value = totalReceived;
-                syncSummaryPreview();
-            }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        document.getElementById('initial_stock_input')?.addEventListener('input', function() {
-            this.dataset.manual = 'true';
-            syncSummaryPreview();
-        });
-
-        // Prefill existing/old incoming stages if available
-        var oldStages = @json(old('incoming_stages', []));
-        if (Array.isArray(oldStages) && oldStages.length > 0) {
-            oldStages.forEach(function(stg) {
-                addStageRow(stg);
-            });
-        }
-        checkEmptyState();
 
         // Initialize on page load
         onCategoryChange();

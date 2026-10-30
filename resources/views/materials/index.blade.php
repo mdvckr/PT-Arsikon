@@ -181,21 +181,6 @@
                                         ({{ $totalMaterials }} material)
                                     </span>
                                 </div>
-                                <div class="flex items-center" style="gap:6px;">
-                                    @can('create materials')
-                                    <a href="{{ route('materials.create', ['category_id' => $category->id]) }}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #cbd5e1;color:#2563eb;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);" title="Tambah Material pada {{ $category->name }}" onclick="event.stopPropagation();">
-                                        <x-lucide-plus style="font-size:9.5px;" /> Tambah
-                                    </a>
-                                    @endcan
-                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
-                                    <button type="button" 
-                                        onclick="event.stopPropagation(); openDeleteCategoryModal({{ $category->id }}, '{{ addslashes($category->name) }}', {{ $totalMaterials }})" 
-                                        style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11.5px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;box-shadow:0 1px 2px rgba(0,0,0,0.04);cursor:pointer;" 
-                                        title="Hapus Kategori {{ $category->name }} jika salah memasukkan">
-                                        <x-lucide-trash-2 style="font-size:10px;" /> Hapus
-                                    </button>
-                                    @endif
-                                </div>
                             </div>
                         </td>
                     </tr>
@@ -214,17 +199,6 @@
                                     <span class="text-muted" style="font-size:11.5px;">
                                         ({{ $materialsInType->count() }})
                                     </span>
-                                </div>
-                                <div class="flex items-center" style="gap:10px;">
-                                    @if(auth()->user()->can('delete materials') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
-                                    <button type="button" 
-                                        onclick="event.stopPropagation(); openDeleteGroupModal({{ $category->id }}, '{{ addslashes($category->name) }}', '{{ addslashes($typeName) }}', {{ $materialsInType->count() }})" 
-                                        style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#ffffff;border:1px solid #fecaca;color:#dc2626;cursor:pointer;" 
-                                        title="Hapus kelompok {{ $typeName }} jika salah memasukkan">
-                                        <x-lucide-trash-2 style="font-size:9.5px;" /> Hapus Kelompok
-                                    </button>
-                                    @endif
-                                    
                                 </div>
                             </div>
                         </td>
@@ -256,48 +230,47 @@
                         </td>
 
                         <td style="padding:10px 14px;white-space:nowrap;vertical-align:middle;">
-                            @if(!empty($m->incoming_stages) && count($m->incoming_stages) > 0)
-                                @php
+                            @php
+                                $stages = $m->getDynamicIncomingStages($filterWarehouseIds ?? null);
+                                if ($stages->isEmpty() && !empty($m->incoming_stages)) {
                                     $stages = collect($m->incoming_stages);
-                                    $stageCount = $stages->count();
-                                    $receivedStages = $stages->where('status', 'received');
-                                    $plannedStages = $stages->where('status', 'planned');
-                                    $recCount = $receivedStages->count();
-                                    $planCount = $plannedStages->count();
+                                }
+                                if ($stages->isEmpty() && !empty($filterWarehouseIds)) {
+                                    $allStages = $m->getDynamicIncomingStages(null);
+                                    if ($allStages->isNotEmpty()) {
+                                        $stages = $allStages;
+                                    }
+                                }
+                                $stageCount = $stages->count();
+                                $receivedStages = $stages->where('status', 'received');
+                                $plannedStages = $stages->whereIn('status', ['planned', 'partial']);
+                                $recCount = $receivedStages->count();
+                                $planCount = $plannedStages->count();
+                                $recQty = (float) $stages->sum('received_qty');
+                                if ($recQty == 0 && $receivedStages->count() > 0) {
                                     $recQty = (float) $receivedStages->sum('qty');
+                                }
+                                $planQty = (float) $stages->sum('remaining_qty');
+                                if ($planQty == 0 && $plannedStages->count() > 0) {
                                     $planQty = (float) $plannedStages->sum('qty');
-                                    $unitAbbr = $m->unit?->abbreviation ?? $m->unit?->name ?? '';
-                                @endphp
+                                }
+                                $unitAbbr = $m->unit?->abbreviation ?? $m->unit?->name ?? '';
+                            @endphp
 
+                            @if($stageCount > 0)
                                 @if($stageCount === 1)
                                     @php
                                         $stg = $stages->first();
                                         $isReceived = ($stg['status'] ?? 'received') === 'received';
-                                        $bg = $isReceived ? '#f0fdf4' : '#fffbeb';
-                                        $border = $isReceived ? '#bbf7d0' : '#fde68a';
-                                        $color = $isReceived ? '#166534' : '#92400e';
+                                        $isPartial = ($stg['status'] ?? '') === 'partial';
+                                        $bg = $isReceived ? '#f0fdf4' : ($isPartial ? '#eff6ff' : '#fffbeb');
+                                        $border = $isReceived ? '#bbf7d0' : ($isPartial ? '#bfdbfe' : '#fde68a');
+                                        $color = $isReceived ? '#166534' : ($isPartial ? '#1d4ed8' : '#92400e');
                                         $icon = $isReceived ? 'circle-check' : 'clock';
-                                        $iconColor = $isReceived ? '#16a34a' : '#d97706';
-                                        $statusLabel = $isReceived ? 'Masuk' : 'Rencana';
+                                        $iconColor = $isReceived ? '#16a34a' : ($isPartial ? '#2563eb' : '#d97706');
+                                        $statusLabel = $stg['status_label'] ?? ($isReceived ? 'Masuk' : ($isPartial ? 'Masuk Sebagian' : 'Rencana'));
                                         $stageDate = !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') : null;
-                                    @endphp
-                                    <span style="display:inline-flex;align-items:center;gap:3.5px;padding:2.5px 7px;border-radius:5px;font-size:10.5px;font-weight:500;background:{{ $bg }};border:1px solid {{ $border }};color:{{ $color }};"
-                                          title="{{ $stg['stage'] ?? 'T1' }}: {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $unitAbbr }} ({{ $statusLabel }}){{ $stageDate ? ' · '.$stageDate : '' }}{{ !empty($stg['notes']) ? ' · '.$stg['notes'] : '' }}">
-                                        @if($isReceived)
-                                            <x-lucide-circle-check style="width:10px;height:10px;color:{{ $iconColor }};" />
-                                        @else
-                                            <x-lucide-clock style="width:10px;height:10px;color:{{ $iconColor }};" />
-                                        @endif
-                                        <strong style="font-weight:700;">{{ $stg['stage'] ?? 'T1' }}</strong>:
-                                        <span>{{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }}</span>
-                                        <span style="font-size:9.5px;opacity:0.9;">({{ $statusLabel }})</span>
-                                    </span>
-                                @else
-                                    @php
-                                        $allReceived = ($recCount === $stageCount);
-                                        $btnBg = $allReceived ? '#f0fdf4' : '#f8fafc';
-                                        $btnBorder = $allReceived ? '#bbf7d0' : '#cbd5e1';
-                                        $btnColor = $allReceived ? '#166534' : '#334155';
+                                        $stgQty = (float)($stg['remaining_qty'] ?? ($stg['qty'] ?? 0));
                                     @endphp
                                     <button type="button"
                                             class="btn-stage-detail"
@@ -306,27 +279,45 @@
                                             data-sku="{{ $m->sku ?? '-' }}"
                                             data-unit="{{ $unitAbbr }}"
                                             data-stages='@json($stages)'
-                                            style="display:inline-flex;align-items:center;gap:5px;padding:2.5px 8px;border-radius:5px;font-size:10.5px;font-weight:500;background:{{ $btnBg }};border:1px solid {{ $btnBorder }};color:{{ $btnColor }};cursor:pointer;line-height:1.3;transition:all .15s ease;"
-                                            onmouseover="this.style.opacity='0.85';"
-                                            onmouseout="this.style.opacity='1';">
+                                            style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:{{ $bg }};border:1px solid {{ $border }};color:{{ $color }};cursor:pointer;line-height:1.3;"
+                                            title="{{ $stg['reference'] ?? ($stg['stage'] ?? 'PO') }}: {{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }} ({{ $statusLabel }}){{ !empty($stg['warehouse_name']) ? ' · '.$stg['warehouse_name'] : '' }}{{ $stageDate ? ' · '.$stageDate : '' }}">
+                                        @if($isReceived)
+                                            <x-lucide-circle-check style="width:11px;height:11px;color:{{ $iconColor }};" />
+                                        @else
+                                            <x-lucide-clock style="width:11px;height:11px;color:{{ $iconColor }};" />
+                                        @endif
+                                        <span>{{ $stg['reference'] ?? ($stg['stage'] ?? 'PO') }}</span>
+                                        <span style="opacity:0.6;">•</span>
+                                        <span>{{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                    </button>
+                                @else
+                                    @php
+                                        $allReceived = ($planQty <= 0 && $recQty > 0);
+                                        $btnBg = $allReceived ? '#f0fdf4' : '#fffbeb';
+                                        $btnBorder = $allReceived ? '#bbf7d0' : '#fde68a';
+                                        $btnColor = $allReceived ? '#166534' : '#92400e';
+                                    @endphp
+                                    <button type="button"
+                                            class="btn-stage-detail"
+                                            onclick="openStagesFromBtn(this)"
+                                            data-name="{{ $m->name }}"
+                                            data-sku="{{ $m->sku ?? '-' }}"
+                                            data-unit="{{ $unitAbbr }}"
+                                            data-stages='@json($stages)'
+                                            style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:{{ $btnBg }};border:1px solid {{ $btnBorder }};color:{{ $btnColor }};cursor:pointer;line-height:1.3;transition:all .15s ease;"
+                                            title="Lihat rincian {{ $stageCount }} transaksi kedatangan barang yang disetujui">
                                         @if($allReceived)
-                                            <x-lucide-circle-check style="font-size:9.5px;color:#16a34a;" />
-                                            <span><strong style="font-weight:700;">{{ $stageCount }}/{{ $stageCount }}</strong> Masuk</span>
+                                            <x-lucide-circle-check style="font-size:10px;color:#16a34a;" />
+                                            <span>Lengkap Masuk</span>
                                             <span style="color:#86efac;">•</span>
                                             <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
-                                        @elseif($recCount === 0)
-                                            <x-lucide-clock style="font-size:9.5px;color:#d97706;" />
-                                            <span><strong style="font-weight:700;">{{ $stageCount }}</strong> Tahap Rencana</span>
-                                            <span style="color:#cbd5e1;">•</span>
-                                            <span style="font-weight:600;color:#92400e;">{{ number_format($planQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
                                         @else
-                                            <x-lucide-layers style="font-size:9.5px;color:#64748b;" />
-                                            <span style="color:#166534;font-weight:600;"><x-lucide-circle-check style="font-size:9px;color:#16a34a;margin-right:2px;" />{{ $recCount }}/{{ $stageCount }} Masuk</span>
-                                            <span style="color:#cbd5e1;">•</span>
-                                            <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }}</span>
-                                            <span style="font-size:9.5px;color:#92400e;font-weight:500;">(+{{ number_format($planQty, 0, ',', '.') }})</span>
+                                            <x-lucide-clock style="font-size:10px;color:#d97706;" />
+                                            <span>{{ $stageCount }} Tahap</span>
+                                            <span style="color:#fde68a;">•</span>
+                                            <span style="font-weight:700;">{{ number_format($planQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
                                         @endif
-                                        <x-lucide-zoom-in style="font-size:8.5px;color:#94a3b8;margin-left:2px;" title="Lihat rincian tahapan" />
+                                        <x-lucide-chevron-right style="font-size:9px;opacity:0.7;margin-left:2px;" />
                                     </button>
                                 @endif
                             @else
@@ -342,9 +333,7 @@
                             $pemakaian = (float) abs($m->stockMutations->where('qty_change', '<', 0)->sum('qty_change'));
                             $totalIn = (float) $m->stockMutations->where('qty_change', '>', 0)->sum('qty_change');
                             $totalStock = $totalIn > 0 ? max($totalIn, $stockSisa + $pemakaian) : ($stockSisa + $pemakaian);
-
-                            $plannedStages = !empty($m->incoming_stages) ? collect($m->incoming_stages)->where('status', 'planned') : collect();
-                            $totalPlanned = (float) $plannedStages->sum('qty');
+                            $totalPlanned = (float) $planQty;
                         @endphp
                         <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
                             <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ number_format($totalStock, 0, ',', '.') }}</span>
@@ -352,7 +341,7 @@
                             <span class="text-muted" style="font-size:11px;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                             @endif
                             @if($totalPlanned > 0)
-                            <div class="text-muted" style="font-size:10.5px;margin-top:1px;">
+                            <div class="text-muted" style="font-size:10.5px;margin-top:1px;color:#b45309 !important;font-weight:600;">
                                 +{{ number_format($totalPlanned, 0, ',', '.') }} rencana
                             </div>
                             @endif
@@ -755,14 +744,16 @@
                             ${iconSvg}
                         </span>
                         <div>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <span style="font-weight:700;font-size:12.5px;color:#0f172a;">${stageLabel}</span>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                                <span style="font-weight:700;font-size:12.5px;color:#0f172a;">${stg.reference || stageLabel}</span>
+                                ${stg.type ? `<span style="font-size:9.5px;font-weight:600;padding:0.5px 5px;border-radius:3px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">${stg.type}</span>` : ''}
                                 <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;background:${statusBg};color:${statusColor};border:1px solid ${statusBorder};">
-                                    ${statusLabel}
+                                    ${stg.status_label || statusLabel}
                                 </span>
                             </div>
-                            ${dateFormatted ? `<div style="font-size:11px;color:#64748b;margin-top:2px;"><x-lucide-calendar style="font-size:10px;margin-right:4px;" />${dateFormatted}</div>` : ''}
-                            ${stg.notes ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:2px;"><x-lucide-sticky-note style="font-size:10px;margin-right:4px;" />${stg.notes}</div>` : ''}
+                            ${stg.source ? `<div style="font-size:11px;color:#475569;margin-top:2px;font-weight:500;">Sumber: ${stg.source}${stg.warehouse_name ? ' → ' + stg.warehouse_name : ''}</div>` : ''}
+                            ${dateFormatted ? `<div style="font-size:11px;color:#64748b;margin-top:1px;"><x-lucide-calendar style="font-size:10px;margin-right:4px;" />Estimasi: ${dateFormatted}</div>` : ''}
+                            ${stg.notes ? `<div style="font-size:11px;color:#64748b;font-style:italic;margin-top:1px;"><x-lucide-sticky-note style="font-size:10px;margin-right:4px;" />${stg.notes}</div>` : ''}
                         </div>
                     </div>
                     <div style="text-align:right;white-space:nowrap;padding-top:1px;">

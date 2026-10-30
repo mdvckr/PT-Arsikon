@@ -80,8 +80,7 @@ body {
 .c-tgl     { width: 7.5%;  }
 .c-proyek  { width: 12%;   }
 .c-sup     { width: 9%;    }
-.c-mat     { width: 9%;    }
-.c-item    { width: 7.5%;  }
+.c-item    { width: 16.5%; }
 .c-vol     { width: 3%;    }
 .c-sat     { width: 3.3%;  }
 .c-hrg     { width: 7.5%;  }
@@ -229,7 +228,7 @@ body {
     <table class="main-table">
         <colgroup>
             <col class="c-no"> <col class="c-tgl"> <col class="c-proyek"> <col class="c-sup">
-            <col class="c-mat"> <col class="c-item"> <col class="c-vol"> <col class="c-sat">
+            <col class="c-item"> <col class="c-vol"> <col class="c-sat">
             <col class="c-hrg"> <col class="c-jml"> <col class="c-det"> <col class="c-inp">
             <col class="c-tot"> <col class="c-per"> <col class="c-ket">
         </colgroup>
@@ -239,7 +238,6 @@ body {
                 <th class="c-tgl" rowspan="2">Tanggal</th>
                 <th class="c-proyek" rowspan="2">Nama Proyek</th>
                 <th class="c-sup"    rowspan="2">Toko /<br>Supplier</th>
-                <th class="c-mat"    rowspan="2">Nama<br>Material</th>
                 <th class="c-item"   rowspan="2">Item</th>
                 <th class="c-vol"    rowspan="2">Vol</th>
                 <th class="c-sat"    rowspan="2">Satuan</th>
@@ -263,8 +261,7 @@ body {
                 $qty      = (float) $item->quantity;
                 $harga    = (float) $item->unit_price;
                 $satuan   = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
-                $matName  = $item->material_name ?: ($item->material?->name ?: $item->item_name);
-                $itemName = $item->item_name ?: ($item->material?->name ?: '-');
+                $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
             @endphp
             <tr>
                 {{-- No --}}
@@ -276,9 +273,6 @@ body {
                     <td rowspan="{{ $itemCount }}" style="font-size:6.5pt; font-weight:700;">{{ $projectName }}</td>
                     <td rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $supplierName }}</td>
                 @endif
-
-                {{-- Nama Material --}}
-                <td class="bold" style="font-size:6.5pt;">{{ $matName }}</td>
 
                 {{-- Item --}}
                 <td style="font-size:6.5pt;">{{ $itemName }}</td>
@@ -321,19 +315,19 @@ body {
         <tfoot>
             {{-- Total Pemasukan --}}
             <tr class="foot-pemasukan">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">Total Pemasukan</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Total Pemasukan</td>
                 <td class="tr nw bold">Rp&nbsp;{{ number_format($total, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
             {{-- Total Pengeluaran --}}
             <tr class="foot-pengeluaran">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
                 <td class="tr nw bold">Rp&nbsp;{{ number_format($total, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
             {{-- Kekurangan / Kelebihan --}}
             <tr class="foot-kekurangan">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
                 <td class="tr nw bold">Rp&nbsp;0</td>
                 <td colspan="2"></td>
             </tr>

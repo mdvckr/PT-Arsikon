@@ -68,7 +68,7 @@ body {
 
 /* Column widths */
 .c-no    { width:2.2%;  } .c-tgl   { width:7%;   } .c-proyek{ width:10.5%;} .c-sup  { width:8.5%;  }
-.c-mat   { width:9%;    } .c-item  { width:7.5%;  } .c-vol   { width:3%;   } .c-sat  { width:3.3%;  }
+.c-item  { width:16.5%; } .c-vol   { width:3%;   } .c-sat  { width:3.3%;  }
 .c-hrg   { width:7.5%;  } .c-jml   { width:7.5%;  } .c-det   { width:7.5%; } .c-inp  { width:5.5%;  }
 .c-tot   { width:7.5%;  } .c-per   { width:3%;    } .c-ket   { width:5.5%; }
 
@@ -155,6 +155,7 @@ body {
 {{-- ── TOMBOL KONTROL ─────────────────────────────────── --}}
 <div class="no-print">
     <a href="{{ $backUrl }}" class="btn-back">← Kembali</a>
+    <a href="{{ route('purchase-receipts.export-weekly', array_filter(['project_id' => $project?->id, 'date' => $receipts->first()?->receipt_date?->format('Y-m-d')])) }}" class="btn-other" style="background:#059669;" title="Download Rekap Nota Excel (.xlsx)">📊 Export Excel</a>
     @if($reportType === 'weekly')
         <a href="{{ $monthlyUrl }}" target="_blank" class="btn-other">📆 Lihat Laporan Bulanan</a>
     @else
@@ -201,7 +202,7 @@ body {
     <table class="main-table">
         <colgroup>
             <col class="c-no"> <col class="c-tgl"> <col class="c-proyek"> <col class="c-sup">
-            <col class="c-mat"> <col class="c-item"> <col class="c-vol"> <col class="c-sat">
+            <col class="c-item"> <col class="c-vol"> <col class="c-sat">
             <col class="c-hrg"> <col class="c-jml"> <col class="c-det"> <col class="c-inp">
             <col class="c-tot"> <col class="c-per"> <col class="c-ket">
         </colgroup>
@@ -211,7 +212,6 @@ body {
                 <th class="c-tgl"   rowspan="2">Tanggal</th>
                 <th class="c-proyek" rowspan="2">Nama Proyek</th>
                 <th class="c-sup"   rowspan="2">Toko /<br>Supplier</th>
-                <th class="c-mat"   rowspan="2">Nama<br>Material</th>
                 <th class="c-item"  rowspan="2">Item</th>
                 <th class="c-vol"   rowspan="2">Vol</th>
                 <th class="c-sat"   rowspan="2">Satuan</th>
@@ -249,7 +249,6 @@ body {
                     <td class="tc" style="font-size:6.5pt;">{{ $tglStr }}</td>
                     <td style="font-size:6.5pt; font-weight:700;">{{ $rProyek }}</td>
                     <td style="font-size:6.5pt;">{{ $supName }}</td>
-                    <td class="bold" style="font-size:6.5pt;">-</td>
                     <td style="font-size:6.5pt;">-</td>
                     <td class="tc">0</td>
                     <td class="tc">-</td>
@@ -269,8 +268,7 @@ body {
                     $qty      = (float) $item->quantity;
                     $harga    = (float) $item->unit_price;
                     $satuan   = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
-                    $matName  = $item->material_name ?: ($item->material?->name ?: $item->item_name);
-                    $itemName = $item->item_name ?: ($item->material?->name ?: '-');
+                    $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
                 @endphp
                 <tr>
                     {{-- No, Tanggal, Nama Proyek, Toko/Supplier (rowspan per nota) --}}
@@ -280,9 +278,6 @@ body {
                         <td rowspan="{{ $itemCount }}" style="font-size:6.5pt; font-weight:700;">{{ $rProyek }}</td>
                         <td rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $supName }}</td>
                     @endif
-
-                    {{-- Nama Material --}}
-                    <td class="bold" style="font-size:6.5pt;">{{ $matName }}</td>
 
                     {{-- Item --}}
                     <td style="font-size:6.5pt;">{{ $itemName }}</td>
@@ -326,7 +321,7 @@ body {
             @endif
         @empty
             <tr>
-                <td colspan="15" class="tc" style="padding:20px; color:#9ca3af;">
+                <td colspan="14" class="tc" style="padding:20px; color:#9ca3af;">
                     Tidak ada nota pada periode ini.
                 </td>
             </tr>
@@ -336,7 +331,7 @@ body {
         <tfoot>
             {{-- Total Pemasukan --}}
             <tr class="foot-pemasukan">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">
+                <td colspan="11" class="tl bold" style="padding-left:8px;">
                     Total Pemasukan &nbsp;({{ $receipts->count() }} Nota)
                 </td>
                 <td class="tr nw bold">Rp&nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
@@ -344,13 +339,13 @@ body {
             </tr>
             {{-- Total Pengeluaran --}}
             <tr class="foot-pengeluaran">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
                 <td class="tr nw bold">Rp&nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
             {{-- Kekurangan/Kelebihan --}}
             <tr class="foot-kekurangan">
-                <td colspan="12" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
                 <td class="tr nw bold">Rp&nbsp;0</td>
                 <td colspan="2"></td>
             </tr>

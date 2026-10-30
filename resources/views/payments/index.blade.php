@@ -207,7 +207,7 @@
                 <div>
                     @if($isRoleAdminPOProyek)
                         <h2 style="font-size:20px;font-weight:800;color:#0f172a;line-height:1.2;margin:0;">
-                            Kas & Saldo Operasional Proyek
+                            Saldo Proyek
                         </h2>
                         <p style="font-size:12.5px;color:#64748b;margin:2px 0 0 0;">
                             Pengelolaan saldo kas harian proyek, riwayat mutasi nota harian, dan pengajuan penambahan saldo ke Pusat/Owner.
@@ -225,21 +225,6 @@
         </div>
     </div>
 
-    {{-- Flash Notifications --}}
-    @if(session('success'))
-    <div class="alert alert-success mb-3" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
-        <x-lucide-circle-check style="font-size:16px;" />
-        <span style="font-size:13px;font-weight:600;">{{ session('success') }}</span>
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="alert alert-danger mb-3" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;display:flex;align-items:center;gap:8px;">
-        <x-lucide-triangle-alert style="font-size:16px;" />
-        <span style="font-size:13px;font-weight:600;">{{ session('error') }}</span>
-    </div>
-    @endif
-
     {{-- ==================== Hero Banner: Saldo Kas Proyek Admin PO ==================== --}}
     <div class="balance-hero-banner">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;position:relative;z-index:2;">
@@ -256,22 +241,20 @@
                     Rp {{ number_format($metrics['total_operational_balance'] ?? 0, 0, ',', '.') }}
                 </div>
                 <div style="font-size:12px;color:#d1fae5;margin-top:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <span><x-lucide-circle-check class="text-emerald-300 me-1" /> Total saldo aktif siap pakai di seluruh proyek</span>
+                    @if($isRoleAdminPOProyek && $assignedProject)
+                        <span><x-lucide-building-2 class="text-emerald-300 me-1" /> Proyek: <strong>{{ $assignedProject->name }}</strong> ({{ $assignedProject->code ?? 'PRJ' }})</span>
+                    @else
+                        <span><x-lucide-circle-check class="text-emerald-300 me-1" /> Total saldo aktif siap pakai di seluruh proyek</span>
+                    @endif
                     <span>&bull;</span>
                     <span><strong>{{ $metrics['instant_count'] ?? 0 }}x</strong> Pembayaran Instan Berhasil (Rp {{ number_format($metrics['instant_verified_amount'] ?? 0, 0, ',', '.') }})</span>
                 </div>
             </div>
 
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:2;">
-                <button type="button" onclick="openBalanceHistoryModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
-                    <x-lucide-list class="me-1" /> Riwayat Mutasi
-                </button>
                 @if($isRoleAdminPOProyek)
-                    <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
-                        <x-lucide-list-checks class="me-1" /> Status Pengajuan Saldo
-                    </button>
-                    <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                        <x-lucide-hand-coins class="me-1" /> Minta Top-Up ke Pusat/Owner
+                    <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12.5px;font-weight:700;padding:9px 20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:inline-flex;align-items:center;gap:6px;">
+                        <x-lucide-hand-coins style="width:16px;height:16px;" /> Ajukan Kas Lapangan ke Pusat/Owner
                     </button>
                 @else
                     <button type="button" onclick="openBalanceRequestsModal()" class="btn btn-sm" style="background:{{ $pendingBalanceRequestsCount > 0 ? '#f59e0b' : 'rgba(255,255,255,0.18)' }};color:#ffffff;border:1px solid {{ $pendingBalanceRequestsCount > 0 ? '#d97706' : 'rgba(255,255,255,0.3)' }};font-size:12px;font-weight:700;padding:8px 14px;border-radius:8px;box-shadow:{{ $pendingBalanceRequestsCount > 0 ? '0 2px 8px rgba(245,158,11,0.3)' : 'none' }};">
@@ -283,12 +266,15 @@
                     <button type="button" onclick="openTopupModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                         <x-lucide-circle-plus class="me-1" /> Top-Up Saldo Langsung
                     </button>
+                    <button type="button" onclick="openBalanceHistoryModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
+                        <x-lucide-list class="me-1" /> Riwayat Mutasi
+                    </button>
                 @endif
             </div>
         </div>
 
-        {{-- Chips Saldo per Proyek --}}
-        @if($projects && $projects->count() > 0)
+        {{-- Chips Saldo per Proyek (Khusus Admin Pusat / Manajemen) --}}
+        @if(!$isRoleAdminPOProyek && $projects && $projects->count() > 0)
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.18);display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;position:relative;z-index:2;">
             @foreach($projects as $prj)
             <div style="background:rgba(255,255,255,0.12);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.22);border-radius:10px;padding:8px 14px;font-size:12px;min-width:210px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -302,15 +288,9 @@
                     <div style="font-weight:800;color:#ffffff;font-size:12.5px;">
                         Rp {{ number_format($prj->operational_balance, 0, ',', '.') }}
                     </div>
-                    @if($isRoleAdminPOProyek)
-                        <button type="button" onclick="openRequestBalanceModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" style="background:none;border:none;color:#6ee7b7;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">
-                            + Minta Saldo
-                        </button>
-                    @else
-                        <button type="button" onclick="openTopupModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" style="background:none;border:none;color:#6ee7b7;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">
-                            + Top-up
-                        </button>
-                    @endif
+                    <button type="button" onclick="openTopupModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" style="background:none;border:none;color:#6ee7b7;font-size:10.5px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">
+                        + Top-up
+                    </button>
                 </div>
             </div>
             @endforeach
@@ -321,33 +301,6 @@
     @if($isRoleAdminPOProyek)
         {{-- ==================== KHUSUS ADMIN PO PROYEK: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
         
-        {{-- Banner Pintasan Nota Harian --}}
-        <div class="card mb-4" style="background:linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);border:1.5px solid #86efac;padding:18px 22px;border-radius:12px;">
-            <div class="flex justify-between items-center flex-wrap gap-4">
-                <div class="flex items-center gap-3">
-                    <div style="width:44px;height:44px;border-radius:10px;background:#10b981;color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:20px;">
-                        <x-lucide-receipt />
-                    </div>
-                    <div>
-                        <h3 style="font-size:16px;font-weight:700;color:#065f46;margin:0;">
-                            Pencatatan & Rincian Belanja Nota Harian Proyek
-                        </h3>
-                        <p style="font-size:12.5px;color:#047857;margin:3px 0 0 0;">
-                            Seluruh nota belanja langsung/harian di proyek dikelola terstruktur (per 1 minggu & hari) pada menu <strong>Daftar Nota Harian</strong>.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('purchase-receipts.create') }}" class="btn btn-outline-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 14px;">
-                        <x-lucide-circle-plus class="me-1" /> Catat Nota Baru
-                    </a>
-                    <a href="{{ route('purchase-receipts.index') }}" class="btn btn-success btn-sm" style="font-weight:700;font-size:12px;padding:8px 16px;background:#059669;border-color:#059669;">
-                        <x-lucide-arrow-right class="me-1" /> Buka Daftar Nota Harian
-                    </a>
-                </div>
-            </div>
-        </div>
-
         {{-- Card 1: Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner --}}
         <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;">
             <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -356,55 +309,47 @@
                     <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner</h3>
                     <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceRequests->count() }} Pengajuan</span>
                 </div>
-                <button type="button" onclick="openRequestBalanceModal()" class="btn btn-sm btn-primary" style="font-size:12px;font-weight:700;">
-                    <x-lucide-send class="me-1" /> Ajukan Permintaan Saldo Baru
-                </button>
             </div>
             <div class="table-wrap">
                 <table class="data-table" style="font-size:12.5px;margin:0;">
                     <thead>
                         <tr style="background:#ffffff;border-bottom:2px solid #e2e8f0;">
                             <th style="width:40px;text-align:center;">No</th>
+                            <th>No. Pengajuan</th>
                             <th>Tgl Diajukan</th>
                             <th>Proyek</th>
                             <th class="text-end">Nominal Saldo</th>
-                            <th class="text-center">Tingkat Urgensi</th>
-                            <th>Keperluan Belanja Nota</th>
                             <th class="text-center">Status Persetujuan</th>
-                            <th>Catatan / Ref Pusat</th>
+                            <th class="text-center" style="width:90px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($balanceRequests as $i => $req)
                         <tr>
                             <td class="text-muted text-center">{{ $i + 1 }}</td>
-                            <td>{{ $req->created_at->format('d/m/Y H:i') }}</td>
+                            <td>
+                                <strong style="font-family:monospace;font-size:12px;color:#0f172a;">
+                                    {{ $req->request_number ?? ('PKL-' . $req->id) }}
+                                </strong>
+                            </td>
+                            <td>{{ $req->request_date ? $req->request_date->format('d/m/Y') : $req->created_at->format('d/m/Y H:i') }}</td>
                             <td><strong class="text-primary">{{ $req->project?->name ?? '-' }}</strong></td>
                             <td class="text-end"><strong class="text-success" style="font-size:13.5px;">Rp {{ number_format($req->amount, 0, ',', '.') }}</strong></td>
-                            <td class="text-center">
-                                <span class="badge badge-{{ $req->urgency_badge_color }}">{{ $req->urgency_label }}</span>
-                            </td>
-                            <td>{{ $req->purpose }}</td>
                             <td class="text-center">
                                 <span class="badge badge-{{ $req->status_badge_color }}" style="font-weight:700;font-size:11px;">
                                     {{ $req->status_label }}
                                 </span>
                             </td>
-                            <td>
-                                @if($req->status === 'approved')
-                                    <span class="text-success text-xs font-semibold"><x-lucide-circle-check class="me-1" />Disetujui {{ $req->approver?->name }}</span>
-                                    @if($req->reference_number)<div class="text-muted text-xs">Ref: {{ $req->reference_number }}</div>@endif
-                                @elseif($req->status === 'rejected')
-                                    <span class="text-danger text-xs font-semibold"><x-lucide-circle-x class="me-1" />Ditolak: {{ $req->rejection_reason }}</span>
-                                @else
-                                    <span class="text-muted text-xs italic">Menunggu verifikasi Pusat / Owner</span>
-                                @endif
+                            <td class="text-center">
+                                <a href="{{ route('payments.balance-requests.print', $req) }}" target="_blank" class="btn btn-xs btn-outline-secondary" style="font-weight:700;display:inline-flex;align-items:center;gap:4px;" title="Cetak Dokumen Pengajuan Kas Lapangan">
+                                    <x-lucide-printer style="width:13px;height:13px;" /> Cetak
+                                </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-6">
-                                Belum ada pengajuan permintaan saldo kas. Klik tombol "Ajukan Permintaan Saldo Baru" jika saldo operasional kas proyek menipis.
+                            <td colspan="7" class="text-center text-muted py-6">
+                                Belum ada pengajuan permintaan saldo kas.
                             </td>
                         </tr>
                         @endforelse
@@ -1348,95 +1293,156 @@
         </div>
     </div>
 
-    {{-- ==================== MODAL 3: Formulir Pengajuan Permintaan Saldo Kas (Admin PO Proyek ke Pusat/Owner) ==================== --}}
-    <div id="modalRequestBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-        <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:540px;overflow:hidden;">
+    {{-- ==================== MODAL 3: Formulir PENGAJUAN KAS LAPANGAN (Admin PO Proyek ke Pusat/Owner) ==================== --}}
+    <div id="modalRequestBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#ffffff;border-radius:14px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);width:100%;max-width:920px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
             
-            <div style="background:linear-gradient(135deg, #065f46 0%, #047857 100%);color:#ffffff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">
-                        <x-lucide-hand-coins class="text-amber-300" />
+            {{-- Modal Header --}}
+            <div style="background:linear-gradient(135deg, #ea580c 0%, #c2410c 100%);color:#ffffff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;">
+                        <x-lucide-file-text class="text-white" />
                     </div>
                     <div>
-                        <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Minta Saldo Kas ke Pusat / Owner</h3>
-                        <p style="font-size:11px;color:#a7f3d0;margin:2px 0 0 0;">Pengajuan dana operasional nota harian proyek</p>
+                        <h3 style="font-size:16px;font-weight:900;margin:0;line-height:1.2;letter-spacing:0.3px;">PENGAJUAN KAS LAPANGAN</h3>
+                        <p style="font-size:11.5px;color:#ffedd5;margin:2px 0 0 0;">Formulir resmi permohonan dana kas operasional (petty cash) proyek ke Kantor Pusat / Owner</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeRequestBalanceModal()" style="background:none;border:none;color:#d1fae5;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
+                <button type="button" onclick="closeRequestBalanceModal()" style="background:none;border:none;color:#ffedd5;cursor:pointer;font-size:20px;line-height:1;padding:4px;">
                     <x-lucide-x />
                 </button>
             </div>
 
-            <form method="POST" action="{{ route('payments.requestBalance') }}">
+            {{-- Modal Form --}}
+            <form method="POST" action="{{ route('payments.requestBalance') }}" style="display:flex;flex-direction:column;flex:1;overflow:hidden;" onsubmit="calcRequestGrandTotal()">
                 @csrf
-                <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-                    <div>
-                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
-                            Proyek Tujuan <span class="text-danger">*</span>
-                        </label>
-                        <select name="project_id" id="reqProjectId" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
-                            <option value="">-- Pilih Proyek yang Dituju --</option>
-                            @foreach($projects as $prj)
-                                <option value="{{ $prj->id }}">
-                                    {{ $prj->name }} (Saldo Saat Ini: Rp {{ number_format($prj->operational_balance, 0, ',', '.') }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
-                            Nominal Saldo yang Diminta (Rp) <span class="text-danger">*</span>
-                        </label>
-                        <div style="position:relative;">
-                            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:#64748b;font-size:13px;">
-                                Rp
+                <div style="padding:20px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;flex:1;">
+                    
+                    {{-- 1. Metadata Pengajuan --}}
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                            <x-lucide-info style="width:14px;height:14px;" /> INFORMASI UTAMA PENGAJUAN
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
+                            <div>
+                                <label class="form-label" style="font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:4px;display:block;">
+                                    Proyek Tujuan (Sesuai Akun)
+                                </label>
+                                <input type="hidden" name="project_id" id="reqProjectId" value="{{ $assignedProject?->id ?? ($projects->first()?->id ?? '') }}">
+                                <div style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;height:36px;display:flex;align-items:center;justify-content:space-between;">
+                                    <span id="reqProjectNameDisplay" style="font-weight:700;font-size:12.5px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:8px;" title="{{ $assignedProject ? $assignedProject->name : ($projects->first()?->name ?? 'Proyek Lapangan') }}">
+                                        {{ $assignedProject ? $assignedProject->name : ($projects->first()?->name ?? 'Proyek Lapangan') }}
+                                    </span>
+                                    <span id="reqProjectBalanceDisplay" style="font-size:11px;font-weight:700;color:#059669;background:#d1fae5;padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0;">
+                                        Saldo: Rp {{ number_format($assignedProject?->operational_balance ?? ($projects->first()?->operational_balance ?? 0), 0, ',', '.') }}
+                                    </span>
+                                </div>
                             </div>
-                            <input type="number" 
-                                   name="amount" 
-                                   id="reqAmountInput" 
-                                   min="1000" 
-                                   step="any" 
-                                   required 
-                                   placeholder="0" 
-                                   oninput="formatRequestRupiahPreview(this.value)"
-                                   class="form-control" 
-                                   style="height:42px;padding-left:40px;font-size:15px;font-weight:800;color:#047857;border-radius:8px;border-color:#cbd5e1;">
-                        </div>
-                        <div id="reqRupiahPreview" style="font-size:11.5px;color:#047857;font-weight:600;margin-top:4px;display:none;">
-                            Preview: Rp 0
+
+                            <div>
+                                <label class="form-label required" style="font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:4px;display:block;">
+                                    Tanggal Pengajuan <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="request_date" value="{{ date('Y-m-d') }}" required class="form-control form-control-sm" style="height:36px;font-size:12.5px;border-radius:6px;">
+                            </div>
+
+                            <div>
+                                <label class="form-label required" style="font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:4px;display:block;">
+                                    Pemohon (Yang Mengajukan) <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="signer_requester" value="{{ auth()->user()->name }}" required class="form-control form-control-sm" style="height:36px;font-size:12.5px;border-radius:6px;">
+                            </div>
+
+                            <div>
+                                <label class="form-label" style="font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;margin-bottom:4px;display:block;">
+                                    Mengetahui / Site Manager
+                                </label>
+                                <input type="text" name="signer_site_manager" placeholder="Nama Site Manager / Penanggung Jawab" class="form-control form-control-sm" style="height:36px;font-size:12.5px;border-radius:6px;">
+                            </div>
                         </div>
                     </div>
 
+                    {{-- 2. Tabel Rincian Barang / Kebutuhan Biaya --}}
                     <div>
-                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
-                            Tingkat Urgensi <span class="text-danger">*</span>
-                        </label>
-                        <select name="urgency" required class="form-control" style="height:40px;font-size:13px;border-radius:8px;border-color:#cbd5e1;">
-                            <option value="normal">Normal (Kebutuhan Rutin Harian)</option>
-                            <option value="urgent">🚨 Mendesak (Saldo Menipis / Perlu Belanja Segera)</option>
-                        </select>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div style="font-size:12px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:6px;">
+                                <x-lucide-list-plus class="text-emerald-600" style="width:16px;height:16px;" /> RINCIAN KEBUTUHAN KAS LAPANGAN
+                            </div>
+                            <span class="text-muted" style="font-size:11px;">Isi daftar barang yang dibutuhkan</span>
+                        </div>
+
+                        <div style="border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+                            <table style="width:100%;border-collapse:collapse;font-size:12px;" id="requestItemsTable">
+                                <thead>
+                                    <tr style="background:#f1f5f9;border-bottom:1.5px solid #cbd5e1;color:#334155;font-size:10.5px;text-transform:uppercase;font-weight:700;letter-spacing:0.3px;">
+                                        <th style="padding:8px 6px;width:36px;text-align:center;">No</th>
+                                        <th style="padding:8px 10px;text-align:left;">Nama Barang <span class="text-danger">*</span></th>
+                                        <th style="padding:8px 6px;width:90px;text-align:center;">Qty <span class="text-danger">*</span></th>
+                                        <th style="padding:8px 6px;width:90px;text-align:center;">Satuan</th>
+                                        <th style="padding:8px 8px;width:150px;text-align:right;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
+                                        <th style="padding:8px 10px;width:150px;text-align:right;">Total (Rp)</th>
+                                        <th style="padding:8px 6px;width:40px;text-align:center;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="requestItemsBody">
+                                    <tr id="req-item-row-1" style="border-bottom:1px solid #e2e8f0;">
+                                        <td class="text-center font-bold text-muted req-row-num" style="padding:6px;vertical-align:middle;">1</td>
+                                        <td style="padding:6px;">
+                                            <input type="text" name="items[1][item_name]" required placeholder="Contoh: Paku 5cm, Semen darurat, dll." class="form-control form-control-sm" style="font-size:12px;">
+                                        </td>
+                                        <td style="padding:6px;">
+                                            <input type="number" name="items[1][quantity]" value="1" min="0.01" step="any" required oninput="calcRequestRowTotal(1)" class="form-control form-control-sm text-center req-item-qty" style="font-size:12px;">
+                                        </td>
+                                        <td style="padding:6px;">
+                                            <input type="text" name="items[1][unit]" placeholder="sak / pcs" class="form-control form-control-sm text-center" style="font-size:12px;">
+                                        </td>
+                                        <td style="padding:6px;">
+                                            <input type="number" name="items[1][unit_price]" value="0" min="0" step="any" required oninput="calcRequestRowTotal(1)" class="form-control form-control-sm text-end req-item-price" style="font-size:12px;font-weight:700;">
+                                        </td>
+                                        <td style="padding:6px;vertical-align:middle;text-align:right;">
+                                            <span id="req-subtotal-1" class="font-bold text-success" style="font-size:12.5px;">Rp 0</span>
+                                        </td>
+                                        <td style="padding:6px;text-align:center;vertical-align:middle;">
+                                            <button type="button" onclick="removeRequestItemRow(1)" class="btn btn-xs btn-outline-danger" title="Hapus Baris" style="padding:2px 6px;">
+                                                <x-lucide-trash-2 style="width:13px;height:13px;" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Tombol Tambah Baris --}}
+                        <div style="margin-top:8px;">
+                            <button type="button" onclick="addRequestItemRow()" class="btn btn-sm btn-outline-primary" style="font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;border-radius:6px;">
+                                <x-lucide-circle-plus style="width:14px;height:14px;" /> Tambah Baris Kebutuhan
+                            </button>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="form-label required" style="font-size:11.5px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:5px;">
-                            Keperluan / Rencana Belanja Nota Harian <span class="text-danger">*</span>
-                        </label>
-                        <textarea name="purpose" 
-                                  rows="3" 
-                                  required
-                                  placeholder="Contoh: Pembelian paku, kawat bendrat, semen darurat minggu ke-4..." 
-                                  class="form-control" 
-                                  style="font-size:12.5px;padding:8px 12px;border-radius:8px;border-color:#cbd5e1;"></textarea>
+                    {{-- 3. Total Banner --}}
+                    <div style="background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:10px;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:11px;font-weight:700;color:#047857;text-transform:uppercase;">TOTAL NOMINAL PENGAJUAN KAS LAPANGAN</div>
+                            <div style="font-size:11px;color:#065f46;">Akumulasi otomatis dari kuantitas x harga seluruh rincian kebutuhan</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div id="grandTotalDisplay" style="font-size:20px;font-weight:900;color:#047857;letter-spacing:0.5px;">
+                                Rp 0
+                            </div>
+                            <input type="hidden" name="amount" id="hiddenGrandTotal" value="0">
+                        </div>
                     </div>
+
                 </div>
 
-                <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
-                    <button type="button" onclick="closeRequestBalanceModal()" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:8px;">
+                {{-- Modal Footer --}}
+                <div style="background:#f8fafc;padding:14px 22px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;">
+                    <button type="button" onclick="closeRequestBalanceModal()" class="btn btn-light border" style="font-size:12.5px;font-weight:600;padding:8px 18px;border-radius:8px;">
                         Batal
                     </button>
-                    <button type="submit" class="btn btn-success" style="font-size:12.5px;font-weight:700;padding:8px 20px;border-radius:8px;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px;">
-                        <x-lucide-send /> Kirim Permintaan ke Pusat/Owner
+                    <button type="submit" class="btn btn-success" style="font-size:13px;font-weight:800;padding:8px 22px;border-radius:8px;background:#059669;border-color:#059669;box-shadow:0 2px 6px rgba(5,150,105,0.3);display:inline-flex;align-items:center;gap:6px;">
+                        <x-lucide-send style="width:15px;height:15px;" /> Kirim Pengajuan Kas Lapangan
                     </button>
                 </div>
             </form>
@@ -1470,8 +1476,6 @@
                             <th style="padding:10px 12px;text-align:left;">Tgl / Pemohon</th>
                             <th style="padding:10px 12px;text-align:left;">Proyek</th>
                             <th style="padding:10px 12px;text-align:right;">Nominal Diminta</th>
-                            <th style="padding:10px 12px;text-align:left;">Keperluan</th>
-                            <th style="padding:10px 12px;text-align:center;">Urgensi</th>
                             <th style="padding:10px 12px;text-align:center;">Status</th>
                             <th style="padding:10px 12px;text-align:center;">Aksi</th>
                         </tr>
@@ -1490,28 +1494,21 @@
                             <td style="padding:10px 12px;text-align:right;font-weight:800;color:#047857;font-size:13.5px;white-space:nowrap;">
                                 Rp {{ number_format($reqItem->amount, 0, ',', '.') }}
                             </td>
-                            <td style="padding:10px 12px;font-size:12px;color:#475569;max-width:220px;">
-                                <div>{{ $reqItem->purpose }}</div>
-                                @if($reqItem->status === 'rejected' && $reqItem->rejection_reason)
-                                    <div class="text-danger text-xs mt-1"><strong>Alasan Tolak:</strong> {{ $reqItem->rejection_reason }}</div>
-                                @elseif($reqItem->status === 'approved' && $reqItem->reference_number)
-                                    <div class="text-success text-xs mt-1"><strong>Ref Kas:</strong> {{ $reqItem->reference_number }}</div>
-                                @endif
-                            </td>
-                            <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
-                                <span class="badge badge-{{ $reqItem->urgency_badge_color }}" style="font-size:10.5px;">
-                                    {{ $reqItem->urgency_label }}
-                                </span>
-                            </td>
                             <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
                                 <span class="badge badge-{{ $reqItem->status_badge_color }}" style="font-size:11px;font-weight:700;">
                                     {{ $reqItem->status_label }}
                                 </span>
+                                @if($reqItem->status === 'rejected' && $reqItem->rejection_reason)
+                                    <div class="text-danger text-xs mt-1" title="{{ $reqItem->rejection_reason }}">Ditolak: {{ \Illuminate\Support\Str::limit($reqItem->rejection_reason, 20) }}</div>
+                                @endif
                             </td>
                             <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
-                                @if($reqItem->status === 'pending')
-                                    @if(!$isRoleAdminPOProyek)
-                                        <div class="flex items-center justify-center gap-1">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{{ route('payments.balance-requests.print', $reqItem) }}" target="_blank" class="btn btn-xs btn-outline-secondary" style="font-weight:700;" title="Cetak Dokumen Pengajuan Kas Lapangan">
+                                        <x-lucide-printer class="me-1" /> Cetak
+                                    </a>
+                                    @if($reqItem->status === 'pending')
+                                        @if(!$isRoleAdminPOProyek)
                                             <form action="{{ route('payments.approveBalanceRequest', $reqItem) }}" method="POST" class="inline" onsubmit="return confirm('Setujui permintaan saldo Rp {{ number_format($reqItem->amount, 0, ',', '.') }} untuk {{ $reqItem->project?->name }}?')">
                                                 @csrf
                                                 <button type="submit" class="btn btn-xs btn-success" title="Setujui & Top-Up Saldo">
@@ -1521,15 +1518,15 @@
                                             <button type="button" class="btn btn-xs btn-outline-danger" onclick="promptRejectRequest({{ $reqItem->id }}, '{{ addslashes($reqItem->project?->name) }}')">
                                                 <x-lucide-x class="me-1" /> Tolak
                                             </button>
-                                        </div>
+                                        @else
+                                            <span class="text-muted text-xs italic">Menunggu Pusat</span>
+                                        @endif
                                     @else
-                                        <span class="text-muted text-xs italic">Menunggu Pusat</span>
+                                        <span class="text-muted text-xs">
+                                            {{ $reqItem->approver?->name ?? 'Pusat' }} ({{ $reqItem->updated_at->format('d/m/Y') }})
+                                        </span>
                                     @endif
-                                @else
-                                    <span class="text-muted text-xs">
-                                        {{ $reqItem->approver?->name ?? 'Pusat' }} ({{ $reqItem->updated_at->format('d/m/Y') }})
-                                    </span>
-                                @endif
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -1615,11 +1612,112 @@
             if (modal) modal.style.display = 'none';
         }
 
-        function openRequestBalanceModal(projectId = null, projectName = null) {
+        let reqItemCounter = 1;
+
+        function addRequestItemRow() {
+            reqItemCounter++;
+            const tbody = document.getElementById('requestItemsBody');
+            if (!tbody) return;
+
+            const tr = document.createElement('tr');
+            tr.id = 'req-item-row-' + reqItemCounter;
+            tr.style.borderBottom = '1px solid #e2e8f0';
+            tr.innerHTML = `
+                <td class="text-center font-bold text-muted req-row-num" style="padding:6px;vertical-align:middle;"></td>
+                <td style="padding:6px;">
+                    <input type="text" name="items[${reqItemCounter}][item_name]" required placeholder="Contoh: Paku 5cm, Semen darurat, dll." class="form-control form-control-sm" style="font-size:12px;">
+                </td>
+                <td style="padding:6px;">
+                    <input type="number" name="items[${reqItemCounter}][quantity]" value="1" min="0.01" step="any" required oninput="calcRequestRowTotal(${reqItemCounter})" class="form-control form-control-sm text-center req-item-qty" style="font-size:12px;">
+                </td>
+                <td style="padding:6px;">
+                    <input type="text" name="items[${reqItemCounter}][unit]" placeholder="sak / pcs" class="form-control form-control-sm text-center" style="font-size:12px;">
+                </td>
+                <td style="padding:6px;">
+                    <input type="number" name="items[${reqItemCounter}][unit_price]" value="0" min="0" step="any" required oninput="calcRequestRowTotal(${reqItemCounter})" class="form-control form-control-sm text-end req-item-price" style="font-size:12px;font-weight:700;">
+                </td>
+                <td style="padding:6px;vertical-align:middle;text-align:right;">
+                    <span id="req-subtotal-${reqItemCounter}" class="font-bold text-success" style="font-size:12.5px;">Rp 0</span>
+                </td>
+                <td style="padding:6px;text-align:center;vertical-align:middle;">
+                    <button type="button" onclick="removeRequestItemRow(${reqItemCounter})" class="btn btn-xs btn-outline-danger" title="Hapus Baris" style="padding:2px 6px;">
+                        <x-lucide-trash-2 style="width:13px;height:13px;" />
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            renumberRequestRows();
+        }
+
+        function removeRequestItemRow(idx) {
+            const row = document.getElementById('req-item-row-' + idx);
+            const tbody = document.getElementById('requestItemsBody');
+            if (tbody && tbody.children.length > 1 && row) {
+                row.remove();
+                renumberRequestRows();
+                calcRequestGrandTotal();
+            } else {
+                alert('Minimal harus ada 1 baris rincian kebutuhan barang.');
+            }
+        }
+
+        function renumberRequestRows() {
+            const rows = document.querySelectorAll('.req-row-num');
+            rows.forEach((td, i) => {
+                td.textContent = i + 1;
+            });
+        }
+
+        function calcRequestRowTotal(idx) {
+            const row = document.getElementById('req-item-row-' + idx);
+            if (!row) return;
+            const qtyInput = row.querySelector('.req-item-qty');
+            const priceInput = row.querySelector('.req-item-price');
+            const subtotalSpan = document.getElementById('req-subtotal-' + idx);
+
+            const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+            const price = parseFloat(priceInput ? priceInput.value : 0) || 0;
+            const subtotal = qty * price;
+
+            if (subtotalSpan) {
+                subtotalSpan.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(subtotal);
+            }
+            calcRequestGrandTotal();
+        }
+
+        function calcRequestGrandTotal() {
+            let grandTotal = 0;
+            const rows = document.querySelectorAll('#requestItemsBody tr');
+            rows.forEach(r => {
+                const qty = parseFloat(r.querySelector('.req-item-qty')?.value || 0) || 0;
+                const price = parseFloat(r.querySelector('.req-item-price')?.value || 0) || 0;
+                grandTotal += (qty * price);
+            });
+
+            const displayEl = document.getElementById('grandTotalDisplay');
+            const hiddenEl = document.getElementById('hiddenGrandTotal');
+            if (displayEl) {
+                displayEl.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(grandTotal);
+            }
+            if (hiddenEl) {
+                hiddenEl.value = grandTotal;
+            }
+        }
+
+        function openRequestBalanceModal(projectId = null, projectName = null, projectBalance = null) {
             const modal = document.getElementById('modalRequestBalance');
             if (projectId) {
-                const select = document.getElementById('reqProjectId');
-                if (select) select.value = projectId;
+                const hiddenInput = document.getElementById('reqProjectId');
+                if (hiddenInput) hiddenInput.value = projectId;
+                const nameDisplay = document.getElementById('reqProjectNameDisplay');
+                if (nameDisplay && projectName) {
+                    nameDisplay.textContent = projectName;
+                    nameDisplay.setAttribute('title', projectName);
+                }
+                const balanceDisplay = document.getElementById('reqProjectBalanceDisplay');
+                if (balanceDisplay && projectBalance !== null) {
+                    balanceDisplay.textContent = 'Saldo: Rp ' + new Intl.NumberFormat('id-ID').format(projectBalance);
+                }
             }
             if (modal) modal.style.display = 'flex';
         }

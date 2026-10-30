@@ -18,14 +18,16 @@ class PurchaseReceiptItem extends Model
         'unit_name',
         'quantity',
         'unit_price',
+        'item_discount',
         'subtotal',
         'notes',
     ];
 
     protected $casts = [
-        'quantity' => 'decimal:2',
-        'unit_price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'quantity'      => 'decimal:2',
+        'unit_price'    => 'decimal:2',
+        'item_discount' => 'decimal:2',
+        'subtotal'      => 'decimal:2',
     ];
 
     public function receipt(): BelongsTo

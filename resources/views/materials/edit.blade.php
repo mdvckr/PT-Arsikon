@@ -200,33 +200,22 @@
                                 @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
-                            {{-- Dropdown 2: Kelompok Barang --}}
+                            {{-- Dropdown 2: Kelompok Barang (Autocomplete Datalist) --}}
                             <div>
-                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                    <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
-                                        Kelompok <span style="color:#ef4444;">*</span>
-                                    </label>
-                                    <button type="button" id="btn_toggle_custom_type" onclick="toggleTypeMode(true)" style="font-size:11px;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600;white-space:nowrap;">
-                                        + Ketik Baru
-                                    </button>
-                                </div>
-                                <div id="type_select_wrap">
-                                    <select id="type_select" class="form-control @error('type') is-invalid @enderror" onchange="onTypeSelectChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
-                                        <option value="">— Pilih Kelompok —</option>
-                                        <option value="__new__">✚ Ketik Kelompok Baru...</option>
-                                    </select>
-                                </div>
-                                <div id="type_custom_wrap" style="display:none;">
-                                    <div style="display:flex;gap:6px;">
-                                        <input type="text" id="type_custom_input" class="form-control" placeholder="Ketik nama kelompok baru..." oninput="onTypeCustomInput(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
-                                        <button type="button" onclick="toggleTypeMode(false)" title="Kembali ke dropdown" class="btn btn-light border" style="height:38px;padding:0 12px;border-radius:6px;font-size:12px;color:#64748b;white-space:nowrap;flex-shrink:0;">
-                                            Pilih
-                                        </button>
-                                    </div>
-                                </div>
-                                <input type="hidden" name="type" id="type_input" value="{{ old('type', $material->type) }}">
+                                <label class="form-label mb-0" for="type_input" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:block;">
+                                    Kelompok <span style="color:#ef4444;">*</span>
+                                </label>
+                                <input type="text" name="type" id="type_input" list="type_datalist"
+                                       value="{{ old('type', $material->type) }}"
+                                       class="form-control @error('type') is-invalid @enderror"
+                                       placeholder="Pilih atau ketik kelompok (misal: Besi Beton, Semen)..."
+                                       oninput="onTypeChange(); syncSummaryPreview();"
+                                       style="height:38px;border-radius:6px;font-size:13px;" required autocomplete="off">
+                                <datalist id="type_datalist">
+                                    {{-- Diisi dinamis via JavaScript sesuai kategori --}}
+                                </datalist>
                                 <div id="type_hint" style="font-size:11px;color:#94a3b8;margin-top:4px;">
-                                    Pilih kategori dulu
+                                    Pilih dari rekomendasi atau ketik kelompok baru
                                 </div>
                                 @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
@@ -343,67 +332,7 @@
                     </div>
                 </div>
 
-                {{-- ── CARD 3: TAHAP KEDATANGAN BARANG ── --}}
-                <div class="edit-card">
-                    <div class="edit-card-header">
-                        <div class="edit-card-title">
-                            <x-lucide-calendar class="text-primary" /> 3. Tahap Kedatangan Barang
-                        </div>
-                        <button type="button" onclick="addStageRow()" class="btn btn-sm btn-primary" style="height:32px;font-size:12px;font-weight:600;padding:0 14px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;">
-                            <x-lucide-plus /> Tambah Tahap
-                        </button>
-                    </div>
 
-                    <div class="edit-card-body">
-                        {{-- Info Note Bar --}}
-                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:14px;font-size:12px;color:#475569;">
-                            <x-lucide-info class="text-primary" style="font-size:15px;flex-shrink:0;" />
-                            <span>Jadwal kedatangan bertahap. Status terkunci otomatis sebagai <strong>Rencana</strong> dan berubah otomatis saat barang diterima.</span>
-                        </div>
-
-                        {{-- Table Wrapper (Hidden if no rows) --}}
-                        <div id="stages_table_wrap" class="overflow-x-auto" style="display:none;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-                            <table class="stages-table w-full min-w-[650px]" id="stages_table">
-                                <thead>
-                                    <tr>
-                                        <th style="padding:10px 14px;width:95px;font-weight:700;">Tahap</th>
-                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Tanggal Rencana</th>
-                                        <th style="padding:10px 14px;width:130px;font-weight:700;text-align:right;">Qty Masuk</th>
-                                        <th style="padding:10px 14px;width:160px;font-weight:700;">Status (Otomatis)</th>
-                                        <th style="padding:10px 14px;font-weight:700;">Keterangan</th>
-                                        <th style="padding:10px 14px;width:50px;text-align:center;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stages_tbody">
-                                    {{-- Baris dinamis --}}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {{-- Empty State (Shown if no rows) --}}
-                        <div id="stages_empty" style="display:none;padding:32px 16px;text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
-                            <div style="width:42px;height:42px;border-radius:50%;background:#e2e8f0;display:inline-flex;align-items:center;justify-content:center;color:#64748b;margin-bottom:10px;">
-                                <x-lucide-calendar-plus style="font-size:18px;" />
-                            </div>
-                            <div style="font-size:13.5px;font-weight:600;color:#334155;">Belum ada jadwal tahap kedatangan</div>
-                            <div style="font-size:12px;color:#64748b;margin-top:4px;max-width:440px;margin-left:auto;margin-right:auto;">
-                                Bila material ini dikirim secara bertahap, klik tombol <strong>Tambah Tahap</strong> di atas untuk menambahkan jadwal kedatangan.
-                            </div>
-                        </div>
-
-                        {{-- Summary Bar (Hidden if no rows) --}}
-                        <div id="stages_summary_bar" style="display:none;margin-top:14px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                            <div style="display:flex;align-items:center;gap:18px;font-size:12.5px;">
-                                <div>Sudah Masuk: <strong id="summary_received" style="color:#16a34a;font-size:13px;">0</strong></div>
-                                <div>Rencana: <strong id="summary_planned" style="color:#b45309;font-size:13px;">0</strong></div>
-                                <div>Total: <strong id="summary_total" style="color:#0f172a;font-size:13px;">0</strong></div>
-                            </div>
-                            <div class="text-muted" style="font-size:11.5px;">
-                                <x-lucide-lock class="text-muted me-1" /> Terkunci otomatis sebagai <strong>Rencana</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
             </div>
 
@@ -495,44 +424,6 @@
     <script>
         var existingGroups = @json($existingGroups ?? []);
 
-        function toggleTypeMode(isCustom) {
-            var selectWrap  = document.getElementById('type_select_wrap');
-            var customWrap  = document.getElementById('type_custom_wrap');
-            var toggleBtn   = document.getElementById('btn_toggle_custom_type');
-            var select      = document.getElementById('type_select');
-            var customInput = document.getElementById('type_custom_input');
-            var hiddenInput = document.getElementById('type_input');
-
-            if (isCustom) {
-                selectWrap.style.display = 'none';
-                customWrap.style.display = 'block';
-                if (toggleBtn) toggleBtn.style.display = 'none';
-                if (!customInput.value && hiddenInput.value) customInput.value = hiddenInput.value;
-                customInput.focus();
-                hiddenInput.value = customInput.value;
-            } else {
-                selectWrap.style.display = 'block';
-                customWrap.style.display = 'none';
-                if (toggleBtn) toggleBtn.style.display = '';
-                if (hiddenInput.value) select.value = hiddenInput.value;
-                if (select.value && select.value !== '__new__') hiddenInput.value = select.value;
-            }
-            onTypeChange();
-        }
-
-        function onTypeSelectChange() {
-            var select = document.getElementById('type_select');
-            var val    = select.value;
-            if (val === '__new__') { toggleTypeMode(true); }
-            else { document.getElementById('type_input').value = val; onTypeChange(); }
-        }
-
-        function onTypeCustomInput() {
-            var customInput = document.getElementById('type_custom_input');
-            document.getElementById('type_input').value = customInput.value;
-            onTypeChange();
-        }
-
         function updateDeleteCategoryBtn() {
             var sel = document.getElementById('category_select');
             var btn = document.getElementById('btn_delete_cat');
@@ -574,72 +465,33 @@
         }
 
         function onCategoryChange() {
+            var select  = document.getElementById('category_select');
+            var catId   = select.value;
+            var wrap    = document.getElementById('new_category_wrap');
+            var isNew   = catId === '__new__';
+            wrap.style.display = isNew ? 'block' : 'none';
             updateDeleteCategoryBtn();
-            var catSelect = document.getElementById('category_select');
-            var newWrap   = document.getElementById('new_category_wrap');
-            var catId     = catSelect.value;
+            if (isNew) { document.getElementById('new_category').focus(); return; }
 
-            if (catId === '__new__') {
-                newWrap.style.display = 'block';
-                document.getElementById('new_category').focus();
-            } else {
-                newWrap.style.display = 'none';
-            }
+            var datalist = document.getElementById('type_datalist');
+            datalist.innerHTML = '';
+            var hint = document.getElementById('type_hint');
 
-            var select2    = document.getElementById('type_select');
-            var hint       = document.getElementById('type_hint');
-            var hiddenType = document.getElementById('type_input');
-            var currentVal = hiddenType.value;
-
-            select2.innerHTML = '<option value="">— Pilih Kelompok —</option>';
-
-            if (catId && catId !== '__new__' && existingGroups[catId]) {
+            if (catId && existingGroups[catId] && existingGroups[catId].length > 0) {
                 var groups = existingGroups[catId];
-                var found  = false;
                 groups.forEach(function(g) {
-                    var opt       = document.createElement('option');
-                    opt.value     = g;
-                    opt.textContent = g;
-                    if (currentVal && currentVal === g) { opt.selected = true; found = true; }
-                    select2.appendChild(opt);
+                    var opt = document.createElement('option');
+                    opt.value = g;
+                    datalist.appendChild(opt);
                 });
-                var newOpt = document.createElement('option');
-                newOpt.value = '__new__'; newOpt.textContent = '✚ Ketik Kelompok Baru...';
-                select2.appendChild(newOpt);
-
-                hint.textContent = groups.length + ' kelompok tersedia';
+                hint.textContent = groups.length + ' kelompok terdaftar di kategori ini. Pilih atau ketik baru.';
                 hint.style.color = '#16a34a';
-
-                if (currentVal && !found) {
-                    toggleTypeMode(true);
-                    document.getElementById('type_custom_input').value = currentVal;
-                    document.getElementById('type_input').value = currentVal;
-                } else if (found) {
-                    toggleTypeMode(false);
-                    select2.value = currentVal;
-                    document.getElementById('type_input').value = currentVal;
-                } else {
-                    toggleTypeMode(false);
-                    if (select2.value && select2.value !== '__new__') document.getElementById('type_input').value = select2.value;
-                }
             } else if (catId) {
-                var newOpt = document.createElement('option');
-                newOpt.value = '__new__'; newOpt.textContent = '✚ Ketik Kelompok Baru...';
-                select2.appendChild(newOpt);
-                hint.textContent = 'Belum ada kelompok. Ketik nama baru.';
+                hint.textContent = 'Belum ada kelompok di kategori ini. Ketik nama kelompok baru.';
                 hint.style.color = '#2563eb';
-                if (currentVal) {
-                    document.getElementById('type_custom_input').value = currentVal;
-                    document.getElementById('type_input').value = currentVal;
-                }
-                toggleTypeMode(true);
             } else {
-                var newOpt = document.createElement('option');
-                newOpt.value = '__new__'; newOpt.textContent = '✚ Ketik Kelompok Baru...';
-                select2.appendChild(newOpt);
                 hint.textContent = 'Pilih kategori dulu';
                 hint.style.color = '#94a3b8';
-                toggleTypeMode(false);
             }
         }
 
@@ -674,17 +526,7 @@
             if (cat && cat.value === '__new__') cat.value = '';
             var unit = document.getElementById('unit_select');
             if (unit && unit.value === '__new__') unit.value = '';
-
-            var customWrap  = document.getElementById('type_custom_wrap');
-            var isCustom    = customWrap && customWrap.style.display !== 'none';
-            var hiddenType  = document.getElementById('type_input');
-            if (isCustom) {
-                var customVal = (document.getElementById('type_custom_input')?.value || '').trim();
-                if (customVal) hiddenType.value = customVal;
-            } else {
-                var selectVal = (document.getElementById('type_select')?.value || '').trim();
-                if (selectVal && selectVal !== '__new__') hiddenType.value = selectVal;
-            }
+            return true;
         }
 
         function syncSummaryPreview() {
@@ -732,136 +574,6 @@
         onCategoryChange();
         toggleNewUnit();
         syncSummaryPreview();
-
-        // ── Incoming Stages Logic (Read-only status badge) ──────────────
-        var stageIndex = 0;
-
-        function checkEmptyState() {
-            var tbody   = document.getElementById('stages_tbody');
-            var empty   = document.getElementById('stages_empty');
-            var tblWrap = document.getElementById('stages_table_wrap');
-            var summary = document.getElementById('stages_summary_bar');
-            var hasRows = tbody && tbody.children.length > 0;
-
-            if (empty) empty.style.display = hasRows ? 'none' : 'block';
-            if (tblWrap) tblWrap.style.display = hasRows ? 'block' : 'none';
-            if (summary) summary.style.display = hasRows ? 'flex' : 'none';
-        }
-
-        function addStageRow(data) {
-            data = data || {};
-            var tbody   = document.getElementById('stages_tbody');
-            var tr      = document.createElement('tr');
-            tr.id       = 'stage_row_' + stageIndex;
-
-            var stageNum  = tbody.children.length + 1;
-            var stageVal  = data.stage  !== undefined ? data.stage  : 'T' + stageNum;
-            var dateVal   = data.date   || '';
-            var qtyVal    = data.qty    !== undefined ? data.qty    : '';
-            var statusVal = data.status || 'planned';
-            var notesVal  = data.notes  || '';
-
-            var statusBadge = (statusVal === 'received')
-                ? `<div style="display:inline-flex;flex-direction:column;gap:3px;">
-                       <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;width:fit-content;">
-                           <x-lucide-circle-check class="text-success" /> Sudah Masuk
-                       </span>
-                       ${data.received_gr ? `<span style="font-size:10px;color:#059669;font-weight:600;"><x-lucide-receipt class="me-1" /> GR #${escapeHtml(data.received_gr)}</span>` : ''}
-                   </div>`
-                : `<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:6px 12px;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;" title="Status terkunci otomatis sebagai Rencana dan berubah ke Sudah Masuk saat barang diterima">
-                       <x-lucide-clock class="text-warning" /> Rencana
-                   </span>`;
-
-            tr.innerHTML = `
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="text" name="incoming_stages[${stageIndex}][stage]" value="${stageVal}"
-                           class="form-control form-control-sm font-monospace"
-                           placeholder="T${stageNum}"
-                           style="height:36px;border-radius:6px;font-size:12.5px;font-weight:700;color:#0f172a;background:#f8fafc;width:75px;text-align:center;">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="date" name="incoming_stages[${stageIndex}][date]" value="${dateVal}"
-                           class="form-control form-control-sm"
-                           style="height:36px;border-radius:6px;font-size:12.5px;">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="number" step="any" min="0" name="incoming_stages[${stageIndex}][qty]" value="${qtyVal}"
-                           class="form-control form-control-sm stage-qty-input"
-                           placeholder="0"
-                           style="height:36px;border-radius:6px;font-size:13px;font-weight:700;text-align:right;"
-                           oninput="updateStagesSummary()">
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="hidden" name="incoming_stages[${stageIndex}][status]" value="${statusVal}" class="stage-status-select">
-                    ${statusBadge}
-                </td>
-                <td style="padding:10px 12px;vertical-align:middle;">
-                    <input type="text" name="incoming_stages[${stageIndex}][notes]" value="${notesVal}"
-                           class="form-control form-control-sm"
-                           placeholder="No. SJ / Truk / Keterangan"
-                           style="height:36px;border-radius:6px;font-size:12.5px;">
-                </td>
-                <td style="padding:10px 12px;text-align:center;vertical-align:middle;">
-                    <button type="button"
-                            onclick="removeStageRow(${stageIndex})"
-                            title="Hapus baris tahap"
-                            class="btn-delete-stage">
-                        <x-lucide-trash-2 style="font-size:12px;" />
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-
-            stageIndex++;
-            updateStagesSummary();
-            checkEmptyState();
-        }
-
-        function removeStageRow(index) {
-            var row = document.getElementById('stage_row_' + index);
-            if (row) { row.remove(); updateStagesSummary(); checkEmptyState(); }
-        }
-
-        function updateStagesSummary() {
-            var tbody = document.getElementById('stages_tbody');
-            var totalReceived = 0, totalPlanned = 0;
-
-            tbody.querySelectorAll('tr').forEach(function(row) {
-                var qtyInput = row.querySelector('.stage-qty-input');
-                var statusSel = row.querySelector('.stage-status-select');
-                if (!qtyInput || !statusSel) return;
-                var qty = parseFloat(qtyInput.value) || 0;
-                if (statusSel.value === 'received') {
-                    totalReceived += qty;
-                } else {
-                    totalPlanned += qty;
-                }
-            });
-
-            var totalAll = totalReceived + totalPlanned;
-            var fmt = function(n) { return n.toLocaleString('id-ID'); };
-
-            var elRec = document.getElementById('summary_received');
-            var elPln = document.getElementById('summary_planned');
-            var elTot = document.getElementById('summary_total');
-            if (elRec) elRec.textContent = fmt(totalReceived);
-            if (elPln) elPln.textContent = fmt(totalPlanned);
-            if (elTot) elTot.textContent = fmt(totalAll);
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        // Prefill existing incoming stages
-        var existingStages = @json(old('incoming_stages', $material->incoming_stages ?? []));
-        if (Array.isArray(existingStages) && existingStages.length > 0) {
-            existingStages.forEach(function(stg) {
-                addStageRow(stg);
-            });
-        }
-        checkEmptyState();
     </script>
     @endpush
 </x-app-layout>

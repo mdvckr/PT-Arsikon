@@ -21,6 +21,11 @@ class PurchaseReceipt extends Model
         'receipt_date',
         'day_label',
         'image_path',
+        'items_subtotal',
+        'global_discount',
+        'shipping_fee',
+        'additional_fee',
+        'additional_fee_notes',
         'total_amount',
         'payment_status',
         'notes',
@@ -28,8 +33,12 @@ class PurchaseReceipt extends Model
     ];
 
     protected $casts = [
-        'receipt_date' => 'date',
-        'total_amount' => 'decimal:2',
+        'receipt_date'         => 'date',
+        'items_subtotal'       => 'decimal:2',
+        'global_discount'      => 'decimal:2',
+        'shipping_fee'         => 'decimal:2',
+        'additional_fee'       => 'decimal:2',
+        'total_amount'         => 'decimal:2',
     ];
 
     public function getStatusLabelAttribute(): string

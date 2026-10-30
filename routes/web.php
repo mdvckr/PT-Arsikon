@@ -184,6 +184,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/purchase-receipts/{purchaseReceipt}/print',         [PurchaseReceiptController::class, 'print'])->name('purchase-receipts.print');
     Route::get('/purchase-receipts/{purchaseReceipt}/print-weekly',  [PurchaseReceiptController::class, 'printWeekly'])->name('purchase-receipts.print-weekly');
     Route::get('/purchase-receipts/{purchaseReceipt}/print-monthly', [PurchaseReceiptController::class, 'printMonthly'])->name('purchase-receipts.print-monthly');
+    Route::get('/purchase-receipts/export-weekly',  [PurchaseReceiptController::class, 'exportWeekly'])->name('purchase-receipts.export-weekly');
     Route::get('/purchase-receipts/{purchaseReceipt}/file',          [PurchaseReceiptController::class, 'file'])->name('purchase-receipts.file');
     Route::resource('purchase-receipts', PurchaseReceiptController::class);
 
@@ -191,6 +192,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);
     Route::post('/payments/topup-balance', [PaymentController::class, 'topupBalance'])->name('payments.topupBalance');
     Route::post('/payments/request-balance', [PaymentController::class, 'requestBalance'])->name('payments.requestBalance');
+    Route::get('/payments/balance-requests/{balanceRequest}/print', [PaymentController::class, 'printBalanceRequest'])->name('payments.balance-requests.print');
     Route::post('/payments/balance-requests/{balanceRequest}/approve', [PaymentController::class, 'approveBalanceRequest'])->name('payments.approveBalanceRequest');
     Route::post('/payments/balance-requests/{balanceRequest}/reject', [PaymentController::class, 'rejectBalanceRequest'])->name('payments.rejectBalanceRequest');
     Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');

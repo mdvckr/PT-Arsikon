@@ -392,27 +392,61 @@
                     </div>
                 </div>
 
-                {{-- Incoming Stages (if any) --}}
-                @if(!empty($tool->incoming_stages) && count($tool->incoming_stages) > 0)
-                <div class="mt-3">
-                    <div style="font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;">
-                        <x-lucide-package-check class="me-1 text-primary" /> Tahap Kedatangan
+                {{-- Incoming Stages (PO & PO Lapangan Dinamis) --}}
+                @php
+                    $dynamicStages = $tool->getDynamicIncomingStages();
+                @endphp
+                @if($dynamicStages->isNotEmpty())
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="display:flex;align-items:center;gap:6px;">
+                            <x-lucide-calendar-clock class="text-primary" style="font-size:14px;" /> Rencana Kedatangan Alat
+                        </span>
+                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;font-weight:700;">
+                            {{ $dynamicStages->count() }} Transaksi
+                        </span>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:5px;">
-                        @foreach($tool->incoming_stages as $stg)
-                            @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
-                            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:4px;font-size:11.5px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
-                                <div>
-                                    <strong>{{ $stg['stage'] ?? ('Tahap '.$loop->iteration) }}</strong>
-                                    @if(!empty($stg['date']))
-                                    <span class="text-muted" style="font-size:10.5px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
-                                    @endif
-                                    <span style="font-size:10px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};margin-left:4px;">
-                                        [{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}]
-                                    </span>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        @foreach($dynamicStages as $stg)
+                            @php
+                                $isReceived = ($stg['status'] ?? '') === 'received';
+                                $isPartial = ($stg['status'] ?? '') === 'partial';
+                                $badgeBg = $isReceived ? '#ecfdf5' : ($isPartial ? '#eff6ff' : '#fffbeb');
+                                $badgeColor = $isReceived ? '#047857' : ($isPartial ? '#1d4ed8' : '#b45309');
+                                $badgeBorder = $isReceived ? '#a7f3d0' : ($isPartial ? '#bfdbfe' : '#fde68a');
+                            @endphp
+                            <div style="padding:8px 10px;border-radius:6px;font-size:11.5px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
+                                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+                                    <div>
+                                        <div style="display:flex;align-items:center;gap:4px;">
+                                            <span class="badge" style="font-size:9.5px;padding:1px 5px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-weight:700;">
+                                                {{ $stg['type'] }}
+                                            </span>
+                                            <strong style="font-family:ui-monospace,SFMono-Regular,monospace;color:#0f172a;">{{ $stg['reference'] }}</strong>
+                                        </div>
+                                        <div style="font-size:10.5px;color:#64748b;margin-top:2px;">
+                                            {{ $stg['source'] }}
+                                            @if(!empty($stg['warehouse_name']))
+                                                &bull; <span class="font-medium text-slate-700">{{ $stg['warehouse_name'] }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <span class="badge" style="background:{{ $badgeBg }};color:{{ $badgeColor }};border:1px solid {{ $badgeBorder }};font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">
+                                            {{ $stg['status_label'] }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div style="font-weight:600;">
-                                    {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} unit
+                                <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+                                    <span class="text-slate-500">
+                                        Rencana: <strong>{{ number_format($stg['planned_qty'], 0, ',', '.') }}</strong>
+                                        @if($stg['received_qty'] > 0)
+                                            | Tiba: <strong class="text-emerald-700">{{ number_format($stg['received_qty'], 0, ',', '.') }}</strong>
+                                        @endif
+                                    </span>
+                                    <span style="font-weight:800;color:#0f172a;">
+                                        Sisa: {{ number_format($stg['remaining_qty'], 0, ',', '.') }} unit
+                                    </span>
                                 </div>
                             </div>
                         @endforeach

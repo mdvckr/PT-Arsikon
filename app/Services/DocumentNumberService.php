@@ -113,6 +113,19 @@ class DocumentNumberService
                     }
                 }
                 break;
+
+            case 'PKL':
+                $numbers = \App\Models\ProjectBalanceRequest::where('request_number', 'like', "PKL-{$year}%")
+                    ->pluck('request_number');
+                foreach ($numbers as $num) {
+                    if (preg_match('/PKL-\\d+-(\\d+)/', $num, $matches)) {
+                        $val = (int) $matches[1];
+                        if ($val > $max) {
+                            $max = $val;
+                        }
+                    }
+                }
+                break;
         }
 
         return $max;
@@ -131,6 +144,7 @@ class DocumentNumberService
             'MR'  => 'REQ-' . date('Ymd') . "-{$padded}",
             'GR'  => 'GR-' . date('Ymd') . "-{$padded}",
             'DST' => 'DST-' . date('Ymd') . "-{$padded}",
+            'PKL' => 'PKL-' . date('Ymd') . "-{$padded}",
             default => "{$type}-{$year}-{$padded}",
         };
     }

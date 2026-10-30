@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Services\DocumentNumberService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProjectBalanceRequest extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'request_number',
+        'request_date',
         'project_id',
         'requested_by',
         'amount',
@@ -21,12 +25,28 @@ class ProjectBalanceRequest extends Model
         'approved_at',
         'reference_number',
         'rejection_reason',
+        'signer_requester',
+        'signer_site_manager',
+        'signer_approver',
     ];
 
     protected $casts = [
-        'amount'      => 'decimal:2',
-        'approved_at' => 'datetime',
+        'amount'       => 'decimal:2',
+        'request_date' => 'date',
+        'approved_at'  => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->request_number)) {
+                $model->request_number = DocumentNumberService::generate('PKL');
+            }
+            if (empty($model->request_date)) {
+                $model->request_date = now()->toDateString();
+            }
+        });
+    }
 
     public function project(): BelongsTo
     {
@@ -41,6 +61,11 @@ class ProjectBalanceRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(ProjectBalanceRequestItem::class, 'project_balance_request_id');
     }
 
     public function getStatusLabelAttribute(): string

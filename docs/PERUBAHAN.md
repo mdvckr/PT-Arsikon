@@ -1342,3 +1342,142 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   2. Pembuatan file migrasi kanonikal tunggal untuk modul audit: `database/migrations/2026_10_26_000002_create_audit_findings_and_reports_tables.php` yang mencakup ketiga tabel terpadu: `audit_findings`, `audit_action_plans`, dan `monthly_audit_reports`.
   3. Penghapusan seluruh file migrasi tambahan sementara yang redundan dari direktori `database/migrations/`.
   4. Hasil: Riwayat migrasi database kembali rapi, bersih, dan bebas dari redundansi DDL alter table.
+
+---
+
+## 29. Modul Keuangan & Pengajuan Kas Lapangan (Itemized Request, Tanda Tangan, Cetak & Penyatuan Migrasi)
+- **Konteks & Kebutuhan Pengguna**:
+  - Di sidebar grup Pengadaan (berdampingan dengan PO Lapangan, Purchase Order, dan Nota Pembelian Harian), menu **Pembayaran** diubah menjadi **Keuangan**.
+  - Alur permintaan saldo kas proyek ke kantor pusat diubah menjadi dokumen terstruktur bernama **PENGAJUAN KAS LAPANGAN**.
+  - Formulir pengajuan saldo wajib memuat rincian tabel kebutuhan kas dengan kolom: **No**, **Nama (Barang/Uraian)**, **Qty & Satuan**, **Harga (Satuan)**, **Total (Kalkulasi Otomatis)**, serta **Grand Total**.
+  - Dokumen pengajuan wajib memuat tanggal pengajuan, nomor dokumen resmi otomatis, dan **3 kolom tanda tangan** (Yang Mengajukan / Admin PO Proyek, Mengetahui / Site Manager, Disetujui Oleh / Kantor Pusat / Owner).
+  - Dokumen pengajuan kas lapangan dapat dicetak resmi (*printable / PDF A4*).
+  - Skema database digabungkan rapi ke dalam file migrasi tunggal `2026_01_02_000003_create_project_balance_requests_table.php` tanpa pecahan file migrasi terpisah.
+- **Implementasi**:
+  1. **Navigasi Sidebar (`resources/views/layouts/app.blade.php`)**:
+     - Mengubah teks menu pada rute `payments.index` dari `<x-lucide-banknote /> Pembayaran` menjadi `<x-lucide-banknote /> Keuangan`.
+  2. **Konsolidasi Skema Migrasi (`database/migrations/2026_01_02_000003_create_project_balance_requests_table.php`)**:
+     - Menyatukan definisi tabel `project_balance_requests` (dengan kolom `request_number`, `request_date`, `signer_requester`, `signer_site_manager`, `signer_approver`) dan tabel child `project_balance_request_items` (`item_name`, `quantity`, `unit`, `unit_price`, `total_price`, `notes`) dalam satu file migrasi tunggal.
+  3. **Model & Layanan Penomoran Dokumen**:
+     - `app/Models/ProjectBalanceRequestItem.php`: Model Eloquent untuk baris item rincian kebutuhan kas dengan relasi `BelongsTo` ke request.
+     - `app/Models/ProjectBalanceRequest.php`: Menambahkan fillable, casting, relasi `HasMany` ke `items`, serta model event `booted()` untuk generate nomor otomatis tipe `PKL`.
+     - `app/Services/DocumentNumberService.php`: Mendaftarkan tipe dokumen `PKL` (Pengajuan Kas Lapangan) dengan format sekuensial aman `PKL-YYYYMMDD-XXXX`.
+  4. **Controller & Rute Pengajuan Kas (`PaymentController.php` & `routes/web.php`)**:
+     - `requestBalance()`: Mendukung penyimpanan multi-item (`items.*`), kalkulasi otomatis subtotal per item dan total akumulasi saldo kas, pencatatan penandatangan, serta transaksi DB yang aman.
+     - `printBalanceRequest()`: Menampilkan lembar cetak dokumen resmi untuk pengajuan kas lapangan.
+     - `routes/web.php`: Pendaftaran rute cetak `GET /payments/balance-requests/{balanceRequest}/print` (`payments.balance-requests.print`).
+  5. **Antarmuka Pengguna & Cetak (`resources/views/payments/`)**:
+     - `resources/views/payments/index.blade.php`:
+       - Redesain Modal 3 menjadi dialog interaktif **PENGAJUAN KAS LAPANGAN** dengan form rincian item dinamis (tambah baris, hapus baris, kalkulasi subtotal dan grand total instan via JavaScript).
+       - Menambahkan kolom No. Pengajuan dan tombol **Cetak** pada tabel riwayat pengajuan kas lapangan.
+     - `resources/views/payments/print-balance-request.blade.php`:
+       - Template cetak resmi A4 berstandar korporat PT Arsikon lengkap dengan kop surat, nomor dokumen resmi, rincian item kebutuhan kas, grand total, catatan, dan 3 kotak tanda tangan resmi.
+  6. **Pengujian Otomatis (Testing Suite)**:
+     - `tests/Feature/ProjectBalanceRequestItemizedTest.php`: Seluruh kasus uji pembuatan pengajuan kas ber-item, verifikasi nomor `PKL`, akses lembar cetak, dan persetujuan penambahan saldo kas lolos 100%.
+     - `tests/Feature/SidebarNavigationTest.php`: Penyesuaian verifikasi nama menu `Keuangan` lolos 100%.
+     - `tests/Feature/PurchaseOrderPayableRuleTest.php` & `AdminPoNotaRbacTest.php`: Seluruh aturan pembayaran dan RBAC lolos 100%.
+
+
+
+---
+
+## 30. Pembaruan Finansial Nota Harian Lapangan (Diskon, Ongkir, Iuran Kuli) & Export Rekap Mingguan Excel (T42)
+- **Konteks & Kebutuhan Pengguna**:
+  - Mengacu pada dokumen spesifikasi [docs/rencana_pengembangan_nota_lapangan.md](file:///d:/PROJECET/PT-Arsikon/docs/rencana_pengembangan_nota_lapangan.md):
+    1. **Skema Database Bersih**: Menambahkan kolom diskon, ongkir, dan iuran kuli tanpa membuat file migrasi terpecah, melainkan disatukan langsung ke dalam file migrasi utama pengadaan [database/migrations/2026_01_01_000004_create_procurement_purchasing_tables.php](file:///d:/PROJECET/PT-Arsikon/database/migrations/2026_01_01_000004_create_procurement_purchasing_tables.php).
+    2. **Logika Finansial Realistis & Zero-Trust Server**:
+       - Diskon per baris item: `(qty * unit_price) - item_discount`.
+       - Diskon global nota (`global_discount`).
+       - Ongkos kirim armada toko (`shipping_fee`).
+       - Iuran / upah kuli bongkar material (`additional_fee`) beserta keterangan uraiannya (`additional_fee_notes`).
+       - Grand Total Pengeluaran Bersih: `(Sum(Items Net Subtotal) - global_discount) + shipping_fee + additional_fee`.
+       - Pemotongan saldo kas operasional proyek dan pencatatan log mutasi kas secara instan berdasarkan grand total bersih akhir.
+    3. **Formulir Interaktif Alpine.js**:
+       - Refactoring form pencatatan nota menggunakan Alpine.js (`x-data="notaReceiptForm()"`).
+       - Repeater item dinamis: penambahan/penghapusan baris, autocomplete satuan dari katalog material, input diskon per item, kalkulasi otomatis subtotal bersih per baris.
+       - Panel ringkasan finansial real-time: Subtotal kotor barang, akumulasi diskon (item + global), ongkos kirim, iuran kuli bongkar, grand total pengeluaran bersih, sisa saldo kas proyek, serta alert dinamis jika saldo kas tidak mencukupi.
+    4. **Export Excel Rekap Nota Mingguan (Maatwebsite / Laravel Excel)**:
+       - Implementasi class export `App\Exports\WeeklyPurchaseReceiptExport` menggunakan package resmi `maatwebsite/excel`.
+       - Desain laporan rapat eksekutif: Header identitas perusahaan PT Arsikon, periode, nama proyek, tabel lengkap 13 kolom, auto size, text wrapping, format mata uang, dan baris total rekapitulasi dengan formula `=SUM(...)`.
+       - Rute dan tombol download Excel langsung di halaman indeks nota dan di setiap kartu header mingguan.
+- **Implementasi**:
+  1. **Struktur Database (`2026_01_01_000004_create_procurement_purchasing_tables.php`)**:
+     - Tabel `purchase_receipts`: ditambahkan kolom `items_subtotal`, `global_discount`, `shipping_fee`, `additional_fee`, dan `additional_fee_notes`.
+     - Tabel `purchase_receipt_items`: ditambahkan kolom `item_discount`.
+  2. **Model Eloquent (`PurchaseReceipt.php` & `PurchaseReceiptItem.php`)**:
+     - Menambahkan kolom-kolom baru ke dalam `$fillable` dan `$casts` (tipe `decimal:2`).
+  3. **Package & Service Export Excel**:
+     - Instalasi `maatwebsite/excel` (v3.1.70).
+     - Pembuatan `app/Exports/WeeklyPurchaseReceiptExport.php` mengimplementasikan `FromCollection`, `WithHeadings`, `WithMapping`, `ShouldAutoSize`, `WithStyles`, dan `WithCustomStartCell`.
+  4. **Controller & Routing**:
+     - `app/Http/Controllers/PurchaseReceiptController.php`:
+       - `store()`: Validasi parameter diskon & biaya, kalkulasi ulang zero-trust di sisi server dalam `DB::transaction`, pencegahan diskon melebihi nilai belanja, pemotongan saldo kas berdasarkan grand total bersih, dan pencatatan riwayat transaksi.
+       - `exportWeekly()`: Handler export Excel berbasis rentang tanggal (`start_date` - `end_date`), filter proyek, atau nomor minggu ISO.
+     - `routes/web.php`: Rute `GET /purchase-receipts/export-weekly` (`purchase-receipts.export-weekly`).
+  5. **Antarmuka Pengguna (Blade + Alpine.js)**:
+     - `resources/views/purchase-receipts/create.blade.php`: Komponen form reaktif Alpine.js dengan input diskon per item, ongkir, iuran kuli, dan live card ringkasan kalkulasi.
+     - `resources/views/purchase-receipts/show.blade.php`: Rincian diskon per item di tabel belanja dan footer breakdown biaya kotor, diskon, ongkir, kuli, serta total pengeluaran bersih.
+     - `resources/views/purchase-receipts/index.blade.php`: Tombol `Export Excel` di header halaman dan tombol cepat `Excel` pada setiap kartu kelompok mingguan.
+     - `resources/views/purchase-receipts/print-report.blade.php`: Tombol pintas `Export Excel` pada toolbar lembar cetak.
+  6. **Pengujian Otomatis (Testing Suite)**:
+     - `tests/Feature/PurchaseReceiptItemizedDiscountAndExportTest.php`:
+       - `test_purchase_receipt_calculates_discounts_and_fees_correctly`: Lulus (perhitungan subtotal kotor, diskon, ongkir, kuli, grand total, dan saldo kas terpotong tepat).
+       - `test_purchase_receipt_rejected_if_balance_insufficient`: Lulus (penolakan transaksi jika saldo kas tidak cukup).
+       - `test_can_export_weekly_purchase_receipts_to_excel`: Lulus (response HTTP 200, header attachment .xlsx).
+     - `tests/Feature/AdminPoNotaRbacTest.php`: Seluruh 4 test (5 assertions) lolos 100%.
+     - `tests/Feature/ProjectBalanceRequestItemizedTest.php`: Seluruh 3 test (25 assertions) lolos 100%.
+     - `tests/Feature/PurchaseReceiptAdminProyekTest.php`: Seluruh 2 test (4 assertions) lolos 100%.
+---
+
+## 31. Penyederhanaan Formulir Pengajuan Kas Lapangan (Otomasi Akun Proyek, Penghapusan Urgensi & Ringkasan, Penyederhanaan Tabel Item)
+- **Konteks & Kebutuhan Pengguna**:
+  - Halaman Keuangan: `http://127.0.0.1:8000/payments` (Modal Formulir **PENGAJUAN KAS LAPANGAN**).
+  - **Proyek Tujuan Otomatis**: Proyek tujuan terkunci otomatis sesuai akun/gudang proyek pengguna yang sedang login tanpa perlu memilih manual di dropdown.
+  - **Penghapusan Tingkat Urgensi**: Kolom pilihan tingkat urgensi dihilangkan dari tampilan modal; backend secara otomatis mengisi default `'normal'`.
+  - **Penghapusan Ringkasan Keperluan**: Kolom ringkasan keperluan/alasan dihilangkan dari form modal; backend secara otomatis mengisi tujuan informatif `"Pengajuan Kebutuhan Kas Lapangan (X item barang)"`.
+  - **Penyederhanaan Tabel Rincian Kebutuhan Kas Lapangan**:
+    - Judul kolom diubah menjadi **Nama Barang** saja (sebelumnya `Nama Barang / Uraian Kebutuhan`).
+    - Kolom **Catatan** dihilangkan sepenuhnya (baik dari header tabel, baris input, fungsi penambahan baris JavaScript, maupun lembar cetak dokumen A4).
+- **Implementasi & Perubahan Berkas**:
+  1. **Backend Controller (`app/Http/Controllers/PaymentController.php`)**:
+     - Method `index()`: Mengalokasikan objek `$assignedProject` berdasarkan gudang/proyek aktif milik user login dan mengirimkannya ke view.
+     - Method `requestBalance()`:
+       - Validasi dibuat fleksibel: `project_id`, `purpose`, `urgency` dibuat `nullable`.
+       - Fallback otomatis `project_id` ke proyek yang ditugaskan kepada akun user login.
+       - Fallback otomatis `urgency` ke `'normal'` jika tidak dikirim dari form.
+       - Fallback otomatis `purpose` menjadi `"Pengajuan Kebutuhan Kas Lapangan ({$itemCount} item barang)"`.
+  2. **Antarmuka Pengguna (`resources/views/payments/index.blade.php`)**:
+     - Modal 3 (`#modalRequestBalance`):
+       - Mengganti elemen dropdown manual `<select name="project_id">` dengan tampilan readonly nama proyek dan sisa saldo kas proyek yang rapi serta input `<input type="hidden" name="project_id" id="reqProjectId">`.
+       - Menghapus input `Tingkat Urgensi` (`urgency`).
+       - Menghapus input `Ringkasan Keperluan / Alasan` (`purpose`).
+       - Menata ulang grid informasi utama menjadi 4 kolom yang proporsional (Proyek Tujuan Sesuai Akun, Tanggal Pengajuan, Pemohon, Mengetahui / Site Manager).
+       - Tabel Rincian Kebutuhan Kas Lapangan:
+         - Mengubah header kolom menjadi **Nama Barang**.
+         - Menghapus kolom header dan input **Catatan**.
+       - JavaScript:
+         - Memperbarui fungsi `addRequestItemRow()` agar baris baru yang ditambahkan tidak memiliki kolom catatan.
+         - Memperbarui fungsi `openRequestBalanceModal(projectId, projectName, projectBalance)` untuk mengupdate nama proyek dan saldo proyek secara dinamis.
+         - Memperbarui tombol pintas chip proyek pada kartu saldo.
+  3. **Dokumen Lembar Cetak Resmi A4 (`resources/views/payments/print-balance-request.blade.php`)**:
+     - Menghapus metadata baris `Urgensi`.
+     - Mengubah header kolom tabel menjadi `Nama Barang`.
+     - Menghapus kolom `Catatan` dari header, baris loop item, baris fallback, dan total row.
+     - Menyesuaikan `colspan="5"` pada baris total dan menghapus cell catatan kosong.
+     - Membersihkan class CSS `.col-notes`.
+  4. **Pengujian Otomatis (Testing Suite)**:
+     - `tests/Feature/ProjectBalanceRequestItemizedTest.php`:
+       - Menambahkan test `test_can_submit_simplified_pengajuan_kas_lapangan_without_urgency_purpose_notes_and_auto_assigns_project()`.
+       - Menambahkan test `test_approving_pengajuan_kas_lapangan_without_payload_succeeds_with_default_reference_number()` untuk memastikan persetujuan saldo langsung tanpa input reference/notes berjalan lancar.
+       - Menjalankan seluruh test suite fitur pengajuan kas lapangan: 5 test (36 assertions) lulus 100%.
+       - Menjalankan `AdminPoNotaRbacTest`: 4 test (5 assertions) lulus 100%.
+  5. **Bugfix Pengamanan Array Key Persetujuan Saldo (`PaymentController.php`)**:
+     - Memperbaiki penanganan `reference_number` dan `notes` pada method `approveBalanceRequest()` dan `topupBalance()` menggunakan null-coalescing / `!empty()` sehingga saat form disubmit langsung (hanya token CSRF) tidak memicu error PHP 8.2 `Undefined array key 'reference_number'`.
+  6. **Penyederhanaan Tabel Status & Eliminasi Tombol Duplikat (`payments/index.blade.php`)**:
+     - Menghapus tombol duplikat `Ajukan Permintaan Saldo Baru` di header kartu Status Pengajuan Permintaan Saldo Kas (sehingga hanya tersisa 1 tombol utama di banner atas halaman).
+     - Menghapus kolom `Tingkat Urgensi` dari tabel riwayat Card 1 dan modal daftar pengajuan saldo kas.
+     - Menghapus kolom `Catatan / Ref Pusat` dari tabel riwayat Card 1 sehingga tampilan tabel menjadi lebih rapi dan fokus pada informasi esensial (No, No. Pengajuan, Tgl, Proyek, Nominal Saldo, Keperluan Belanja Nota, Status, Aksi Cetak).
+  7. **Pembersihan Notifikasi & Banner Redundan (Clean UI Refactor)**:
+     - Menghapus blok statis `@if(session('...'))` dari `layouts/app.blade.php` dan `payments/index.blade.php` sehingga notifikasi flash ditangani 100% oleh komponen modern `<x-notification.glass-stack />` yang elegan dan auto-dismissing tanpa duplikasi kotak hijau bertumpuk.
+     - Menghapus banner 'Pencatatan & Rincian Belanja Nota Harian Proyek' dari halaman `payments/index.blade.php` agar layout bersih, padat, dan langsung menyajikan status kas serta mutasi saldo tanpa redundansi informasi.
+

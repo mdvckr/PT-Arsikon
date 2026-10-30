@@ -181,6 +181,11 @@ return new class extends Migration
             $table->date('receipt_date');
             $table->string('day_label')->nullable();
             $table->string('image_path')->nullable();
+            $table->decimal('items_subtotal', 15, 2)->default(0.00);
+            $table->decimal('global_discount', 15, 2)->default(0.00);
+            $table->decimal('shipping_fee', 15, 2)->default(0.00);
+            $table->decimal('additional_fee', 15, 2)->default(0.00);
+            $table->string('additional_fee_notes', 255)->nullable();
             $table->decimal('total_amount', 15, 2)->default(0.00);
             $table->string('payment_status')->default('unpaid');
             $table->text('notes')->nullable();
@@ -196,6 +201,7 @@ return new class extends Migration
             $table->string('item_name')->nullable();
             $table->decimal('quantity', 12, 2)->default(1.00);
             $table->decimal('unit_price', 15, 2)->default(0.00);
+            $table->decimal('item_discount', 15, 2)->default(0.00);
             $table->decimal('subtotal', 15, 2)->default(0.00);
             $table->string('notes')->nullable();
             $table->timestamps();

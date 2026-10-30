@@ -358,9 +358,29 @@ class MaterialRequestService
                     throw new Exception("Kuantitas persetujuan tidak boleh negatif.");
                 }
 
-                $item->update([
-                    'qty_approved' => $qtyApproved,
-                ]);
+                $updates = ['qty_approved' => $qtyApproved];
+
+                // Jika item custom dan belum tertaut material_id/tool_id, coba tautkan ke master yang ada
+                if (empty($item->material_id) && empty($item->tool_id) && !empty($item->custom_item_name)) {
+                    $cleanName = trim($item->custom_item_name);
+                    $matchedMat = Material::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($cleanName)])->first();
+                    if ($matchedMat) {
+                        $updates['material_id'] = $matchedMat->id;
+                        if (empty($item->category_id) && $matchedMat->category_id) {
+                            $updates['category_id'] = $matchedMat->category_id;
+                        }
+                    } else {
+                        $matchedTool = Tool::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($cleanName)])->first();
+                        if ($matchedTool) {
+                            $updates['tool_id'] = $matchedTool->id;
+                            if (empty($item->category_id) && $matchedTool->category_id) {
+                                $updates['category_id'] = $matchedTool->category_id;
+                            }
+                        }
+                    }
+                }
+
+                $item->update($updates);
             }
 
             $request->update([

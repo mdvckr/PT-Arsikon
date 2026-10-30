@@ -65,7 +65,8 @@ class GoodsReceiptController extends Controller
         $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
 
         $materialsJson = $materials->map(function ($m) {
-            $stages = collect($m->incoming_stages ?? []);
+            $dyn = $m->getDynamicIncomingStages();
+            $stages = $dyn->isNotEmpty() ? $dyn : collect($m->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
             // supplier_name: dari field langsung, atau dari relasi jika ada
             $supplierName = $m->supplier_name ?: ($m->supplier?->name);
@@ -96,7 +97,8 @@ class GoodsReceiptController extends Controller
         $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true)->orderBy('name')->get();
 
         $toolsJson = $tools->map(function ($t) {
-            $stages = collect($t->incoming_stages ?? []);
+            $dyn = $t->getDynamicIncomingStages();
+            $stages = $dyn->isNotEmpty() ? $dyn : collect($t->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
             $whId = $t->current_warehouse_id ?? $t->inventories->first()?->warehouse_id;
             $whName = $t->currentWarehouse?->name ?? $t->inventories->first()?->warehouse?->name;
@@ -731,7 +733,8 @@ class GoodsReceiptController extends Controller
         $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
 
         $materialsJson = $materials->map(function ($m) {
-            $stages = collect($m->incoming_stages ?? []);
+            $dyn = $m->getDynamicIncomingStages();
+            $stages = $dyn->isNotEmpty() ? $dyn : collect($m->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
             $supplierName = $m->supplier_name ?: ($m->supplier?->name);
             $firstInv = $m->inventories->first();
@@ -761,7 +764,8 @@ class GoodsReceiptController extends Controller
         $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true)->orderBy('name')->get();
 
         $toolsJson = $tools->map(function ($t) {
-            $stages = collect($t->incoming_stages ?? []);
+            $dyn = $t->getDynamicIncomingStages();
+            $stages = $dyn->isNotEmpty() ? $dyn : collect($t->incoming_stages ?? []);
             $planned = $stages->where('status', 'planned')->values();
             $whId = $t->current_warehouse_id ?? $t->inventories->first()?->warehouse_id;
             $whName = $t->currentWarehouse?->name ?? $t->inventories->first()?->warehouse?->name;

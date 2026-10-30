@@ -1030,7 +1030,7 @@
                                         $itemPos = $item->purchaseOrderItems ? $item->purchaseOrderItems->map->purchaseOrder->filter()->unique('id') : collect();
                                     @endphp
                                     <div style="font-weight:700;color:#d97706;font-size:11.5px;">
-                                        Sisa Dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
+                                        Sisa dipesan: {{ format_quantity($remainingOrder) }} {{ $unit }}
                                     </div>
                                     @if($itemPos->isNotEmpty())
                                         <div style="font-size:10.5px;margin-top:3px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
@@ -1050,7 +1050,8 @@
                                         $targetQty = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
                                         $isSufficient = $availableStock >= $targetQty && $targetQty > 0;
                                     @endphp
-                                    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                                        <span style="font-size:10.5px;color:#64748b;font-weight:600;">Stok Tersedia:</span>
                                         <span style="font-weight:800;color:#0f172a;font-size:12px;">
                                             {{ format_quantity($availableStock) }} {{ $unit }}
                                         </span>

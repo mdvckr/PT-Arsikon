@@ -266,47 +266,84 @@
                 <thead>
                     <tr>
                         <th style="width:4%;">#</th>
-                        <th style="width:22%;">Nama Material</th>
-                        <th style="width:24%;">Item (Jenis yang Dibeli)</th>
+                        <th style="width:38%;">Item</th>
                         <th class="text-center" style="width:10%;">Jumlah (Vol)</th>
                         <th class="text-center" style="width:8%;">Satuan</th>
-                        <th class="text-end" style="width:14%;">Harga Satuan</th>
-                        <th class="text-end" style="width:14%;">Subtotal</th>
-                        <th>Catatan Item</th>
+                        <th class="text-end" style="width:13%;">Harga Satuan</th>
+                        <th class="text-end" style="width:12%;">Diskon Item</th>
+                        <th class="text-end" style="width:15%;">Subtotal Bersih</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($purchaseReceipt->items as $idx => $item)
                     @php
-                        $matName = $item->material_name ?: ($item->material?->name ?: $item->item_name);
-                        $itemName = $item->item_name ?: '-';
+                        $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
                         $satuan = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
                     @endphp
                     <tr>
                         <td class="text-muted text-center">{{ $idx + 1 }}</td>
                         <td>
-                            <strong class="text-primary">{{ $matName }}</strong>
-                        </td>
-                        <td>
-                            <span>{{ $itemName }}</span>
+                            <strong class="text-primary">{{ $itemName }}</strong>
+                            @if($item->notes)
+                                <small class="text-muted block text-xs">Ket: {{ $item->notes }}</small>
+                            @endif
                         </td>
                         <td class="text-center font-semibold">{{ number_format($item->quantity, $item->quantity == floor($item->quantity) ? 0 : 2, ',', '.') }}</td>
                         <td class="text-center">
                             <span class="badge badge-secondary text-xs">{{ $satuan }}</span>
                         </td>
                         <td class="text-end">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
-                        <td class="text-end"><strong class="text-success">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</strong></td>
-                        <td class="text-muted text-xs">{{ $item->notes ?? '-' }}</td>
+                        <td class="text-end text-emerald-600 font-medium">
+                            @if((float)$item->item_discount > 0)
+                                - Rp {{ number_format($item->item_discount, 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="text-end font-semibold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr style="background:#f8fafc;font-weight:bold;">
-                        <td colspan="6" class="text-end" style="font-size:15px;">TOTAL PEMBELIAN NOTA:</td>
-                        <td class="text-end" style="font-size:17px;color:#16a34a;">
+                    @php
+                        $subtotalItems = (float)($purchaseReceipt->items_subtotal > 0 ? $purchaseReceipt->items_subtotal : $purchaseReceipt->items->sum('subtotal'));
+                        $totalItemDiscounts = (float)$purchaseReceipt->items->sum('item_discount');
+                        $globalDisc = (float)($purchaseReceipt->global_discount ?? 0);
+                        $shipFee = (float)($purchaseReceipt->shipping_fee ?? 0);
+                        $addFee = (float)($purchaseReceipt->additional_fee ?? 0);
+                        $totalDiskonAll = $totalItemDiscounts + $globalDisc;
+                    @endphp
+                    <tr style="background:#f8fafc;">
+                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Subtotal Kotor Barang:</td>
+                        <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Rp {{ number_format($subtotalItems, 0, ',', '.') }}</td>
+                    </tr>
+                    @if($totalDiskonAll > 0)
+                    <tr style="background:#f0fdf4;color:#047857;">
+                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
+                            Total Diskon Nota @if($globalDisc > 0) (Item: Rp {{ number_format($totalItemDiscounts, 0, ',', '.') }} + Global: Rp {{ number_format($globalDisc, 0, ',', '.') }}) @endif:
+                        </td>
+                        <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">- Rp {{ number_format($totalDiskonAll, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    @if($shipFee > 0)
+                    <tr style="background:#f8fafc;">
+                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Ongkos Kirim (Armada Toko):</td>
+                        <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">+ Rp {{ number_format($shipFee, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    @if($addFee > 0)
+                    <tr style="background:#f8fafc;">
+                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
+                            Iuran / Kuli Bongkar @if($purchaseReceipt->additional_fee_notes) ({{ $purchaseReceipt->additional_fee_notes }}) @endif:
+                        </td>
+                        <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">+ Rp {{ number_format($addFee, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    <tr style="background:#ecfdf5;border-top:2px solid #059669;font-weight:bold;">
+                        <td colspan="6" class="text-end" style="font-size:15px;color:#065f46;padding:12px 16px;">TOTAL PENGELUARAN BERSIH:</td>
+                        <td class="text-end" style="font-size:18px;color:#047857;padding:12px 16px;">
                             Rp {{ number_format($purchaseReceipt->total_amount, 0, ',', '.') }}
                         </td>
-                        <td></td>
                     </tr>
                 </tfoot>
             </table>

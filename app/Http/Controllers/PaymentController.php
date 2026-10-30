@@ -171,13 +171,24 @@ class PaymentController extends Controller
         ];
 
         if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
-            $balanceRequests = ProjectBalanceRequest::whereIn('project_id', $userProjectIds)->with(['project', 'requester', 'approver'])->latest('id')->take(20)->get();
+            $balanceRequests = ProjectBalanceRequest::whereIn('project_id', $userProjectIds)->with(['project', 'requester', 'approver', 'items'])->latest('id')->take(20)->get();
         } else {
-            $balanceRequests = ProjectBalanceRequest::with(['project', 'requester', 'approver'])->latest('id')->take(20)->get();
+            $balanceRequests = ProjectBalanceRequest::with(['project', 'requester', 'approver', 'items'])->latest('id')->take(20)->get();
         }
         $pendingBalanceRequestsCount = ProjectBalanceRequest::where('status', 'pending')->count();
 
-        return view('payments.index', compact('payments', 'metrics', 'projects', 'balanceLogs', 'groupedBalanceWeeks', 'balanceRequests', 'pendingBalanceRequestsCount', 'isRoleAdminPOProyek'));
+        $assignedProject = null;
+        if (!empty($userProjectIds)) {
+            $assignedProject = Project::find($userProjectIds[0]);
+        }
+        if (!$assignedProject && $user->activeWarehouse()?->project) {
+            $assignedProject = $user->activeWarehouse()->project;
+        }
+        if (!$assignedProject && $projects->isNotEmpty()) {
+            $assignedProject = $projects->first();
+        }
+
+        return view('payments.index', compact('payments', 'metrics', 'projects', 'balanceLogs', 'groupedBalanceWeeks', 'balanceRequests', 'pendingBalanceRequestsCount', 'isRoleAdminPOProyek', 'assignedProject'));
     }
 
     public function create(Request $request)
@@ -254,7 +265,7 @@ class PaymentController extends Controller
 
         $validated = $request->validate([
             'purchase_order_id'     => 'required|exists:purchase_orders,id',
-            'payment_type'          => 'required|in:waiting,instant',
+            'payment_type'          => 'nullable|in:waiting,instant',
             'project_id'            => 'nullable|exists:projects,id',
             'amount'                => 'required|numeric|min:1',
             'payment_method'        => 'required|string',
@@ -279,7 +290,8 @@ class PaymentController extends Controller
         }
 
         $markReceiptsAsPaid = $request->boolean('mark_receipts_as_paid');
-        $paymentType = $validated['payment_type'];
+        $paymentType = $validated['payment_type'] ?? 'waiting';
+        $validated['payment_type'] = $paymentType;
         unset($validated['mark_receipts_as_paid']);
 
         try {
@@ -417,7 +429,7 @@ class PaymentController extends Controller
                 'balance_before'   => $before,
                 'balance_after'    => $after,
                 'reference_number' => $validated['reference_number'] ?? null,
-                'notes'            => $validated['notes'] ?: 'Top-up saldo operasional kas proyek untuk Admin PO',
+                'notes'            => (!empty($validated['notes']) ? $validated['notes'] : 'Top-up saldo operasional kas proyek untuk Admin PO'),
             ]);
 
             return $p;
@@ -434,34 +446,117 @@ class PaymentController extends Controller
         $this->authorize('create payments');
 
         $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
-            'amount'     => 'required|numeric|min:1000',
-            'purpose'    => 'required|string|max:1000',
-            'urgency'    => 'required|in:normal,urgent',
+            'project_id'          => 'nullable|exists:projects,id',
+            'request_date'        => 'nullable|date',
+            'amount'              => 'nullable|numeric|min:0',
+            'purpose'             => 'nullable|string|max:1000',
+            'urgency'             => 'nullable|in:normal,urgent',
+            'signer_requester'    => 'nullable|string|max:150',
+            'signer_site_manager' => 'nullable|string|max:150',
+            'items'               => 'nullable|array',
+            'items.*.item_name'   => 'required_with:items|string|max:255',
+            'items.*.quantity'    => 'required_with:items|numeric|min:0.01',
+            'items.*.unit'        => 'nullable|string|max:50',
+            'items.*.unit_price'  => 'required_with:items|numeric|min:0',
+            'items.*.notes'       => 'nullable|string|max:255',
         ]);
+
+        $user = auth()->user();
+        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
+
+        $projectId = $validated['project_id'] ?? null;
+        if (empty($projectId) && !empty($userProjectIds)) {
+            $projectId = $userProjectIds[0];
+        }
+        if (empty($projectId)) {
+            $projectId = $user->warehouses()->whereNotNull('project_id')->value('project_id')
+                ?? $user->activeWarehouse()?->project_id
+                ?? Project::value('id');
+        }
+
+        if ($isRoleAdminPOProyek && !empty($userProjectIds) && !in_array($projectId, $userProjectIds)) {
+            return back()->with('error', 'Anda hanya dapat mengajukan permintaan saldo kas untuk proyek yang ditugaskan kepada Anda.');
+        }
+
+        $project = Project::findOrFail($projectId);
+
+        // Hitung total dari baris rincian item jika ada
+        $calculatedAmount = 0;
+        $itemsToSave = [];
+
+        if (!empty($validated['items'])) {
+            foreach ($validated['items'] as $item) {
+                if (empty(trim($item['item_name'] ?? ''))) continue;
+
+                $qty = (float) ($item['quantity'] ?? 1);
+                $price = (float) ($item['unit_price'] ?? 0);
+                $subtotal = $qty * $price;
+                $calculatedAmount += $subtotal;
+
+                $itemsToSave[] = [
+                    'item_name'   => trim($item['item_name']),
+                    'quantity'    => $qty,
+                    'unit'        => $item['unit'] ?? null,
+                    'unit_price'  => $price,
+                    'total_price' => $subtotal,
+                    'notes'       => $item['notes'] ?? null,
+                ];
+            }
+        }
+
+        $finalAmount = ($calculatedAmount > 0) ? $calculatedAmount : (float) ($validated['amount'] ?? 0);
+
+        if ($finalAmount <= 0) {
+            return back()->withErrors(['amount' => 'Total pengajuan kas lapangan wajib lebih dari Rp 0. Masukkan rincian kebutuhan belanja dengan harga yang valid.'])->withInput();
+        }
+
+        $itemCount = count($itemsToSave);
+        $purpose = !empty($validated['purpose'])
+            ? $validated['purpose']
+            : ($itemCount > 0 ? "Pengajuan Kebutuhan Kas Lapangan ({$itemCount} item barang)" : "Pengajuan Kebutuhan Kas Lapangan");
+        $urgency = $validated['urgency'] ?? 'normal';
+
+        $balanceRequest = DB::transaction(function () use ($validated, $user, $project, $finalAmount, $purpose, $urgency, $itemsToSave) {
+            $req = ProjectBalanceRequest::create([
+                'request_date'        => $validated['request_date'] ?? now()->toDateString(),
+                'project_id'          => $project->id,
+                'requested_by'        => $user->id,
+                'amount'              => $finalAmount,
+                'purpose'             => $purpose,
+                'urgency'             => $urgency,
+                'status'              => 'pending',
+                'signer_requester'    => !empty($validated['signer_requester']) ? $validated['signer_requester'] : $user->name,
+                'signer_site_manager' => $validated['signer_site_manager'] ?? null,
+            ]);
+
+            foreach ($itemsToSave as $it) {
+                $req->items()->create($it);
+            }
+
+            return $req;
+        });
+
+        $formattedAmount = number_format($balanceRequest->amount, 0, ',', '.');
+        return back()->with('success', "Pengajuan Kas Lapangan #{$balanceRequest->request_number} sebesar Rp {$formattedAmount} untuk '{$project->name}' berhasil diajukan ke Kantor Pusat / Owner! Anda dapat mencetak dokumen pengajuannya.");
+    }
+
+    public function printBalanceRequest(ProjectBalanceRequest $balanceRequest)
+    {
+        $this->authorize('view payments');
 
         $user = auth()->user();
         $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
-            if (!empty($userProjectIds) && !in_array($validated['project_id'], $userProjectIds)) {
-                return back()->with('error', 'Anda hanya dapat mengajukan permintaan saldo kas untuk proyek yang ditugaskan kepada Anda.');
+            if (!empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
+                abort(403, 'Anda tidak memiliki akses ke pengajuan kas proyek lain.');
             }
         }
 
-        $project = Project::findOrFail($validated['project_id']);
+        $balanceRequest->load(['project', 'requester', 'approver', 'items']);
 
-        ProjectBalanceRequest::create([
-            'project_id'   => $project->id,
-            'requested_by' => $user->id,
-            'amount'       => (float) $validated['amount'],
-            'purpose'      => $validated['purpose'],
-            'urgency'      => $validated['urgency'],
-            'status'       => 'pending',
-        ]);
-
-        $formattedAmount = number_format($validated['amount'], 0, ',', '.');
-        return back()->with('success', "Permintaan saldo kas sebesar Rp {$formattedAmount} untuk '{$project->name}' berhasil diajukan ke Kantor Pusat / Owner. Menunggu persetujuan.");
+        return view('payments.print-balance-request', compact('balanceRequest'));
     }
 
     public function approveBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
@@ -488,8 +583,9 @@ class PaymentController extends Controller
 
             $project->update(['operational_balance' => $after]);
 
-            $ref = $validated['reference_number'] ?: "REQ-BAL-{$balanceRequest->id}";
+            $ref = (!empty($validated['reference_number'])) ? $validated['reference_number'] : "REQ-BAL-{$balanceRequest->id}";
             $requesterName = $balanceRequest->requester?->name ?? 'Admin PO Proyek';
+            $noteText = (!empty($validated['notes'])) ? $validated['notes'] : $balanceRequest->purpose;
 
             ProjectBalanceLog::create([
                 'project_id'       => $project->id,
@@ -499,7 +595,7 @@ class PaymentController extends Controller
                 'balance_before'   => $before,
                 'balance_after'    => $after,
                 'reference_number' => $ref,
-                'notes'            => "Disetujui dari Permintaan Saldo #{$balanceRequest->id} oleh {$requesterName}: " . ($validated['notes'] ?: $balanceRequest->purpose),
+                'notes'            => "Disetujui dari Pengajuan Kas #{$balanceRequest->request_number} oleh {$requesterName}: " . $noteText,
             ]);
 
             $balanceRequest->update([
@@ -507,11 +603,12 @@ class PaymentController extends Controller
                 'approved_by'      => $user->id,
                 'approved_at'      => now(),
                 'reference_number' => $ref,
+                'signer_approver'  => $balanceRequest->signer_approver ?: $user->name,
             ]);
         });
 
         $formattedAmount = number_format($balanceRequest->amount, 0, ',', '.');
-        return back()->with('success', "Permintaan saldo kas sebesar Rp {$formattedAmount} berhasil disetujui! Saldo proyek otomatis bertambah.");
+        return back()->with('success', "Pengajuan kas lapangan #{$balanceRequest->request_number} sebesar Rp {$formattedAmount} berhasil disetujui! Saldo proyek otomatis bertambah.");
     }
 
     public function rejectBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)

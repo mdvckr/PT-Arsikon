@@ -300,35 +300,67 @@
                     </div>
                 </div>
 
-                {{-- Incoming Stages Card (if present) --}}
-                @if(!empty($material->incoming_stages) && count($material->incoming_stages) > 0)
+                {{-- Incoming Stages Card (PO & PO Lapangan Dinamis) --}}
+                @php
+                    $dynamicStages = $material->getDynamicIncomingStages();
+                @endphp
+                @if($dynamicStages->isNotEmpty())
                 <div class="detail-card">
                     <div class="detail-card-header">
                         <div class="detail-card-title">
-                            <x-lucide-calendar class="text-primary" /> Tahap Kedatangan Barang
+                            <x-lucide-calendar-clock class="text-primary" /> Rencana Tahap Kedatangan Barang
                         </div>
+                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:700;">
+                            {{ $dynamicStages->count() }} Transaksi Aktif
+                        </span>
                     </div>
                     <div class="detail-card-body">
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            @foreach($material->incoming_stages as $stg)
-                                @php $isReceived = ($stg['status'] ?? 'received') === 'received'; @endphp
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:6px;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
-                                    <div>
-                                        <strong>{{ $stg['stage'] ?? ('Tahap '.$loop->iteration) }}</strong>
-                                        @if(!empty($stg['date']))
-                                        <span class="text-muted" style="font-size:11px;">({{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }})</span>
-                                        @endif
-                                        <div style="font-size:11px;color:{{ $isReceived ? '#16a34a' : '#b45309' }};font-weight:600;margin-top:2px;display:flex;align-items:center;gap:4px;">
-                                            @if($isReceived)
-                                                <x-lucide-circle-check class="w-3.5 h-3.5" />
-                                            @else
-                                                <x-lucide-clock class="w-3.5 h-3.5" />
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            @foreach($dynamicStages as $stg)
+                                @php
+                                    $isReceived = ($stg['status'] ?? '') === 'received';
+                                    $isPartial = ($stg['status'] ?? '') === 'partial';
+                                    $badgeBg = $isReceived ? '#ecfdf5' : ($isPartial ? '#eff6ff' : '#fffbeb');
+                                    $badgeColor = $isReceived ? '#047857' : ($isPartial ? '#1d4ed8' : '#b45309');
+                                    $badgeBorder = $isReceived ? '#a7f3d0' : ($isPartial ? '#bfdbfe' : '#fde68a');
+                                @endphp
+                                <div style="padding:10px 12px;border-radius:8px;font-size:12px;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;">
+                                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                                        <div>
+                                            <div style="display:flex;align-items:center;gap:6px;">
+                                                <span class="badge" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">
+                                                    {{ $stg['type'] }}
+                                                </span>
+                                                <strong style="font-family:ui-monospace,SFMono-Regular,monospace;color:#0f172a;">{{ $stg['reference'] }}</strong>
+                                            </div>
+                                            <div style="font-size:11px;color:#64748b;margin-top:3px;">
+                                                <span>{{ $stg['source'] }}</span>
+                                                @if(!empty($stg['warehouse_name']))
+                                                    &bull; <span class="font-medium text-slate-700">{{ $stg['warehouse_name'] }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <span class="badge" style="background:{{ $badgeBg }};color:{{ $badgeColor }};border:1px solid {{ $badgeBorder }};font-size:10.5px;padding:3px 8px;border-radius:5px;font-weight:700;">
+                                                {{ $stg['status_label'] }}
+                                            </span>
+                                            @if(!empty($stg['date']))
+                                            <div style="font-size:10.5px;color:#94a3b8;margin-top:2px;">
+                                                {{ \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') }}
+                                            </div>
                                             @endif
-                                            <span>{{ $isReceived ? 'Sudah Masuk' : 'Rencana' }}</span>
                                         </div>
                                     </div>
-                                    <div style="font-weight:700;font-size:13px;color:#0f172a;">
-                                        {{ number_format((float)($stg['qty'] ?? 0), 0, ',', '.') }} {{ $material->unit?->abbreviation ?? '' }}
+                                    <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;">
+                                        <span class="text-slate-500">
+                                            Rencana: <strong>{{ number_format($stg['planned_qty'], 0, ',', '.') }}</strong>
+                                            @if($stg['received_qty'] > 0)
+                                                | Tiba: <strong class="text-emerald-700">{{ number_format($stg['received_qty'], 0, ',', '.') }}</strong>
+                                            @endif
+                                        </span>
+                                        <span style="font-weight:800;font-size:12.5px;color:#0f172a;">
+                                            Sisa: {{ number_format($stg['remaining_qty'], 0, ',', '.') }} {{ $material->unit?->abbreviation ?? '' }}
+                                        </span>
                                     </div>
                                 </div>
                             @endforeach

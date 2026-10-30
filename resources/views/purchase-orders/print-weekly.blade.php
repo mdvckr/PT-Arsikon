@@ -463,10 +463,10 @@
                 <img src="{{ asset('assets/Logo-Dashboard.png') }}" alt="Logo PT Arsikon" onerror="this.style.display='none'">
             </div>
             <div class="corp-info-col">
-                <div class="corp-name">PT Arsikon Cipta Karya</div>
+                <div class="corp-name">PT ARSIKON CIPTA KARYA</div>
                 <div class="corp-subtitle">General Contractor & Construction Logistics Management</div>
                 <div class="corp-address">
-                    Kantor Pusat & Workshop: Jl. Raya Proyek Logistik, Sleman, D.I. Yogyakarta • Telp: (0274) 880-991 • Email: procurement@arsikon.co.id
+                    Jl. Pasir Luhur No.1, Taranan, Sinduharjo, Kec. Ngaglik, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55581
                 </div>
             </div>
             <div class="corp-doc-col">
