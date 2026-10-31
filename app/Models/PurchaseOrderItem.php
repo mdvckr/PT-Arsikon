@@ -95,7 +95,7 @@ class PurchaseOrderItem extends Model
 
     public function isTool(): bool
     {
-        return !empty($this->tool_id);
+        return !empty($this->tool_id) || ($this->materialRequestItem && $this->materialRequestItem->isTool());
     }
 
     public function isCustom(): bool

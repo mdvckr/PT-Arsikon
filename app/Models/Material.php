@@ -150,7 +150,7 @@ class Material extends Model
 
         $stages = collect();
 
-        // 1. Dari Purchase Order (PO Vendor / Pengadaan yang disetujui)
+        // 1. Dari Purchase Order (PO Vendor / Pengadaan)
         $poItemsQuery = PurchaseOrderItem::where(function ($q) {
                 $q->where('material_id', $this->id);
                 if (!empty($this->name)) {
@@ -158,7 +158,7 @@ class Material extends Model
                 }
             })
             ->whereHas('purchaseOrder', function ($q) use ($whIds) {
-                $q->whereIn('status', ['approved', 'sent', 'partial_received', 'partially_received']);
+                $q->whereIn('status', ['draft', 'approved', 'sent', 'partial_received', 'partially_received', 'received']);
                 if (!empty($whIds)) {
                     $q->where(function ($sub) use ($whIds) {
                         $sub->whereIn('delivery_warehouse_id', $whIds)
@@ -166,7 +166,7 @@ class Material extends Model
                     });
                 }
             })
-            ->with(['purchaseOrder.deliveryWarehouse', 'purchaseOrder.supplier']);
+            ->with(['purchaseOrder.deliveryWarehouse', 'purchaseOrder.supplier', 'purchaseOrder.goodsReceipts.warehouse', 'purchaseOrder.materialRequest']);
 
         foreach ($poItemsQuery->get() as $poItem) {
             $po = $poItem->purchaseOrder;
@@ -176,24 +176,107 @@ class Material extends Model
             $qtyReceived = (float) $poItem->received_qty;
             $remaining = max(0, $qtyPlanned - $qtyReceived - (float)$poItem->lost_qty - (float)$poItem->short_closed_qty);
 
-            if ($remaining > 0 || ($qtyReceived > 0 && in_array($po->status, ['partial_received', 'partially_received']))) {
-                $stages->push([
-                    'type'           => 'PO',
-                    'stage'          => $po->po_number,
-                    'reference'      => $po->po_number,
-                    'source'         => $po->supplier?->name ?: ($po->supplier_name ?: 'Vendor PO'),
-                    'warehouse_name' => $po->deliveryWarehouse?->name,
-                    'warehouse_id'   => $po->delivery_warehouse_id,
-                    'qty'            => $remaining > 0 ? $remaining : $qtyReceived,
-                    'planned_qty'    => $qtyPlanned,
-                    'received_qty'   => $qtyReceived,
-                    'remaining_qty'  => $remaining,
-                    'date'           => $po->expected_delivery ? $po->expected_delivery->format('Y-m-d') : ($po->order_date ? $po->order_date->format('Y-m-d') : null),
-                    'status'         => $remaining <= 0 ? 'received' : ($qtyReceived > 0 ? 'partial' : 'planned'),
-                    'status_label'   => $remaining <= 0 ? 'Lengkap Masuk' : ($qtyReceived > 0 ? 'Masuk Sebagian (' . number_format($qtyReceived, 0, ',', '.') . '/' . number_format($qtyPlanned, 0, ',', '.') . ')' : 'Rencana'),
-                    'notes'          => $po->notes ?: null,
-                ]);
+            $isFullyReceived = ($po->status === 'received') || ($remaining <= 0 && $qtyReceived > 0);
+            $isPartial = in_array($po->status, ['partial_received', 'partially_received']) || ($qtyReceived > 0 && $remaining > 0);
+
+            // Cari nomor penerimaan barang (Goods Receipt)
+            $grs = $po->goodsReceipts->filter(function($gr) use ($whIds) {
+                return empty($whIds) || in_array($gr->warehouse_id, $whIds);
+            });
+            $grNumber = $grs->pluck('receipt_number')->filter()->unique()->implode(', ');
+
+            // Status label & badge
+            if ($isFullyReceived) {
+                $status = 'received';
+                $statusLabel = 'Lengkap Masuk';
+            } elseif ($isPartial) {
+                $status = 'partial';
+                $statusLabel = 'Masuk Sebagian (' . number_format($qtyReceived, 0, ',', '.') . '/' . number_format($qtyPlanned, 0, ',', '.') . ')';
+            } elseif ($po->status === 'draft') {
+                $status = 'planned';
+                $statusLabel = 'Draft PO';
+            } elseif ($po->status === 'sent') {
+                $status = 'planned';
+                $statusLabel = 'Dalam Pengiriman';
+            } else {
+                $status = 'planned';
+                $statusLabel = 'Disetujui (Menunggu Kirim)';
             }
+
+            // Reference display: cantumkan PO dan GR jika ada
+            $refDisplay = $po->po_number;
+            if ($grNumber) {
+                $refDisplay .= ' · ' . $grNumber;
+            } elseif ($po->materialRequest) {
+                $refDisplay .= ' (MR: ' . $po->materialRequest->request_number . ')';
+            }
+
+            $stageDate = null;
+            if ($isFullyReceived && $grs->isNotEmpty() && $grs->first()->receipt_date) {
+                $stageDate = $grs->first()->receipt_date->format('Y-m-d');
+            } elseif ($po->expected_delivery) {
+                $stageDate = $po->expected_delivery->format('Y-m-d');
+            } elseif ($po->order_date) {
+                $stageDate = $po->order_date->format('Y-m-d');
+            }
+
+            $stages->push([
+                'type'           => 'PO',
+                'stage'          => $po->po_number,
+                'reference'      => $refDisplay,
+                'source'         => $po->supplier?->name ?: ($po->supplier_name ?: 'Vendor PO'),
+                'warehouse_name' => $po->deliveryWarehouse?->name,
+                'warehouse_id'   => $po->delivery_warehouse_id,
+                'qty'            => $isFullyReceived ? $qtyReceived : ($remaining > 0 ? $remaining : $qtyPlanned),
+                'planned_qty'    => $qtyPlanned,
+                'received_qty'   => $qtyReceived,
+                'remaining_qty'  => $remaining,
+                'date'           => $stageDate,
+                'status'         => $status,
+                'status_label'   => $statusLabel,
+                'notes'          => $po->notes ?: null,
+            ]);
+        }
+
+        // 2. Dari Penerimaan Barang (GR) langsung tanpa PO
+        $directGrItems = \App\Models\GoodsReceiptItem::where('material_id', $this->id)
+            ->whereHas('goodsReceipt', function ($q) use ($whIds) {
+                $q->where('status', 'confirmed')
+                  ->whereNull('purchase_order_id');
+                if (!empty($whIds)) {
+                    $q->whereIn('warehouse_id', $whIds);
+                }
+            })
+            ->with(['goodsReceipt.warehouse', 'goodsReceipt.materialRequest'])
+            ->get();
+
+        foreach ($directGrItems as $grItem) {
+            $gr = $grItem->goodsReceipt;
+            if (!$gr) continue;
+            $qtyRec = (float) $grItem->qty_received;
+            if ($qtyRec <= 0) continue;
+
+            $refDisplay = $gr->receipt_number;
+            if ($gr->materialRequest) {
+                $refDisplay .= ' (MR: ' . $gr->materialRequest->request_number . ')';
+            }
+
+            $stages->push([
+                'type'           => 'Penerimaan (GR)',
+                'stage'          => $gr->receipt_number,
+                'reference'      => $refDisplay,
+                'source'         => $gr->supplier_name ?: 'Penerimaan Langsung Proyek',
+                'warehouse_name' => $gr->warehouse?->name,
+                'warehouse_id'   => $gr->warehouse_id,
+                'qty'            => $qtyRec,
+                'planned_qty'    => $qtyRec,
+                'received_qty'   => $qtyRec,
+                'remaining_qty'  => 0,
+                'date'           => $gr->receipt_date ? $gr->receipt_date->format('Y-m-d') : null,
+                'status'         => 'received',
+                'status_label'   => 'Lengkap Masuk',
+                'notes'          => $gr->notes ?: null,
+            ]);
         }
 
         // 2. Dari PO Lapangan (Material Request yang sudah disetujui tapi belum/hanya sebagian dibuat PO)

@@ -125,8 +125,11 @@ class MaterialRequestController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
+        $toolCategories = Category::where('type', 'tool')->orderBy('name')->get();
+
         return view('material-requests.create', compact(
             'materialCategories',
+            'toolCategories',
             'uncategorizedMaterials',
             'warehouses',
             'warehouseId',
@@ -155,6 +158,7 @@ class MaterialRequestController extends Controller
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
+            'custom_items.*.item_type'   => 'nullable|in:material,tool',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
             'custom_items.*.type'        => 'nullable|string|max:100',
             'custom_items.*.unit'        => 'nullable|string|max:50',
@@ -211,11 +215,13 @@ class MaterialRequestController extends Controller
                 $name = trim($cItem['name'] ?? '');
                 if ($name === '') continue;
                 $customNote = trim($cItem['notes'] ?? '');
+                $itemType = in_array($cItem['item_type'] ?? '', ['material', 'tool']) ? $cItem['item_type'] : 'material';
                 $itemsData[] = [
                     'material_id'      => null,
+                    'item_type'        => $itemType,
                     'custom_item_name' => $name,
                     'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
-                    'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
+                    'custom_item_unit' => trim($cItem['unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
                     'notes'            => $customNote ?: 'Manual - tidak ada di gudang sumber',
@@ -413,9 +419,12 @@ class MaterialRequestController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
+        $toolCategories = Category::where('type', 'tool')->orderBy('name')->get();
+
         return view('material-requests.edit', compact(
             'materialRequest',
             'materialCategories',
+            'toolCategories',
             'uncategorizedMaterials',
             'warehouses',
             'warehouseId',
@@ -459,6 +468,7 @@ class MaterialRequestController extends Controller
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
+            'custom_items.*.item_type'   => 'nullable|in:material,tool',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
             'custom_items.*.type'        => 'nullable|string|max:100',
             'custom_items.*.unit'        => 'nullable|string|max:50',
@@ -512,11 +522,13 @@ class MaterialRequestController extends Controller
                 $name = trim($cItem['name'] ?? '');
                 if ($name === '') continue;
                 $customNote = trim($cItem['notes'] ?? '');
+                $itemType = in_array($cItem['item_type'] ?? '', ['material', 'tool']) ? $cItem['item_type'] : 'material';
                 $itemsData[] = [
                     'material_id'      => null,
+                    'item_type'        => $itemType,
                     'custom_item_name' => $name,
                     'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
-                    'custom_item_unit' => trim($cItem['unit'] ?? 'unit') ?: 'unit',
+                    'custom_item_unit' => trim($cItem['unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
                     'qty_requested'    => $qty,
                     'notes'            => $customNote ?: 'Manual - tidak ada di gudang sumber',

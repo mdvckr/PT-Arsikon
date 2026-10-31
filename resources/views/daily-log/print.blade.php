@@ -213,7 +213,7 @@
 
         <!-- Judul -->
         <div class="doc-title">
-            <h2>LAPORAN HARIAN LOGISTIK DAN MATERIAL PROYEK</h2>
+            <h2>LAPORAN HARIAN LOGISTIK PROYEK</h2>
             <div class="doc-sub">{{ $selectedWarehouse->name }} — Tanggal: {{ \Carbon\Carbon::parse($date)->translatedFormat('l, d F Y') }}</div>
         </div>
 

@@ -270,7 +270,12 @@
                                         $iconColor = $isReceived ? '#16a34a' : ($isPartial ? '#2563eb' : '#d97706');
                                         $statusLabel = $stg['status_label'] ?? ($isReceived ? 'Masuk' : ($isPartial ? 'Masuk Sebagian' : 'Rencana'));
                                         $stageDate = !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') : null;
-                                        $stgQty = (float)($stg['remaining_qty'] ?? ($stg['qty'] ?? 0));
+                                        $stgQty = $isReceived
+                                            ? (float)($stg['received_qty'] ?? ($stg['qty'] ?? 0))
+                                            : (float)(($stg['remaining_qty'] ?? null) !== null && (float)$stg['remaining_qty'] > 0 ? $stg['remaining_qty'] : ($stg['qty'] ?? ($stg['planned_qty'] ?? 0)));
+                                        if ($stgQty <= 0) {
+                                            $stgQty = (float)($stg['qty'] ?? ($stg['planned_qty'] ?? 0));
+                                        }
                                     @endphp
                                     <button type="button"
                                             class="btn-stage-detail"
@@ -286,9 +291,15 @@
                                         @else
                                             <x-lucide-clock style="width:11px;height:11px;color:{{ $iconColor }};" />
                                         @endif
-                                        <span>{{ $stg['reference'] ?? ($stg['stage'] ?? 'PO') }}</span>
-                                        <span style="opacity:0.6;">•</span>
-                                        <span>{{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                        @if($isPartial)
+                                            <span>{{ $stageDate ?: 'Masuk' }}</span>
+                                            <span style="opacity:0.6;">•</span>
+                                            <span>{{ number_format((float)($stg['received_qty'] ?? 0), 0, ',', '.') }}/{{ number_format((float)($stg['planned_qty'] ?? $stgQty), 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                        @else
+                                            <span>{{ $stageDate ?: ($stg['reference'] ?? ($stg['stage'] ?? 'Masuk')) }}</span>
+                                            <span style="opacity:0.6;">•</span>
+                                            <span>{{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                        @endif
                                     </button>
                                 @else
                                     @php
@@ -718,23 +729,39 @@
 
             stages.forEach(function(stg, idx) {
                 var isReceived = (stg.status || 'received') === 'received';
+                var isPartial = (stg.status || '') === 'partial';
                 var qty = parseFloat(stg.qty || 0);
+                var receivedQty = parseFloat(stg.received_qty || 0);
+                var remainingQty = parseFloat(stg.remaining_qty || 0);
+
                 if (isReceived) {
-                    recQty += qty;
+                    recQty += (receivedQty > 0 ? receivedQty : qty);
+                } else if (isPartial) {
+                    recQty += receivedQty;
+                    planQty += remainingQty;
                 } else {
-                    planQty += qty;
+                    planQty += (remainingQty > 0 ? remainingQty : qty);
                 }
 
                 var stageLabel = stg.stage || ('T' + (idx + 1));
-                var statusLabel = isReceived ? 'Sudah Masuk' : 'Rencana';
-                var statusBg = isReceived ? '#f0fdf4' : '#fffbeb';
-                var statusBorder = isReceived ? '#bbf7d0' : '#fde68a';
-                var statusColor = isReceived ? '#166534' : '#92400e';
+                var statusLabel = isReceived ? 'Sudah Masuk' : (isPartial ? 'Masuk Sebagian' : 'Rencana');
+                var statusBg = isReceived ? '#f0fdf4' : (isPartial ? '#eff6ff' : '#fffbeb');
+                var statusBorder = isReceived ? '#bbf7d0' : (isPartial ? '#bfdbfe' : '#fde68a');
+                var statusColor = isReceived ? '#166534' : (isPartial ? '#1d4ed8' : '#92400e');
                 var iconSvg = isReceived
                     ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></svg>'
                     : '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-                var iconColor = isReceived ? '#16a34a' : '#d97706';
+                var iconColor = isReceived ? '#16a34a' : (isPartial ? '#2563eb' : '#d97706');
                 var dateFormatted = stg.date ? formatDate(stg.date) : null;
+
+                var displayQtyHtml = '';
+                if (isPartial) {
+                    displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#1e40af;">${numberFormat(receivedQty)} / ${numberFormat(stg.planned_qty || (receivedQty + remainingQty))} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div><div style="font-size:10.5px;color:#d97706;">Sisa: ${numberFormat(remainingQty)} ${unit}</div>`;
+                } else if (isReceived) {
+                    displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#15803d;">${numberFormat(receivedQty > 0 ? receivedQty : qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>`;
+                } else {
+                    displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#0f172a;">${numberFormat(remainingQty > 0 ? remainingQty : qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>`;
+                }
 
                 var row = document.createElement('div');
                 row.style.cssText = 'padding:10px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;';
@@ -757,7 +784,7 @@
                         </div>
                     </div>
                     <div style="text-align:right;white-space:nowrap;padding-top:1px;">
-                        <div style="font-weight:700;font-size:13px;color:#0f172a;">${numberFormat(qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>
+                        ${displayQtyHtml}
                     </div>
                 `;
                 list.appendChild(row);

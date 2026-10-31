@@ -156,6 +156,7 @@ class ProcurementMultiPoTest extends TestCase
         $this->assertEquals('fully_ordered', $pr->fresh()->status);
 
         // 5. Batalkan (cancel) PO 1 (60 sak)
+        $this->flushSession();
         $cancelResponse = $this->actingAs($this->adminPusat)
             ->post(route('purchase-orders.cancel', $po1));
 

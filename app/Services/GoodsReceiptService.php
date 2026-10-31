@@ -307,6 +307,30 @@ class GoodsReceiptService
                 if ($item->isTool()) {
                     // Penanganan Alat / Mesin: stok bertambah HANYA dari qty_received baik
                     $tool = $item->tool;
+                    if (!$tool && ($item->purchase_order_item_id || $item->material_request_item_id)) {
+                        $mrItem = $item->materialRequestItem ?? $poItem?->materialRequestItem;
+                        $customName = $poItem?->custom_item_name ?? $mrItem?->custom_item_name;
+                        if (!empty($customName)) {
+                            $catId = $mrItem?->category_id;
+                            $spec  = $mrItem?->specification;
+                            $typeName = $mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null);
+                            $tool = Tool::autoRegisterCustom(
+                                $customName,
+                                $catId,
+                                $typeName,
+                                null,
+                                $spec
+                            );
+                            $item->update(['tool_id' => $tool->id]);
+                            if ($poItem) {
+                                $poItem->update(['tool_id' => $tool->id]);
+                            }
+                            if ($mrItem) {
+                                $mrItem->update(['tool_id' => $tool->id]);
+                            }
+                        }
+                    }
+
                     if ($tool && (float) $item->qty_received > 0) {
                         $this->toolInventoryService->addStock(
                             $warehouse,

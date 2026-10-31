@@ -61,18 +61,19 @@ class MaterialRequestService
                     throw new Exception("Jumlah pengajuan harus > 0.");
                 }
 
-                // T14: Item alat (tool)
-                if (!empty($item['tool_id']) || ($item['item_type'] ?? '') === 'tool') {
+                // T14: Item alat (tool) dari master tool terdaftar
+                if (!empty($item['tool_id'])) {
                     if (fmod($qtyRequested, 1) != 0) {
                         throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
                     }
-                    $tool = !empty($item['tool_id']) ? \App\Models\Tool::findOrFail($item['tool_id']) : null;
+                    $tool = \App\Models\Tool::findOrFail($item['tool_id']);
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
                         'item_type'           => 'tool',
-                        'tool_id'             => $tool?->id,
+                        'tool_id'             => $tool->id,
                         'material_id'         => null,
-                        'category_id'         => $tool?->category_id,
+                        'category_id'         => $tool->category_id,
+                        'fulfillment'         => $item['fulfillment'] ?? ($sourceWarehouse ? 'stock' : 'purchase'),
                         'qty_requested'       => (int) $qtyRequested,
                         'qty_approved'        => $submitImmediately ? (int) $qtyRequested : 0,
                         'notes'               => $item['notes'] ?? null,
@@ -83,12 +84,14 @@ class MaterialRequestService
                     continue;
                 }
 
-                // Custom manual item (tidak ada di gudang sumber)
-                if (empty($item['material_id'])) {
+                // Custom manual item (tidak ada di gudang sumber / master)
+                if (empty($item['material_id']) && empty($item['tool_id'])) {
                     $customName = trim($item['custom_item_name'] ?? '');
                     if ($customName === '') {
                         throw new Exception("Nama barang custom tidak boleh kosong.");
                     }
+
+                    $itemType = ($item['item_type'] ?? '') === 'tool' ? 'tool' : 'material';
 
                     $customCategoryId = null;
                     if (!empty($item['category_id'])) {
@@ -96,21 +99,28 @@ class MaterialRequestService
                         if (!$cat) {
                             throw new Exception("Kategori custom tidak valid.");
                         }
-                        if ($cat->type === 'tool' && fmod($qtyRequested, 1) != 0) {
-                            throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                        if ($cat->type === 'tool') {
+                            $itemType = 'tool';
                         }
                         $customCategoryId = $cat->id;
                     }
 
+                    if ($itemType === 'tool' && fmod($qtyRequested, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                    }
+
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
+                        'item_type'           => $itemType,
                         'material_id'         => null,
+                        'tool_id'             => null,
                         'category_id'         => $customCategoryId,
                         'custom_item_name'    => $customName,
                         'custom_item_type'    => trim($item['custom_item_type'] ?? '') ?: null,
-                        'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
-                        'qty_requested'       => $qtyRequested,
-                        'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
+                        'custom_item_unit'    => trim($item['custom_item_unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
+                        'fulfillment'         => 'purchase',
+                        'qty_requested'       => $itemType === 'tool' ? (int) $qtyRequested : $qtyRequested,
+                        'qty_approved'        => $submitImmediately ? ($itemType === 'tool' ? (int) $qtyRequested : $qtyRequested) : 0,
                         'notes'               => $item['notes'] ?? null,
                         'specification'       => $item['specification'] ?? null,
                         'usage_location'      => $item['usage_location'] ?? null,
@@ -125,6 +135,7 @@ class MaterialRequestService
                     'material_request_id' => $request->id,
                     'material_id'         => $material->id,
                     'category_id'         => $material->category_id, // Server mengisi dari kategori materialnya dan mengabaikan nilai klien
+                    'fulfillment'         => $item['fulfillment'] ?? ($sourceWarehouse ? 'stock' : 'purchase'),
                     'qty_requested'       => $qtyRequested,
                     'qty_approved'        => $submitImmediately ? $qtyRequested : 0,
                     'notes'               => $item['notes'] ?? null,
@@ -236,9 +247,11 @@ class MaterialRequestService
                 $qtyRequested = (float) $item['qty_requested'];
                 if ($qtyRequested <= 0) continue;
 
-                if (empty($item['material_id'])) {
+                if (empty($item['material_id']) && empty($item['tool_id'])) {
                     $customName = trim($item['custom_item_name'] ?? '');
                     if ($customName === '') continue;
+
+                    $itemType = ($item['item_type'] ?? '') === 'tool' ? 'tool' : 'material';
 
                     $customCategoryId = null;
                     if (!empty($item['category_id'])) {
@@ -246,21 +259,30 @@ class MaterialRequestService
                         if (!$cat) {
                             throw new Exception("Kategori custom tidak valid.");
                         }
+                        if ($cat->type === 'tool') {
+                            $itemType = 'tool';
+                        }
                         $customCategoryId = $cat->id;
                     }
 
+                    if ($itemType === 'tool' && fmod($qtyRequested, 1) != 0) {
+                        throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
+                    }
+
                     $matchCustom = $existingItems->first(function ($it) use ($customName, $handledItemIds) {
-                        return empty($it->material_id) &&
+                        return empty($it->material_id) && empty($it->tool_id) &&
                                !in_array($it->id, $handledItemIds) &&
                                strtolower(trim((string)$it->custom_item_name)) === strtolower($customName);
                     });
 
                     if ($matchCustom) {
                         $matchCustom->update([
+                            'item_type'        => $itemType,
                             'category_id'      => $customCategoryId,
                             'custom_item_type' => trim($item['custom_item_type'] ?? '') ?: null,
-                            'custom_item_unit' => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
-                            'qty_requested'    => $qtyRequested,
+                            'custom_item_unit' => trim($item['custom_item_unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
+                            'fulfillment'      => 'purchase',
+                            'qty_requested'    => $itemType === 'tool' ? (int) $qtyRequested : $qtyRequested,
                             'notes'            => $item['notes'] ?? null,
                             'specification'    => $item['specification'] ?? null,
                             'usage_location'   => $item['usage_location'] ?? null,
@@ -270,13 +292,15 @@ class MaterialRequestService
                     } else {
                         $newItem = MaterialRequestItem::create([
                             'material_request_id' => $request->id,
-                            'item_type'           => 'material',
+                            'item_type'           => $itemType,
                             'material_id'         => null,
+                            'tool_id'             => null,
                             'category_id'         => $customCategoryId,
                             'custom_item_name'    => $customName,
                             'custom_item_type'    => trim($item['custom_item_type'] ?? '') ?: null,
-                            'custom_item_unit'    => trim($item['custom_item_unit'] ?? 'unit') ?: 'unit',
-                            'qty_requested'       => $qtyRequested,
+                            'custom_item_unit'    => trim($item['custom_item_unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
+                            'fulfillment'         => 'purchase',
+                            'qty_requested'       => $itemType === 'tool' ? (int) $qtyRequested : $qtyRequested,
                             'qty_approved'        => 0,
                             'notes'               => $item['notes'] ?? null,
                             'specification'       => $item['specification'] ?? null,
@@ -295,6 +319,7 @@ class MaterialRequestService
                     if ($matchMat) {
                         $matchMat->update([
                             'category_id'    => $material->category_id,
+                            'fulfillment'    => $matchMat->fulfillment ?: ($sourceWarehouse ? 'stock' : 'purchase'),
                             'qty_requested'  => $qtyRequested,
                             'notes'          => $item['notes'] ?? null,
                             'specification'  => $item['specification'] ?? null,
@@ -310,6 +335,7 @@ class MaterialRequestService
                             'category_id'         => $material->category_id,
                             'custom_item_name'    => null,
                             'custom_item_unit'    => null,
+                            'fulfillment'         => $sourceWarehouse ? 'stock' : 'purchase',
                             'qty_requested'       => $qtyRequested,
                             'qty_approved'        => 0,
                             'notes'               => $item['notes'] ?? null,
@@ -359,6 +385,10 @@ class MaterialRequestService
                 }
 
                 $updates = ['qty_approved' => $qtyApproved];
+
+                if (empty($item->fulfillment)) {
+                    $updates['fulfillment'] = ($request->from_warehouse_id === null || $item->isCustom()) ? 'purchase' : 'stock';
+                }
 
                 // Jika item custom dan belum tertaut material_id/tool_id, coba tautkan ke master yang ada
                 if (empty($item->material_id) && empty($item->tool_id) && !empty($item->custom_item_name)) {

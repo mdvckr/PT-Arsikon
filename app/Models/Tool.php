@@ -108,7 +108,7 @@ class Tool extends Model
                 }
             })
             ->whereHas('purchaseOrder', function ($q) use ($whIds) {
-                $q->whereIn('status', ['approved', 'sent', 'partial_received', 'partially_received']);
+                $q->whereIn('status', ['draft', 'approved', 'sent', 'partial_received', 'partially_received', 'received']);
                 if (!empty($whIds)) {
                     $q->where(function ($sub) use ($whIds) {
                         $sub->whereIn('delivery_warehouse_id', $whIds)
@@ -116,7 +116,7 @@ class Tool extends Model
                     });
                 }
             })
-            ->with(['purchaseOrder.deliveryWarehouse', 'purchaseOrder.supplier']);
+            ->with(['purchaseOrder.deliveryWarehouse', 'purchaseOrder.supplier', 'purchaseOrder.goodsReceipts.warehouse', 'purchaseOrder.materialRequest']);
 
         foreach ($poItemsQuery->get() as $poItem) {
             $po = $poItem->purchaseOrder;
@@ -126,24 +126,105 @@ class Tool extends Model
             $qtyReceived = (int) $poItem->received_qty;
             $remaining = max(0, $qtyPlanned - $qtyReceived - (int)$poItem->lost_qty - (int)$poItem->short_closed_qty);
 
-            if ($remaining > 0 || ($qtyReceived > 0 && in_array($po->status, ['partial_received', 'partially_received']))) {
-                $stages->push([
-                    'type'           => 'PO',
-                    'stage'          => $po->po_number,
-                    'reference'      => $po->po_number,
-                    'source'         => $po->supplier?->name ?: ($po->supplier_name ?: 'Vendor PO'),
-                    'warehouse_name' => $po->deliveryWarehouse?->name,
-                    'warehouse_id'   => $po->delivery_warehouse_id,
-                    'qty'            => $remaining > 0 ? $remaining : $qtyReceived,
-                    'planned_qty'    => $qtyPlanned,
-                    'received_qty'   => $qtyReceived,
-                    'remaining_qty'  => $remaining,
-                    'date'           => $po->expected_delivery ? $po->expected_delivery->format('Y-m-d') : ($po->order_date ? $po->order_date->format('Y-m-d') : null),
-                    'status'         => $remaining <= 0 ? 'received' : ($qtyReceived > 0 ? 'partial' : 'planned'),
-                    'status_label'   => $remaining <= 0 ? 'Lengkap Masuk' : ($qtyReceived > 0 ? 'Masuk Sebagian (' . number_format($qtyReceived, 0, ',', '.') . '/' . number_format($qtyPlanned, 0, ',', '.') . ')' : 'Rencana'),
-                    'notes'          => $po->notes ?: null,
-                ]);
+            $isFullyReceived = ($po->status === 'received') || ($remaining <= 0 && $qtyReceived > 0);
+            $isPartial = in_array($po->status, ['partial_received', 'partially_received']) || ($qtyReceived > 0 && $remaining > 0);
+
+            // Cari nomor penerimaan barang (Goods Receipt)
+            $grs = $po->goodsReceipts->filter(function($gr) use ($whIds) {
+                return empty($whIds) || in_array($gr->warehouse_id, $whIds);
+            });
+            $grNumber = $grs->pluck('receipt_number')->filter()->unique()->implode(', ');
+
+            if ($isFullyReceived) {
+                $status = 'received';
+                $statusLabel = 'Lengkap Masuk';
+            } elseif ($isPartial) {
+                $status = 'partial';
+                $statusLabel = 'Masuk Sebagian (' . number_format($qtyReceived, 0, ',', '.') . '/' . number_format($qtyPlanned, 0, ',', '.') . ')';
+            } elseif ($po->status === 'draft') {
+                $status = 'planned';
+                $statusLabel = 'Draft PO';
+            } elseif ($po->status === 'sent') {
+                $status = 'planned';
+                $statusLabel = 'Dalam Pengiriman';
+            } else {
+                $status = 'planned';
+                $statusLabel = 'Disetujui (Menunggu Kirim)';
             }
+
+            $refDisplay = $po->po_number;
+            if ($grNumber) {
+                $refDisplay .= ' · ' . $grNumber;
+            } elseif ($po->materialRequest) {
+                $refDisplay .= ' (MR: ' . $po->materialRequest->request_number . ')';
+            }
+
+            $stageDate = null;
+            if ($isFullyReceived && $grs->isNotEmpty() && $grs->first()->receipt_date) {
+                $stageDate = $grs->first()->receipt_date->format('Y-m-d');
+            } elseif ($po->expected_delivery) {
+                $stageDate = $po->expected_delivery->format('Y-m-d');
+            } elseif ($po->order_date) {
+                $stageDate = $po->order_date->format('Y-m-d');
+            }
+
+            $stages->push([
+                'type'           => 'PO',
+                'stage'          => $po->po_number,
+                'reference'      => $refDisplay,
+                'source'         => $po->supplier?->name ?: ($po->supplier_name ?: 'Vendor PO'),
+                'warehouse_name' => $po->deliveryWarehouse?->name,
+                'warehouse_id'   => $po->delivery_warehouse_id,
+                'qty'            => $isFullyReceived ? $qtyReceived : ($remaining > 0 ? $remaining : $qtyPlanned),
+                'planned_qty'    => $qtyPlanned,
+                'received_qty'   => $qtyReceived,
+                'remaining_qty'  => $remaining,
+                'date'           => $stageDate,
+                'status'         => $status,
+                'status_label'   => $statusLabel,
+                'notes'          => $po->notes ?: null,
+            ]);
+        }
+
+        // 2. Dari Penerimaan Barang (GR) langsung tanpa PO
+        $directGrItems = \App\Models\GoodsReceiptItem::where('tool_id', $this->id)
+            ->whereHas('goodsReceipt', function ($q) use ($whIds) {
+                $q->where('status', 'confirmed')
+                  ->whereNull('purchase_order_id');
+                if (!empty($whIds)) {
+                    $q->whereIn('warehouse_id', $whIds);
+                }
+            })
+            ->with(['goodsReceipt.warehouse', 'goodsReceipt.materialRequest'])
+            ->get();
+
+        foreach ($directGrItems as $grItem) {
+            $gr = $grItem->goodsReceipt;
+            if (!$gr) continue;
+            $qtyRec = (int) $grItem->qty_received;
+            if ($qtyRec <= 0) continue;
+
+            $refDisplay = $gr->receipt_number;
+            if ($gr->materialRequest) {
+                $refDisplay .= ' (MR: ' . $gr->materialRequest->request_number . ')';
+            }
+
+            $stages->push([
+                'type'           => 'Penerimaan (GR)',
+                'stage'          => $gr->receipt_number,
+                'reference'      => $refDisplay,
+                'source'         => $gr->supplier_name ?: 'Penerimaan Langsung Proyek',
+                'warehouse_name' => $gr->warehouse?->name,
+                'warehouse_id'   => $gr->warehouse_id,
+                'qty'            => $qtyRec,
+                'planned_qty'    => $qtyRec,
+                'received_qty'   => $qtyRec,
+                'remaining_qty'  => 0,
+                'date'           => $gr->receipt_date ? $gr->receipt_date->format('Y-m-d') : null,
+                'status'         => 'received',
+                'status_label'   => 'Lengkap Masuk',
+                'notes'          => $gr->notes ?: null,
+            ]);
         }
 
         // 2. Dari PO Lapangan untuk Alat
@@ -379,5 +460,83 @@ class Tool extends Model
             'under_maintenance' => $this->increment('stock_maintenance', $qty),
             default             => $this->increment('stock_available', $qty),
         };
+    }
+
+    /**
+     * Auto-register custom/manual tool to master tools table.
+     */
+    public static function autoRegisterCustom(
+        string $name,
+        ?int $categoryId = null,
+        ?string $typeName = null,
+        ?string $brand = null,
+        ?string $size = null
+    ): Tool {
+        $cleanName = trim($name);
+        $tool = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
+        if ($tool) {
+            return $tool;
+        }
+
+        // Resolve category: prioritaskan pilihan user ($categoryId), atau cari kategori Khusus Proyek, jika belum ada buatkan CAT-TOOL-CUST
+        $category = null;
+        if ($categoryId) {
+            $category = Category::where('type', 'tool')->find($categoryId);
+        }
+
+        if (!$category) {
+            $category = Category::where('type', 'tool')
+                ->where(function ($q) {
+                    $q->where('code', 'CAT-TOOL-CUST')
+                      ->orWhere('name', 'like', '%Khusus Proyek%')
+                      ->orWhere('name', 'like', '%Custom%');
+                })->first();
+        }
+
+        if (!$category) {
+            $category = Category::firstOrCreate(
+                ['code' => 'CAT-TOOL-CUST'],
+                [
+                    'name' => 'Alat Khusus Proyek',
+                    'type' => 'tool',
+                    'description' => 'Kategori otomatis untuk alat custom/manual dari pengadaan proyek',
+                ]
+            );
+        }
+
+        // Resolve kelompok/type: prioritaskan $typeName, atau cari kelompok yang sudah ada di kategori ini, atau fallback kontekstual
+        $resolvedType = trim($typeName ?? '');
+        if (empty($resolvedType)) {
+            $existingType = static::where('category_id', $category->id)
+                ->whereNotNull('type')
+                ->where('type', '!=', '')
+                ->where('type', '!=', 'Alat Proyek')
+                ->value('type');
+
+            $resolvedType = $existingType ?: ($category->code !== 'CAT-TOOL-CUST' ? $category->name : 'Alat Proyek');
+        }
+
+        // Generate unique Code
+        $maxId = (int) (static::max('id') ?? 0) + 1;
+        $code = 'TL-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+        while (static::where('code', $code)->exists()) {
+            $maxId++;
+            $code = 'TL-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+        }
+
+        $centralWarehouse = Warehouse::where('is_central', true)->first();
+
+        return static::create([
+            'category_id'          => $category->id,
+            'owner_warehouse_id'   => $centralWarehouse?->id,
+            'current_warehouse_id' => $centralWarehouse?->id,
+            'code'                 => $code,
+            'name'                 => $cleanName,
+            'brand'                => $brand ?: 'Custom / Proyek',
+            'type'                 => $resolvedType,
+            'size'                 => $size ?: null,
+            'is_active'            => true,
+            'notes'                => 'Didaftarkan otomatis oleh sistem dari Permintaan / Penerimaan Barang Proyek',
+        ]);
     }
 }

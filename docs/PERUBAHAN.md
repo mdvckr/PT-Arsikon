@@ -1481,3 +1481,106 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
      - Menghapus blok statis `@if(session('...'))` dari `layouts/app.blade.php` dan `payments/index.blade.php` sehingga notifikasi flash ditangani 100% oleh komponen modern `<x-notification.glass-stack />` yang elegan dan auto-dismissing tanpa duplikasi kotak hijau bertumpuk.
      - Menghapus banner 'Pencatatan & Rincian Belanja Nota Harian Proyek' dari halaman `payments/index.blade.php` agar layout bersih, padat, dan langsung menyajikan status kas serta mutasi saldo tanpa redundansi informasi.
 
+---
+
+### T27. Integrasi & Koneksi REQ PO Lapangan ke Modul Purchase Order (PO Vendor)
+- **Tujuan**:
+  - Mengatasi kendala di mana pengajuan PO Lapangan berkode `REQ-...` (Material Request) yang ditujukan ke Pengadaan / Beli ke Vendor (`from_warehouse_id === null`) tidak terhubung atau tidak muncul pada dropdown "Dari PO Lapangan (Permintaan Proyek)" saat Admin Pengadaan membuat Purchase Order baru.
+  - Memastikan seluruh item PO Lapangan yang tidak bersumber dari transfer stok gudang secara otomatis diidentifikasi sebagai jalur pembelian (`fulfillment = 'purchase'`), sehingga dapat langsung diterbitkan menjadi PO Vendor dengan kuota dan gudang tujuan pengiriman yang terkoneksi secara tepat.
+- **Penyebab Utama & Analisis Masalah**:
+  1. Pada saat pengajuan atau persetujuan PO Lapangan (`MaterialRequestService`), kolom `fulfillment` pada baris item (`material_request_items`) tidak terisi (bernilai `NULL`).
+  2. Modul pembuatan PO (`PurchaseOrderController@create`) sebelumnya memfilter item dengan syarat ketat `it->fulfillment === 'purchase'` atau `empty(it->material_id)`. Akibatnya, material terdaftar dari PO Lapangan tanpa gudang sumber tereliminasi dari koleksi `$approvedMRs` dan peta `$mrItemsMap`.
+  3. Halaman detail PO Lapangan (`material-requests.show`) tidak memunculkan tombol aksi "Terbitkan PO Vendor" karena `$hasPurchaseItems` bernilai false akibat nilai `fulfillment` yang `NULL`.
+  4. Penanganan variabel `$mrItem` di dalam loop `store()` dan `update()` pada `PurchaseOrderController` berpotensi memicu `Undefined variable` pada transaksi yang melibatkan item PR tanpa MR.
+- **Rincian Perubahan File**:
+  1. **Model Eloquent (`app/Models/MaterialRequestItem.php`)**:
+     - Menambahkan hook event `boot()` dengan callback `saving`: jika `fulfillment` kosong, secara otomatis menetapkan `'purchase'` jika item bertipe kustom (`material_id === null`) atau berasal dari permohonan tanpa gudang asal (`from_warehouse_id === null`), dan `'stock'` jika sebaliknya.
+     - Menambahkan method helper `isPurchase(): bool` untuk verifikasi konsisten lintas modul.
+  2. **Service Layer (`app/Services/MaterialRequestService.php`)**:
+     - Pada method `createRequest()` dan `updateRequest()`, mengisi nilai kolom `fulfillment` secara eksplisit:
+       - Item custom / manual: selalu `'purchase'`.
+       - Item master material / alat: `'purchase'` jika `$sourceWarehouse === null` (Pengadaan), dan default `'stock'` jika bersumber dari gudang tertentu.
+     - Pada method `approveRequest()`, memastikan baris item yang disetujui memiliki nilai `fulfillment` yang sahih.
+  3. **Controller (`app/Http/Controllers/PurchaseOrderController.php`)**:
+     - Memperluas query `$approvedMRs` pada `create()` agar mencakup item berstatus pemenuhan `purchase`, item custom, maupun item dari MR yang tidak memiliki gudang asal (`from_warehouse_id === null`).
+     - Menyinkronkan filter pada `$mrItemsMap` dan kandidat pengadaan `$purchaseCandidates`.
+     - Inisialisasi `$mrItem = null;` dan `$prItem = null;` pada loop `store()` dan `update()` untuk mengeliminasi potensi error `Undefined variable`.
+     - Menyesuaikan validasi penolakan pemenuhan stok di mana pemblokiran hanya berlaku jika item bertipe `'stock'` dan memiliki gudang asal yang sah.
+  4. **Antarmuka Pengguna (Blade Views)**:
+     - `resources/views/purchase-orders/create.blade.php`: Memperbarui kalkulasi sisa item yang butuh dipesan pada dropdown header "Dari PO Lapangan (Permintaan Proyek)" sehingga dokumen berkode `REQ-...` langsung muncul dan dapat dipilih.
+     - `resources/views/material-requests/show.blade.php`: Memperbarui evaluasi `$hasPurchaseItems` dan indikator status pemesanan per item sehingga tombol "Terbitkan PO Vendor" tampil aktif saat PO Lapangan disetujui.
+  5. **Migrasi Database (`database/migrations/2026_10_31_000001_backfill_material_request_items_fulfillment.php`)**:
+     - Melakukan migrasi data untuk memperbarui baris item lama yang memiliki `fulfillment IS NULL` sesuai ketentuan di atas, sehingga data aktif seperti `REQ-20261031-0001` langsung terhubung seketika tanpa perlu input ulang.
+  6. **Pengujian Otomatis (Testing Suite)**:
+     - `tests/Feature/MaterialRequestToPoConnectionTest.php`: Memverifikasi siklus end-to-end: pengajuan PO Lapangan tanpa gudang sumber -> persetujuan pusat -> kemunculan tombol terbitkan PO -> kemunculan di dropdown create PO -> penerbitan PO ke vendor -> mutasi sisa kuota `qty_ordered` MR item (100% lulus, 20 assertions).
+     - `tests/Feature/PoDirectFromMrTest.php`: 8 test lulus 100% (25 assertions).
+     - `tests/Feature/ProcurementMultiPoTest.php`: 1 test multi-PO lulus 100% (15 assertions).
+
+
+
+---
+
+### T28. Visibilitas Tahapan Masuk Material & Alat dari Alur Penerimaan Barang (PO Lapangan, PO Vendor, & Goods Receipt)
+- **Tujuan**:
+  - Memastikan kolom **"TAHAPAN MASUK"** pada halaman Data Material (`materials.index`) dan Data Alat (`tools.index`) secara akurat menampilkan riwayat dan status kedatangan barang yang dipesan dari PO Lapangan / PO Vendor, baik yang masih dalam proses pengiriman, masuk sebagian, hingga yang telah selesai/lengkap diterima via Penerimaan Barang (Goods Receipt).
+- **Penyebab Utama & Analisis Masalah**:
+  1. Method `getDynamicIncomingStages` pada model `Material` dan `Tool` sebelumnya memfilter status PO secara restriktif dengan hanya menyertakan status `['approved', 'sent', 'partial_received', 'partially_received']` dan mewajibkan `remaining > 0`.
+  2. Saat Goods Receipt (GR) dikonfirmasi 100%, sistem mengubah status PO menjadi `received` dan sisa kuota yang belum datang (`remaining`) menjadi `0`. Akibatnya, transaksi kedatangan yang sudah berhasil masuk tereliminasi dari koleksi `$stages`, sehingga halaman Data Material menampilkan `-` (tanda strip) seolah barang tidak pernah dipesan atau tidak memiliki tahapan masuk.
+  3. Pada view `materials/index.blade.php` dan `tools/index.blade.php`, perhitungan kuantitas ringkas single-stage menggunakan operator null coalescing `($stg['remaining_qty'] ?? ($stg['qty'] ?? 0))`. Karena nilai `0` bukan `null` dalam PHP, untuk transaksi yang sudah diterima (`remaining_qty = 0`) kuantitas yang ditampilkan berisiko mengevaluasi `0 pcs` jika tidak dibedakan antara status `received` dan status rencana.
+- **Rincian Perubahan File**:
+  1. **Model Material (`app/Models/Material.php`)**:
+     - Memperluas query status PO pada `getDynamicIncomingStages` mencakup `['draft', 'approved', 'sent', 'partial_received', 'partially_received', 'received']`.
+     - Menghitung logika penerimaan lengkap `$isFullyReceived = ($po->status === 'received') || ($remaining <= 0 && $qtyReceived > 0)`.
+     - Mengaitkan bukti nomor Goods Receipt (`receipt_number`) terkonfirmasi ke dalam label referensi: `$refDisplay = $po->po_number . ' · ' . $grNumber`.
+     - Menetapkan kuantitas tahapan `$stg['qty']` secara cerdas: jika telah lengkap diterima mengambil `$qtyReceived`, jika berjalan mengambil sisa `$remaining`.
+     - Menambahkan penelusuran penerimaan langsung (Direct Goods Receipt) tanpa PO Vendor.
+  2. **Model Alat (`app/Models/Tool.php`)**:
+     - Menerapkan perbaikan identik pada `getDynamicIncomingStages` untuk melacak kedatangan alat/peralatan proyek dari PO maupun Goods Receipt.
+  3. **Antarmuka Pengguna (Blade Views & Modal JavaScript)**:
+     - `resources/views/materials/index.blade.php`:
+       - Memperbaiki perhitungan kuantitas baris (`$stgQty`) agar menampilkan jumlah yang telah diterima saat transaksi berstatus `received`.
+       - Menampilkan badge ringkas tanggal dan jumlah barang `[✓ DD/MM/YYYY • X pcs]` menggantikan teks nomor PO yang terlalu panjang, sementara rincian nomor PO & GR tetap tersaji lengkap pada tooltip hover dan modal detail klik.
+       - Memperbarui fungsi JavaScript `openStagesModal` agar rincian kuantitas tertera rapi untuk status parsial (`Terima: X / Y • Sisa: Z`) maupun lengkap diterima.
+     - `resources/views/tools/index.blade.php`:
+       - Menerapkan penyesuaian yang sama pada badge tahapan masuk alat (`[✓ DD/MM/YYYY • X unit]`) dan modal pop-up detail tahapan.
+  4. **Pengujian Otomatis (Testing Suite)**:
+     - `tests/Feature/IncomingStagesVisibilityTest.php`:
+       - Memverifikasi secara end-to-end bahwa material dengan PO berstatus `received` dan bukti Goods Receipt terkonfirmasi menghasilkan koleksi tahapan masuk lengkap (`received`, `Lengkap Masuk`, nomor PO & GR, kuantitas riil) serta tanggal dan jumlah ter-render sempurna pada HTML halaman `materials.index` (100% lulus, 13 assertions).
+
+
+---
+
+### T29. Penambahan Dropdown Tipe Item (Material vs Alat) pada Input Manual PO Lapangan
+- **Tujuan**:
+  - Menambahkan pilihan dropdown tipe item ("Material" dan "Alat") pada tabel Seksi 2: "Barang Khusus / Input Manual Proyek" di form pembuatan (`create`) dan pengeditan (`edit`) PO Lapangan (Material Request).
+  - Memungkinkan pelaksana lapangan mengajukan pengadaan alat/mesin proyek yang belum terdaftar di katalog master secara langsung melalui PO Lapangan, tanpa tercampur atau tertukar dengan material konstruksi.
+  - Menyelaraskan opsi kategori dan default satuan secara otomatis berdasarkan pilihan tipe item: jika memilih "Material", dropdown kategori menampilkan kategori material dan default satuan `pcs`; jika memilih "Alat", dropdown kategori beralih menampilkan kategori alat/mesin dan default satuan `unit`.
+  - Menegakkan validasi ketat bahwa kuantitas pengajuan alat wajib berupa bilangan bulat (integer), serta memastikan item alat yang dipesan melalui Purchase Order (PO Vendor) dan diterima melalui Goods Receipt (GR) secara otomatis didaftarkan ke master alat (`tools`) dan menambah stok alat gudang proyek.
+- **Rincian Perubahan File**:
+  1. **Tampilan Form PO Lapangan (`resources/views/material-requests/create.blade.php` & `edit.blade.php`)**:
+     - Menambahkan kolom header `<th>Item <span class="text-danger">*</span></th>` tepat sebelum nama barang manual.
+     - Menyediakan elemen dropdown `<select name="custom_items[...][item_type]">` dengan opsi "Material" dan "Alat".
+     - Menambahkan handler JavaScript `onCustomItemTypeChange(selectElement)` untuk:
+       - Menyaring pilihan kategori (material categories vs tool categories).
+       - Menyesuaikan nilai default satuan (`pcs` untuk material, `unit` untuk alat).
+       - Mengatur attribute `step="1"` dan `min="1"` pada input kuantitas jika tipe adalah "Alat".
+     - Memperbarui fungsi `addCustomRequestRow()` untuk menyertakan dropdown `item_type` secara dinamis pada setiap baris manual baru yang ditambahkan.
+     - Menyesuaikan `colspan="11"` pada baris tabel ketika belum ada item manual.
+  2. **Tampilan Detail PO Lapangan (`resources/views/material-requests/show.blade.php`)**:
+     - Memperbarui badge penanda pada tabel barang khusus: menampilkan badge biru `Input Manual (Alat)` jika item bertipe alat, dan badge amber `Input Manual (Material)` jika bertipe material.
+  3. **Model Eloquent (`app/Models/MaterialRequestItem.php`, `PurchaseOrderItem.php`, & `GoodsReceiptItem.php`)**:
+     - `MaterialRequestItem`: Menambahkan helper `isTool(): bool` (`$this->item_type === 'tool' || !empty($this->tool_id)`) dan memperbarui `isCustom(): bool` (`$this->material_id === null && $this->tool_id === null`).
+     - `PurchaseOrderItem` & `GoodsReceiptItem`: Menyelaraskan pendeteksian alat agar mengenali custom item dari PO Lapangan yang bertipe alat (`$this->materialRequestItem?->isTool()`).
+  4. **Controller & Service Layer (`MaterialRequestController.php` & `MaterialRequestService.php`)**:
+     - Menerima dan memvalidasi `custom_items.*.item_type` (`nullable|in:material,tool`).
+     - Menyimpan atribut `item_type` ke dalam tabel `material_request_items` pada `createRequest()` dan `updateRequest()`.
+     - Memastikan validasi integer kuantitas alat berlaku baik untuk alat master maupun alat manual (custom).
+  5. **Auto-Registrasi Alat Custom saat Penerimaan Barang (`Tool.php` & `GoodsReceiptService.php`)**:
+     - Implementasi method `Tool::autoRegisterCustom(...)` untuk mendaftarkan alat custom secara otomatis ke master alat (`TL-AUTO-XXXX`) saat Goods Receipt dikonfirmasi.
+     - `GoodsReceiptService` mengaitkan `tool_id` yang baru terdaftar ke item penerimaan, PO item, dan MR item, serta menambahkan stok inventaris ke gudang penerima via `ToolInventoryService`.
+  6. **Pengujian Otomatis (`tests/Feature/CustomItemTypeDropdownTest.php`)**:
+     - 4 skenario test komprehensif (37 assertions) berstatus HIJAU (PASS):
+       - Menampilkan dropdown Item (Material & Alat) pada form create dan edit.
+       - Penyimpanan item custom bertipe alat dan verifikasi badge di halaman show.
+       - Penolakan kuantitas desimal untuk item alat custom.
+       - Siklus end-to-end: pengajuan alat custom -> penerbitan PO -> penerimaan Goods Receipt -> auto-register ke master tool dan mutasi stok alat di gudang proyek.

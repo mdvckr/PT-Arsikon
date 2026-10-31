@@ -44,6 +44,21 @@ class MaterialRequestItem extends Model
         'qty_issued'     => 'decimal:2',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($item) {
+            if (empty($item->fulfillment)) {
+                if ($item->isCustom() || empty($item->materialRequest?->from_warehouse_id)) {
+                    $item->fulfillment = 'purchase';
+                } else {
+                    $item->fulfillment = 'stock';
+                }
+            }
+        });
+    }
+
     public function materialRequest(): BelongsTo
     {
         return $this->belongsTo(MaterialRequest::class);
@@ -71,7 +86,23 @@ class MaterialRequestItem extends Model
 
     public function isCustom(): bool
     {
-        return $this->material_id === null;
+        return $this->material_id === null && $this->tool_id === null;
+    }
+
+    public function isTool(): bool
+    {
+        return $this->item_type === 'tool' || !empty($this->tool_id);
+    }
+
+    public function isPurchase(): bool
+    {
+        if ($this->fulfillment === 'purchase') {
+            return true;
+        }
+        if ($this->fulfillment === 'stock') {
+            return false;
+        }
+        return $this->isCustom() || empty($this->materialRequest?->from_warehouse_id);
     }
 
     public function displayName(): string

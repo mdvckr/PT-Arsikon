@@ -320,6 +320,7 @@
                         <thead>
                             <tr style="background:#fef3c7;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:#92400e;">
                                 <th style="min-width:160px;padding:8px 8px;white-space:nowrap;">Nama Barang (Manual) <span class="text-danger">*</span></th>
+                                <th style="width:105px;padding:8px 8px;white-space:nowrap;">Item <span class="text-danger">*</span></th>
                                 <th style="min-width:110px;padding:8px 8px;white-space:nowrap;">Spesifikasi</th>
                                 <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kategori</th>
                                 <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kelompok</th>
@@ -333,7 +334,7 @@
                         </thead>
                         <tbody id="customRequestBody">
                             <tr id="customRequestEmpty" style="{{ old('custom_items') && count(old('custom_items')) > 0 ? 'display:none;' : '' }}">
-                                <td colspan="10" class="text-center text-muted" style="padding:16px;font-size:12px;">
+                                <td colspan="11" class="text-center text-muted" style="padding:16px;font-size:12px;">
                                     <x-lucide-package-open style="font-size:20px;color:#cbd5e1;display:inline-block;margin-bottom:4px;" />
                                     Belum ada barang manual ditambahkan. Klik tombol <strong>"Tambah Baris Manual"</strong> jika diperlukan.
                                 </td>
@@ -345,14 +346,28 @@
                                         <input type="text" name="custom_items[{{ $cIdx }}][name]" class="form-control" value="{{ $cItem['name'] ?? '' }}" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 8px;">
                                     </td>
                                     <td style="padding:6px 6px;">
+                                        <select name="custom_items[{{ $cIdx }}][item_type]" class="form-control custom-item-type-select" onchange="onCustomItemTypeChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;font-weight:600;">
+                                            <option value="material" {{ ($cItem['item_type'] ?? 'material') === 'material' ? 'selected' : '' }}>Material</option>
+                                            <option value="tool" {{ ($cItem['item_type'] ?? '') === 'tool' ? 'selected' : '' }}>Alat</option>
+                                        </select>
+                                    </td>
+                                    <td style="padding:6px 6px;">
                                         <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                                     </td>
                                     <td style="padding:6px 6px;">
                                         <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
-                                            <option value="">Material Khusus (Otomatis)</option>
-                                            @foreach($materialCategories as $cat)
-                                                <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                            @endforeach
+                                            @php $curItemType = $cItem['item_type'] ?? 'material'; @endphp
+                                            @if($curItemType === 'tool')
+                                                <option value="">Alat Khusus (Otomatis)</option>
+                                                @foreach($toolCategories as $cat)
+                                                    <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                                @endforeach
+                                            @else
+                                                <option value="">Material Khusus (Otomatis)</option>
+                                                @foreach($materialCategories as $cat)
+                                                    <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                                @endforeach
+                                            @endif
                                         </select>
                                     </td>
                                     <td style="padding:6px 6px;">
@@ -896,6 +911,50 @@
             hiddenInput.value = manualInput.value.trim();
         }
 
+        const materialCategoryOptions = `@foreach($materialCategories as $cat)<option value="{{ $cat->id }}">{{ addslashes($cat->name) }}</option>@endforeach`;
+        const toolCategoryOptions = `@foreach($toolCategories as $cat)<option value="{{ $cat->id }}">{{ addslashes($cat->name) }}</option>@endforeach`;
+
+        function onCustomItemTypeChange(selectEl) {
+            const row = selectEl.closest('tr');
+            if (!row) return;
+            const itemType = selectEl.value; // 'material' or 'tool'
+            const catSelect = row.querySelector('.custom-item-cat-select');
+            const unitInput = row.querySelector('input[name*="[unit]"]');
+            const qtyInput = row.querySelector('.qty-input');
+
+            if (catSelect) {
+                if (itemType === 'tool') {
+                    catSelect.innerHTML = `<option value="">Alat Khusus (Otomatis)</option>` + toolCategoryOptions;
+                } else {
+                    catSelect.innerHTML = `<option value="">Material Khusus (Otomatis)</option>` + materialCategoryOptions;
+                }
+                if (typeof onCustomCategoryChange === 'function') {
+                    onCustomCategoryChange(catSelect);
+                }
+            }
+
+            if (unitInput) {
+                if (itemType === 'tool' && (unitInput.value === 'pcs' || !unitInput.value)) {
+                    unitInput.value = 'unit';
+                } else if (itemType === 'material' && unitInput.value === 'unit') {
+                    unitInput.value = 'pcs';
+                }
+            }
+
+            if (qtyInput) {
+                if (itemType === 'tool') {
+                    qtyInput.step = '1';
+                    qtyInput.min = '1';
+                    if (qtyInput.value && parseFloat(qtyInput.value) > 0) {
+                        qtyInput.value = Math.round(parseFloat(qtyInput.value));
+                    }
+                } else {
+                    qtyInput.step = '0.01';
+                    qtyInput.min = '0.01';
+                }
+            }
+        }
+
         let customReqIndex = {{ count(old('custom_items', [])) }};
         function addCustomRequestRow() {
             const tbody = document.getElementById('customRequestBody');
@@ -904,21 +963,23 @@
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #fef3c7';
 
-            let categoryOptions = `<option value="">Material Khusus (Otomatis)</option>`;
-            @foreach($materialCategories as $cat)
-                categoryOptions += `<option value="{{ $cat->id }}">{{ addslashes($cat->name) }}</option>`;
-            @endforeach
-
             tr.innerHTML = `
                 <td style="padding:6px 6px;">
                     <input type="text" name="custom_items[${customReqIndex}][name]" class="form-control" placeholder="Contoh: Triplek 9mm 1.2x2.4" required style="font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 8px;">
+                </td>
+                <td style="padding:6px 6px;">
+                    <select name="custom_items[${customReqIndex}][item_type]" class="form-control custom-item-type-select" onchange="onCustomItemTypeChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;font-weight:600;">
+                        <option value="material" selected>Material</option>
+                        <option value="tool">Alat</option>
+                    </select>
                 </td>
                 <td style="padding:6px 6px;">
                     <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                 </td>
                 <td style="padding:6px 6px;">
                     <select name="custom_items[${customReqIndex}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
-                        ${categoryOptions}
+                        <option value="">Material Khusus (Otomatis)</option>
+                        ${materialCategoryOptions}
                     </select>
                 </td>
                 <td style="padding:6px 6px;">

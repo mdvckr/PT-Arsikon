@@ -93,28 +93,39 @@ class PurchaseOrderController extends Controller
             ->whereHas('items', function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('fulfillment', 'purchase')
-                        ->orWhereNull('material_id');
+                        ->orWhereNull('material_id')
+                        ->orWhere(function ($nested) {
+                            $nested->where(function ($n2) {
+                                $n2->whereNull('fulfillment')->orWhere('fulfillment', '!=', 'stock');
+                            })->whereHas('materialRequest', fn($mrQ) => $mrQ->whereNull('from_warehouse_id'));
+                        });
                 });
             })
             ->latest()
             ->get()
             ->filter(function ($mr) {
-                return $mr->items->contains(function ($it) {
+                return $mr->items->contains(function ($it) use ($mr) {
                     $sisa = (float) $it->qty_approved > 0
                         ? (float) $it->qty_approved - (float) $it->qty_ordered
                         : (float) $it->qty_requested - (float) $it->qty_ordered;
-                    return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
+                    $isPurchase = ($it->fulfillment === 'purchase')
+                        || empty($it->material_id)
+                        || ($it->fulfillment !== 'stock' && empty($mr->from_warehouse_id));
+                    return $isPurchase && $sisa > 0;
                 });
             })
             ->values();
 
         // Peta item PO Lapangan untuk interaktivitas JavaScript di antarmuka
         $mrItemsMap = $approvedMRs->mapWithKeys(function ($mr) {
-            $items = $mr->items->filter(function ($it) {
+            $items = $mr->items->filter(function ($it) use ($mr) {
                 $sisa = (float) $it->qty_approved > 0
                     ? (float) $it->qty_approved - (float) $it->qty_ordered
                     : (float) $it->qty_requested - (float) $it->qty_ordered;
-                return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
+                $isPurchase = ($it->fulfillment === 'purchase')
+                    || empty($it->material_id)
+                    || ($it->fulfillment !== 'stock' && empty($mr->from_warehouse_id));
+                return $isPurchase && $sisa > 0;
             })->map(function ($it) use ($mr) {
                 $sisa = (float) $it->qty_approved > 0
                     ? (float) $it->qty_approved - (float) $it->qty_ordered
@@ -153,14 +164,17 @@ class PurchaseOrderController extends Controller
             if ($mr) {
                 // T7: Dukung seluruh item master & custom dengan fulfillment purchase dan sisa kuota > 0
                 $purchaseCandidates = $mr->items->filter(function ($it) use ($mr) {
+                    $isPurchase = ($it->fulfillment === 'purchase')
+                        || empty($it->material_id)
+                        || ($it->fulfillment !== 'stock' && empty($mr->from_warehouse_id));
                     if (in_array($mr->status, ['approved', 'partially_fulfilled'])) {
                         $sisa = (float) $it->qty_approved > 0
                             ? (float) $it->qty_approved - (float) $it->qty_ordered
                             : (float) $it->qty_requested - (float) $it->qty_ordered;
-                        return ($it->fulfillment === 'purchase' || empty($it->material_id)) && $sisa > 0;
+                        return $isPurchase && $sisa > 0;
                     }
                     // Jika submitted, dukung item custom atau purchase untuk preview/notifikasi
-                    return empty($it->material_id) || $it->fulfillment === 'purchase';
+                    return $isPurchase;
                 })->values();
 
                 if ($purchaseCandidates->isEmpty() && $request->from_mr_id) {
@@ -250,7 +264,8 @@ class PurchaseOrderController extends Controller
             }
 
             // Validasi T14: qty alat selalu bilangan bulat di PO
-            if ($hasTool) {
+            $isToolItem = $hasTool || (!empty($item['material_request_item_id']) && MaterialRequestItem::where('id', $item['material_request_item_id'])->value('item_type') === 'tool');
+            if ($isToolItem) {
                 $qty = $item['quantity'] ?? null;
                 if (!is_null($qty) && fmod((float)$qty, 1) != 0) {
                     return back()->withInput()->withErrors([
@@ -303,7 +318,7 @@ class PurchaseOrderController extends Controller
                     ]);
                 }
 
-                if ($mrItem->fulfillment === 'stock') {
+                if ($mrItem->fulfillment === 'stock' && !empty($mrItem->materialRequest?->from_warehouse_id)) {
                     $matName = $mrItem->displayName();
                     return back()->withInput()->withErrors([
                         "items.{$idx}.material_request_item_id" => "Item {$matName} dialokasikan untuk pemenuhan stok gudang (Surat Jalan), tidak dapat dibuatkan PO."
@@ -400,6 +415,8 @@ class PurchaseOrderController extends Controller
                 $toolId     = !empty($item['tool_id']) ? $item['tool_id'] : null;
                 $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
                 $prItemId   = !empty($item['procurement_request_item_id']) ? $item['procurement_request_item_id'] : null;
+                $mrItem     = null;
+                $prItem     = null;
 
                 if (!$prItemId && !empty($validated['procurement_request_id']) && $materialId) {
                     $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])
@@ -890,6 +907,8 @@ class PurchaseOrderController extends Controller
                 $toolId     = !empty($item['tool_id']) ? $item['tool_id'] : null;
                 $mrItemId   = !empty($item['material_request_item_id']) ? $item['material_request_item_id'] : null;
                 $prItemId   = !empty($item['procurement_request_item_id']) ? $item['procurement_request_item_id'] : null;
+                $mrItem     = null;
+                $prItem     = null;
 
                 if (!$prItemId && !empty($validated['procurement_request_id']) && $materialId) {
                     $prItemId = ProcurementRequestItem::where('procurement_request_id', $validated['procurement_request_id'])

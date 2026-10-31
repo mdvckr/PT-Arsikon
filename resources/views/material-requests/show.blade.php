@@ -368,7 +368,7 @@
     @endpush
 
     @php
-        $hasPurchaseItems = $materialRequest->items->contains(fn($it) => $it->fulfillment === 'purchase' && ((float)$it->qty_approved - (float)$it->qty_ordered) > 0);
+        $hasPurchaseItems = $materialRequest->items->contains(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id) || ($it->fulfillment !== 'stock' && empty($materialRequest->from_warehouse_id))) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0);
         $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
         $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) || auth()->user()->can('create purchase orders');
         $relatedPos = $materialRequest->items->flatMap->purchaseOrderItems->map->purchaseOrder->filter()->unique('id');
@@ -964,13 +964,13 @@
                                     {{ $item->displayName() }}
                                     @if($isCustom)
                                         <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;">
-                                            <x-lucide-tag class="me-1" />Input Manual
+                                            <x-lucide-tag class="me-1" />Input Manual ({{ $item->isTool() ? 'Alat' : 'Material' }})
                                         </span>
                                     @endif
                                 </div>
                                 <div style="font-size:11.5px;color:#64748b;margin-top:2px;">
                                     @if($isCustom)
-                                        <span style="color:#b45309;">Material khusus non-katalog pusat</span>
+                                        <span style="color:#b45309;">{{ $item->isTool() ? 'Alat khusus non-katalog pusat' : 'Material khusus non-katalog pusat' }}</span>
                                     @else
                                         <span style="font-family:ui-monospace,SFMono-Regular,Consolas,monospace;">SKU: {{ $item->material?->sku ?? '-' }}</span>
                                         @if($item->material?->code)
@@ -1022,7 +1022,7 @@
                                 @endif
                             </td>
                             <td style="text-align:center;">
-                                @if($item->fulfillment === 'purchase')
+                                @if($item->fulfillment === 'purchase' || empty($item->material_id) || ($item->fulfillment !== 'stock' && empty($materialRequest->from_warehouse_id)))
                                     @php
                                         $approvedQty = (float) $item->qty_approved;
                                         $orderedQty  = (float) $item->qty_ordered;

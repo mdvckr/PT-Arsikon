@@ -86,7 +86,7 @@
                                 @foreach($approvedMRs as $mr)
                                     @php
                                         $projName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
-                                        $itemsCount = $mr->items->filter(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id)) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0)->count();
+                                        $itemsCount = $mr->items->filter(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id) || ($it->fulfillment !== 'stock' && empty($mr->from_warehouse_id))) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0)->count();
                                         $isSelected = (old('material_request_id', $selectedMR?->id ?? request('from_mr_id')) == $mr->id);
                                     @endphp
                                     <option value="{{ $mr->id }}" 

@@ -69,7 +69,7 @@ class GoodsReceiptItem extends Model
 
     public function isTool(): bool
     {
-        return $this->item_type === 'tool' || !empty($this->tool_id);
+        return $this->item_type === 'tool' || !empty($this->tool_id) || ($this->purchaseOrderItem && $this->purchaseOrderItem->isTool()) || ($this->materialRequestItem && $this->materialRequestItem->isTool());
     }
 
     public function getItemNameAttribute(): string
