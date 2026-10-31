@@ -115,6 +115,17 @@ function checkAndUpdateWarehouseLock() {
 // ROW MANAGEMENT & EMPTY STATE
 // ============================================================
 
+function focusAndHighlightField(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function() {
+            el.focus();
+            flashEl(el, '#bfdbfe');
+        }, 250);
+    }
+}
+
 function checkEmptyState(customMessage) {
     const tbody = document.getElementById('itemsBody');
     if (!tbody) return;
@@ -123,26 +134,32 @@ function checkEmptyState(customMessage) {
     if (rows.length === 0) {
         if (!emptyRow) {
             const desc = customMessage || 'Pilih <strong>PO Lapangan</strong> atau <strong>Purchase Order (PO Vendor)</strong> pada formulir di bawah untuk memuat barang otomatis, atau tambahkan item manual.';
-            const html = '<tr id="emptyItemsRow">'
-                + '<td colspan="8" style="padding:42px 18px;text-align:center;background:#fafcff;border:2px dashed #cbd5e1;border-radius:12px;">'
-                + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:480px;margin:0 auto;">'
-                + '<div style="width:54px;height:54px;border-radius:50%;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;box-shadow:0 3px 10px rgba(37,99,235,0.12);">'
+            const html = '<tr id="emptyItemsRow" class="empty-receipt-row">'
+                + '<td colspan="8" class="empty-receipt-canvas">'
+                + '<div class="empty-receipt-card">'
+                + '<div class="empty-icon-circle">'
                 + '<i class="fas fa-boxes-stacked"></i>'
                 + '</div>'
-                + '<h6 style="font-weight:700;color:#1e293b;font-size:14.5px;margin-bottom:5px;">Belum Ada Barang yang Dimuat</h6>'
-                + '<p style="font-size:12px;color:#64748b;line-height:1.55;margin-bottom:18px;">' + desc + '</p>'
-                + '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">'
-                + '<button type="button" class="btn btn-sm btn-outline-primary" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:6px 14px;" onclick="document.getElementById(\'mrSelect\')?.focus()">'
-                + '<i class="fas fa-clipboard-check me-1"></i> Pilih PO Lapangan'
+                + '<h6 class="empty-title">Belum Ada Barang yang Dimuat</h6>'
+                + '<p class="empty-desc">' + desc + '</p>'
+                + '<div class="empty-actions-primary">'
+                + '<button type="button" class="btn btn-sm btn-primary" style="font-size:12px;font-weight:600;border-radius:8px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(37,99,235,0.2);" onclick="addRow(\'material\')">'
+                + '<i class="fas fa-plus"></i> Tambah Material'
                 + '</button>'
-                + '<button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:6px 14px;" onclick="document.getElementById(\'poSelect\')?.focus()">'
-                + '<i class="fas fa-file-contract me-1"></i> Pilih PO Vendor'
+                + '<button type="button" class="btn btn-sm btn-warning" style="font-size:12px;font-weight:600;border-radius:8px;padding:7px 16px;color:#ffffff;background:#d97706;border-color:#b45309;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(217,119,6,0.2);" onclick="addRow(\'tool\')">'
+                + '<i class="fas fa-plus"></i> Tambah Alat'
                 + '</button>'
-                + '<button type="button" class="btn btn-sm btn-primary" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:6px 14px;" onclick="addRow(\'material\')">'
-                + '<i class="fas fa-plus me-1"></i> + Material'
+                + '</div>'
+                + '<div class="empty-actions-secondary">'
+                + '<span style="font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-right:2px;">Atau Impor PO:</span>'
+                + '<button type="button" class="btn btn-sm btn-light" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:5px 12px;border:1px solid #cbd5e1;background:#ffffff;color:#334155;display:inline-flex;align-items:center;gap:5px;cursor:pointer;" onclick="focusAndHighlightField(\'mrSelect\')">'
+                + '<i class="fas fa-clipboard-check text-success"></i> PO Lapangan'
                 + '</button>'
-                + '<button type="button" class="btn btn-sm btn-warning" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:6px 14px;color:#ffffff;background:#d97706;" onclick="addRow(\'tool\')">'
-                + '<i class="fas fa-helmet-safety me-1"></i> + Alat'
+                + '<button type="button" class="btn btn-sm btn-light" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:5px 12px;border:1px solid #cbd5e1;background:#ffffff;color:#334155;display:inline-flex;align-items:center;gap:5px;cursor:pointer;" onclick="focusAndHighlightField(\'poSelect\')">'
+                + '<i class="fas fa-file-contract text-primary"></i> PO Vendor'
+                + '</button>'
+                + '<button type="button" class="btn btn-sm btn-light" style="font-size:11.5px;font-weight:600;border-radius:7px;padding:5px 12px;border:1px solid #cbd5e1;background:#ffffff;color:#334155;display:inline-flex;align-items:center;gap:5px;cursor:pointer;" onclick="openScheduledModal()">'
+                + '<i class="fas fa-calendar-check text-info"></i> Jadwal Kedatangan'
                 + '</button>'
                 + '</div>'
                 + '</div>'
@@ -209,8 +226,8 @@ function addRow(type, opts) {
     }
 
     const typeBadge = isTool
-        ? '<span class="badge" style="background:rgba(217,119,6,0.12);color:#b45309;font-weight:700;"><i class="fas fa-helmet-safety"></i> Alat</span>'
-        : '<span class="badge" style="background:rgba(37,99,235,0.12);color:#2563eb;font-weight:700;"><i class="fas fa-box"></i> Material</span>';
+        ? '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-weight:700;font-size:11px;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-helmet-safety"></i> Alat</span>'
+        : '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-weight:700;font-size:11px;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-box"></i> Material</span>';
 
     const isRequired = (!customName && !targetId) ? 'required' : '';
 
@@ -224,13 +241,12 @@ function addRow(type, opts) {
         ? '<input type="hidden" name="items[' + idx + '][po_delivery_schedule_id]" value="' + opts.po_delivery_schedule_id + '">' : '';
 
     const poNum = opts.purchase_order_number || opts.po_number || '';
-    const poBadge = poNum
-        ? '<span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;font-size:9.5px;margin-top:3px;display:block;white-space:nowrap;" title="Ref PO Vendor"><i class="fas fa-file-contract me-1"></i>#' + escHtml(poNum) + (opts.supplier_name ? ' (' + escHtml(opts.supplier_name) + ')' : '') + '</span>'
-        : '';
-
-    const mrBadge = opts.mr_number
-        ? '<span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:9.5px;margin-top:3px;display:block;white-space:nowrap;" title="Ref PO Lapangan"><i class="fas fa-clipboard-check me-1"></i>#' + escHtml(opts.mr_number) + '</span>'
-        : '';
+    let refText = '';
+    if (poNum) {
+        refText = '<span style="display:block;font-size:10px;color:#64748b;font-family:monospace;margin-top:2px;" title="Ref PO: ' + escHtml(poNum) + '">#' + escHtml(poNum) + '</span>';
+    } else if (opts.mr_number) {
+        refText = '<span style="display:block;font-size:10px;color:#64748b;font-family:monospace;margin-top:2px;" title="Ref PO Lapangan: ' + escHtml(opts.mr_number) + '">#' + escHtml(opts.mr_number) + '</span>';
+    }
 
     const customNameInput = customName
         ? '<input type="hidden" name="items[' + idx + '][custom_item_name]" value="' + escHtml(customName) + '">' : '';
@@ -268,12 +284,12 @@ function addRow(type, opts) {
     const unitAbbr = opts.unit_abbr || opts.unit || opts.abbr || (isTool ? 'Unit' : '--');
 
     const row = '<tr id="row-' + idx + '" class="item-row" data-type="' + (isTool ? 'tool' : 'material') + '">'
-        + '<td class="col-type" style="vertical-align:top;padding-top:10px;">'
+        + '<td class="col-type" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + typeInput + poItemInput + mrItemInput + schedInput + customNameInput + customUnitInput + customTypeInput
         + '<input type="hidden" name="items[' + idx + '][stage_reference]" id="stage-input-' + idx + '" value="' + escHtml(stageRef) + '">'
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="' + (opts.unit_price || 0) + '">'
-        + typeBadge + poBadge + mrBadge + '</td>'
+        + '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;">' + typeBadge + refText + '</div></td>'
 
         + '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
         + '<select name="' + selectName + '" class="form-control item-select" ' + isRequired + ' '
@@ -421,90 +437,61 @@ function onItemChange(sel, idx, isTool) {
         }
     }
 
-    // Render meta tags
-    let metaHtml = '<div class="item-meta-tags">';
-    if (item.sku || item.code) {
-        metaHtml += '<span class="badge badge-secondary" style="font-family:monospace;font-size:10px;">'
-            + '<i class="fas fa-barcode me-1"></i>' + escHtml(item.sku || item.code) + '</span>';
-    }
-    if (item.brand) {
-        metaHtml += '<span class="badge" style="background:#f1f5f9;color:#334155;font-size:10.5px;border:1px solid #e2e8f0;">'
-            + '<i class="fas fa-tag me-1 text-muted"></i>Merek: <strong>' + escHtml(item.brand) + '</strong></span>';
-    }
-    if (item.size) {
-        metaHtml += '<span class="badge" style="background:#eff6ff;color:#1e40af;font-size:10.5px;border:1px solid #bfdbfe;">'
-            + '<i class="fas fa-ruler-combined me-1"></i>Ukuran: <strong>' + escHtml(item.size) + '</strong></span>';
-    }
-    if (item.type && item.type !== 'tool') {
-        metaHtml += '<span class="badge" style="background:#f5f3ff;color:#6d28d9;font-size:10.5px;border:1px solid #ddd6fe;">'
-            + escHtml(item.type) + '</span>';
-    }
-    if (item.supplier_name) {
-        metaHtml += '<span class="badge" style="background:#f0fdf4;color:#166534;font-size:10.5px;border:1px solid #bbf7d0;">'
-            + '<i class="fas fa-building me-1"></i>Supplier: <strong>' + escHtml(item.supplier_name) + '</strong></span>';
-    }
-    if (item.warehouse_name) {
-        metaHtml += '<span class="badge" style="background:#ecfeff;color:#0e7490;font-size:10.5px;border:1px solid #a5f3fc;">'
-            + '<i class="fas fa-warehouse me-1"></i>Lokasi: <strong>' + escHtml(item.warehouse_name) + '</strong></span>';
-    }
-    metaHtml += '</div>';
+    // Render clean subtle meta line (Senior UI/UX: no noisy rainbow badges)
+    const metaParts = [];
+    if (item.sku || item.code) metaParts.push('<span>SKU: <strong style="font-family:monospace;color:#475569;">' + escHtml(item.sku || item.code) + '</strong></span>');
+    if (item.brand) metaParts.push('<span>Merek: <strong style="color:#475569;">' + escHtml(item.brand) + '</strong></span>');
+    if (item.size) metaParts.push('<span>Ukuran: <strong style="color:#475569;">' + escHtml(item.size) + '</strong></span>');
+    if (item.type && item.type !== 'tool' && item.type !== 'material') metaParts.push('<span>' + escHtml(item.type) + '</span>');
 
-    // Render tahapan
-    if (item.incoming_stages && item.incoming_stages.length > 0) {
-        const plannedCount = (item.planned_stages || []).length;
-        metaHtml += '<div class="item-stages-box">'
-            + '<div style="font-size:11px;font-weight:700;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;">'
-            + '<span><i class="fas fa-calendar-check text-warning me-1"></i> Jadwal Tahapan Barang Ini (Klik untuk pilih):</span>'
-            + '<span class="badge" style="background:#fef3c7;color:#78350f;font-size:9.5px;padding:1px 6px;">'
-            + plannedCount + ' Rencana Belum Masuk</span>'
-            + '</div><div class="stage-chips-wrap">';
+    let metaHtml = '';
+    if (metaParts.length > 0) {
+        metaHtml = '<div style="font-size:11px;color:#64748b;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+            + metaParts.join('<span style="color:#cbd5e1;">•</span>')
+            + '</div>';
+    }
 
+    // Render tahapan hanya jika ada rencana yang belum masuk (hindari kotak kuning kosong jika 0 rencana)
+    const plannedStages = (item.planned_stages || []).filter(function(stg) { return stg.status === 'planned'; });
+    if (plannedStages.length > 0) {
         const stageInputEl = document.getElementById('stage-input-' + idx);
         const currentStageLower = stageInputEl ? stageInputEl.value.trim().toLowerCase() : '';
 
-        item.incoming_stages.forEach(function(stg, sIdx) {
-            const isPlanned = (stg.status === 'planned');
+        metaHtml += '<div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+            + '<span style="font-size:11px;font-weight:600;color:#92400e;display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-clock text-warning"></i> Pilih Tahap:</span>';
+
+        plannedStages.forEach(function(stg, sIdx) {
             const stageDate = stg.date ? formatDmy(stg.date) : '-';
             const safeStage = escHtml(stg.stage || ('Tahap ' + (sIdx + 1)));
             const isSelected = currentStageLower && (currentStageLower === safeStage.toLowerCase());
-            const isAutoFirst = (sIdx === 0 && isPlanned && !currentStageLower);
+            const isAutoFirst = (sIdx === 0 && !currentStageLower);
             const activeClass = (isSelected || isAutoFirst) ? ' active' : '';
 
-            if (isPlanned) {
-                const supId = JSON.stringify(item.supplier_id || null);
-                const supName = JSON.stringify(item.supplier_name || null);
-                const rawQty = stg.qty ? stg.qty : 0;
-                const safeQty = isTool ? Math.max(1, Math.round(parseFloat(rawQty) || 1)) : rawQty;
-                const whId = JSON.stringify(stg.warehouse_id || item.warehouse_id || null);
-                const whName = JSON.stringify(stg.warehouse_name || item.warehouse_name || null);
-                metaHtml += '<button type="button" class="btn-stage-pill' + activeClass + '" '
-                    + 'id="stage-pill-' + idx + '-' + sIdx + '" '
-                    + 'onclick="selectStageForItem(' + idx + ',\'' + safeStage + '\',' + safeQty + ',\'' + (stg.date || '') + '\',' + sIdx + ',' + supId + ',' + supName + ',' + whId + ',' + whName + ')" '
-                    + 'title="Klik: ' + safeStage + ' - ' + safeQty + ' ' + item.abbr + ' (' + stageDate + ')">'
-                    + '<i class="fas fa-clock text-warning"></i>'
-                    + '<strong>' + safeStage + '</strong>: ' + safeQty + ' ' + item.abbr
-                    + '<span style="opacity:0.85;font-size:9.5px;">(' + stageDate + ')</span>'
-                    + '</button>';
+            const supId = JSON.stringify(item.supplier_id || null);
+            const supName = JSON.stringify(item.supplier_name || null);
+            const rawQty = stg.qty ? stg.qty : 0;
+            const safeQty = isTool ? Math.max(1, Math.round(parseFloat(rawQty) || 1)) : rawQty;
+            const whId = JSON.stringify(stg.warehouse_id || item.warehouse_id || null);
+            const whName = JSON.stringify(stg.warehouse_name || item.warehouse_name || null);
 
-                // Auto-trigger tahap terpilih atau tahap pertama
-                if (isSelected || isAutoFirst) {
-                    (function(s, sI, sQty, sWhId, sWhName) {
-                        setTimeout(function() {
-                            selectStageForItem(idx, s.stage || ('T' + (sI + 1)), sQty, s.date || '', sI, item.supplier_id, item.supplier_name, sWhId, sWhName);
-                        }, 0);
-                    })(stg, sIdx, safeQty, (stg.warehouse_id || item.warehouse_id || null), (stg.warehouse_name || item.warehouse_name || null));
-                }
-            } else {
-                metaHtml += '<span class="btn-stage-pill" '
-                    + 'style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;cursor:default;" '
-                    + 'title="Sudah diterima">'
-                    + '<i class="fas fa-check-circle text-success"></i>'
-                    + safeStage + ': ' + stg.qty + ' ' + item.abbr + ' (Sudah Masuk)'
-                    + '</span>';
+            metaHtml += '<button type="button" class="btn-stage-pill' + activeClass + '" '
+                + 'id="stage-pill-' + idx + '-' + sIdx + '" '
+                + 'onclick="selectStageForItem(' + idx + ',\'' + safeStage + '\',' + safeQty + ',\'' + (stg.date || '') + '\',' + sIdx + ',' + supId + ',' + supName + ',' + whId + ',' + whName + ')" '
+                + 'style="font-size:11px;padding:2px 8px;border-radius:5px;" '
+                + 'title="Pilih: ' + safeStage + ' - ' + safeQty + ' ' + item.abbr + ' (' + stageDate + ')">'
+                + safeStage + ' (' + safeQty + ' ' + item.abbr + ')'
+                + '</button>';
+
+            if (isSelected || isAutoFirst) {
+                (function(s, sI, sQty, sWhId, sWhName) {
+                    setTimeout(function() {
+                        selectStageForItem(idx, s.stage || ('T' + (sI + 1)), sQty, s.date || '', sI, item.supplier_id, item.supplier_name, sWhId, sWhName);
+                    }, 0);
+                })(stg, sIdx, safeQty, (stg.warehouse_id || item.warehouse_id || null), (stg.warehouse_name || item.warehouse_name || null));
             }
         });
 
-        metaHtml += '</div></div>';
+        metaHtml += '</div>';
     }
 
     if (metaContainer) metaContainer.innerHTML = metaHtml;
@@ -650,23 +637,17 @@ function recalcDiscrepancy(idx, changedField) {
         }
     }
 
-    // Update Visual Badge & Highlight
+    // Update Visual Badge & Highlight (Clean senior UI: only show warning when there's an actual shortfall)
     if (badgeContainer) {
         if (shipped > 0 && missing > 0) {
-            badgeContainer.innerHTML = '<span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 6px;font-weight:700;"><i class="fas fa-triangle-exclamation me-1"></i>Selisih ' + missing + ' (Stok update: ' + masuk + ')</span>';
+            badgeContainer.innerHTML = '<span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:10px;padding:2px 6px;font-weight:700;"><i class="fas fa-triangle-exclamation me-1"></i>Kurang ' + missing + '</span>';
             if (missingInput) {
                 missingInput.style.borderColor = '#d97706';
                 missingInput.style.backgroundColor = '#fffbeb';
                 missingInput.style.color = '#b45309';
             }
-        } else if (shipped > 0 && masuk === shipped) {
-            badgeContainer.innerHTML = '<span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:10px;padding:2px 6px;font-weight:600;"><i class="fas fa-check-circle me-1"></i>Sesuai PO (' + masuk + ')</span>';
-            if (missingInput) {
-                missingInput.style.borderColor = '#cbd5e1';
-                missingInput.style.backgroundColor = '#ffffff';
-                missingInput.style.color = '';
-            }
         } else {
+            // Bersih total: tidak perlu badge hijau jika Qty sesuai PO
             badgeContainer.innerHTML = '';
             if (missingInput) {
                 missingInput.style.borderColor = '#cbd5e1';
@@ -1403,12 +1384,15 @@ function filterItemsTab(type) {
             const icon = (type === 'tool' ? 'fa-helmet-safety' : 'fa-box-open');
             const tr = document.createElement('tr');
             tr.id = 'empty-filter-notice';
-            tr.innerHTML = '<td colspan="5" style="text-align:center;padding:36px 16px;background:#f8fafc;">'
-                + '<i class="fas ' + icon + ' text-muted" style="font-size:28px;margin-bottom:8px;display:block;"></i>'
-                + '<div style="font-weight:700;color:#334155;font-size:13.5px;margin-bottom:4px;">Belum Ada Item ' + label + ' Didaftarkan</div>'
-                + '<p style="color:#64748b;font-size:12px;margin-bottom:12px;">Saat ini belum ada ' + label.toLowerCase() + ' pada sesi penerimaan ini.</p>'
-                + '<button type="button" class="btn btn-sm ' + btnColor + '" onclick="' + addFn + '" style="border-radius:6px;font-size:12px;font-weight:600;padding:6px 16px;">'
-                + '<i class="fas ' + icon + ' me-1"></i> + Tambah ' + label + '</button></td>';
+            tr.innerHTML = '<td colspan="8" style="text-align:center;padding:36px 16px;background:#fafcff;">'
+                + '<div style="max-width:380px;margin:0 auto;display:flex;flex-direction:column;align-items:center;">'
+                + '<div style="width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;">'
+                + '<i class="fas ' + icon + '"></i></div>'
+                + '<div style="font-weight:700;color:#0f172a;font-size:14px;margin-bottom:4px;">Belum Ada Item ' + label + '</div>'
+                + '<p style="color:#64748b;font-size:12px;line-height:1.5;margin-bottom:14px;">Saat ini belum ada barang bertipe ' + label.toLowerCase() + ' pada sesi penerimaan ini.</p>'
+                + '<button type="button" class="btn btn-sm ' + btnColor + '" onclick="' + addFn + '" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 16px;display:inline-flex;align-items:center;gap:6px;">'
+                + '<i class="fas fa-plus"></i> Tambah ' + label + '</button>'
+                + '</div></td>';
             document.getElementById('itemsBody').appendChild(tr);
         }
     } else if (emptyNotice) {
@@ -1430,7 +1414,12 @@ function updateGrandTotal() {
     const elTool = document.getElementById('count-tool');
     if (elTool) elTool.textContent = countTool;
     const totalEl = document.getElementById('totalItemCount');
-    if (totalEl) totalEl.innerHTML = 'Total: <strong>' + countAll + '</strong> item (<span style="color:#2563eb;font-weight:600;">' + countMaterial + ' Material</span>, <span style="color:#d97706;font-weight:600;">' + countTool + ' Alat</span>)';
+    if (totalEl) {
+        totalEl.innerHTML = '<span style="font-size:12px;color:#64748b;font-weight:600;">Total:</span> '
+            + '<span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;">' + countAll + ' Item</span> '
+            + '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">' + countMaterial + ' Material</span> '
+            + '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">' + countTool + ' Alat</span>';
+    }
     filterItemsTab(currentTabFilter);
 }
 

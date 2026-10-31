@@ -173,12 +173,23 @@ class ReportAndAuditController extends Controller
     {
         $request->validate([
             'corrective_action' => 'required|string|min:10',
-            'evidence_file'     => 'nullable|file|mimes:pdf,jpg,jpeg,png,xlsx,doc,docx|max:5120',
+            'evidence_file'     => [
+                'nullable',
+                'file',
+                'mimes:pdf,jpg,jpeg,png,webp',
+                'mimetypes:application/pdf,image/jpeg,image/png,image/webp',
+                'max:5120',
+                new \App\Rules\NoExecutableCode(),
+            ],
         ]);
 
         $path = null;
         if ($request->hasFile('evidence_file')) {
-            $path = $request->file('evidence_file')->store('audit_evidences', 'public');
+            $path = app(\App\Services\SecureFileUploadService::class)->uploadDocument(
+                $request->file('evidence_file'),
+                'audit_evidences',
+                'public'
+            );
         }
 
         AuditActionPlan::create([

@@ -30,6 +30,7 @@ use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PrintTemplateController;
 use App\Http\Controllers\TransitLossController;
+use App\Http\Controllers\SecureAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -223,6 +224,11 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
         [PrintTemplateController::class, 'file'])
         ->name('print-templates.file')
         ->middleware('signed');
+
+    // Secure Internal Document Attachments
+    Route::get('/secure-attachments/{path}', [SecureAttachmentController::class, 'show'])
+        ->where('path', '.*')
+        ->name('secure.attachments.show');
 });
 
 require __DIR__.'/auth.php';

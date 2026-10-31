@@ -125,7 +125,7 @@ class PurchaseOrderContactPersonTest extends TestCase
         // Periksa tampilan print PDF
         $printResponse = $this->actingAs($this->adminPO)->get(route('purchase-orders.print', $po));
         $printResponse->assertStatus(200);
-        $printResponse->assertSee('CP : Bpk. Hendra Kurniawan (0812-9988-7766)');
+        $printResponse->assertSeeText('Contact Person (CP) : Bpk. Hendra Kurniawan (0812-9988-7766)');
     }
 
     public function test_print_po_falls_back_to_creator_name_when_cp_is_empty(): void
@@ -144,6 +144,6 @@ class PurchaseOrderContactPersonTest extends TestCase
 
         $printResponse = $this->actingAs($this->adminPO)->get(route('purchase-orders.print', $po));
         $printResponse->assertStatus(200);
-        $printResponse->assertSee('CP : ' . $this->adminPO->name);
+        $printResponse->assertSeeText('Contact Person (CP) : ' . $this->adminPO->name);
     }
 }

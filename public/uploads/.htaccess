@@ -1,0 +1,26 @@
+# Matikan eksekusi PHP dan script CGI di dalam direktori upload/storage
+<FilesMatch "\.(?i:php|php[0-9]|phtml|phar|pl|py|jsp|asp|htm|html|sh|cgi)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Matikan PHP Engine jika modul mod_php aktif
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Paksa browser untuk tidak menebak MIME type (Mencegah MIME Sniffing XSS)
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+Options -Indexes -ExecCGI
+

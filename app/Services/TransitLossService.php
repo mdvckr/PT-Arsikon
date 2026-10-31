@@ -47,10 +47,10 @@ class TransitLossService
             throw new DomainException("Batas waktu pencatatan kehilangan ({$graceDays} hari) telah terlewati. Diperlukan otorisasi Admin Pusat.");
         }
 
-        // Simpan file bukti
+        // Simpan file bukti secara aman (UUID + strip EXIF metadata)
         $evidencePath = null;
         if (isset($data['evidence']) && $data['evidence'] instanceof UploadedFile) {
-            $evidencePath = $data['evidence']->store('transit-losses', 'public');
+            $evidencePath = app(SecureFileUploadService::class)->uploadDocument($data['evidence'], 'transit-losses', 'public');
         } elseif (isset($data['evidence_path'])) {
             $evidencePath = $data['evidence_path'];
         }

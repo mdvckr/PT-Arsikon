@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('location')->nullable();
             $table->enum('status', ['planning', 'active', 'completed', 'on_hold'])->default('active');
+            $table->decimal('operational_balance', 15, 2)->default(0.00);
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->timestamps();

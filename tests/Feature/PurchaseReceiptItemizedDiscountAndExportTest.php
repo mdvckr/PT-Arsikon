@@ -82,6 +82,8 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             'supplier_name'         => 'TB Sinar Abadi',
             'receipt_number'        => 'BON-001',
             'receipt_date'          => '2026-10-28',
+            'payment_source'        => 'personal_advance',
+            'paid_by_name'          => 'Mandor Joko',
             'notes'                 => 'Belanja material darurat tahap 1',
             'global_discount'       => 50000,
             'shipping_fee'          => 100000,
@@ -90,6 +92,7 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             'items' => [
                 [
                     'material_id'   => $this->material->id,
+                    'item_type'     => 'Material',
                     'material_name' => 'Semen Gresik 50kg',
                     'item_name'     => 'Semen Gresik 50kg Bon #1',
                     'unit_name'     => 'Sak',
@@ -100,9 +103,10 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
                 ],
                 [
                     'material_id'   => null,
-                    'material_name' => 'Semen Putih',
-                    'item_name'     => 'Semen Putih Tiga Roda',
-                    'unit_name'     => 'Sak',
+                    'item_type'     => 'Konsumsi',
+                    'material_name' => 'Nasi Bungkus',
+                    'item_name'     => 'Nasi Bungkus Siang Pekerja',
+                    'unit_name'     => 'Porsi',
                     'quantity'      => 5,
                     'unit_price'    => 50000,
                     'item_discount' => 0,
@@ -116,6 +120,9 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
 
         $receipt = PurchaseReceipt::where('receipt_number', 'BON-001')->first();
         $this->assertNotNull($receipt);
+        $this->assertEquals('personal_advance', $receipt->payment_source);
+        $this->assertEquals('Mandor Joko', $receipt->paid_by_name);
+        $this->assertTrue($receipt->is_talangan);
 
         $this->assertEquals(800000.00, (float)$receipt->items_subtotal);
         $this->assertEquals(50000.00, (float)$receipt->global_discount);
@@ -124,22 +131,24 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
         $this->assertEquals('Upah kuli bongkar semen 15 sak', $receipt->additional_fee_notes);
         $this->assertEquals(925000.00, (float)$receipt->total_amount);
 
-        // Check project balance deducted by 925.000
+        // Check project balance NOT deducted because it is a personal advance (talangan pribadi)
         $this->project->refresh();
-        $this->assertEquals(9075000.00, (float)$this->project->operational_balance);
+        $this->assertEquals(10000000.00, (float)$this->project->operational_balance);
 
-        // Check items persisted with item_discount
+        // Check items persisted with item_discount & item_type
         $items = $receipt->items;
         $this->assertCount(2, $items);
+        $this->assertEquals('Material', $items[0]->item_type);
         $this->assertEquals(50000.00, (float)$items[0]->item_discount);
         $this->assertEquals(550000.00, (float)$items[0]->subtotal);
+        $this->assertEquals('Konsumsi', $items[1]->item_type);
         $this->assertEquals(0.00, (float)$items[1]->item_discount);
         $this->assertEquals(250000.00, (float)$items[1]->subtotal);
     }
 
-    public function test_purchase_receipt_rejected_if_balance_insufficient(): void
+    public function test_purchase_receipt_allows_negative_balance_as_field_talangan(): void
     {
-        // Balance is 10.000.000, request is 15.000.000
+        // Balance is 10.000.000, expense is 15.000.000 (Field Talangan when HQ funds haven't arrived)
         $postData = [
             'project_id'            => $this->project->id,
             'project_name'          => $this->project->name,
@@ -152,6 +161,7 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             'items' => [
                 [
                     'material_id'   => $this->material->id,
+                    'item_type'     => 'Material',
                     'material_name' => 'Semen Gresik 50kg',
                     'item_name'     => 'Semen Gresik Borongan',
                     'unit_name'     => 'Sak',
@@ -163,12 +173,15 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
         ];
 
         $response = $this->actingAs($this->user)->post(route('purchase-receipts.store'), $postData);
-        $response->assertSessionHas('error');
+        $response->assertSessionHasNoErrors();
 
-        // Verify balance unchanged
+        // Verify balance became negative (-5.000.000) as field talangan/deficit
         $this->project->refresh();
-        $this->assertEquals(10000000.00, (float)$this->project->operational_balance);
-        $this->assertNull(PurchaseReceipt::where('receipt_number', 'BON-OVER')->first());
+        $this->assertEquals(-5000000.00, (float)$this->project->operational_balance);
+
+        $receipt = PurchaseReceipt::where('receipt_number', 'BON-OVER')->first();
+        $this->assertNotNull($receipt);
+        $this->assertEquals(15000000.00, (float)$receipt->total_amount);
     }
 
     public function test_can_export_weekly_purchase_receipts_to_excel(): void
@@ -200,5 +213,15 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $this->assertStringContainsString('attachment;', $response->headers->get('content-disposition'));
         $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
+
+        $export = new \App\Exports\WeeklyPurchaseReceiptExport(collect());
+        $headings = $export->headings();
+        $this->assertNotContains('Proyek', $headings);
+        $this->assertNotContains('Status', $headings);
+        $this->assertContains('Item', $headings);
+        $this->assertContains('Nama Barang', $headings);
+        $this->assertContains('Jumlah (Vol)', $headings);
+        $this->assertContains('Harga Satuan (Rp)', $headings);
+        $this->assertContains('Subtotal (Rp)', $headings);
     }
 }

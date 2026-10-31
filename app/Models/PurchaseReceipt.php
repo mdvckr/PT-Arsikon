@@ -28,9 +28,24 @@ class PurchaseReceipt extends Model
         'additional_fee_notes',
         'total_amount',
         'payment_status',
+        'payment_source',
+        'paid_by_name',
         'notes',
         'created_by',
     ];
+
+    public function getIsTalanganAttribute(): bool
+    {
+        return $this->payment_source === 'personal_advance' || !empty($this->paid_by_name);
+    }
+
+    public function getPaymentSourceLabelAttribute(): string
+    {
+        if ($this->is_talangan) {
+            return 'Talangan Pribadi' . ($this->paid_by_name ? " ({$this->paid_by_name})" : '');
+        }
+        return 'Kas Operasional Proyek';
+    }
 
     protected $casts = [
         'receipt_date'         => 'date',

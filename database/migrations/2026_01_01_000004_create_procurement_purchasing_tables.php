@@ -188,6 +188,8 @@ return new class extends Migration
             $table->string('additional_fee_notes', 255)->nullable();
             $table->decimal('total_amount', 15, 2)->default(0.00);
             $table->string('payment_status')->default('unpaid');
+            $table->string('payment_source', 50)->default('project_cash');
+            $table->string('paid_by_name', 150)->nullable();
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
@@ -198,8 +200,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('purchase_receipt_id')->constrained('purchase_receipts')->onDelete('cascade');
             $table->foreignId('material_id')->nullable()->constrained('materials')->nullOnDelete();
+            $table->string('material_name')->nullable();
+            $table->string('item_type', 50)->default('Material');
             $table->string('item_name')->nullable();
             $table->decimal('quantity', 12, 2)->default(1.00);
+            $table->string('unit_name', 50)->nullable();
             $table->decimal('unit_price', 15, 2)->default(0.00);
             $table->decimal('item_discount', 15, 2)->default(0.00);
             $table->decimal('subtotal', 15, 2)->default(0.00);
@@ -211,11 +216,15 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->string('payment_number')->unique();
-            $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
+            $table->foreignId('purchase_order_id')->nullable()->constrained('purchase_orders')->nullOnDelete();
+            $table->foreignId('project_id')->nullable()->constrained('projects')->nullOnDelete();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('status', ['draft', 'pending', 'verified', 'rejected'])->default('draft');
+            $table->string('payment_type', 30)->default('waiting');
             $table->decimal('amount', 15, 2);
+            $table->decimal('balance_before', 15, 2)->nullable();
+            $table->decimal('balance_after', 15, 2)->nullable();
             $table->string('payment_method')->nullable();
             $table->date('payment_date');
             $table->string('bank_account')->nullable();
@@ -268,6 +277,55 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
         });
+
+        // 13. Project Balance Logs (Mutasi / Top-up Saldo Kas Operasional Proyek)
+        Schema::create('project_balance_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('payment_id')->nullable()->constrained('payments')->nullOnDelete();
+            $table->string('type', 30); // 'topup', 'payment_deduction', 'adjustment'
+            $table->decimal('amount', 15, 2);
+            $table->decimal('balance_before', 15, 2)->default(0.00);
+            $table->decimal('balance_after', 15, 2)->default(0.00);
+            $table->string('reference_number')->nullable();
+            $table->text('notes')->nullable();
+            $table->timestamps();
+        });
+
+        // 14. Project Balance Requests (Pengajuan Kas Lapangan)
+        Schema::create('project_balance_requests', function (Blueprint $table) {
+            $table->id();
+            $table->string('request_number', 50)->nullable()->unique();
+            $table->date('request_date')->nullable();
+            $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
+            $table->foreignId('requested_by')->constrained('users')->cascadeOnDelete();
+            $table->decimal('amount', 15, 2);
+            $table->text('purpose');
+            $table->string('urgency', 20)->default('normal');
+            $table->string('status', 20)->default('pending');
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->string('reference_number', 100)->nullable();
+            $table->text('rejection_reason')->nullable();
+            $table->string('signer_requester', 150)->nullable();
+            $table->string('signer_site_manager', 150)->nullable();
+            $table->string('signer_approver', 150)->nullable();
+            $table->timestamps();
+        });
+
+        // 15. Project Balance Request Items
+        Schema::create('project_balance_request_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_balance_request_id')->constrained('project_balance_requests')->cascadeOnDelete();
+            $table->string('item_name');
+            $table->decimal('quantity', 12, 2)->default(1.00);
+            $table->string('unit', 50)->nullable();
+            $table->decimal('unit_price', 15, 2)->default(0.00);
+            $table->decimal('total_price', 15, 2)->default(0.00);
+            $table->text('notes')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -275,6 +333,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('project_balance_request_items');
+        Schema::dropIfExists('project_balance_requests');
+        Schema::dropIfExists('project_balance_logs');
         Schema::dropIfExists('return_items');
         Schema::dropIfExists('returns');
         Schema::dropIfExists('payment_items');

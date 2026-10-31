@@ -75,9 +75,28 @@
                         <input type="hidden" name="payment_status" value="paid">
                         <div class="form-control" style="background:#ecfdf5;color:#065f46;font-weight:700;display:flex;align-items:center;gap:6px;border-color:#a7f3d0;cursor:default;">
                             <x-lucide-circle-check class="text-emerald-600" />
-                            <span>Sudah Dibayar (Instan - Potong Kas)</span>
+                            <span>Sudah Dibayar (Lunas Lapangan)</span>
                         </div>
-                        <small class="text-muted" style="font-size:11px;margin-top:2px;display:block;">Saldo kas proyek otomatis terpotong saat nota disimpan.</small>
+                        <small class="text-muted" style="font-size:11px;margin-top:2px;display:block;">Belanja telah dibayarkan langsung di toko/lapangan.</small>
+                    </div>
+
+                    {{-- Sumber Dana Belanja --}}
+                    <div>
+                        <label class="form-label font-semibold">Sumber Dana Belanja <span class="text-danger">*</span></label>
+                        <select name="payment_source" x-model="paymentSource" class="form-control" style="font-weight:600;" required>
+                            <option value="project_cash">💵 Kas Operasional Proyek</option>
+                            <option value="personal_advance">👤 Talangan Pribadi (Uang Sendiri)</option>
+                        </select>
+                        <small class="text-muted" style="font-size:11px;margin-top:2px;display:block;">Pilih jika ditalangi staf/mandor sebelum dana pusat turun.</small>
+                    </div>
+
+                    {{-- Ditalangi Oleh (Muncul jika Talangan Pribadi) --}}
+                    <div x-show="paymentSource === 'personal_advance'" x-transition>
+                        <label class="form-label font-semibold" style="color:#b45309;">
+                            Ditalangi Oleh (Nama Lengkap) <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="paid_by_name" x-model="paidByName" :required="paymentSource === 'personal_advance'" placeholder="Contoh: Mandor Joko / Pak Budi (Pelaksana)" class="form-control" style="border-color:#f59e0b;background:#fffbeb;font-weight:600;">
+                        <small class="text-muted" style="font-size:11px;margin-top:2px;display:block;color:#92400e;">Nama pemilik uang untuk pencatatan penggantian (reimburse) dari pusat.</small>
                     </div>
 
                     {{-- Upload Foto Nota --}}
@@ -111,12 +130,13 @@
                     <table class="data-table" id="items-table">
                         <thead>
                             <tr>
-                                <th style="width: 36%;">Item <span class="text-danger">*</span></th>
+                                <th style="width: 14%;">Item <span class="text-danger">*</span></th>
+                                <th style="width: 26%;">Nama Barang <span class="text-danger">*</span></th>
                                 <th style="width: 10%;">Satuan <span class="text-danger">*</span></th>
-                                <th style="width: 10%; text-align:right;">Vol (Qty) <span class="text-danger">*</span></th>
-                                <th style="width: 14%; text-align:right;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
-                                <th style="width: 12%; text-align:right;">Diskon Item (Rp)</th>
-                                <th style="width: 15%; text-align:right;">Subtotal Bersih</th>
+                                <th style="width: 9%; text-align:right;">Vol (Qty) <span class="text-danger">*</span></th>
+                                <th style="width: 13%; text-align:right;">Harga Satuan (Rp) <span class="text-danger">*</span></th>
+                                <th style="width: 11%; text-align:right;">Diskon Item (Rp)</th>
+                                <th style="width: 14%; text-align:right;">Subtotal Bersih</th>
                                 <th style="width: 3%; text-align:center;">Hapus</th>
                             </tr>
                         </thead>
@@ -124,10 +144,18 @@
                             <template x-for="(item, index) in items" :key="index">
                                 <tr class="item-row">
                                     <td>
-                                        <input type="text" :name="`items[${index}][item_name]`" list="material-list" x-model="item.item_name" @input="onItemInput(item, $event)" placeholder="Misal: Semen Gresik 50kg, Triplek 9mm..." class="form-control" required>
+                                        <select :name="`items[${index}][item_type]`" x-model="item.item_type" class="form-control" style="padding:6px 8px; font-weight:600;" required>
+                                            <option value="Material">Material</option>
+                                            <option value="Alat">Alat</option>
+                                            <option value="Konsumsi">Konsumsi</option>
+                                            <option value="Operasional">Operasional</option>
+                                        </select>
                                     </td>
                                     <td>
-                                        <input type="text" :name="`items[${index}][unit_name]`" list="unit-list" x-model="item.unit_name" placeholder="Zak/Lbr/Kg" class="form-control" required>
+                                        <input type="text" :name="`items[${index}][item_name]`" :list="item.item_type === 'Material' ? 'material-list' : null" x-model="item.item_name" @input="onItemInput(item, $event)" :placeholder="item.item_type === 'Material' ? 'Misal: Semen Gresik, Triplek...' : (item.item_type === 'Alat' ? 'Misal: Sewa Molen, Cangkul...' : (item.item_type === 'Konsumsi' ? 'Misal: Makan Siang Pekerja, Air Galon...' : 'Nama barang / keperluan...'))" class="form-control" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" :name="`items[${index}][unit_name]`" list="unit-list" x-model="item.unit_name" placeholder="Zak/Pcs/Porsi" class="form-control" required>
                                     </td>
                                     <td>
                                         <input type="number" step="0.01" min="0.01" :name="`items[${index}][quantity]`" x-model.number="item.quantity" @input="updateRowSubtotal(item)" class="form-control text-end" required>
@@ -160,10 +188,13 @@
                 </datalist>
 
                 <datalist id="unit-list">
-                    <option value="Lbr">Lembar (Lbr)</option>
                     <option value="Zak">Zak</option>
+                    <option value="Lbr">Lembar (Lbr)</option>
                     <option value="Pcs">Pcs</option>
                     <option value="Bh">Buah (Bh)</option>
+                    <option value="Porsi">Porsi</option>
+                    <option value="Bks">Bungkus (Bks)</option>
+                    <option value="Hari">Hari</option>
                     <option value="Kg">Kilogram (Kg)</option>
                     <option value="M3">Meter Kubik (M3)</option>
                     <option value="M2">Meter Persegi (M2)</option>
@@ -225,21 +256,37 @@
                             </div>
 
                             <div class="flex justify-between items-center pt-2 text-xs" style="border-top:1px dashed #cbd5e1;">
-                                <span style="color:#64748b;">Sisa Saldo Kas Operasional:</span>
+                                <span style="color:#64748b;">
+                                    <span x-show="paymentSource === 'personal_advance'">Saldo Kas Proyek (Tetap Utuh):</span>
+                                    <span x-show="paymentSource !== 'personal_advance'">Sisa Saldo Kas Operasional:</span>
+                                </span>
                                 <span :style="remainingBalance >= 0 ? 'color:#059669;font-weight:700;' : 'color:#dc2626;font-weight:800;'" x-text="formatRupiah(remainingBalance)"></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Alert Saldo Kas Kurang --}}
-                <div x-show="isBalanceInsufficient" class="alert alert-danger mt-4" style="background:#fef2f2;border:1px solid #ef4444;color:#991b1b;padding:12px 16px;border-radius:8px;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <x-lucide-triangle-alert style="font-size:18px;" />
+                {{-- Alert jika Talangan Pribadi: info bahwa saldo kas & topup tidak terpotong --}}
+                <div x-show="paymentSource === 'personal_advance'" class="mt-4 p-3 rounded-lg" style="background:#f0fdf4;border:1.5px solid #86efac;color:#166534;">
+                    <div class="flex items-start gap-2.5">
+                        <x-lucide-shield-check class="text-emerald-600 mt-0.5" style="font-size:18px;flex-shrink:0;" />
                         <div>
-                            <strong style="font-size:13px;display:block;">Peringatan: Saldo Kas Proyek Tidak Mencukupi!</strong>
-                            <span style="font-size:12px;">
-                                Total bersih nota (<span x-text="formatRupiah(grandTotal)"></span>) melebihi saldo kas tersedia (<span x-text="formatRupiah(currentBalance)"></span>). Silakan ajukan Pengajuan Kas Lapangan terlebih dahulu.
+                            <strong style="font-size:13px;display:block;color:#166534;">Saldo Kas & Top-Up Pusat Terlindungi (Tidak Terpotong)</strong>
+                            <span style="font-size:12px;color:#15803d;line-height:1.4;display:block;margin-top:2px;">
+                                Karena belanja ditalangi uang pribadi (<span x-text="paidByName || 'Staf'"></span>), saldo kas operasional proyek <strong>tidak dipotong</strong> dan saldo dana Top-Up dari Kantor Pusat nantinya akan <strong>masuk 100% utuh tanpa terpotong</strong>.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alert Saldo Kas Kurang (hanya jika pakai Kas Proyek) --}}
+                <div x-show="paymentSource === 'project_cash' && isBalanceInsufficient" class="mt-4 p-3 rounded-lg" style="background:#fff7ed;border:1.5px solid #fdba74;color:#9a3412;">
+                    <div class="flex items-start gap-2.5">
+                        <x-lucide-circle-alert class="text-amber-600 mt-0.5" style="font-size:18px;flex-shrink:0;" />
+                        <div>
+                            <strong style="font-size:13px;display:block;color:#9a3412;">Saldo Kas Proyek Saat Ini Kurang!</strong>
+                            <span style="font-size:12px;color:#7c2d12;line-height:1.4;display:block;margin-top:2px;">
+                                Total belanja (<span x-text="formatRupiah(grandTotal)"></span>) melebihi saldo kas tersedia (<span x-text="formatRupiah(currentBalance)"></span>). Jika belanja ini menggunakan uang pribadi mandor/staf, silakan ubah Sumber Dana di atas ke <strong>"Talangan Pribadi (Uang Sendiri)"</strong> agar saldo kas & top-up proyek <strong>tidak terpotong</strong>.
                             </span>
                         </div>
                     </div>
@@ -248,8 +295,9 @@
 
             <div class="flex justify-end gap-3 mb-6">
                 <a href="{{ route('purchase-receipts.index') }}" class="btn btn-light">Batal</a>
-                <button type="submit" id="submit_btn" class="btn" :class="isBalanceInsufficient ? 'btn-danger' : 'btn-primary'" style="padding:10px 24px;font-weight:700;">
-                    <x-lucide-save class="me-1" /> Simpan & Potong Saldo Kas
+                <button type="submit" id="submit_btn" class="btn btn-primary" style="padding:10px 24px;font-weight:700;">
+                    <x-lucide-save class="me-1" />
+                    <span x-text="isBalanceInsufficient ? 'Simpan Nota (Catat Talangan)' : 'Simpan & Potong Saldo Kas'"></span>
                 </button>
             </div>
         </form>
@@ -265,6 +313,7 @@
                 $d = (float)($it['item_discount'] ?? 0);
                 $sub = max(0, ($q * $p) - min($q * $p, max(0, $d)));
                 $initialItems[] = [
+                    'item_type'     => (string)($it['item_type'] ?? 'Material'),
                     'item_name'     => (string)($it['item_name'] ?? ($it['material_name'] ?? '')),
                     'unit_name'     => (string)($it['unit_name'] ?? ''),
                     'quantity'      => $q,
@@ -276,6 +325,7 @@
         } else {
             $initialItems = [
                 [
+                    'item_type'     => 'Material',
                     'item_name'     => '',
                     'unit_name'     => '',
                     'quantity'      => 1,
@@ -295,6 +345,8 @@
                 projectName: @json(old('project_name', (string)($selectedProject?->name ?? ''))),
                 globalDiscount: {{ (float) old('global_discount', 0) }},
                 shippingFee: {{ (float) old('shipping_fee', 0) }},
+                paymentSource: @json(old('payment_source', 'project_cash')),
+                paidByName: @json(old('paid_by_name', auth()->user()?->name ?? '')),
                 items: @json($initialItems),
 
                 init() {
@@ -305,6 +357,7 @@
 
                 addItem() {
                     this.items.push({
+                        item_type: 'Material',
                         item_name: '',
                         unit_name: '',
                         quantity: 1,
@@ -379,10 +432,16 @@
                 },
 
                 get remainingBalance() {
+                    if (this.paymentSource === 'personal_advance') {
+                        return this.currentBalance; // Saldo kas proyek tetap utuh jika ditalangi pribadi!
+                    }
                     return this.currentBalance - this.grandTotal;
                 },
 
                 get isBalanceInsufficient() {
+                    if (this.paymentSource === 'personal_advance') {
+                        return false;
+                    }
                     return this.grandTotal > this.currentBalance;
                 },
 

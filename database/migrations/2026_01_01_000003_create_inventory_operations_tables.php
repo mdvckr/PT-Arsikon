@@ -96,7 +96,7 @@ return new class extends Migration
             $table->string('custom_item_type', 100)->nullable();
             $table->string('custom_item_name')->nullable();
             $table->string('custom_item_unit', 50)->nullable();
-            $table->enum('fulfillment', ['stock', 'purchase'])->nullable();
+            $table->enum('fulfillment', ['stock', 'purchase'])->default('stock');
             $table->decimal('qty_requested', 12, 2);
             $table->decimal('qty_approved', 12, 2)->default(0.00);
             $table->decimal('qty_ordered', 12, 2)->default(0.00);

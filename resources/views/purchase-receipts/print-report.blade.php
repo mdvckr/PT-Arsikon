@@ -67,9 +67,9 @@ body {
 .main-table { width:100%; border-collapse:collapse; font-size:7pt; table-layout:fixed; }
 
 /* Column widths */
-.c-no    { width:2.2%;  } .c-tgl   { width:7%;   } .c-proyek{ width:10.5%;} .c-sup  { width:8.5%;  }
-.c-item  { width:16.5%; } .c-vol   { width:3%;   } .c-sat  { width:3.3%;  }
-.c-hrg   { width:7.5%;  } .c-jml   { width:7.5%;  } .c-det   { width:7.5%; } .c-inp  { width:5.5%;  }
+.c-no    { width:2.2%;  } .c-tgl   { width:7%;   } .c-sup  { width:9.5%;  }
+.c-item  { width:6.5%;  } .c-barang{ width:15.5%;} .c-vol   { width:3%;   } .c-sat  { width:3.3%;  }
+.c-hrg   { width:7.5%;  } .c-jml   { width:7.5%;  } .c-det   { width:7.5%; } .c-inp  { width:6.5%;  }
 .c-tot   { width:7.5%;  } .c-per   { width:3%;    } .c-ket   { width:5.5%; }
 
 /* HEADER */
@@ -201,8 +201,8 @@ body {
     {{-- ── TABEL ────────────────────────────────────────── --}}
     <table class="main-table">
         <colgroup>
-            <col class="c-no"> <col class="c-tgl"> <col class="c-proyek"> <col class="c-sup">
-            <col class="c-item"> <col class="c-vol"> <col class="c-sat">
+            <col class="c-no"> <col class="c-tgl"> <col class="c-sup">
+            <col class="c-item"> <col class="c-barang"> <col class="c-vol"> <col class="c-sat">
             <col class="c-hrg"> <col class="c-jml"> <col class="c-det"> <col class="c-inp">
             <col class="c-tot"> <col class="c-per"> <col class="c-ket">
         </colgroup>
@@ -210,9 +210,9 @@ body {
             <tr>
                 <th class="c-no"    rowspan="2">No</th>
                 <th class="c-tgl"   rowspan="2">Tanggal</th>
-                <th class="c-proyek" rowspan="2">Nama Proyek</th>
                 <th class="c-sup"   rowspan="2">Toko /<br>Supplier</th>
                 <th class="c-item"  rowspan="2">Item</th>
+                <th class="c-barang" rowspan="2">Nama Barang</th>
                 <th class="c-vol"   rowspan="2">Vol</th>
                 <th class="c-sat"   rowspan="2">Satuan</th>
                 <th class="c-hrg"   rowspan="2">Harga<br>Satuan</th>
@@ -247,8 +247,8 @@ body {
                 <tr>
                     <td class="tc">{{ $loop->iteration }}</td>
                     <td class="tc" style="font-size:6.5pt;">{{ $tglStr }}</td>
-                    <td style="font-size:6.5pt; font-weight:700;">{{ $rProyek }}</td>
                     <td style="font-size:6.5pt;">{{ $supName }}</td>
+                    <td class="tc" style="font-size:6.5pt; font-weight:700;">Material</td>
                     <td style="font-size:6.5pt;">-</td>
                     <td class="tc">0</td>
                     <td class="tc">-</td>
@@ -269,17 +269,20 @@ body {
                     $harga    = (float) $item->unit_price;
                     $satuan   = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
                     $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
+                    $itemType = $item->item_type ?: 'Material';
                 @endphp
                 <tr>
-                    {{-- No, Tanggal, Nama Proyek, Toko/Supplier (rowspan per nota) --}}
+                    {{-- No, Tanggal, Toko/Supplier (rowspan per nota) --}}
                     @if($isFirst)
                         <td class="tc" rowspan="{{ $itemCount }}">{{ $loop->parent->iteration }}</td>
                         <td class="tc" rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $tglStr }}</td>
-                        <td rowspan="{{ $itemCount }}" style="font-size:6.5pt; font-weight:700;">{{ $rProyek }}</td>
                         <td rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $supName }}</td>
                     @endif
 
-                    {{-- Item --}}
+                    {{-- Item (Kategori) --}}
+                    <td class="tc" style="font-size:6.5pt; font-weight:700;">{{ $itemType }}</td>
+
+                    {{-- Nama Barang --}}
                     <td style="font-size:6.5pt;">{{ $itemName }}</td>
 
                     {{-- Vol --}}

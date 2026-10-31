@@ -78,9 +78,9 @@ body {
 /* Column widths (A4 landscape ≈ 275mm usable) */
 .c-no      { width: 2.2%;  }
 .c-tgl     { width: 7.5%;  }
-.c-proyek  { width: 12%;   }
 .c-sup     { width: 9%;    }
-.c-item    { width: 16.5%; }
+.c-item    { width: 6.5%;  }
+.c-barang  { width: 15.5%; }
 .c-vol     { width: 3%;    }
 .c-sat     { width: 3.3%;  }
 .c-hrg     { width: 7.5%;  }
@@ -227,18 +227,18 @@ body {
     {{-- ── TABEL UTAMA ────────────────────────────────── --}}
     <table class="main-table">
         <colgroup>
-            <col class="c-no"> <col class="c-tgl"> <col class="c-proyek"> <col class="c-sup">
-            <col class="c-item"> <col class="c-vol"> <col class="c-sat">
+            <col class="c-no"> <col class="c-tgl"> <col class="c-sup">
+            <col class="c-item"> <col class="c-barang"> <col class="c-vol"> <col class="c-sat">
             <col class="c-hrg"> <col class="c-jml"> <col class="c-det"> <col class="c-inp">
             <col class="c-tot"> <col class="c-per"> <col class="c-ket">
         </colgroup>
         <thead>
             <tr>
-                <th class="c-no"  rowspan="2">No</th>
-                <th class="c-tgl" rowspan="2">Tanggal</th>
-                <th class="c-proyek" rowspan="2">Nama Proyek</th>
+                <th class="c-no"     rowspan="2">No</th>
+                <th class="c-tgl"    rowspan="2">Tanggal</th>
                 <th class="c-sup"    rowspan="2">Toko /<br>Supplier</th>
                 <th class="c-item"   rowspan="2">Item</th>
+                <th class="c-barang" rowspan="2">Nama Barang</th>
                 <th class="c-vol"    rowspan="2">Vol</th>
                 <th class="c-sat"    rowspan="2">Satuan</th>
                 <th class="c-hrg"    rowspan="2">Harga<br>Satuan</th>
@@ -262,19 +262,22 @@ body {
                 $harga    = (float) $item->unit_price;
                 $satuan   = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
                 $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
+                $itemType = $item->item_type ?: 'Material';
             @endphp
             <tr>
                 {{-- No --}}
                 <td class="tc">{{ $idx + 1 }}</td>
 
-                {{-- Tanggal, Proyek, Supplier — rowspan karena sama semua --}}
+                {{-- Tanggal, Supplier — rowspan karena sama semua --}}
                 @if($isFirst)
                     <td class="tc" rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $tanggalStr }}</td>
-                    <td rowspan="{{ $itemCount }}" style="font-size:6.5pt; font-weight:700;">{{ $projectName }}</td>
                     <td rowspan="{{ $itemCount }}" style="font-size:6.5pt;">{{ $supplierName }}</td>
                 @endif
 
-                {{-- Item --}}
+                {{-- Item (Kategori) --}}
+                <td class="tc" style="font-size:6.5pt; font-weight:700;">{{ $itemType }}</td>
+
+                {{-- Nama Barang --}}
                 <td style="font-size:6.5pt;">{{ $itemName }}</td>
 
                 {{-- Vol --}}

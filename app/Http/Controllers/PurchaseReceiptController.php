@@ -120,8 +120,9 @@ class PurchaseReceiptController extends Controller
         });
 
         $pos = collect();
+        $selectedProject = $request->project_id ? $projects->firstWhere('id', $request->project_id) : null;
 
-        return view('purchase-receipts.index', compact('receipts', 'groupedWeeks', 'projects', 'pos'));
+        return view('purchase-receipts.index', compact('receipts', 'groupedWeeks', 'projects', 'pos', 'selectedProject'));
     }
 
     public function create(Request $request)
@@ -175,10 +176,13 @@ class PurchaseReceiptController extends Controller
             'supplier_name'         => 'nullable|string|max:255',
             'receipt_number'        => 'nullable|string|max:100',
             'receipt_date'          => 'required|date',
-            'image'                 => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048'],
+            'image'                 => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048', new \App\Rules\NoExecutableCode()],
             'notes'                 => 'nullable|string',
+            'payment_source'        => 'nullable|string|in:project_cash,personal_advance',
+            'paid_by_name'          => 'nullable|string|max:150',
             'items'                 => 'required|array|min:1',
             'items.*.material_id'   => 'nullable|exists:materials,id',
+            'items.*.item_type'     => 'nullable|string|max:50',
             'items.*.material_name' => 'nullable|string|max:255',
             'items.*.item_name'     => 'nullable|string|max:255',
             'items.*.unit_name'     => 'nullable|string|max:50',
@@ -231,10 +235,12 @@ class PurchaseReceiptController extends Controller
             $netItemSubtotal = $rawItemTotal - $itemDiscount;
             $itemsSubtotal += $netItemSubtotal;
 
+            $itemType = !empty($item['item_type']) ? trim($item['item_type']) : 'Material';
             $itemName = !empty($item['item_name']) ? $item['item_name'] : (!empty($item['material_name']) ? $item['material_name'] : '-');
             $materialName = !empty($item['material_name']) ? $item['material_name'] : $itemName;
 
             $processedItems[] = array_merge($item, [
+                'item_type'     => $itemType,
                 'item_name'     => $itemName,
                 'material_name' => $materialName,
                 'item_discount' => $itemDiscount,
@@ -268,18 +274,20 @@ class PurchaseReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            // Lock project for update & deduct balance
+            // Lock project for update
             $project = Project::where('id', $project->id)->lockForUpdate()->first();
             $balanceBefore = (float) $project->operational_balance;
 
-            if ($balanceBefore < ($grandTotal - 0.001)) {
-                $curSaldo = number_format($balanceBefore, 0, ',', '.');
-                $needSaldo = number_format($grandTotal, 0, ',', '.');
-                throw new \DomainException("Saldo kas operasional proyek '{$project->name}' tidak mencukupi (Tersedia: Rp {$curSaldo}, Dibutuhkan: Rp {$needSaldo}). Silakan lakukan Top-Up Saldo terlebih dahulu.");
-            }
+            $isTalangan = ($validated['payment_source'] ?? '') === 'personal_advance' || !empty($validated['paid_by_name']);
 
-            $balanceAfter = $balanceBefore - $grandTotal;
-            $project->update(['operational_balance' => $balanceAfter]);
+            if ($isTalangan) {
+                // Dana Talangan Pribadi: Saldo kas operasional proyek TIDAK DIPOTONG (tetap utuh, saldo top-up tidak terpotong)
+                $balanceAfter = $balanceBefore;
+            } else {
+                // Kas Operasional Proyek: Memotong saldo kas operasional proyek
+                $balanceAfter = $balanceBefore - $grandTotal;
+                $project->update(['operational_balance' => $balanceAfter]);
+            }
 
             $imagePath = null;
             if ($request->hasFile('image')) {
@@ -303,6 +311,8 @@ class PurchaseReceiptController extends Controller
                 'receipt_date'         => $validated['receipt_date'],
                 'day_label'            => $dayLabel,
                 'payment_status'       => 'paid',
+                'payment_source'       => $validated['payment_source'] ?? 'project_cash',
+                'paid_by_name'         => !empty($validated['paid_by_name']) ? trim($validated['paid_by_name']) : null,
                 'image_path'           => $imagePath,
                 'items_subtotal'       => $itemsSubtotal,
                 'global_discount'      => $globalDiscount,
@@ -325,6 +335,7 @@ class PurchaseReceiptController extends Controller
 
                 $receipt->items()->create([
                     'material_id'   => $item['material_id'] ?? null,
+                    'item_type'     => $item['item_type'] ?? 'Material',
                     'material_name' => $materialName,
                     'item_name'     => $itemName,
                     'unit_name'     => $unitName,
@@ -336,25 +347,41 @@ class PurchaseReceiptController extends Controller
                 ]);
             }
 
-            // Record log into ProjectBalanceLog
-            ProjectBalanceLog::create([
-                'project_id'       => $project->id,
-                'user_id'          => auth()->id(),
-                'type'             => 'payment_deduction',
-                'amount'           => $grandTotal,
-                'balance_before'   => $balanceBefore,
-                'balance_after'    => $balanceAfter,
-                'reference_number' => $receipt->receipt_number ?? "NOTA-{$receipt->id}",
-                'notes'            => 'Pembayaran Instan Nota Harian #' . ($receipt->receipt_number ?? $receipt->id) . ($receipt->supplier_name ? ' - Toko: ' . $receipt->supplier_name : ''),
-            ]);
+            if ($isTalangan) {
+                $penalang = !empty($receipt->paid_by_name) ? $receipt->paid_by_name : 'Staf Lapangan';
+                $curBalStr = number_format($balanceBefore, 0, ',', '.');
+                $successMsg = "⚡ Nota Pembelian Harian berhasil dicatat sebagai Talangan Pribadi ({$penalang})! Saldo kas proyek '{$project->name}' TIDAK TERPOTONG (tetap Rp {$curBalStr}). Saldo Top-Up dari Pusat nantinya tetap utuh 100%.";
+            } else {
+                $isDeficit = ($balanceAfter < 0);
+                $logNotes = 'Pembayaran Instan Nota Harian #' . ($receipt->receipt_number ?? $receipt->id) . ($receipt->supplier_name ? ' - Toko: ' . $receipt->supplier_name : '');
+                if ($isDeficit) {
+                    $logNotes .= ' (Defisit Kas: Rp ' . number_format($balanceAfter, 0, ',', '.') . ')';
+                }
+
+                // Record log into ProjectBalanceLog only when project balance is actually deducted
+                ProjectBalanceLog::create([
+                    'project_id'       => $project->id,
+                    'user_id'          => auth()->id(),
+                    'type'             => 'payment_deduction',
+                    'amount'           => $grandTotal,
+                    'balance_before'   => $balanceBefore,
+                    'balance_after'    => $balanceAfter,
+                    'reference_number' => $receipt->receipt_number ?? "NOTA-{$receipt->id}",
+                    'notes'            => $logNotes,
+                ]);
+
+                $formattedTotal = number_format($grandTotal, 0, ',', '.');
+                $formattedRem   = number_format($balanceAfter, 0, ',', '.');
+
+                $successMsg = $isDeficit
+                    ? "⚡ Nota Pembelian Harian berhasil dicatat! Saldo kas proyek '{$project->name}' terpotong Rp {$formattedTotal}. Sisa saldo defisit: Rp {$formattedRem}."
+                    : "⚡ Nota Pembelian Harian berhasil dicatat & LUNAS! Saldo kas operasional proyek '{$project->name}' otomatis terpotong Rp {$formattedTotal}. Sisa saldo: Rp {$formattedRem}.";
+            }
 
             DB::commit();
 
-            $formattedTotal = number_format($grandTotal, 0, ',', '.');
-            $formattedRem   = number_format($balanceAfter, 0, ',', '.');
-
             return redirect()->route('purchase-receipts.show', $receipt)
-                ->with('success', "⚡ Nota Pembelian Harian berhasil dicatat & LUNAS! Saldo kas operasional proyek '{$project->name}' otomatis terpotong Rp {$formattedTotal}. Sisa saldo: Rp {$formattedRem}.");
+                ->with('success', $successMsg);
         } catch (\DomainException $e) {
             DB::rollBack();
             return back()->withInput()->with('error', $e->getMessage());
@@ -657,8 +684,8 @@ class PurchaseReceiptController extends Controller
 
         DB::beginTransaction();
         try {
-            // Refund balance if paid
-            if ($purchaseReceipt->payment_status === 'paid' && (float)$purchaseReceipt->total_amount > 0 && $purchaseReceipt->project_id) {
+            // Refund balance if paid from project cash (not talangan pribadi)
+            if (!$purchaseReceipt->is_talangan && $purchaseReceipt->payment_status === 'paid' && (float)$purchaseReceipt->total_amount > 0 && $purchaseReceipt->project_id) {
                 $project = Project::find($purchaseReceipt->project_id);
                 if ($project) {
                     $before = (float) $project->operational_balance;

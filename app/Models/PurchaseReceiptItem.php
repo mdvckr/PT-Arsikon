@@ -13,6 +13,7 @@ class PurchaseReceiptItem extends Model
     protected $fillable = [
         'purchase_receipt_id',
         'material_id',
+        'item_type',
         'material_name',
         'item_name',
         'unit_name',
@@ -22,6 +23,21 @@ class PurchaseReceiptItem extends Model
         'subtotal',
         'notes',
     ];
+
+    public function getItemTypeLabelAttribute(): string
+    {
+        return $this->item_type ?: 'Material';
+    }
+
+    public function getItemTypeBadgeClassAttribute(): string
+    {
+        return match (strtolower($this->item_type ?? 'material')) {
+            'alat'        => 'badge-warning',
+            'konsumsi'    => 'badge-success',
+            'operasional' => 'badge-info',
+            default       => 'badge-primary',
+        };
+    }
 
     protected $casts = [
         'quantity'      => 'decimal:2',

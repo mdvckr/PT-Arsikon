@@ -3,8 +3,21 @@
 
     <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div>
-            <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Pencatatan Nota Pembelian Harian</h2>
-            <p class="text-muted" style="font-size:13px;">Daftar belanja nota fisik harian di proyek</p>
+            <div class="flex items-center gap-2 flex-wrap">
+                <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Pencatatan Nota Pembelian Harian</h2>
+                @if(isset($selectedProject) && $selectedProject)
+                    <span class="badge" style="background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px;">
+                        <x-lucide-building-2 style="font-size:13px;display:inline-block;vertical-align:middle;margin-right:3px;" /> {{ $selectedProject->name }}
+                    </span>
+                @endif
+            </div>
+            <p class="text-muted" style="font-size:13px;">
+                @if(isset($selectedProject) && $selectedProject)
+                    Rekapitulasi pengeluaran kas operasional nota harian proyek <strong>{{ $selectedProject->name }}</strong>
+                @else
+                    Daftar belanja nota fisik harian di seluruh proyek
+                @endif
+            </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             {{-- Tombol Cetak Laporan Mingguan --}}
@@ -175,10 +188,10 @@
                                 <thead>
                                     <tr style="background:#ffffff;border-bottom:2px solid #e2e8f0;">
                                         <th style="width:40px;text-align:center;">No</th>
-                                        <th>No. Nota Fisik</th>
-                                        <th>Proyek</th>
+                                        <th style="width:130px;">No. Nota Fisik</th>
                                         <th>Supplier / Toko</th>
-                                        <th>Item Belanja</th>
+                                        <th style="width:120px;">Item</th>
+                                        <th>Nama Barang</th>
                                         <th>Status Pembayaran</th>
                                         <th class="text-end">Total Belanja</th>
                                         <th>Bukti Nota</th>
@@ -192,31 +205,67 @@
                                         <td class="text-muted text-center">{{ $idx + 1 }}</td>
                                         <td>
                                             <code>{{ $receipt->receipt_number ?? '-' }}</code>
-                                        </td>
-                                        <td>
-                                            @if($receipt->project)
-                                                <strong class="text-primary">{{ $receipt->project->name }}</strong>
-                                            @elseif($receipt->project_name)
-                                                <span>{{ $receipt->project_name }}</span>
-                                            @else
-                                                <span class="text-muted">-</span>
+                                            @if(!request('project_id'))
+                                                <div style="font-size:11px;color:#2563eb;font-weight:600;margin-top:2px;" title="Proyek">
+                                                    🏢 {{ $receipt->project?->name ?? ($receipt->project_name ?? '-') }}
+                                                </div>
                                             @endif
                                         </td>
                                         <td><strong>{{ $receipt->supplier_name ?? $receipt->supplier?->name ?? '-' }}</strong></td>
                                         <td>
-                                            <div class="flex items-center gap-1">
-                                                <span class="badge badge-secondary" style="font-size:11px;">{{ $receipt->items->count() }} item</span>
-                                                @if($receipt->items->count() > 0)
-                                                    <span class="text-muted text-xs truncate" style="max-width:140px;" title="{{ $receipt->items->pluck('item_name')->join(', ') }}">
-                                                        ({{ $receipt->items->first()->item_name }}@if($receipt->items->count() > 1)...@endif)
+                                            @php
+                                                $types = $receipt->items->pluck('item_type')->filter()->unique();
+                                                if ($types->isEmpty()) {
+                                                    $types = collect(['Material']);
+                                                }
+                                            @endphp
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach($types as $tp)
+                                                    @php
+                                                        $tpColor = match(strtolower($tp)) {
+                                                            'alat' => 'background:#fef3c7;color:#b45309;border:1px solid #fde68a;',
+                                                            'konsumsi' => 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;',
+                                                            'operasional' => 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;',
+                                                            default => 'background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe;',
+                                                        };
+                                                    @endphp
+                                                    <span class="badge" style="{{ $tpColor }}font-size:10.5px;padding:2px 7px;font-weight:700;">
+                                                        {{ $tp }}
                                                     </span>
-                                                @endif
+                                                @endforeach
                                             </div>
                                         </td>
                                         <td>
-                                            @if($receipt->payment_status === 'paid')
+                                            @php
+                                                $firstItem = $receipt->items->first();
+                                                $itemCount = $receipt->items->count();
+                                            @endphp
+                                            @if($itemCount > 0 && $firstItem)
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <strong style="color:#1e293b;font-size:13px;">{{ $firstItem->item_name ?: ($firstItem->material_name ?: 'Item Nota') }}</strong>
+                                                    @if($itemCount > 1)
+                                                        <span class="badge badge-secondary" style="font-size:10.5px;padding:2px 6px;" title="{{ $receipt->items->pluck('item_name')->join(', ') }}">
+                                                            +{{ $itemCount - 1 }} item lain
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                @if($firstItem->unit_name || $firstItem->quantity)
+                                                    <span class="text-muted text-xs block mt-0.5">
+                                                        {{ number_format($firstItem->quantity, $firstItem->quantity == floor($firstItem->quantity) ? 0 : 2, ',', '.') }} {{ $firstItem->unit_name ?? 'Bh' }}
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($receipt->is_talangan)
+                                                <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:3px;" title="Ditalangi pribadi oleh: {{ $receipt->paid_by_name ?? 'Staf Lapangan' }}">
+                                                    <x-lucide-hand-coins style="font-size:12px;" /> Talangan: {{ $receipt->paid_by_name ? Str::limit($receipt->paid_by_name, 14) : 'Pribadi' }}
+                                                </span>
+                                            @elseif($receipt->payment_status === 'paid')
                                                 <span class="badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;font-size:11.5px;font-weight:700;">
-                                                    <x-lucide-zap class="me-1" /> Lunas (Instan)
+                                                    <x-lucide-zap class="me-1" /> Lunas (Kas Proyek)
                                                 </span>
                                             @else
                                                 <span class="badge badge-{{ $receipt->status_color }}">{{ $receipt->status_label }}</span>
@@ -224,7 +273,7 @@
                                         </td>
                                         <td class="text-end">
                                             <strong class="text-success" style="font-size:13.5px;">
-                                                Rp {{ number_format($receipt->total_amount, 0, ',', '.') }}
+                                                 Rp {{ number_format($receipt->total_amount, 0, ',', '.') }}
                                             </strong>
                                         </td>
                                         <td>

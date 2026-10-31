@@ -207,7 +207,11 @@
             </div>
         </div>
 
-        @if(!$po && $purchaseReceipt->project)
+        @if($purchaseReceipt->is_talangan)
+            <div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px;border-radius:8px;padding:12px 16px;">
+                <x-lucide-hand-coins class="me-1 text-amber-600" /> Nota ini dibayar menggunakan <strong>Dana Talangan Pribadi Lapangan</strong> oleh <strong>{{ $purchaseReceipt->paid_by_name ?? 'Staf Lapangan' }}</strong> sebesar <strong>Rp {{ number_format($receiptTotal, 0, ',', '.') }}</strong>. Penggantian dana talangan ini akan dikirimkan oleh Kantor Pusat saat pengisian Top-Up Kas Proyek.
+            </div>
+        @elseif(!$po && $purchaseReceipt->project)
             <div style="background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:13px;border-radius:8px;padding:12px 16px;">
                 <x-lucide-zap class="me-1 text-warning" /> Pembayaran nota harian ini dilakukan secara <strong>instan</strong> menggunakan <strong>Saldo Kas Operasional Proyek ({{ $purchaseReceipt->project->name }})</strong>. Total belanja sebesar <strong>Rp {{ number_format($receiptTotal, 0, ',', '.') }}</strong> telah otomatis dipotong dari saldo kas proyek saat nota dicatat.
             </div>
@@ -266,11 +270,12 @@
                 <thead>
                     <tr>
                         <th style="width:4%;">#</th>
-                        <th style="width:38%;">Item</th>
+                        <th style="width:12%;">Item</th>
+                        <th style="width:28%;">Nama Barang</th>
                         <th class="text-center" style="width:10%;">Jumlah (Vol)</th>
                         <th class="text-center" style="width:8%;">Satuan</th>
-                        <th class="text-end" style="width:13%;">Harga Satuan</th>
-                        <th class="text-end" style="width:12%;">Diskon Item</th>
+                        <th class="text-end" style="width:12%;">Harga Satuan</th>
+                        <th class="text-end" style="width:11%;">Diskon Item</th>
                         <th class="text-end" style="width:15%;">Subtotal Bersih</th>
                     </tr>
                 </thead>
@@ -279,9 +284,21 @@
                     @php
                         $itemName = $item->item_name ?: ($item->material_name ?: ($item->material?->name ?: '-'));
                         $satuan = $item->unit_name ?: ($item->material?->unit?->symbol ?: 'Bh');
+                        $tp = $item->item_type ?: 'Material';
+                        $tpColor = match(strtolower($tp)) {
+                            'alat' => 'background:#fef3c7;color:#b45309;border:1px solid #fde68a;',
+                            'konsumsi' => 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;',
+                            'operasional' => 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;',
+                            default => 'background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe;',
+                        };
                     @endphp
                     <tr>
                         <td class="text-muted text-center">{{ $idx + 1 }}</td>
+                        <td>
+                            <span class="badge" style="{{ $tpColor }}font-size:11px;padding:3px 8px;font-weight:700;">
+                                {{ $tp }}
+                            </span>
+                        </td>
                         <td>
                             <strong class="text-primary">{{ $itemName }}</strong>
                             @if($item->notes)
@@ -314,12 +331,12 @@
                         $totalDiskonAll = $totalItemDiscounts + $globalDisc;
                     @endphp
                     <tr style="background:#f8fafc;">
-                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Subtotal Kotor Barang:</td>
+                        <td colspan="7" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Subtotal Kotor Barang:</td>
                         <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Rp {{ number_format($subtotalItems, 0, ',', '.') }}</td>
                     </tr>
                     @if($totalDiskonAll > 0)
                     <tr style="background:#f0fdf4;color:#047857;">
-                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
+                        <td colspan="7" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
                             Total Diskon Nota @if($globalDisc > 0) (Item: Rp {{ number_format($totalItemDiscounts, 0, ',', '.') }} + Global: Rp {{ number_format($globalDisc, 0, ',', '.') }}) @endif:
                         </td>
                         <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">- Rp {{ number_format($totalDiskonAll, 0, ',', '.') }}</td>
@@ -327,20 +344,20 @@
                     @endif
                     @if($shipFee > 0)
                     <tr style="background:#f8fafc;">
-                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Ongkos Kirim (Armada Toko):</td>
+                        <td colspan="7" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">Ongkos Kirim (Armada Toko):</td>
                         <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">+ Rp {{ number_format($shipFee, 0, ',', '.') }}</td>
                     </tr>
                     @endif
                     @if($addFee > 0)
                     <tr style="background:#f8fafc;">
-                        <td colspan="6" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
+                        <td colspan="7" class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">
                             Iuran / Kuli Bongkar @if($purchaseReceipt->additional_fee_notes) ({{ $purchaseReceipt->additional_fee_notes }}) @endif:
                         </td>
                         <td class="text-end font-semibold" style="font-size:13px;padding:8px 16px;">+ Rp {{ number_format($addFee, 0, ',', '.') }}</td>
                     </tr>
                     @endif
                     <tr style="background:#ecfdf5;border-top:2px solid #059669;font-weight:bold;">
-                        <td colspan="6" class="text-end" style="font-size:15px;color:#065f46;padding:12px 16px;">TOTAL PENGELUARAN BERSIH:</td>
+                        <td colspan="7" class="text-end" style="font-size:15px;color:#065f46;padding:12px 16px;">TOTAL PENGELUARAN BERSIH:</td>
                         <td class="text-end" style="font-size:18px;color:#047857;padding:12px 16px;">
                             Rp {{ number_format($purchaseReceipt->total_amount, 0, ',', '.') }}
                         </td>
