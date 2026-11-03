@@ -133,9 +133,9 @@ function checkEmptyState(customMessage) {
     const emptyRow = document.getElementById('emptyItemsRow');
     if (rows.length === 0) {
         if (!emptyRow) {
-            const desc = customMessage || 'Pilih <strong>PO Lapangan</strong> atau <strong>Purchase Order (PO Vendor)</strong> pada formulir di bawah untuk memuat barang otomatis, atau tambahkan item manual.';
+            const desc = customMessage || 'Pilih <strong>PO Lapangan</strong> atau <strong>Purchase Order (PO Vendor)</strong> pada formulir di atas untuk memuat barang otomatis, atau tambahkan item manual.';
             const html = '<tr id="emptyItemsRow" class="empty-receipt-row">'
-                + '<td colspan="8" class="empty-receipt-canvas">'
+                + '<td colspan="10" class="empty-receipt-canvas">'
                 + '<div class="empty-receipt-card">'
                 + '<div class="empty-icon-circle">'
                 + '<i class="fas fa-boxes-stacked"></i>'
@@ -172,6 +172,16 @@ function checkEmptyState(customMessage) {
     updateGrandTotal();
 }
 
+function suggestCustomSku(name, isTool) {
+    const clean = (name || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    let prefix = isTool ? 'TL' : 'MAT';
+    if (clean.length >= 3) {
+        prefix = clean.substring(0, 3);
+    }
+    const randNum = Math.floor(100 + Math.random() * 900);
+    return prefix + '-' + randNum;
+}
+
 function addRow(type, opts) {
     type = type || 'material';
     opts = opts || {};
@@ -192,27 +202,32 @@ function addRow(type, opts) {
     });
 
     let targetId = isTool ? opts.tool_id : opts.material_id;
-    let customOptionHtml = '';
     let isItemFoundInMaster = false;
+    let foundMasterItem = null;
 
     if (targetId) {
-        isItemFoundInMaster = itemsList.some(function(i) { return i.id == targetId; });
+        foundMasterItem = itemsList.find(function(i) { return i.id == targetId; });
+        if (foundMasterItem) {
+            isItemFoundInMaster = true;
+        }
     }
 
     // Jika item berasal dari PO / MR khusus proyek dan belum ada di list master
     const customName = opts.material_name || opts.name || opts.custom_item_name || '';
-    if (!isItemFoundInMaster && customName) {
-        customOptionHtml = '<optgroup label="Khusus PO / Proyek">'
+    const isCustom = (!isItemFoundInMaster && Boolean(customName));
+
+    let optionsHtml = '';
+    if (isCustom) {
+        optionsHtml = '<optgroup label="Khusus PO / Proyek">'
             + '<option value="' + (targetId || '') + '" selected data-custom="1">'
             + escHtml(customName) + ' (Item Khusus PO)'
             + '</option></optgroup>';
     }
 
-    let optionsHtml = customOptionHtml;
     for (const catName in categories) {
         optionsHtml += '<optgroup label="' + escHtml(catName) + '">';
         categories[catName].forEach(function(item) {
-            const isSelected = !customOptionHtml && (isTool ? (opts.tool_id == item.id) : (opts.material_id == item.id));
+            const isSelected = !isCustom && (isTool ? (opts.tool_id == item.id) : (opts.material_id == item.id));
             const stageBadge = (item.planned_stages && item.planned_stages.length > 0)
                 ? ' • [📅 ' + item.planned_stages.length + ' Tahap Jadwal]' : '';
             const brandText = item.brand ? ' · ' + item.brand : '';
@@ -252,8 +267,6 @@ function addRow(type, opts) {
         ? '<input type="hidden" name="items[' + idx + '][custom_item_name]" value="' + escHtml(customName) + '">' : '';
     const customUnitInput = (opts.unit_abbr || opts.unit || opts.abbr)
         ? '<input type="hidden" name="items[' + idx + '][custom_item_unit]" value="' + escHtml(opts.unit_abbr || opts.unit || opts.abbr) + '">' : '';
-    const customTypeInput = (opts.custom_item_type || opts.type)
-        ? '<input type="hidden" name="items[' + idx + '][type]" value="' + escHtml(opts.custom_item_type || opts.type) + '">' : '';
 
     const typeInput = '<input type="hidden" name="items[' + idx + '][item_type]" value="' + (isTool ? 'tool' : 'material') + '">';
     const selectName = isTool ? ('items[' + idx + '][tool_id]') : ('items[' + idx + '][material_id]');
@@ -283,22 +296,94 @@ function addRow(type, opts) {
     const stageRef = opts.stage_reference || '';
     const unitAbbr = opts.unit_abbr || opts.unit || opts.abbr || (isTool ? 'Unit' : '--');
 
+    // BUILD COLUMN CELLS: SKU & CLASSIFICATION
+    let skuCellHtml = '';
+    let classificationCellHtml = '';
+    let itemCellHtml = '';
+
+    if (isCustom) {
+        let initialSku = opts.sku || opts.custom_sku || suggestCustomSku(customName, isTool);
+        skuCellHtml = '<td class="col-sku" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Kode SKU</div>'
+            + '<input type="text" name="items[' + idx + '][custom_sku]" id="sku-input-' + idx + '" class="form-control text-uppercase" '
+            + 'placeholder="mis. ' + escHtml(initialSku) + '" value="' + escHtml(initialSku) + '" '
+            + 'style="font-family:monospace;font-weight:700;font-size:12px;height:32px;border-radius:6px;padding:3px 7px;border:1.5px solid #cbd5e1;width:100%;background:#ffffff;" '
+            + 'title="Kode SKU / Barcode Baru untuk barang ini">'
+            + '</td>';
+
+        itemCellHtml = '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Nama Barang / Referensi PO</div>'
+            + '<div style="font-weight:700;font-size:13px;color:#0f172a;line-height:1.3;padding-top:2px;">' + escHtml(customName) + '</div>'
+            + '<div class="item-meta-tags mt-1"><span class="badge" style="background:#eff6ff;color:#1e40af;font-size:10px;border:1px solid #bfdbfe;font-weight:600;"><i class="fas fa-certificate me-1"></i>Item Khusus PO / Proyek</span></div>'
+            + '<input type="hidden" name="' + selectName + '" value="">'
+            + '</td>';
+
+        const catList = isTool
+            ? (typeof grToolCategories !== 'undefined' ? grToolCategories : (window.grToolCategories || []))
+            : (typeof grMaterialCategories !== 'undefined' ? grMaterialCategories : (window.grMaterialCategories || []));
+        let catOptions = '<option value="">— Pilih Kategori —</option>';
+        const targetCatId = opts.category_id || null;
+        catList.forEach(function(cat) {
+            const isSel = (targetCatId && cat.id == targetCatId) ? ' selected' : '';
+            catOptions += '<option value="' + cat.id + '"' + isSel + '>' + escHtml(cat.name) + '</option>';
+        });
+        const initialType = opts.custom_item_type || opts.type || '';
+
+        classificationCellHtml = '<td class="col-classification" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Kategori & Kelompok</div>'
+            + '<select name="items[' + idx + '][category_id]" class="form-control" style="font-size:11.5px;height:30px;border-radius:6px;padding:2px 6px;margin-bottom:4px;border:1.5px solid #cbd5e1;width:100%;background:#ffffff;">'
+            + catOptions
+            + '</select>'
+            + '<input type="text" name="items[' + idx + '][custom_type]" class="form-control" placeholder="Kelompok (mis. Agregat)" value="' + escHtml(initialType) + '" style="font-size:11.5px;height:28px;border-radius:6px;padding:2px 6px;border:1.5px solid #cbd5e1;width:100%;background:#ffffff;" title="Kelompok barang (opsional)">'
+            + '</td>';
+    } else {
+        const masterSku = foundMasterItem ? (foundMasterItem.sku || foundMasterItem.code || '-') : '-';
+        const masterSkuVal = foundMasterItem ? (foundMasterItem.sku || foundMasterItem.code || '') : '';
+
+        skuCellHtml = '<td class="col-sku" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Kode SKU</div>'
+            + '<span class="badge" id="sku-badge-' + idx + '" style="font-family:monospace;font-size:11px;background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;padding:5px 8px;border-radius:6px;display:inline-block;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;">'
+            + escHtml(masterSku)
+            + '</span>'
+            + '<input type="hidden" name="items[' + idx + '][custom_sku]" id="sku-input-' + idx + '" value="' + escHtml(masterSkuVal) + '">'
+            + '</td>';
+
+        itemCellHtml = '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Nama Barang / Referensi PO</div>'
+            + '<select name="' + selectName + '" class="form-control item-select" ' + isRequired + ' '
+            + 'onchange="onItemChange(this,' + idx + ',' + (isTool ? 'true' : 'false') + ')" '
+            + 'style="font-weight:600;font-size:12.5px;">'
+            + '<option value="">' + defaultPrompt + '</option>' + optionsHtml
+            + '</select>'
+            + '<div id="item-meta-' + idx + '" class="item-meta-container"></div>'
+            + '<div id="discrepancy-badge-' + idx + '" class="mt-1"></div></td>';
+
+        let masterCatHtml = '<span class="text-muted" style="font-size:11px;">-</span>';
+        if (foundMasterItem) {
+            masterCatHtml = '<span class="badge" style="background:#f8fafc;border:1px solid #e2e8f0;color:#334155;font-weight:600;padding:3px 7px;border-radius:5px;font-size:11px;display:inline-block;">'
+                + escHtml(foundMasterItem.category_name || '-') + '</span>'
+                + (foundMasterItem.type ? '<div style="font-size:10.5px;color:#64748b;margin-top:2px;">' + escHtml(foundMasterItem.type) + '</div>' : '');
+        }
+
+        classificationCellHtml = '<td class="col-classification" style="vertical-align:top;padding-top:10px;">'
+            + '<div class="mobile-label-tag">Kategori & Kelompok</div>'
+            + '<div id="cat-badge-' + idx + '">' + masterCatHtml + '</div>'
+            + '<input type="hidden" name="items[' + idx + '][category_id]" id="cat-input-' + idx + '" value="' + (foundMasterItem ? (foundMasterItem.category_id || '') : '') + '">'
+            + '<input type="hidden" name="items[' + idx + '][custom_type]" id="type-input-' + idx + '" value="' + (foundMasterItem ? escHtml(foundMasterItem.type || '') : '') + '">'
+            + '</td>';
+    }
+
     const row = '<tr id="row-' + idx + '" class="item-row" data-type="' + (isTool ? 'tool' : 'material') + '">'
         + '<td class="col-type" style="vertical-align:top;padding-top:10px;text-align:center;">'
-        + typeInput + poItemInput + mrItemInput + schedInput + customNameInput + customUnitInput + customTypeInput
+        + typeInput + poItemInput + mrItemInput + schedInput + customNameInput + customUnitInput
         + '<input type="hidden" name="items[' + idx + '][stage_reference]" id="stage-input-' + idx + '" value="' + escHtml(stageRef) + '">'
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="' + (opts.unit_price || 0) + '">'
         + '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;">' + typeBadge + refText + '</div></td>'
 
-        + '<td class="col-item" style="vertical-align:top;padding-top:10px;">'
-        + '<select name="' + selectName + '" class="form-control item-select" ' + isRequired + ' '
-        + 'onchange="onItemChange(this,' + idx + ',' + (isTool ? 'true' : 'false') + ')" '
-        + 'style="font-weight:600;font-size:12.5px;">'
-        + '<option value="">' + defaultPrompt + '</option>' + optionsHtml
-        + '</select>'
-        + '<div id="item-meta-' + idx + '" class="item-meta-container"></div>'
-        + '<div id="discrepancy-badge-' + idx + '" class="mt-1"></div></td>'
+        + skuCellHtml
+        + itemCellHtml
+        + classificationCellHtml
 
         // Qty Target PO
         + '<td class="col-shipped" style="vertical-align:top;padding-top:10px;">'
@@ -328,6 +413,12 @@ function addRow(type, opts) {
         + 'placeholder="0" data-idx="' + idx + '" '
         + 'oninput="recalcDiscrepancy(' + idx + ', \'selisih\')" '
         + 'style="font-weight:700;font-size:13px;border-radius:7px;border:1.5px solid #cbd5e1;' + (qtyMissing > 0 ? 'background:#fffbeb;border-color:#d97706;color:#b45309;' : '') + '" title="Selisih barang tidak sesuai PO">'
+        + '<div id="missing-action-wrap-' + idx + '" style="margin-top:4px;' + (qtyMissing > 0 ? 'display:block;' : 'display:none;') + '">'
+        + '<select name="items[' + idx + '][missing_action]" class="form-control" style="font-size:10px;height:25px;padding:1px 3px;border-radius:5px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-weight:600;width:100%;cursor:pointer;" title="Penyelesaian Selisih">'
+        + '<option value="lost"' + (opts.missing_action === 'pending' ? '' : ' selected') + '>Hilang / Rusak (Selesai)</option>'
+        + '<option value="pending"' + (opts.missing_action === 'pending' ? ' selected' : '') + '>Kirim Susulan (Menunggu)</option>'
+        + '</select>'
+        + '</div>'
         + '</td>'
 
         // Satuan
@@ -351,7 +442,8 @@ function addRow(type, opts) {
 
     document.getElementById('itemsBody').insertAdjacentHTML('beforeend', row);
 
-    const sel = document.querySelector('[name="' + selectName + '"]');
+    const rowEl = document.getElementById('row-' + idx);
+    const sel = rowEl ? rowEl.querySelector('select.item-select') : null;
     if (sel) {
         if (targetId) sel.value = targetId;
         onItemChange(sel, idx, isTool);
@@ -377,13 +469,26 @@ function removeRow(idx) {
 // ============================================================
 
 function onItemChange(sel, idx, isTool) {
+    if (!sel || !sel.options || sel.selectedIndex < 0) {
+        return;
+    }
     const opt = sel.options[sel.selectedIndex];
     const metaContainer = document.getElementById('item-meta-' + idx);
+    const skuBadge = document.getElementById('sku-badge-' + idx);
+    const skuInput = document.getElementById('sku-input-' + idx);
+    const catBadge = document.getElementById('cat-badge-' + idx);
+    const catInput = document.getElementById('cat-input-' + idx);
+    const typeInput = document.getElementById('type-input-' + idx);
 
     if (!opt || (!opt.value && opt.getAttribute('data-custom') !== '1')) {
         const unitEl = document.getElementById('unit-' + idx);
         if (unitEl) unitEl.textContent = isTool ? 'Unit' : '-';
         if (metaContainer) metaContainer.innerHTML = '';
+        if (skuBadge) skuBadge.textContent = '-';
+        if (skuInput) skuInput.value = '';
+        if (catBadge) catBadge.innerHTML = '<span class="text-muted" style="font-size:11px;">-</span>';
+        if (catInput) catInput.value = '';
+        if (typeInput) typeInput.value = '';
         checkAndUpdateWarehouseLock();
         return;
     }
@@ -399,6 +504,16 @@ function onItemChange(sel, idx, isTool) {
     const itemsList = isTool ? grTools : grMaterials;
     const item = itemsList.find(function(i) { return i.id == opt.value; });
     if (!item) return;
+
+    if (skuBadge) skuBadge.textContent = item.sku || item.code || '-';
+    if (skuInput) skuInput.value = item.sku || item.code || '';
+    if (catBadge) {
+        catBadge.innerHTML = '<span class="badge" style="background:#f8fafc;border:1px solid #e2e8f0;color:#334155;font-weight:600;padding:3px 7px;border-radius:5px;font-size:11px;display:inline-block;">'
+            + escHtml(item.category_name || '-') + '</span>'
+            + (item.type ? '<div style="font-size:10.5px;color:#64748b;margin-top:2px;">' + escHtml(item.type) + '</div>' : '');
+    }
+    if (catInput) catInput.value = item.category_id || '';
+    if (typeInput) typeInput.value = item.type || '';
 
     const abbr = item.abbr || (isTool ? 'Unit' : '-');
     const unitEl = document.getElementById('unit-' + idx);
@@ -657,6 +772,11 @@ function recalcDiscrepancy(idx, changedField) {
         }
     }
 
+    const missingWrap = document.getElementById('missing-action-wrap-' + idx);
+    if (missingWrap) {
+        missingWrap.style.display = (missing > 0) ? 'block' : 'none';
+    }
+
     updateGrandTotal();
 }
 
@@ -728,6 +848,10 @@ function loadPoItems(poId) {
                         custom_item_unit: item.custom_item_unit,
                         custom_item_type: item.custom_item_type,
                         unit_abbr: item.unit_abbr,
+                        category_id: item.category_id,
+                        category_name: item.category_name,
+                        sku: item.sku,
+                        custom_sku: item.custom_sku,
                         purchase_order_item_id: item.purchase_order_item_id,
                         purchase_order_number: data.po_number,
                         supplier_name: data.supplier_name,
@@ -968,6 +1092,10 @@ function loadMrItems(mrId, filterPoId) {
                         custom_item_unit: item.custom_item_unit,
                         custom_item_type: item.custom_item_type,
                         unit_abbr: item.unit_abbr,
+                        category_id: item.category_id,
+                        category_name: item.category_name,
+                        sku: item.sku,
+                        custom_sku: item.custom_sku,
                         material_request_item_id: item.material_request_item_id,
                         purchase_order_item_id: item.purchase_order_item_id,
                         purchase_order_number: item.purchase_order_number,
@@ -1384,7 +1512,7 @@ function filterItemsTab(type) {
             const icon = (type === 'tool' ? 'fa-helmet-safety' : 'fa-box-open');
             const tr = document.createElement('tr');
             tr.id = 'empty-filter-notice';
-            tr.innerHTML = '<td colspan="8" style="text-align:center;padding:36px 16px;background:#fafcff;">'
+            tr.innerHTML = '<td colspan="10" style="text-align:center;padding:36px 16px;background:#fafcff;">'
                 + '<div style="max-width:380px;margin:0 auto;display:flex;flex-direction:column;align-items:center;">'
                 + '<div style="width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;">'
                 + '<i class="fas ' + icon + '"></i></div>'

@@ -179,6 +179,7 @@ class Tool extends Model
                 'planned_qty'    => $qtyPlanned,
                 'received_qty'   => $qtyReceived,
                 'remaining_qty'  => $remaining,
+                'lost_qty'       => (int) $poItem->lost_qty,
                 'date'           => $stageDate,
                 'status'         => $status,
                 'status_label'   => $statusLabel,
@@ -470,7 +471,8 @@ class Tool extends Model
         ?int $categoryId = null,
         ?string $typeName = null,
         ?string $brand = null,
-        ?string $size = null
+        ?string $size = null,
+        ?string $customCode = null
     ): Tool {
         $cleanName = trim($name);
         $tool = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
@@ -517,11 +519,18 @@ class Tool extends Model
         }
 
         // Generate unique Code
-        $maxId = (int) (static::max('id') ?? 0) + 1;
-        $code = 'TL-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
-        while (static::where('code', $code)->exists()) {
-            $maxId++;
+        if (!empty($customCode)) {
+            $code = strtoupper(trim($customCode));
+            if (static::where('code', $code)->exists()) {
+                $code = $code . '-' . rand(10, 99);
+            }
+        } else {
+            $maxId = (int) (static::max('id') ?? 0) + 1;
             $code = 'TL-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+            while (static::where('code', $code)->exists()) {
+                $maxId++;
+                $code = 'TL-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+            }
         }
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();

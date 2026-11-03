@@ -19,11 +19,15 @@ class GoodsReceiptItem extends Model
         'stage_reference',
         'material_id',
         'tool_id',
+        'custom_sku',
+        'category_id',
+        'custom_type',
         'qty_shipped',
         'qty_received',
         'qty_damaged',
         'qty_missing',
         'missing_status',
+        'missing_action',
         'condition',
         'unit_price',
         'notes',
@@ -52,6 +56,11 @@ class GoodsReceiptItem extends Model
         return $this->belongsTo(Tool::class);
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function purchaseOrderItem(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrderItem::class);
@@ -75,17 +84,17 @@ class GoodsReceiptItem extends Model
     public function getItemNameAttribute(): string
     {
         if ($this->isTool()) {
-            return $this->tool?->name ?? 'Alat #' . $this->tool_id;
+            return $this->tool?->name ?? $this->purchaseOrderItem?->displayName() ?? $this->materialRequestItem?->displayName() ?? ('Alat #' . $this->tool_id);
         }
-        return $this->material?->name ?? 'Material #' . $this->material_id;
+        return $this->material?->name ?? $this->purchaseOrderItem?->displayName() ?? $this->materialRequestItem?->displayName() ?? ('Material #' . $this->material_id);
     }
 
     public function getItemCodeAttribute(): string
     {
         if ($this->isTool()) {
-            return $this->tool?->code ?? '-';
+            return $this->tool?->code ?? $this->custom_sku ?? '-';
         }
-        return $this->material?->sku ?? $this->material?->code ?? '-';
+        return $this->material?->sku ?? $this->material?->code ?? $this->custom_sku ?? '-';
     }
 
     public function getItemUnitAttribute(): string

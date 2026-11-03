@@ -873,105 +873,7 @@
         @method('PUT')
         <div class="receipt-create-layout">
 
-            {{-- ── 1. Bagian Atas: Rincian Barang & Alat Masuk (Full Width) ── --}}
-            <div class="card shadow-sm" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;overflow:hidden;">
-                <div class="card-header receipt-card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                    
-                    {{-- Judul & Filter Tab (Material sendiri, Alat sendiri, Semua) --}}
-                    <div class="flex items-center gap-3 flex-wrap receipt-header-title-box">
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <div style="width:36px;height:36px;border-radius:9px;background:#eff6ff;border:1px solid #dbeafe;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;flex-shrink:0;">
-                                <x-lucide-boxes style="font-size:17px;" />
-                            </div>
-                            <div>
-                                <span class="card-title" style="font-size:14.5px;font-weight:700;color:#0f172a;display:block;letter-spacing:-0.2px;">Rincian Barang &amp; Alat Diterima</span>
-                                <span style="font-size:11px;color:#64748b;display:block;margin-top:1px;">Pencatatan fisik kuantitas barang masuk &amp; pengecekan selisih</span>
-                            </div>
-                        </div>
-
-                        {{-- Filter Tabs (Material sendiri & Alat sendiri) --}}
-                        <div class="flex items-center gap-1 receipt-tabs-wrap">
-                            <button type="button" class="btn-tab-filter active" id="tab-btn-all" onclick="filterItemsTab('all')">
-                                <x-lucide-list style="font-size:12px;" /> Semua <span class="count-badge" id="count-all">0</span>
-                            </button>
-                            <button type="button" class="btn-tab-filter" id="tab-btn-material" onclick="filterItemsTab('material')">
-                                <x-lucide-package style="font-size:12px;color:#2563eb;" /> Material <span class="count-badge" id="count-material">0</span>
-                            </button>
-                            <button type="button" class="btn-tab-filter" id="tab-btn-tool" onclick="filterItemsTab('tool')">
-                                <x-lucide-hard-hat style="font-size:12px;color:#d97706;" /> Alat <span class="count-badge" id="count-tool">0</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- Tombol Tambah & Tarik dari Jadwal --}}
-                    <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
-                        <button type="button" class="btn btn-sm btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s ease;">
-                            <x-lucide-calendar-check style="font-size:13px;color:#0284c7;" /> Tarik dari Jadwal <span class="badge" id="badgeSchedCount" style="background:#0284c7;color:#ffffff;font-size:10px;margin-left:3px;display:none;padding:2px 5px;border-radius:6px;">0</span>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-primary btn-add-mat" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
-                            <x-lucide-plus style="font-size:13px;" /> Material
-                        </button>
-                        <button type="button" class="btn btn-sm btn-warning btn-add-tool" id="btnAddTool" onclick="addRow('tool')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;color:#ffffff;background:#d97706;border-color:#b45309;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(217,119,6,0.2);">
-                            <x-lucide-plus style="font-size:13px;" /> Alat
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Fast 1-Click Scheduled Import Banner --}}
-                <div id="scheduledBanner" style="display:none;margin:12px 18px 0;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:#166534;">
-                        <x-lucide-zap class="text-warning" style="font-size:16px;" />
-                        <span>Terdeteksi <strong id="scheduledBannerCount">0</strong> barang dalam jadwal rencana kedatangan.</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <button type="button" class="btn btn-sm btn-success" onclick="autoImportAllScheduled()" style="font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                            <x-lucide-check-check class="me-1" /> Tarik Semua Otomatis (Cepat)
-                        </button>
-                        <button type="button" class="btn btn-sm btn-light border" onclick="openScheduledModal()" style="font-size:11.5px;padding:5px 10px;border-radius:6px;">
-                            Pilih Satuan
-                        </button>
-                    </div>
-                </div>
-
-                <div class="table-wrap">
-                    <table class="data-table receipt-items-table mb-0" id="itemsTable">
-                        <thead>
-                            <tr>
-                                <th style="width:105px;text-align:center;">Tipe</th>
-                                <th style="min-width:240px;">Nama Barang / Item &amp; Referensi <span class="text-danger">*</span></th>
-                                <th style="width:120px;text-align:center;" title="Kuantitas yang dipesan pada Purchase Order / PO Lapangan">Qty Target (PO)</th>
-                                <th style="width:130px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Qty Masuk (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:110px;text-align:center;" title="Selisih jika barang tidak sesuai PO (misal PO 100, selisih 5, maka stok update 95)">Selisih</th>
-                                <th style="width:85px;text-align:center;">Satuan</th>
-                                <th style="width:170px;">Catatan / Keterangan</th>
-                                <th style="width:45px;text-align:center;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="itemsBody">
-                            {{-- Diisi oleh JS addRow() atau prefill AJAX dari PO / Jadwal --}}
-                        </tbody>
-                    </table>
-                </div>
-
-                {{-- Total Summary Strip --}}
-                <div class="receipt-summary-strip" style="padding:11px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;" id="totalItemCount">
-                        <span style="font-size:12px;color:#64748b;font-weight:600;">Total:</span>
-                        <span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><span id="count-all">0</span> Item</span>
-                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material">0</span> Material</span>
-                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool">0</span> Alat</span>
-                    </div>
-                    <div class="flex items-center gap-2 summary-links" style="font-size:11.5px;color:#64748b;">
-                        <x-lucide-help-circle style="font-size:13px;color:#94a3b8;" />
-                        <span>Barang belum ada di sistem?</span>
-                        <a href="{{ route('materials.create') }}" target="_blank" class="text-primary fw-600 hover:underline">+ Master Material</a>
-                        <span style="color:#cbd5e1;">•</span>
-                        <a href="{{ route('tools.create') }}" target="_blank" class="text-warning fw-600 hover:underline" style="color:#d97706 !important;">+ Master Alat</a>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── 2. Bagian Bawah: Data Sesi Penerimaan (Premium UI) ── --}}
+            {{-- ── 1. Bagian Atas: Data Sesi Penerimaan (Dokumen, Supplier, PO & Gudang) ── --}}
             <div class="card session-card">
 
                 {{-- Header --}}
@@ -1192,9 +1094,109 @@
 
                     </div>
                 </div>
+            </div>
 
-                {{-- ─── Submit Bar ─── --}}
-                <div class="submit-bar">
+            {{-- ── 2. Bagian Tengah: Rincian Barang & Alat Masuk (Full Width) ── --}}
+            <div class="card shadow-sm" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;overflow:hidden;">
+                <div class="card-header receipt-card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                    
+                    {{-- Judul & Filter Tab (Material sendiri, Alat sendiri, Semua) --}}
+                    <div class="flex items-center gap-3 flex-wrap receipt-header-title-box">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:36px;height:36px;border-radius:9px;background:#eff6ff;border:1px solid #dbeafe;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;flex-shrink:0;">
+                                <x-lucide-boxes style="font-size:17px;" />
+                            </div>
+                            <div>
+                                <span class="card-title" style="font-size:14.5px;font-weight:700;color:#0f172a;display:block;letter-spacing:-0.2px;">Rincian Barang &amp; Alat Diterima</span>
+                                <span style="font-size:11px;color:#64748b;display:block;margin-top:1px;">Pencatatan fisik kuantitas barang masuk &amp; pengecekan selisih</span>
+                            </div>
+                        </div>
+
+                        {{-- Filter Tabs (Material sendiri & Alat sendiri) --}}
+                        <div class="flex items-center gap-1 receipt-tabs-wrap">
+                            <button type="button" class="btn-tab-filter active" id="tab-btn-all" onclick="filterItemsTab('all')">
+                                <x-lucide-list style="font-size:12px;" /> Semua <span class="count-badge" id="count-all">0</span>
+                            </button>
+                            <button type="button" class="btn-tab-filter" id="tab-btn-material" onclick="filterItemsTab('material')">
+                                <x-lucide-package style="font-size:12px;color:#2563eb;" /> Material <span class="count-badge" id="count-material">0</span>
+                            </button>
+                            <button type="button" class="btn-tab-filter" id="tab-btn-tool" onclick="filterItemsTab('tool')">
+                                <x-lucide-hard-hat style="font-size:12px;color:#d97706;" /> Alat <span class="count-badge" id="count-tool">0</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Tombol Tambah & Tarik dari Jadwal --}}
+                    <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
+                        <button type="button" class="btn btn-sm btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s ease;">
+                            <x-lucide-calendar-check style="font-size:13px;color:#0284c7;" /> Tarik dari Jadwal <span class="badge" id="badgeSchedCount" style="background:#0284c7;color:#ffffff;font-size:10px;margin-left:3px;display:none;padding:2px 5px;border-radius:6px;">0</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary btn-add-mat" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
+                            <x-lucide-plus style="font-size:13px;" /> Material
+                        </button>
+                        <button type="button" class="btn btn-sm btn-warning btn-add-tool" id="btnAddTool" onclick="addRow('tool')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;color:#ffffff;background:#d97706;border-color:#b45309;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(217,119,6,0.2);">
+                            <x-lucide-plus style="font-size:13px;" /> Alat
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Fast 1-Click Scheduled Import Banner --}}
+                <div id="scheduledBanner" style="display:none;margin:12px 18px 0;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:#166534;">
+                        <x-lucide-zap class="text-warning" style="font-size:16px;" />
+                        <span>Terdeteksi <strong id="scheduledBannerCount">0</strong> barang dalam jadwal rencana kedatangan.</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button type="button" class="btn btn-sm btn-success" onclick="autoImportAllScheduled()" style="font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                            <x-lucide-check-check class="me-1" /> Tarik Semua Otomatis (Cepat)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light border" onclick="openScheduledModal()" style="font-size:11.5px;padding:5px 10px;border-radius:6px;">
+                            Pilih Satuan
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="data-table receipt-items-table mb-0" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width:105px;text-align:center;">Tipe</th>
+                                <th style="min-width:240px;">Nama Barang / Item &amp; Referensi <span class="text-danger">*</span></th>
+                                <th style="width:120px;text-align:center;" title="Kuantitas yang dipesan pada Purchase Order / PO Lapangan">Qty Target (PO)</th>
+                                <th style="width:130px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Qty Masuk (Stok) <span class="text-danger">*</span></th>
+                                <th style="width:110px;text-align:center;" title="Selisih jika barang tidak sesuai PO (misal PO 100, selisih 5, maka stok update 95)">Selisih</th>
+                                <th style="width:85px;text-align:center;">Satuan</th>
+                                <th style="width:170px;">Catatan / Keterangan</th>
+                                <th style="width:45px;text-align:center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            {{-- Diisi oleh JS addRow() atau prefill AJAX dari PO / Jadwal --}}
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Total Summary Strip --}}
+                <div class="receipt-summary-strip" style="padding:11px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;" id="totalItemCount">
+                        <span style="font-size:12px;color:#64748b;font-weight:600;">Total:</span>
+                        <span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><span id="count-all">0</span> Item</span>
+                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material">0</span> Material</span>
+                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool">0</span> Alat</span>
+                    </div>
+                    <div class="flex items-center gap-2 summary-links" style="font-size:11.5px;color:#64748b;">
+                        <x-lucide-help-circle style="font-size:13px;color:#94a3b8;" />
+                        <span>Barang belum ada di sistem?</span>
+                        <a href="{{ route('materials.create') }}" target="_blank" class="text-primary fw-600 hover:underline">+ Master Material</a>
+                        <span style="color:#cbd5e1;">•</span>
+                        <a href="{{ route('tools.create') }}" target="_blank" class="text-warning fw-600 hover:underline" style="color:#d97706 !important;">+ Master Alat</a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── 3. Bagian Bawah: Form Action Bar (Batal & Simpan Perubahan) ── --}}
+            <div class="card shadow-sm" style="border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;overflow:hidden;">
+                <div class="submit-bar" style="border-top:none;">
                     <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;">
                         <x-lucide-shield style="color:#94a3b8;" />
                         Perubahan akan disimpan ke <strong style="color:#334155;">Draft</strong> — stok belum berubah hingga dikonfirmasi

@@ -300,14 +300,7 @@
                                 <x-lucide-rotate-ccw class="me-1" /> Reset
                             </button>
                         </div>
-                        <div id="manualButtonsGroup" style="display: none; gap: 8px;">
-                            <button type="button" class="btn btn-sm btn-primary" id="btnAddManualRow" onclick="addManualRow()" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
-                                <x-lucide-plus class="me-1" /> Tambah Baris
-                            </button>
-                            <button type="button" class="btn btn-sm btn-light border text-primary" id="btnAddCustomRow" onclick="addManualRow(null, '', true)" style="border-radius:6px; font-size:12px; height:32px; padding:0 12px; font-weight:600;">
-                                <x-lucide-plus class="me-1" /> Item Custom
-                            </button>
-                        </div>
+                        
                     </div>
 
                     {{-- Search Toolbar --}}
@@ -317,7 +310,7 @@
                             <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 34px; padding-left: 32px; font-size: 12px; border-radius: 6px; border-color:#cbd5e1;">
                         </div>
                         <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
-                            0 item
+                            {{ count($materialsData) }} item
                         </span>
                     </div>
 
@@ -327,8 +320,8 @@
                             <thead>
                                 <tr style="background:#fafafa; border-bottom:1px solid #e2e8f0; font-size:10.5px; text-transform:uppercase; letter-spacing:0.3px; color:#64748b;">
                                     <th style="text-align: left; padding:7px 12px;">Nama Material</th>
-                                    <th style="text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">Tiba / Pakai</th>
-                                    <th style="text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
+                                    <th style="display:none; text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">Tiba / Pakai</th>
+                                    <th style="display:none; text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
                                     <th style="text-align: center; width: 100px; padding:7px 8px;">Stok Gudang</th>
                                     <th style="text-align: center; width: 140px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
                                     <th style="text-align: left; padding:7px 12px;">Keterangan</th>
@@ -336,12 +329,80 @@
                                 </tr>
                             </thead>
                             <tbody id="itemsBody">
-                                {{-- Dynamic rows --}}
+                                @forelse($materialsData as $idx => $m)
+                                <tr id="row-{{ $idx }}" style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 12px; position: relative;">
+                                        <div style="position: relative;">
+                                            <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;" />
+                                            <input type="text" 
+                                                   id="row-{{ $idx }}-name-input" 
+                                                   class="form-control material-autocomplete-input" 
+                                                   placeholder="Ketik nama material..." 
+                                                   autocomplete="off"
+                                                   value="{{ $m['name'] }}"
+                                                   oninput="onMaterialSearchInput(this, 'row-{{ $idx }}')"
+                                                   onfocus="onMaterialSearchFocus(this, 'row-{{ $idx }}')"
+                                                   onkeydown="onMaterialSearchKeydown(event, 'row-{{ $idx }}')"
+                                                   style="height: 38px; padding-left: 32px; padding-right: 28px; font-size: 12.5px; border-radius: 6px;">
+                                            <button type="button" 
+                                                    id="row-{{ $idx }}-clear-btn" 
+                                                    onclick="clearMaterialRowSelection('row-{{ $idx }}')" 
+                                                    style="display: block; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" 
+                                                    title="Hapus / Ganti">
+                                                <x-lucide-x />
+                                            </button>
+                                        </div>
+
+                                        <input type="hidden" name="items[{{ $idx }}][material_id]" id="row-{{ $idx }}-material-id" value="{{ $m['id'] }}">
+                                        <input type="hidden" name="items[{{ $idx }}][custom_item_name]" id="row-{{ $idx }}-custom-name" value="">
+                                        <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" id="row-{{ $idx }}-custom-unit" value="">
+
+                                        <div id="row-{{ $idx }}-custom-badge-wrap" style="display: none; align-items: center; gap: 6px; margin-top: 5px;">
+                                            <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:2px 6px;">Non-Master</span>
+                                            <input type="text" id="row-{{ $idx }}-custom-unit-input" class="form-control" placeholder="Satuan (cth: sak, m3)" value="unit" style="height: 26px; font-size: 11px; padding: 2px 6px; width: 110px; border-radius: 4px;" oninput="onCustomUnitChange(this, 'row-{{ $idx }}')">
+                                        </div>
+                                    </td>
+                                    <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">
+                                        -
+                                    </td>
+                                    <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">
+                                        -
+                                    </td>
+                                    <td style="padding: 8px 8px; text-align: center;">
+                                        <span class="badge" id="row-{{ $idx }}-stock" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 5px; {{ (float)$m['stock'] > 0 ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;' }}">
+                                            {{ $m['stock'] }} {{ $m['unit'] }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 8px 8px;">
+                                        <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
+                                            <input type="number" name="items[{{ $idx }}][quantity]" id="row-{{ $idx }}-qty" class="form-control qty-input text-center"
+                                                   step="0.01" min="0" placeholder="0" value="" oninput="validateManualQty('row-{{ $idx }}')"
+                                                   style="width: 85px;" max="{{ $m['stock'] }}">
+                                            <span class="text-muted fw-600" id="row-{{ $idx }}-unit" style="font-size: 11.5px; min-width: 24px;">{{ $m['unit'] }}</span>
+                                        </div>
+                                        <div id="row-{{ $idx }}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 3px; text-align:center; display: none;"></div>
+                                    </td>
+                                    <td style="padding: 8px 10px;">
+                                        <input type="text" name="items[{{ $idx }}][notes]" class="form-control" placeholder="Keterangan keperluan...">
+                                    </td>
+                                    <td style="padding: 8px 6px; text-align: center;">
+                                        <button type="button" class="btn-delete-row" onclick="removeRow('row-{{ $idx }}')" title="Hapus Baris">
+                                            <x-lucide-trash-2 />
+                                        </button>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr id="empty-stock-row">
+                                    <td colspan="5" class="text-center p-4 text-muted" style="font-size: 12.5px;">
+                                        Belum ada stok material yang tercatat di gudang ini. Klik <strong>+ Tambah Baris</strong> atau <strong>+ Item Custom</strong> di atas untuk mencatat pengeluaran.
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
 
                         {{-- Empty State jika belum pilih MR --}}
-                        <div id="mrEmptyState" style="padding: 28px 16px; text-align: center; color: #94a3b8;">
+                        <div id="mrEmptyState" style="display:none; padding: 28px 16px; text-align: center; color: #94a3b8;">
                             <x-lucide-inbox style="font-size: 24px; color: #cbd5e1; margin-bottom: 6px; display:inline-block;" />
                             <div style="font-size: 12.5px; font-weight: 600; color: #475569;">Belum Ada PO Lapangan (MR) yang Dipilih</div>
                             <div style="font-size: 11px; margin-top: 2px;">Silakan pilih nomor MR pada bagian <strong>Metode & Surat PO Lapangan</strong> di atas.</div>
@@ -361,14 +422,13 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            {{-- ── Kanan: Informasi Bon Pengeluaran ── --}}
+            {{-- ── Kanan: Informasi Pengeluaran ── --}}
             <div class="card sidebar-sticky-bon" id="bonSidebarCard" style="position:sticky; top:20px; border:1px solid #e2e8f0; border-radius:10px; background:#ffffff; box-shadow:0 2px 6px -1px rgba(0,0,0,0.03); overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; gap:6px;">
                     <x-lucide-receipt class="text-primary" style="font-size:13px;" />
-                    <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Informasi Bon Pengeluaran</span>
+                    <span class="card-title" style="font-size:13px; font-weight:700; color:#1e293b;">Informasi Pengeluaran</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
 
@@ -481,7 +541,9 @@
         const materialsGrouped = @json($materialsGrouped ?? []);
         const selectedWarehouseId = {{ $selectedWarehouse?->id ?? 'null' }};
         let currentMode = 'manual';
-        let rowIndex = 0;
+        let isLoadingMR = false;
+        let mrItemsCache = [];
+        let rowIndex = {{ count($materialsData) }};
 
         function scrollToBonForm() {
             const sidebar = document.getElementById('bonSidebarCard');
@@ -581,6 +643,9 @@
                     const defaultQty = remaining > 0 && stock > 0 ? Math.min(remaining, stock) : (remaining > 0 ? remaining : 0);
                     const isFullyFulfilled = remaining <= 0;
                     const isOutOfStock = stock <= 0;
+                    const fulfilledBadgeHtml = isFullyFulfilled 
+                        ? `<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><x-lucide-check /> Terpenuhi</span>` 
+                        : '';
 
                     const tr = document.createElement('tr');
                     tr.id = rowId;
@@ -595,7 +660,7 @@
                                 <code style="font-size: 10.5px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #475569;">${item.code}</code>
                                 <span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; border-radius:3px; padding:1px 5px;">${item.category}</span>
                             </div>
-                            ${isFullyFulfilled ? '<span class="badge" style="font-size: 10px; background:#f1f5f9; color:#64748b; margin-top:2px; display:inline-block;"><x-lucide-check /> Terpenuhi</span>' : ''}
+                            ${fulfilledBadgeHtml}
                         </td>
                         <td style="padding: 7px 8px; text-align: center;">
                             <div class="fw-700" style="font-size: 12px; color:#1e293b;">Tiba: ${item.qty_received} ${item.unit}</div>
@@ -778,7 +843,7 @@
                 <td style="padding: 8px 8px;">
                     <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
                         <input type="number" name="items[${rowIndex}][quantity]" id="${rowId}-qty" class="form-control qty-input text-center"
-                               step="0.01" min="0.01" placeholder="0" value="${qtyVal}" required oninput="validateManualQty('${rowId}')"
+                               step="0.01" min="0" placeholder="0" value="${qtyVal}" oninput="validateManualQty('${rowId}')"
                                style="width: 85px;" ${initialId ? `max="${initialStock}"` : ''}>
                         <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 24px;">${initialUnit}</span>
                     </div>
@@ -1222,8 +1287,10 @@
             let visibleCount = 0;
 
             rows.forEach(tr => {
-                const text = tr.innerText.toLowerCase();
-                const match = !q || text.includes(q);
+                const nameInput = tr.querySelector('.material-autocomplete-input');
+                const nameText = nameInput ? nameInput.value.toLowerCase() : '';
+                const fullText = (tr.innerText + ' ' + nameText).toLowerCase();
+                const match = !q || fullText.includes(q);
                 tr.style.display = match ? '' : 'none';
                 if (match) {
                     visibleCount++;
@@ -1333,14 +1400,25 @@
             });
 
             if (!hasValidQty) {
+                rows.forEach(tr => tr.querySelectorAll('input, select').forEach(inp => inp.disabled = false));
                 alert('Silakan masukkan jumlah pengeluaran minimal 1 material dengan kuantitas lebih dari 0.');
                 return false;
             }
 
             if (hasError) {
+                rows.forEach(tr => tr.querySelectorAll('input, select').forEach(inp => inp.disabled = false));
                 alert('Terdapat input kuantitas yang melebihi kuota persetujuan MR atau stok fisik gudang. Mohon perbaiki baris bertanda merah.');
                 return false;
             }
+
+            // Saring dan nonaktifkan baris yang kuantitasnya kosong / 0 agar tidak dikirim ke server
+            rows.forEach(tr => {
+                const qtyInput = tr.querySelector('.qty-input');
+                const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+                if (qty <= 0) {
+                    tr.querySelectorAll('input, select').forEach(inp => inp.disabled = true);
+                }
+            });
 
             const btn = form.querySelector('button[type=submit]');
             if (btn) {
@@ -1355,8 +1433,28 @@
             updateTableSummary();
         });
 
-        // Initialize on DOM ready
-        document.addEventListener('DOMContentLoaded', function() {
+        const oldItems = @json(old('items') ?? []);
+
+        function initMaterialRows() {
+            // 1. Pulihkan data submit sebelumnya jika ada (misal redirect error validasi)
+            if (oldItems && oldItems.length > 0) {
+                const tbody = document.getElementById('itemsBody');
+                tbody.innerHTML = '';
+                rowIndex = 0;
+                oldItems.forEach(it => {
+                    if (it.is_custom || it.custom_item_name) {
+                        addManualRow(null, it.quantity || '', true, it.custom_item_name || '');
+                    } else if (it.material_id) {
+                        addManualRow(it.material_id, it.quantity || '');
+                    }
+                });
+            }
+
+            updateTableSummary();
+        }
+
+        // Initialize on DOM ready or immediate if already loaded
+        function setupPage() {
             const manualButtonsGroup = document.getElementById('manualButtonsGroup');
             const mrQuickActions = document.getElementById('mrQuickActions');
             const mrCols = document.querySelectorAll('.col-mr-only');
@@ -1365,9 +1463,14 @@
             if (mrQuickActions) mrQuickActions.style.display = 'none';
             if (emptyState) emptyState.style.display = 'none';
             mrCols.forEach(el => el.style.display = 'none');
-            addManualRow();
-            updateTableSummary();
-        });
+            initMaterialRows();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupPage);
+        } else {
+            setupPage();
+        }
     </script>
     @endpush
 </x-app-layout>

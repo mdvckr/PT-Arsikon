@@ -321,12 +321,13 @@
             border-radius: 4px;
             text-transform: uppercase;
         }
-        .st-draft     { background: #f1f5f9; color: #475569; }
-        .st-approved  { background: #dbeafe; color: #1d4ed8; }
-        .st-sent      { background: #fef3c7; color: #b45309; }
-        .st-received  { background: #dcfce7; color: #15803d; }
-        .st-cancelled { background: #fee2e2; color: #b91c1c; }
-        .st-closed    { background: #e2e8f0; color: #334155; }
+        .st-draft            { background: #f1f5f9; color: #475569; }
+        .st-approved         { background: #dbeafe; color: #1d4ed8; }
+        .st-sent             { background: #fef3c7; color: #b45309; }
+        .st-partial_received { background: #e0f2fe; color: #0369a1; }
+        .st-received         { background: #dcfce7; color: #15803d; }
+        .st-cancelled        { background: #fee2e2; color: #b91c1c; }
+        .st-closed           { background: #e2e8f0; color: #334155; }
 
         /* FOOTER ROW TOTAL */
         .po-table tfoot tr td {
@@ -538,12 +539,13 @@
                         $linkedMr = $order->materialRequest ?? $order->items->firstWhere('material_request_item_id', '!=', null)?->materialRequestItem?->materialRequest;
                         $projectTarget = $order->project?->name ?? $order->deliveryWarehouse?->name ?? '-';
                         $statusClass = match($order->status) {
-                            'approved' => 'st-approved',
-                            'sent'     => 'st-sent',
-                            'received' => 'st-received',
-                            'cancelled'=> 'st-cancelled',
-                            'closed'   => 'st-closed',
-                            default    => 'st-draft'
+                            'approved'         => 'st-approved',
+                            'sent'             => 'st-sent',
+                            'partial_received' => 'st-partial_received',
+                            'received'         => 'st-received',
+                            'cancelled'        => 'st-cancelled',
+                            'closed'           => 'st-closed',
+                            default            => 'st-draft'
                         };
                     @endphp
                     <tr>

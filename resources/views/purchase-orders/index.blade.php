@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Purchase Order (PO)</x-slot>
+    <x-slot name="title">Purchase Order</x-slot>
 
     @php
         $canViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
@@ -7,8 +7,8 @@
 
     <div class="flex justify-between items-center mb-4">
         <div>
-            <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Purchase Order (PO)</h2>
-            <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian ke Supplier</p>
+            <h2 style="font-size:20px;font-weight:700;color:#0f172a;">Purchase Order</h2>
+            <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian</p>
         </div>
         <div class="flex gap-2 items-center">
             <a href="{{ route('purchase-orders.weekly-report') }}" 
@@ -45,11 +45,13 @@
             <form method="GET" class="flex flex-wrap gap-2 items-center ms-auto">
                 <input type="date" name="date" value="{{ request('date') }}" class="form-control" style="width:160px;padding:6px 10px;font-size:13px;" title="Filter Tanggal Tertentu" onchange="this.form.submit()">
 
-                <select name="status" class="form-control" style="width:160px;padding:6px 10px;font-size:13px;" onchange="this.form.submit()">
+                <select name="status" class="form-control" style="width:175px;padding:6px 10px;font-size:13px;" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
+                    <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Menunggu Pengiriman</option>
+                    <option value="partial_received" {{ request('status') === 'partial_received' ? 'selected' : '' }}>Sebagian Diterima</option>
+                    <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Selesai</option>
                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Dikirim ke Supplier</option>
-                    <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Diterima</option>
+                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                 </select>
 

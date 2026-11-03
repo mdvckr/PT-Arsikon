@@ -188,6 +188,14 @@ class MaterialUsageController extends Controller
     {
         $this->authorize('create material usages');
 
+        // Saring item yang memiliki kuantitas > 0 agar baris stok yang tidak diisi kuantitasnya tidak memicu error validasi
+        if ($request->has('items') && is_array($request->items)) {
+            $filteredItems = array_values(array_filter($request->items, function ($it) {
+                return isset($it['quantity']) && is_numeric($it['quantity']) && (float) $it['quantity'] > 0;
+            }));
+            $request->merge(['items' => $filteredItems]);
+        }
+
         $validated = $request->validate([
             'warehouse_id'        => 'required|exists:warehouses,id',
             'material_request_id' => 'nullable|exists:material_requests,id',

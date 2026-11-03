@@ -19,6 +19,8 @@ class ToolAssignment extends Model
         'from_warehouse_id',
         'to_warehouse_id',
         'assigned_to_user_id',
+        'borrower_user_id',
+        'is_representative',
         'borrower_name',
         'borrower_phone',
         'location_name',
@@ -42,12 +44,18 @@ class ToolAssignment extends Model
     ];
 
     protected $casts = [
+        'is_representative'  => 'boolean',
         'assigned_at'        => 'datetime',
         'expected_return_at' => 'date',
         'returned_at'        => 'datetime',
         'approved_at'        => 'datetime',
         'cancelled_at'       => 'datetime',
     ];
+
+    public function borrowerUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'borrower_user_id');
+    }
 
     public function toolLoan(): BelongsTo
     {

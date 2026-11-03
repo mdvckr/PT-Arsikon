@@ -219,7 +219,7 @@
             <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
                 <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
                     <x-lucide-info class="text-primary" style="font-size:13px;" />
-                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Bon Pengeluaran</span>
+                    <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Pengeluaran</span>
                 </div>
                 <div class="card-body" style="padding:12px 14px;">
                     @php

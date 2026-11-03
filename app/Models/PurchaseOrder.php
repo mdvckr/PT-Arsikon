@@ -274,9 +274,9 @@ class PurchaseOrder extends Model
         return match($this->status) {
             'draft'            => 'Draft',
             'approved'         => 'Disetujui',
-            'sent'             => 'Dikirim ke Supplier',
+            'sent'             => 'Menunggu Pengiriman',
             'partial_received' => 'Sebagian Diterima',
-            'received'         => 'Diterima',
+            'received'         => 'Selesai',
             'cancelled'        => 'Dibatalkan',
             'closed'           => 'Ditutup (Short Close)',
             default            => $this->status,
@@ -287,8 +287,8 @@ class PurchaseOrder extends Model
         return match($this->status) {
             'draft'            => 'gray',
             'approved'         => 'info',
-            'sent'             => 'primary',
-            'partial_received' => 'warning',
+            'sent'             => 'warning',
+            'partial_received' => 'primary',
             'received'         => 'success',
             'cancelled'        => 'danger',
             'closed'           => 'secondary',

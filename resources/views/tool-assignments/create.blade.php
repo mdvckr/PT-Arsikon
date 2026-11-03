@@ -327,22 +327,64 @@
                     <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Peminjaman</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
+                    {{-- Mode Pekerja: Manual Lapangan vs Akun Karyawan --}}
+                    <div class="mb-2">
+                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:4px;display:block;">
+                            Tipe Peminjam Fisik
+                        </label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:3px;border-radius:6px;margin-bottom:8px;">
+                            <button type="button" id="tabWorkerManual" onclick="switchBorrowerType('manual')" style="border:none;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,0.05);transition:all .15s;">
+                                Pekerja Lapangan
+                            </button>
+                            <button type="button" id="tabWorkerUser" onclick="switchBorrowerType('user')" style="border:none;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:#64748b;transition:all .15s;">
+                                Karyawan Terdaftar
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Dropdown Akun Karyawan (Tampil saat tab user aktif) --}}
+                    <div id="userSelectContainer" class="mb-2" style="display:none;">
+                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
+                            Pilih Akun Karyawan
+                        </label>
+                        <select name="borrower_user_id" id="borrowerUserSelect" class="form-control" onchange="onWorkerUserSelected(this)">
+                            <option value="">-- Pilih Nama Karyawan --</option>
+                            @foreach($users as $u)
+                            <option value="{{ $u->id }}" data-name="{{ $u->name }}" data-phone="{{ $u->phone ?? '' }}" {{ old('borrower_user_id') == $u->id ? 'selected' : '' }}>
+                                {{ $u->name }} ({{ $u->roles->first()?->name ?? 'Karyawan' }})
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Nama Peminjam / Worker <span class="text-danger">*</span>
+                            Nama Pekerja / Peminjam <span class="text-danger">*</span>
                         </label>
-                        <input type="text" name="borrower_name" class="form-control"
-                               placeholder="Contoh: Pak Joko"
+                        <input type="text" name="borrower_name" id="borrowerNameInput" class="form-control"
+                               placeholder="Contoh: Pak Slamet (Tukang Besi)"
                                value="{{ old('borrower_name') }}" required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
                             No. Telepon / Kontak <span class="text-muted" style="font-weight:400;">(Opsional)</span>
                         </label>
-                        <input type="text" name="borrower_phone" class="form-control"
+                        <input type="text" name="borrower_phone" id="borrowerPhoneInput" class="form-control"
                                placeholder="Contoh: 0812-3456-7890"
                                value="{{ old('borrower_phone') }}">
                     </div>
+
+                    {{-- Indikator Mewakili Pekerja --}}
+                    <div class="mb-2" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin:0;">
+                            <input type="checkbox" name="is_representative" value="1" {{ old('is_representative', '1') == '1' ? 'checked' : '' }} style="margin-top:2px;accent-color:#2563eb;width:15px;height:15px;">
+                            <div>
+                                <span style="font-size:11.5px;font-weight:600;color:#1e293b;display:block;">Mewakili Pekerja Lapangan</span>
+                                <span style="font-size:10.5px;color:#64748b;display:block;line-height:1.3;">Admin Gudang mencatat peminjaman alat fisik atas nama pekerja/mandor.</span>
+                            </div>
+                        </label>
+                    </div>
+
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
                             Lokasi Pekerjaan / Site <span class="text-danger">*</span>
@@ -381,9 +423,27 @@
                         </label>
                         <textarea name="purpose" class="form-control" rows="2" placeholder="Catatan keperluan pekerjaan...">{{ old('purpose') }}</textarea>
                     </div>
+
+                    {{-- Self-Approval Box untuk Admin yang Berwenang --}}
+                    @can('approve tool assignments')
+                    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin:0;">
+                            <input type="checkbox" name="self_approve" id="selfApproveToggle" value="1" checked onchange="updateSubmitButtonLabel()" style="margin-top:3px;accent-color:#16a34a;width:16px;height:16px;">
+                            <div>
+                                <span style="font-size:12px;font-weight:700;color:#166534;display:block;">Langsung Setujui & Keluarkan Alat</span>
+                                <span style="font-size:11px;color:#15803d;display:block;line-height:1.35;">Alat langsung aktif & stok gudang otomatis terpotong saat disimpan (Self-Approval mandiri).</span>
+                            </div>
+                        </label>
+                    </div>
+                    @endcan
+
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <button type="submit" id="btnSubmitAssignment" class="btn btn-primary w-full" style="justify-content:center;padding:9px;font-size:13px;font-weight:600;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
+                            @can('approve tool assignments')
+                            <x-lucide-check-circle class="me-1" /> Simpan & Setujui Langsung
+                            @else
                             <x-lucide-send class="me-1" /> Ajukan Peminjaman
+                            @endcan
                         </button>
                         <a href="{{ route('tool-assignments.index') }}" class="btn btn-light border w-full text-center" style="justify-content:center;padding:7px;font-size:12px;font-weight:500;border-radius:6px;color:#64748b;">
                             Batal
@@ -481,6 +541,70 @@
                 formCard.scrollIntoView({ behavior: 'smooth' });
                 const borrowerInput = formCard.querySelector('input[name="borrower_name"]');
                 if (borrowerInput) setTimeout(() => borrowerInput.focus(), 300);
+            }
+        }
+
+        function switchBorrowerType(type) {
+            const tabManual = document.getElementById('tabWorkerManual');
+            const tabUser   = document.getElementById('tabWorkerUser');
+            const userContainer = document.getElementById('userSelectContainer');
+            const nameInput = document.getElementById('borrowerNameInput');
+            const phoneInput = document.getElementById('borrowerPhoneInput');
+            const userSelect = document.getElementById('borrowerUserSelect');
+
+            if (type === 'user') {
+                tabUser.style.background = '#ffffff';
+                tabUser.style.color = '#0f172a';
+                tabUser.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                tabManual.style.background = 'transparent';
+                tabManual.style.color = '#64748b';
+                tabManual.style.boxShadow = 'none';
+
+                userContainer.style.display = 'block';
+                onWorkerUserSelected(userSelect);
+            } else {
+                tabManual.style.background = '#ffffff';
+                tabManual.style.color = '#0f172a';
+                tabManual.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                tabUser.style.background = 'transparent';
+                tabUser.style.color = '#64748b';
+                tabUser.style.boxShadow = 'none';
+
+                userContainer.style.display = 'none';
+                if (userSelect) userSelect.value = '';
+                nameInput.readOnly = false;
+            }
+        }
+
+        function onWorkerUserSelected(select) {
+            if (!select) return;
+            const option = select.options[select.selectedIndex];
+            const nameInput = document.getElementById('borrowerNameInput');
+            const phoneInput = document.getElementById('borrowerPhoneInput');
+
+            if (option && option.value) {
+                const userName = option.getAttribute('data-name');
+                const userPhone = option.getAttribute('data-phone');
+                if (userName && nameInput) {
+                    nameInput.value = userName;
+                }
+                if (userPhone && phoneInput) {
+                    phoneInput.value = userPhone;
+                }
+            }
+        }
+
+        function updateSubmitButtonLabel() {
+            const toggle = document.getElementById('selfApproveToggle');
+            const btn = document.getElementById('btnSubmitAssignment');
+            if (!btn) return;
+
+            if (toggle && toggle.checked) {
+                btn.innerHTML = `<x-lucide-check-circle class="me-1" /> Simpan & Setujui Langsung`;
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-primary');
+            } else {
+                btn.innerHTML = `<x-lucide-send class="me-1" /> Ajukan Peminjaman`;
             }
         }
 

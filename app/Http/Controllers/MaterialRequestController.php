@@ -18,7 +18,7 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('view material requests');
 
-        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse.project', 'approvedBy', 'items.category']);
+        $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse.project', 'approvedBy', 'items.category', 'purchaseOrders']);
 
         if (auth()->user()->hasRole(['Admin Gudang Proyek', 'Karyawan'])) {
             $query->where('requested_by_user_id', auth()->id());

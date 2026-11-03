@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Material;
 use App\Models\MaterialRequest;
 use App\Models\MaterialRequestItem;
+use App\Models\Tool;
 use App\Models\User;
 use App\Models\Warehouse;
 use Exception;
@@ -66,7 +68,7 @@ class MaterialRequestService
                     if (fmod($qtyRequested, 1) != 0) {
                         throw new Exception("Kuantitas alat pada permintaan material harus berupa bilangan bulat.");
                     }
-                    $tool = \App\Models\Tool::findOrFail($item['tool_id']);
+                    $tool = Tool::findOrFail($item['tool_id']);
                     MaterialRequestItem::create([
                         'material_request_id' => $request->id,
                         'item_type'           => 'tool',
@@ -95,7 +97,7 @@ class MaterialRequestService
 
                     $customCategoryId = null;
                     if (!empty($item['category_id'])) {
-                        $cat = \App\Models\Category::find($item['category_id']);
+                        $cat = Category::find($item['category_id']);
                         if (!$cat) {
                             throw new Exception("Kategori custom tidak valid.");
                         }
@@ -255,7 +257,7 @@ class MaterialRequestService
 
                     $customCategoryId = null;
                     if (!empty($item['category_id'])) {
-                        $cat = \App\Models\Category::find($item['category_id']);
+                        $cat = Category::find($item['category_id']);
                         if (!$cat) {
                             throw new Exception("Kategori custom tidak valid.");
                         }

@@ -153,9 +153,28 @@
                                     @foreach($categories as $cat)
                                     <option value="{{ $cat->id }}" {{ old('category_id', $tool->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                                     @endforeach
-                                    <option value="__new__">✚ Kategori Baru...</option>
+                                    <option value="__new__" {{ old('category_id') === '__new__' || (!old('category_id') && old('new_category')) ? 'selected' : '' }}>✚ Kategori Baru...</option>
                                 </select>
                                 @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+                                {{-- Input Kategori Baru (Langsung Muncul Tepat di Bawah Dropdown) --}}
+                                <div id="new_category_wrap" style="display:none;margin-top:8px;">
+                                    <div style="position:relative;">
+                                        <input type="text" name="new_category" id="new_category" value="{{ old('new_category') }}" 
+                                               class="form-control @error('new_category') is-invalid @enderror" 
+                                               placeholder="Ketik nama kategori baru di sini..." 
+                                               style="height:38px;border-radius:6px;background:#f0f9ff;border:1.5px solid #0284c7;font-size:13px;padding-right:32px;" 
+                                               oninput="syncSummaryPreview()">
+                                        <button type="button" onclick="cancelNewCategory()" title="Batal tambah kategori baru" 
+                                                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;padding:2px;display:flex;align-items:center;">
+                                            <x-lucide-x style="font-size:14px;" />
+                                        </button>
+                                    </div>
+                                    <div style="font-size:11px;color:#0284c7;margin-top:4px;font-weight:500;">
+                                        ✚ Kategori baru otomatis dibuat saat alat disimpan.
+                                    </div>
+                                    @error('new_category')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                </div>
                             </div>
 
                             {{-- Dropdown 2: Kelompok Alat (Unified Autocomplete Datalist) --}}
@@ -189,13 +208,6 @@
                                        oninput="onTypeChange(); syncSummaryPreview();" style="height:38px;border-radius:6px;font-size:13px;">
                                 @error('size')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
-                        </div>
-
-                        {{-- Kategori Baru (kondisional) --}}
-                        <div id="new_category_wrap" style="display:none;margin-top:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-                            <label class="form-label" for="new_category" style="font-size:12px;font-weight:700;color:#334155;">Nama Kategori Baru</label>
-                            <input type="text" name="new_category" id="new_category" value="{{ old('new_category') }}" class="form-control" placeholder="Contoh: Alat Berat, Power Tools, Surveying" style="height:38px;border-radius:6px;background:#fff;max-width:360px;" oninput="syncSummaryPreview()">
-                            <div class="text-muted" style="font-size:11px;margin-top:4px;">Kategori baru akan otomatis dibuat bila belum ada.</div>
                         </div>
                     </div>
                 </div>
@@ -481,16 +493,51 @@
             });
         }
 
+        function cancelNewCategory() {
+            var select = document.getElementById('category_select');
+            var newCatInput = document.getElementById('new_category');
+            if (newCatInput) newCatInput.value = '';
+            if (select) {
+                select.value = '';
+                select.setAttribute('required', 'required');
+            }
+            onCategoryChange();
+            syncSummaryPreview();
+        }
+
         function onCategoryChange() {
             var select = document.getElementById('category_select');
+            if (!select) return;
             var catId = select.value;
             var wrap = document.getElementById('new_category_wrap');
+            var newCatInput = document.getElementById('new_category');
             var isNew = catId === '__new__';
-            wrap.style.display = isNew ? 'block' : 'none';
+
+            if (wrap) {
+                wrap.style.display = isNew ? 'block' : 'none';
+            }
+
+            if (isNew) {
+                select.removeAttribute('required');
+                if (newCatInput) {
+                    newCatInput.setAttribute('required', 'required');
+                    setTimeout(function() { newCatInput.focus(); }, 50);
+                }
+            } else {
+                select.setAttribute('required', 'required');
+                if (newCatInput) {
+                    newCatInput.removeAttribute('required');
+                }
+            }
+
             updateDeleteCategoryBtn();
-            if (isNew) { document.getElementById('new_category').focus(); return; }
+
+            if (isNew) {
+                return;
+            }
 
             var datalist = document.getElementById('type_datalist');
+            if (!datalist) return;
             datalist.innerHTML = '';
             var hint = document.getElementById('type_hint');
 
@@ -501,11 +548,11 @@
                     opt.value = g;
                     datalist.appendChild(opt);
                 });
-                hint.innerHTML = '<span style="color:#16a34a;"><x-lucide-circle-check style="font-size:10px;" /> ' + groups.length + ' kelompok alat tersedia (klik/ketik)</span>';
+                if (hint) hint.innerHTML = '<span style="color:#16a34a;">✔ ' + groups.length + ' kelompok alat tersedia (klik/ketik)</span>';
             } else if (catId) {
-                hint.innerHTML = '<span style="color:#64748b;">Belum ada kelompok di kategori ini. Ketik nama kelompok alat baru.</span>';
+                if (hint) hint.innerHTML = '<span style="color:#64748b;">Belum ada kelompok di kategori ini. Ketik nama kelompok alat baru.</span>';
             } else {
-                hint.textContent = 'Ketik kelompok baru atau pilih rekomendasi';
+                if (hint) hint.textContent = 'Ketik kelompok baru atau pilih rekomendasi';
             }
         }
 
@@ -547,7 +594,15 @@
         function prepareSubmit() {
             recalculateTotalStock();
             var cat = document.getElementById('category_select');
-            if (cat && cat.value === '__new__') cat.value = '';
+            var newCat = document.getElementById('new_category');
+            if (cat && cat.value === '__new__') {
+                cat.removeAttribute('required');
+            }
+            if (newCat && newCat.value.trim() !== '') {
+                if (cat) {
+                    cat.removeAttribute('required');
+                }
+            }
             return true;
         }
 

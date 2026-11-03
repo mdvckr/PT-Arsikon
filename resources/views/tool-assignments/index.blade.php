@@ -169,9 +169,14 @@
                         </td>
                         <td style="padding:8px 10px;">
                             <div class="fw-600" style="color:#0f172a;font-size:12px;">{{ $loan->borrower_name }}</div>
-                            @if($loan->borrower_phone)
-                            <div class="text-muted" style="font-size:10.5px;"><x-lucide-phone style="font-size:8.5px;" /> {{ $loan->borrower_phone }}</div>
-                            @endif
+                            <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;">
+                                @if($loan->is_representative)
+                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9.5px;padding:0 5px;border-radius:4px;font-weight:600;">Mewakili Pekerja</span>
+                                @endif
+                                @if($loan->borrower_phone)
+                                <span class="text-muted" style="font-size:10.5px;"><x-lucide-phone style="font-size:8.5px;" /> {{ $loan->borrower_phone }}</span>
+                                @endif
+                            </div>
                         </td>
                         <td style="padding:8px 10px;">
                             <div style="font-size:12px;">{{ $loan->location_name }}</div>

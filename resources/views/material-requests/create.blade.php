@@ -319,22 +319,20 @@
                     <table class="data-table mb-0" id="customRequestTable" style="font-size:12px;width:100%;min-width:1020px;">
                         <thead>
                             <tr style="background:#fef3c7;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:#92400e;">
-                                <th style="min-width:160px;padding:8px 8px;white-space:nowrap;">Nama Barang (Manual) <span class="text-danger">*</span></th>
-                                <th style="width:105px;padding:8px 8px;white-space:nowrap;">Item <span class="text-danger">*</span></th>
-                                <th style="min-width:110px;padding:8px 8px;white-space:nowrap;">Spesifikasi</th>
-                                <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kategori</th>
-                                <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Kelompok</th>
-                                <th style="width:65px;text-align:center;padding:8px 6px;white-space:nowrap;">Satuan</th>
-                                <th style="width:75px;text-align:center;padding:8px 6px;white-space:nowrap;">Jumlah <span class="text-danger">*</span></th>
+                                <th style="min-width:180px;padding:8px 8px;white-space:nowrap;">Nama Barang (Manual) <span class="text-danger">*</span></th>
+                                <th style="width:110px;padding:8px 8px;white-space:nowrap;">Item <span class="text-danger">*</span></th>
+                                <th style="min-width:130px;padding:8px 8px;white-space:nowrap;">Spesifikasi / Ukuran</th>
+                                <th style="width:75px;text-align:center;padding:8px 6px;white-space:nowrap;">Satuan</th>
+                                <th style="width:85px;text-align:center;padding:8px 6px;white-space:nowrap;">Jumlah <span class="text-danger">*</span></th>
                                 <th style="width:120px;text-align:center;padding:8px 6px;white-space:nowrap;">Tgl Pakai</th>
-                                <th style="min-width:130px;padding:8px 8px;white-space:nowrap;">Alokasi / Zona</th>
-                                <th style="min-width:120px;padding:8px 8px;white-space:nowrap;">Catatan</th>
+                                <th style="min-width:140px;padding:8px 8px;white-space:nowrap;">Alokasi / Zona</th>
+                                <th style="min-width:130px;padding:8px 8px;white-space:nowrap;">Catatan</th>
                                 <th style="width:40px;text-align:center;padding:8px 4px;"></th>
                             </tr>
                         </thead>
                         <tbody id="customRequestBody">
                             <tr id="customRequestEmpty" style="{{ old('custom_items') && count(old('custom_items')) > 0 ? 'display:none;' : '' }}">
-                                <td colspan="11" class="text-center text-muted" style="padding:16px;font-size:12px;">
+                                <td colspan="9" class="text-center text-muted" style="padding:16px;font-size:12px;">
                                     <x-lucide-package-open style="font-size:20px;color:#cbd5e1;display:inline-block;margin-bottom:4px;" />
                                     Belum ada barang manual ditambahkan. Klik tombol <strong>"Tambah Baris Manual"</strong> jika diperlukan.
                                 </td>
@@ -352,40 +350,7 @@
                                         </select>
                                     </td>
                                     <td style="padding:6px 6px;">
-                                        <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
-                                    </td>
-                                    <td style="padding:6px 6px;">
-                                        <select name="custom_items[{{ $cIdx }}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
-                                            @php $curItemType = $cItem['item_type'] ?? 'material'; @endphp
-                                            @if($curItemType === 'tool')
-                                                <option value="">Alat Khusus (Otomatis)</option>
-                                                @foreach($toolCategories as $cat)
-                                                    <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                                @endforeach
-                                            @else
-                                                <option value="">Material Khusus (Otomatis)</option>
-                                                @foreach($materialCategories as $cat)
-                                                    <option value="{{ $cat->id }}" {{ ($cItem['category_id'] ?? '') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </td>
-                                    <td style="padding:6px 6px;">
-                                        <div class="custom-type-group-wrap" data-index="{{ $cIdx }}" style="width:100%;">
-                                            <div class="type-select-wrap">
-                                                <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;">
-                                                    <option value="">— Pilih Kelompok —</option>
-                                                    <option value="__new__">✚ Ketik Kelompok Baru...</option>
-                                                </select>
-                                            </div>
-                                            <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
-                                                <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;padding:4px 6px;flex:1;min-width:0;">
-                                                <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
-                                                    <x-lucide-list />
-                                                </button>
-                                            </div>
-                                            <input type="hidden" name="custom_items[{{ $cIdx }}][type]" class="custom-type-hidden" value="{{ $cItem['type'] ?? '' }}">
-                                        </div>
+                                        <input type="text" name="custom_items[{{ $cIdx }}][spec]" class="form-control" value="{{ $cItem['spec'] ?? '' }}" placeholder="mis. fc'=25 MPa, 10mm" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                                     </td>
                                     <td style="padding:6px 6px;">
                                         <input type="text" name="custom_items[{{ $cIdx }}][unit]" class="form-control" value="{{ $cItem['unit'] ?? 'pcs' }}" placeholder="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 4px;">
@@ -974,30 +939,7 @@
                     </select>
                 </td>
                 <td style="padding:6px 6px;">
-                    <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
-                </td>
-                <td style="padding:6px 6px;">
-                    <select name="custom_items[${customReqIndex}][category_id]" class="form-control custom-item-cat-select" onchange="onCustomCategoryChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;cursor:pointer;">
-                        <option value="">Material Khusus (Otomatis)</option>
-                        ${materialCategoryOptions}
-                    </select>
-                </td>
-                <td style="padding:6px 6px;">
-                    <div class="custom-type-group-wrap" data-index="${customReqIndex}" style="width:100%;">
-                        <div class="type-select-wrap">
-                            <select class="form-control custom-type-select" onchange="onCustomTypeSelectChange(this)" style="font-size:11.5px;height:32px;border-radius:6px;width:100%;padding:2px 6px;">
-                                <option value="">— Pilih Kelompok —</option>
-                                <option value="__new__">✚ Ketik Kelompok Baru...</option>
-                            </select>
-                        </div>
-                        <div class="type-manual-wrap" style="display:none;align-items:center;gap:4px;">
-                            <input type="text" class="form-control custom-type-manual-input" placeholder="Ketik kelompok..." oninput="onCustomTypeManualInput(this)" style="font-size:11.5px;height:32px;border-radius:6px;padding:4px 6px;flex:1;min-width:0;">
-                            <button type="button" class="btn btn-light border" onclick="toggleCustomTypeMode(this, false)" title="Kembali ke dropdown pilihan" style="height:32px;padding:0 8px;font-size:11px;color:#64748b;border-radius:6px;flex-shrink:0;">
-                                <x-lucide-list />
-                            </button>
-                        </div>
-                        <input type="hidden" name="custom_items[${customReqIndex}][type]" class="custom-type-hidden" value="">
-                    </div>
+                    <input type="text" name="custom_items[${customReqIndex}][spec]" class="form-control" placeholder="mis. fc'=25 MPa, 10mm" style="font-size:12px;height:32px;border-radius:6px;padding:4px 8px;width:100%;">
                 </td>
                 <td style="padding:6px 6px;">
                     <input type="text" name="custom_items[${customReqIndex}][unit]" class="form-control" placeholder="pcs" value="pcs" style="text-align:center;font-size:12px;height:32px;border-radius:6px;width:100%;padding:4px 4px;">
@@ -1021,7 +963,6 @@
                 </td>
             `;
             tbody.appendChild(tr);
-            initCustomTypeOptions(tr, false);
             customReqIndex++;
             calculateTotal();
         }

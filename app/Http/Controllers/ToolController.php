@@ -169,6 +169,10 @@ class ToolController extends Controller
             $request->merge(['code' => strtoupper(trim($request->code))]);
         }
 
+        if ($request->input('category_id') === '__new__') {
+            $request->merge(['category_id' => null]);
+        }
+
         if ($request->has('manual_items') && is_array($request->manual_items)) {
             $filteredManual = [];
             foreach ($request->manual_items as $item) {
@@ -190,8 +194,8 @@ class ToolController extends Controller
             'type'            => 'nullable|string|max:255',
             'size'            => 'nullable|string|max:255',
             'brand'           => 'nullable|string|max:100',
-            'category_id'     => 'nullable|integer|exists:categories,id',
-            'new_category'    => 'nullable|string|max:255',
+            'category_id'     => 'required_without:new_category|nullable|integer|exists:categories,id',
+            'new_category'    => 'required_without:category_id|nullable|string|max:255',
             'warehouse_id'    => 'required|integer|exists:warehouses,id',
             'notes'           => 'nullable|string',
             'stock_total'     => 'nullable|integer|min:0',
@@ -201,6 +205,9 @@ class ToolController extends Controller
             'manual_items.*.name'  => 'required|string|max:255',
             'manual_items.*.stock_total' => 'nullable|integer|min:0',
             'manual_items.*.warehouse_id' => 'required|integer|exists:warehouses,id',
+        ], [
+            'category_id.required_without'  => 'Kategori alat wajib dipilih atau masukkan nama kategori baru.',
+            'new_category.required_without' => 'Nama kategori baru wajib diisi jika belum memilih kategori yang ada.',
         ]);
 
         // Validate warehouse access
@@ -398,6 +405,10 @@ class ToolController extends Controller
             $request->merge(['code' => strtoupper(trim($request->code))]);
         }
 
+        if ($request->input('category_id') === '__new__') {
+            $request->merge(['category_id' => null]);
+        }
+
         $validated = $request->validate([
             'code'              => "required|string|max:50|unique:tools,code,{$tool->id}",
             'name'              => 'required|string|max:255',
@@ -438,7 +449,7 @@ class ToolController extends Controller
             'type'                 => $typeVal,
             'size'                 => $validated['size'] ?? null,
             'brand'                => $validated['brand'] ?? null,
-            'category_id'          => $category?->id,
+            'category_id'          => $category?->id ?? $tool->category_id,
             'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
             'notes'                => $validated['notes'] ?? null,
             // T13: incoming_stages dibekukan (read-only, tidak ditimpa saat edit)
@@ -446,7 +457,7 @@ class ToolController extends Controller
         ]);
 
         // Sync aggregate stock snapshot to the active warehouse inventory
-        $warehouse = $validated['warehouse_id']
+        $warehouse = !empty($validated['warehouse_id'])
             ? Warehouse::find($validated['warehouse_id'])
             : $tool->currentWarehouse;
 

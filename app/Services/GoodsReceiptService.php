@@ -141,7 +141,8 @@ class GoodsReceiptService
                     }
                 }
 
-                $qtyMissing = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
+                $qtyMissing    = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
+                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? null) : null;
                 $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
 
                 // T9: GR tidak menerima unit_price dari request untuk item ber-PO. Selalu salin dari PO item.
@@ -156,11 +157,15 @@ class GoodsReceiptService
                     'stage_reference'          => $item['stage_reference'] ?? null,
                     'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
                     'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'custom_sku'               => !empty($item['custom_sku']) ? trim($item['custom_sku']) : null,
+                    'category_id'              => !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                    'custom_type'              => !empty($item['custom_type']) ? trim($item['custom_type']) : null,
                     'qty_shipped'              => $qtyShipped,
                     'qty_received'             => $qtyReceived,
                     'qty_damaged'              => $qtyDamaged,
                     'qty_missing'              => $qtyMissing,
                     'missing_status'           => $missingStatus,
+                    'missing_action'           => $missingAction,
                     'condition'                => $item['condition'] ?? 'good',
                     'unit_price'               => $unitPrice,
                     'notes'                    => $item['notes'] ?? null,
@@ -240,6 +245,7 @@ class GoodsReceiptService
                 }
 
                 $qtyMissing    = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
+                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? null) : null;
                 $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
                 $unitPrice     = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
 
@@ -252,11 +258,15 @@ class GoodsReceiptService
                     'stage_reference'          => $item['stage_reference'] ?? null,
                     'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
                     'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'custom_sku'               => !empty($item['custom_sku']) ? trim($item['custom_sku']) : null,
+                    'category_id'              => !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                    'custom_type'              => !empty($item['custom_type']) ? trim($item['custom_type']) : null,
                     'qty_shipped'              => $qtyShipped,
                     'qty_received'             => $qtyReceived,
                     'qty_damaged'              => $qtyDamaged,
                     'qty_missing'              => $qtyMissing,
                     'missing_status'           => $missingStatus,
+                    'missing_action'           => $missingAction,
                     'condition'                => $item['condition'] ?? 'good',
                     'unit_price'               => $unitPrice,
                     'notes'                    => $item['notes'] ?? null,
@@ -311,15 +321,17 @@ class GoodsReceiptService
                         $mrItem = $item->materialRequestItem ?? $poItem?->materialRequestItem;
                         $customName = $poItem?->custom_item_name ?? $mrItem?->custom_item_name;
                         if (!empty($customName)) {
-                            $catId = $mrItem?->category_id;
+                            $catId = $item->category_id ?: ($mrItem?->category_id ?? null);
                             $spec  = $mrItem?->specification;
-                            $typeName = $mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null);
+                            $typeName = $item->custom_type ?: ($mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null));
+                            $customSku = $item->custom_sku ?: null;
                             $tool = Tool::autoRegisterCustom(
                                 $customName,
                                 $catId,
                                 $typeName,
                                 null,
-                                $spec
+                                $spec,
+                                $customSku
                             );
                             $item->update(['tool_id' => $tool->id]);
                             if ($poItem) {
@@ -361,16 +373,18 @@ class GoodsReceiptService
                         $customUnit = $poItem?->custom_item_unit ?? ($poItem?->unit ?? ($mrItem?->custom_item_unit ?? 'unit'));
 
                         if (!empty($customName)) {
-                            $catId = $mrItem?->category_id;
+                            $catId = $item->category_id ?: ($mrItem?->category_id ?? null);
                             $spec  = $mrItem?->specification;
-                            $typeName = $mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null);
+                            $typeName = $item->custom_type ?: ($mrItem?->custom_item_type ?: ($poItem?->custom_item_type ?? null));
+                            $customSku = $item->custom_sku ?: null;
                             $material = Material::autoRegisterCustom(
                                 $customName,
                                 $customUnit,
                                 $catId,
                                 $typeName,
                                 null,
-                                $spec
+                                $spec,
+                                $customSku
                             );
                             $item->update(['material_id' => $material->id]);
                             if ($poItem) {
@@ -407,11 +421,47 @@ class GoodsReceiptService
                         if ($poItem && (float) $item->qty_received > 0) {
                             $poItem->increment('received_qty', (float) $item->qty_received);
                         }
+
+                        // Penanganan selisih kuantitas (qty_missing)
+                        if ($poItem && (float) $item->qty_missing > 0) {
+                            $isLostAction = ($item->missing_action === 'lost');
+                            if ($isLostAction) {
+                                $poItem->increment('lost_qty', (float) $item->qty_missing);
+                                $item->update(['missing_status' => 'confirmed_lost']);
+
+                                if (\Illuminate\Support\Facades\Schema::hasTable('transit_losses')) {
+                                    $unitPrice = (float) ($poItem->unit_price ?? $item->unit_price ?? 0);
+                                    \App\Models\TransitLoss::firstOrCreate(
+                                        [
+                                            'goods_receipt_id'      => $receipt->id,
+                                            'goods_receipt_item_id' => $item->id,
+                                        ],
+                                        [
+                                            'purchase_order_id'      => $poItem->purchase_order_id,
+                                            'purchase_order_item_id' => $poItem->id,
+                                            'material_id'            => $item->material_id,
+                                            'tool_id'                => $item->tool_id,
+                                            'qty'                    => $item->qty_missing,
+                                            'lost_qty'               => $item->qty_missing,
+                                            'unit_price'             => $unitPrice,
+                                            'loss_value'             => round((float) $item->qty_missing * $unitPrice, 2),
+                                            'status'                 => 'claim_filed',
+                                            'notes'                  => $item->notes ?? 'Selisih dicatat hilang/rusak saat penerimaan barang.',
+                                            'recorded_by'            => $userId,
+                                            'approved_by'            => $userId,
+                                            'approved_at'            => now(),
+                                        ]
+                                    );
+                                }
+                            } else {
+                                $item->update(['missing_status' => 'unresolved']);
+                            }
+                        }
                     }
                 }
 
                 // T13: Sinkronisasi ke PoDeliverySchedule (menggantikan incoming_stages)
-                if ($poItem && (float) $item->qty_received > 0) {
+                if ($poItem && ((float) $item->qty_received > 0 || (float) $item->qty_missing > 0)) {
                     $schedule = null;
                     if ($item->po_delivery_schedule_id) {
                         $schedule = PoDeliverySchedule::where('id', $item->po_delivery_schedule_id)
@@ -438,7 +488,8 @@ class GoodsReceiptService
                     if ($schedule) {
                         $newReceived = (float) $schedule->received_qty + (float) $item->qty_received;
                         $schedule->received_qty = $newReceived;
-                        $schedule->status = $newReceived >= (float) $schedule->planned_qty ? 'received' : 'partial';
+                        $isLostDiscrepancy = ((float) $item->qty_missing > 0 && $item->missing_action === 'lost');
+                        $schedule->status = ($newReceived >= (float) $schedule->planned_qty || $isLostDiscrepancy) ? 'received' : 'partial';
                         $schedule->save();
                     }
                 }

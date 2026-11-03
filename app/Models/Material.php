@@ -231,6 +231,7 @@ class Material extends Model
                 'planned_qty'    => $qtyPlanned,
                 'received_qty'   => $qtyReceived,
                 'remaining_qty'  => $remaining,
+                'lost_qty'       => (float) $poItem->lost_qty,
                 'date'           => $stageDate,
                 'status'         => $status,
                 'status_label'   => $statusLabel,
@@ -339,7 +340,8 @@ class Material extends Model
         ?int $categoryId = null,
         ?string $typeName = null,
         ?string $brand = null,
-        ?string $size = null
+        ?string $size = null,
+        ?string $customSku = null
     ): Material {
         $cleanName = trim($name);
         $material = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
@@ -401,11 +403,18 @@ class Material extends Model
         }
 
         // Generate unique SKU
-        $maxId = (int) (static::max('id') ?? 0) + 1;
-        $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
-        while (static::where('sku', $sku)->exists()) {
-            $maxId++;
+        if (!empty($customSku)) {
+            $sku = strtoupper(trim($customSku));
+            if (static::where('sku', $sku)->exists()) {
+                $sku = $sku . '-' . rand(10, 99);
+            }
+        } else {
+            $maxId = (int) (static::max('id') ?? 0) + 1;
             $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+            while (static::where('sku', $sku)->exists()) {
+                $maxId++;
+                $sku = 'MAT-AUTO-' . str_pad((string)$maxId, 4, '0', STR_PAD_LEFT);
+            }
         }
 
         return static::create([

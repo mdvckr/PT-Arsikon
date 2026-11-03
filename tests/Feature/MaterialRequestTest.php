@@ -167,4 +167,30 @@ class MaterialRequestTest extends TestCase
         $redirectResponse->assertRedirect(route('material-requests.show', $standardOnlyMr));
         $redirectResponse->assertSessionHas('error');
     }
+
+    public function test_admin_can_approve_material_request_with_custom_items_without_class_not_found_error(): void
+    {
+        $request = $this->requestService->createRequest(
+            $this->projectWarehouse,
+            null,
+            $this->projectUser,
+            [
+                [
+                    'custom_item_name' => 'Kawat Las Khusus 2.6mm',
+                    'custom_item_unit' => 'kg',
+                    'item_type'        => 'material',
+                    'qty_requested'    => 15,
+                ],
+            ],
+            true
+        );
+
+        $response = $this->actingAs($this->adminUser)->post(route('material-requests.approve', $request));
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('success');
+
+        $request->refresh();
+        $this->assertEquals('approved', $request->status);
+        $this->assertEquals($this->adminUser->id, $request->approved_by_user_id);
+    }
 }

@@ -177,8 +177,24 @@
                 </div>
                 <div class="card-body" style="padding:12px 14px;">
                     <div class="info-row">
-                        <span class="info-label">Nama Peminjam</span>
-                        <span class="info-val" style="color:#0f172a;">{{ $toolLoan->borrower_name }}</span>
+                        <span class="info-label">Peminjam Fisik</span>
+                        <div class="info-val" style="color:#0f172a;display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                            <span>{{ $toolLoan->borrower_name }}</span>
+                            @if($toolLoan->borrowerUser)
+                            <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-size:10px;padding:1px 6px;border-radius:4px;">Akun Karyawan</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status Pengajuan</span>
+                        <div class="info-val" style="display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                            @if($toolLoan->is_representative || ($toolLoan->borrower_name && strcasecmp(trim($toolLoan->borrower_name), trim($toolLoan->assignedBy?->name ?? '')) !== 0))
+                            <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">Mewakili Pekerja</span>
+                            @else
+                            <span class="badge" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;font-size:10px;padding:1px 6px;border-radius:4px;">Peminjam Mandiri</span>
+                            @endif
+                            <span style="font-size:11px;font-weight:500;color:#64748b;">(Dicatat: {{ $toolLoan->assignedBy?->name ?? '-' }})</span>
+                        </div>
                     </div>
                     <div class="info-row">
                         <span class="info-label">No. Telepon / HP</span>
@@ -362,18 +378,24 @@
         {{-- Right Panel: Action / Approval / Return / Cancellation Cards --}}
         <div style="display:flex;flex-direction:column;gap:14px;">
 
-            {{-- 1. Pending Approval by Central Admin --}}
+            {{-- 1. Pending Approval Card --}}
             @if($toolLoan->status === 'pending')
                 @can('approve tool assignments')
                 <div class="card" style="border:1px solid #fde68a;border-radius:10px;background:#fffbeb;box-shadow:0 2px 6px -1px rgba(245,158,11,0.06);overflow:hidden;">
                     <div class="card-header" style="background:#fef3c7;border-bottom:1px solid #fde68a;padding:10px 14px;display:flex;align-items:center;gap:6px;">
                         <x-lucide-shield class="text-warning" style="font-size:13px;" />
-                        <span class="card-title" style="font-size:12.5px;font-weight:700;color:#92400e;">Persetujuan Admin Pusat</span>
+                        <span class="card-title" style="font-size:12.5px;font-weight:700;color:#92400e;">Persetujuan Peminjaman Alat</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
+                        @if((int)$toolLoan->assigned_by_user_id === (int)auth()->id())
+                        <div style="font-size:11px;color:#166534;background:#f0fdf4;padding:6px 10px;border-radius:6px;margin-bottom:10px;border:1px solid #bbf7d0;line-height:1.4;">
+                            <strong>Self-Approval:</strong> Anda mencatat peminjaman ini mewakili pekerja dan memiliki wewenang untuk menyetujuinya secara mandiri.
+                        </div>
+                        @else
                         <p class="text-muted mb-2" style="font-size:11.5px;line-height:1.4;color:#78350f;">
-                            Pengajuan peminjaman alat memerlukan persetujuan Admin Pusat sebelum stok alat resmi dikurangi.
+                            Pengajuan peminjaman alat dapat disetujui langsung oleh Admin Gudang Proyek maupun Admin Pusat untuk mempercepat operasional proyek.
                         </p>
+                        @endif
                         <form method="POST" action="{{ route('tool-assignments.approve', $toolLoan->id) }}" class="mb-2">
                             @csrf
                             <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12px;font-weight:600;border-radius:6px;" onclick="return confirm('Setujui pengajuan peminjaman #{{ $toolLoan->loan_number }} ini? Stok seluruh alat akan otomatis dikurangi.')">
@@ -406,9 +428,14 @@
                 </div>
             @elseif($toolLoan->approvedBy)
                 <div class="card" style="border:1px solid #e2e8f0;border-radius:10px;background:#ffffff;box-shadow:0 2px 6px -1px rgba(0,0,0,0.03);overflow:hidden;">
-                    <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;gap:6px;">
-                        <x-lucide-circle-check class="text-success" style="font-size:12px;" />
-                        <span class="card-title" style="font-size:12px;font-weight:700;color:#1e293b;">Disetujui Oleh</span>
+                    <div class="card-header" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <x-lucide-circle-check class="text-success" style="font-size:12px;" />
+                            <span class="card-title" style="font-size:12px;font-weight:700;color:#1e293b;">Disetujui Oleh</span>
+                        </div>
+                        @if((int)$toolLoan->approved_by_user_id === (int)$toolLoan->assigned_by_user_id)
+                        <span class="badge" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-size:9.5px;padding:1px 6px;border-radius:4px;font-weight:600;">Self-Approval</span>
+                        @endif
                     </div>
                     <div class="card-body" style="padding:10px 14px;">
                         <div class="info-row" style="padding:4px 0;">
@@ -419,6 +446,11 @@
                             <span class="info-label" style="width:90px;">Tanggal</span>
                             <span class="info-val">{{ $toolLoan->approved_at ? \Carbon\Carbon::parse($toolLoan->approved_at)->format('d/m/Y H:i') : '-' }}</span>
                         </div>
+                        @if((int)$toolLoan->approved_by_user_id === (int)$toolLoan->assigned_by_user_id)
+                        <div style="margin-top:6px;font-size:10.5px;color:#166534;background:#f0fdf4;padding:4px 8px;border-radius:4px;line-height:1.35;">
+                            Disetujui mandiri oleh Admin Gudang untuk mempercepat operasional pekerjaan di lapangan.
+                        </div>
+                        @endif
                     </div>
                 </div>
             @endif

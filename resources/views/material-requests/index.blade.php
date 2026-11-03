@@ -214,11 +214,15 @@
                             @elseif($req->status === 'submitted')
                                 <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-clock class="me-1" style="font-size:9px;" />Menunggu</span>
                             @elseif($req->status === 'approved')
-                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check class="me-1" style="font-size:9px;" />Disetujui</span>
+                                @if($req->purchaseOrders && $req->purchaseOrders->isNotEmpty())
+                                    <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;" title="PO Vendor sudah terbit, menunggu kedatangan barang"><x-lucide-clock class="me-1" style="font-size:9px;" />Menunggu Kiriman</span>
+                                @else
+                                    <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check class="me-1" style="font-size:9px;" />Disetujui</span>
+                                @endif
                             @elseif($req->status === 'partially_fulfilled')
                                 <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-truck class="me-1" style="font-size:9px;" />Sebagian</span>
                             @elseif($req->status === 'fulfilled')
-                                <span class="badge" style="background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check-check class="me-1" style="font-size:9px;" />Terpenuhi</span>
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-check-check class="me-1" style="font-size:9px;" />Selesai</span>
                             @elseif($req->status === 'rejected')
                                 <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10.5px;padding:2px 7px;border-radius:12px;font-weight:600;white-space:nowrap;"><x-lucide-x class="me-1" style="font-size:9px;" />Ditolak</span>
                             @elseif($req->status === 'cancelled')

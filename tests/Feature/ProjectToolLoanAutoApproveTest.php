@@ -172,6 +172,7 @@ class ProjectToolLoanAutoApproveTest extends TestCase
         $this->assertEquals(0, $inv->stock_borrowed);
 
         // Admin Pusat kemudian menyetujui pengajuan
+        $this->flushSession();
         $approveResponse = $this->actingAs($this->adminPusat)
             ->post(route('tool-assignments.approve', $loan->id));
 

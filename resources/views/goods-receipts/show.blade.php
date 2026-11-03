@@ -188,7 +188,7 @@
                                 $qty      = (float) $item->qty_received;
                                 $itemName = $item->item_name;
                                 $itemCode = $item->item_code;
-                                $categoryName = $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Umum');
+                                $categoryName = $item->category?->name ?? ($isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Umum'));
                                 $unitName = $item->item_unit;
                             @endphp
                             <tr>

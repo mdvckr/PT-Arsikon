@@ -154,4 +154,66 @@ class MasterDataTest extends TestCase
         $this->assertEquals('Bahan Perekat & Adukan', $material->category->name);
         $this->assertEquals('Zak', $material->unit->name);
     }
+
+    public function test_can_create_tool_with_new_category(): void
+    {
+        $admin = \App\Models\User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
+        $warehouse = \App\Models\Warehouse::where('is_central', true)->firstOrFail();
+
+        $response = $this->actingAs($admin)->post(route('tools.store'), [
+            'code'         => 'TOOL-NEWCAT-001',
+            'name'         => 'Theodolite Digital Laser',
+            'type'         => 'Theodolite',
+            'brand'        => 'Topcon',
+            'category_id'  => '__new__',
+            'new_category' => 'Alat Ukur & Surveying',
+            'warehouse_id' => $warehouse->id,
+            'stock_total'  => 5,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('tools.index'));
+
+        $newCategory = Category::where('name', 'Alat Ukur & Surveying')->where('type', 'tool')->first();
+        $this->assertNotNull($newCategory);
+
+        $tool = Tool::where('code', 'TOOL-NEWCAT-001')->first();
+        $this->assertNotNull($tool);
+        $this->assertEquals($newCategory->id, $tool->category_id);
+        $this->assertEquals('Alat Ukur & Surveying', $tool->category->name);
+        $this->assertEquals(5, $tool->stock_total);
+    }
+
+    public function test_can_update_tool_with_new_category(): void
+    {
+        $admin = \App\Models\User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
+        $category = Category::where('type', 'tool')->firstOrFail();
+
+        $tool = Tool::create([
+            'code'                 => 'TOOL-UPDATECAT-01',
+            'name'                 => 'Waterpass Magnetik 60cm',
+            'type'                 => 'Waterpass',
+            'category_id'          => $category->id,
+            'current_warehouse_id' => null,
+            'stock_total'          => 2,
+            'stock_available'      => 2,
+            'is_active'            => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('tools.update', $tool), [
+            'code'              => $tool->code,
+            'name'              => 'Waterpass Magnetik 60cm Pro',
+            'type'              => 'Waterpass',
+            'category_id'       => '__new__',
+            'new_category'      => 'Alat Presisi Khusus',
+            'stock_total'       => 2,
+            'stock_available'   => 2,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('tools.index'));
+
+        $tool->refresh();
+        $this->assertEquals('Alat Presisi Khusus', $tool->category->name);
+    }
 }

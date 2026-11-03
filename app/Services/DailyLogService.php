@@ -9,7 +9,9 @@ use App\Models\MaterialReturn;
 use App\Models\MaterialUsage;
 use App\Models\StockMutation;
 use App\Models\StockOpname;
+use App\Models\Tool;
 use App\Models\ToolAssignment;
+use App\Models\ToolInventory;
 use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -148,9 +150,9 @@ class DailyLogService
         $stockBalanceGrouped = $stockBalance->groupBy('category_name')->sortKeys();
 
         // 5. Tool balance (same as controller)
-        $toolInventories = \App\Models\ToolInventory::with(['tool.category'])->where('warehouse_id', $selectedWarehouse->id)->get();
+        $toolInventories = ToolInventory::with(['tool.category'])->where('warehouse_id', $selectedWarehouse->id)->get();
         $inventoryToolIds = $toolInventories->pluck('tool_id')->all();
-        $otherTools = \App\Models\Tool::with('category')->whereNotIn('id', $inventoryToolIds)->where(function ($q) use ($selectedWarehouse) {
+        $otherTools = Tool::with('category')->whereNotIn('id', $inventoryToolIds)->where(function ($q) use ($selectedWarehouse) {
             $q->where('current_warehouse_id', $selectedWarehouse->id)->orWhereHas('assignments', fn($qa) => $qa->where('from_warehouse_id', $selectedWarehouse->id));
         })->get();
         $allToolEntities = collect();

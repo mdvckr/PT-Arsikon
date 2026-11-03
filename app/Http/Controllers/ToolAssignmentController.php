@@ -127,6 +127,9 @@ class ToolAssignmentController extends Controller
 
         $validated = $request->validate([
             'quantities'         => 'required|array',
+            'borrower_user_id'   => 'nullable|exists:users,id',
+            'is_representative'  => 'nullable|boolean',
+            'self_approve'       => 'nullable|boolean',
             'borrower_name'      => 'required|string|max:255',
             'borrower_phone'     => 'nullable|string|max:50',
             'location_name'      => 'required|string|max:255',
@@ -174,14 +177,23 @@ class ToolAssignmentController extends Controller
             }
         }
 
-        // Peminjaman oleh Admin Proyek untuk alat milik proyek sendiri langsung aktif (tanpa perlu persetujuan pusat)
-        $autoApprove = $isProjectWarehouse && $isAdminProyek && $allToolsOwnedByProject && ($validToolCount > 0);
+        // Self-Approval: User berwenang (Admin Gudang Proyek / Pusat) dapat langsung menyetujui jika centang aktif,
+        // atau otomatis aktif jika alat milik proyek sendiri di gudang proyek.
+        $canApprove = $assignedBy->can('approve tool assignments');
+        if ($request->has('self_approve')) {
+            $autoApprove = $canApprove && $request->boolean('self_approve');
+        } else {
+            $autoApprove = $isProjectWarehouse && $isAdminProyek && $allToolsOwnedByProject && ($validToolCount > 0);
+        }
         $initialStatus = $autoApprove ? 'active' : 'pending';
+
+        $isRepresentative = $request->boolean('is_representative');
+        $borrowerUserId = $validated['borrower_user_id'] ?? null;
 
         $totalAssignedCount = 0;
         $toolLoan = null;
 
-        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, $autoApprove, $initialStatus, &$totalAssignedCount, &$toolLoan) {
+        DB::transaction(function () use ($validated, $warehouse, $assignedBy, $borrowerInfoNotes, $autoApprove, $initialStatus, $isRepresentative, $borrowerUserId, &$totalAssignedCount, &$toolLoan) {
             $loanNumber = ToolLoan::generateLoanNumber();
 
             $toolLoan = ToolLoan::create([
@@ -190,6 +202,8 @@ class ToolAssignmentController extends Controller
                 'assigned_by_user_id' => $assignedBy->id,
                 'approved_by_user_id' => $autoApprove ? $assignedBy->id : null,
                 'approved_at'         => $autoApprove ? now() : null,
+                'borrower_user_id'    => $borrowerUserId,
+                'is_representative'   => $isRepresentative,
                 'borrower_name'       => $validated['borrower_name'],
                 'borrower_phone'      => $validated['borrower_phone'] ?? null,
                 'location_name'       => $validated['location_name'],
@@ -225,6 +239,8 @@ class ToolAssignmentController extends Controller
                     'assigned_by_user_id' => $assignedBy->id,
                     'approved_by_user_id' => $autoApprove ? $assignedBy->id : null,
                     'approved_at'         => $autoApprove ? now() : null,
+                    'borrower_user_id'    => $borrowerUserId,
+                    'is_representative'   => $isRepresentative,
                     'borrower_name'       => $validated['borrower_name'],
                     'borrower_phone'      => $validated['borrower_phone'] ?? null,
                     'location_name'       => $validated['location_name'],
@@ -234,7 +250,7 @@ class ToolAssignmentController extends Controller
                     'notes'               => $borrowerInfoNotes,
                 ]);
 
-                // Jika auto-approve (alat milik proyek sendiri), kurangi stok tersedia langsung
+                // Jika auto-approve, kurangi stok tersedia langsung
                 if ($autoApprove) {
                     $this->toolInvService->borrow($warehouse, $tool, (int) $qty);
                 }
@@ -307,8 +323,13 @@ class ToolAssignmentController extends Controller
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat disetujui.');
         }
 
-        // T17: Pemisahan peran - penyetuju tidak boleh sama dengan pengaju
-        if ((int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
+        // Pemisahan peran: pengaju tidak boleh menyetujui jika meminjam alat untuk dirinya sendiri secara personal.
+        // Jika peminjaman dicatat mewakili pekerja lapangan atau peminjam fisik bukan user sendiri,
+        // user dengan hak approval diizinkan melakukan persetujuan mandiri (self-approval).
+        $isSelfBorrowing = ((int) $toolLoan->borrower_user_id === (int) auth()->id())
+            || (!$toolLoan->is_representative && strcasecmp(trim($toolLoan->borrower_name ?? ''), trim(auth()->user()->name)) === 0);
+
+        if (!$toolLoan->is_representative && $isSelfBorrowing && (int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
             return back()->with('error', 'Penyetuju peminjaman tidak boleh sama dengan pengaju.');
         }
 
@@ -373,8 +394,13 @@ class ToolAssignmentController extends Controller
             return back()->with('error', 'Hanya pengajuan berstatus menunggu persetujuan yang dapat ditolak.');
         }
 
-        // T17: Pemisahan peran - penolak tidak boleh sama dengan pengaju
-        if ((int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
+        // Pemisahan peran: pengaju tidak boleh menolak jika meminjam alat untuk dirinya sendiri secara personal.
+        // Jika peminjaman dicatat mewakili pekerja lapangan atau peminjam fisik bukan user sendiri,
+        // user dengan hak approval diizinkan melakukan penolakan mandiri.
+        $isSelfBorrowing = ((int) $toolLoan->borrower_user_id === (int) auth()->id())
+            || (!$toolLoan->is_representative && strcasecmp(trim($toolLoan->borrower_name ?? ''), trim(auth()->user()->name)) === 0);
+
+        if (!$toolLoan->is_representative && $isSelfBorrowing && (int) $toolLoan->assigned_by_user_id === (int) auth()->id()) {
             return back()->with('error', 'Penolak peminjaman tidak boleh sama dengan pengaju.');
         }
 
