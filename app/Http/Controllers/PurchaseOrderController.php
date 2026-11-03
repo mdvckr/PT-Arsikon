@@ -11,11 +11,14 @@ use App\Models\GoodsReceipt;
 use App\Models\Supplier;
 use App\Models\Material;
 use App\Models\PurchaseReceipt;
+use App\Exports\PurchaseOrderItemTemplateExport;
+use App\Imports\PurchaseOrderItemImport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PurchaseOrderController extends Controller
 {
@@ -397,7 +400,9 @@ class PurchaseOrderController extends Controller
                 'delivery_warehouse_id' => $deliveryWarehouseId,
                 'risk_bearer'           => $validated['risk_bearer'] ?? 'vendor',
                 'created_by'            => auth()->id(),
-                'status'                => 'draft',
+                'approved_by'           => auth()->id(),
+                'approved_at'           => now(),
+                'status'                => 'sent',
                 'order_date'            => $validated['order_date'],
                 'expected_delivery'     => $validated['expected_delivery'] ?? null,
                 'terms'                 => $validated['terms'] ?? null,
@@ -1449,6 +1454,54 @@ class PurchaseOrderController extends Controller
             return back()->with('success', 'Jadwal kedatangan PO berhasil diperbarui.');
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Download official template Excel for PO items import.
+     */
+    public function downloadItemsTemplate()
+    {
+        return Excel::download(new PurchaseOrderItemTemplateExport, 'Template_Item_PO_PT_Arsikon.xlsx');
+    }
+
+    /**
+     * Parse uploaded Excel file and return structured PO items as JSON.
+     */
+    public function importItemsExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $import = new PurchaseOrderItemImport();
+            $data = Excel::toArray($import, $file);
+
+            // Handle multiple sheets or single sheet
+            $rows = !empty($data[0]) ? $data[0] : (!empty($data) ? $data : []);
+            $items = $import->parseRows($rows);
+
+            if (empty($items)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ditemukan baris barang yang valid dalam file Excel. Pastikan nama barang dan jumlah (kuantitas) terisi dengan benar.',
+                    'items'   => [],
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil memproses ' . count($items) . ' item dari file Excel.',
+                'items'   => $items,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membaca file Excel: ' . $e->getMessage(),
+                'items'   => [],
+            ], 500);
         }
     }
 }

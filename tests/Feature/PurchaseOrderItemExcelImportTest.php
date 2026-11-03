@@ -131,4 +131,68 @@ class PurchaseOrderItemExcelImportTest extends TestCase
         $this->assertEquals('Beli di toko terdekat', $item2['notes']);
         $this->assertTrue($item2['is_custom']);
     }
+
+    public function test_admin_po_can_download_items_template(): void
+    {
+        $response = $this->actingAs($this->adminPo)
+            ->get(route('purchase-orders.template-items-excel'));
+
+        $response->assertOk();
+        $this->assertTrue(
+            str_contains((string)$response->headers->get('content-disposition'), 'attachment') ||
+            str_contains((string)$response->headers->get('content-type'), 'spreadsheet') ||
+            str_contains((string)$response->headers->get('content-type'), 'vnd.openxmlformats')
+        );
+    }
+
+    public function test_admin_po_can_import_excel_items_via_endpoint(): void
+    {
+        // Buat file CSV sederhana dengan baris header dan 2 baris item
+        $content = "Nama Barang / SKU,Jumlah (Qty),Satuan,Harga Satuan (Rp),Catatan / Keterangan\n";
+        $content .= "Semen Gresik 50kg,30,sak,68000,Cor Dak Lt 2\n";
+        $content .= "Besi Hollow 4x4,15,batang,95000,Rangka Plafon\n";
+
+        $file = UploadedFile::fake()->createWithContent('test_items.csv', $content);
+
+        $response = $this->actingAs($this->adminPo)
+            ->postJson(route('purchase-orders.import-items-excel'), [
+                'file' => $file,
+            ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'items' => [
+                '*' => [
+                    'material_id',
+                    'name',
+                    'quantity',
+                    'unit',
+                    'unit_price',
+                    'subtotal',
+                    'notes',
+                    'is_custom',
+                ]
+            ]
+        ]);
+
+        $data = $response->json();
+        $this->assertTrue($data['success']);
+        $this->assertCount(2, $data['items']);
+        $this->assertEquals($this->material->id, $data['items'][0]['material_id']);
+        $this->assertEquals('Semen Gresik 50kg', $data['items'][0]['name']);
+        $this->assertEquals(30, $data['items'][0]['quantity']);
+        $this->assertNull($data['items'][1]['material_id']);
+        $this->assertTrue($data['items'][1]['is_custom']);
+    }
+
+    public function test_import_endpoint_validates_required_file(): void
+    {
+        $response = $this->actingAs($this->adminPo)
+            ->postJson(route('purchase-orders.import-items-excel'), []);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['file']);
+    }
 }
