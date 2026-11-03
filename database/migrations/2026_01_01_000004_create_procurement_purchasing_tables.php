@@ -158,11 +158,15 @@ return new class extends Migration
             $table->string('stage_reference', 100)->nullable();
             $table->foreignId('material_id')->nullable()->constrained('materials');
             $table->foreignId('tool_id')->nullable()->constrained('tools')->nullOnDelete();
+            $table->string('custom_sku', 50)->nullable();
+            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->string('custom_type', 100)->nullable();
             $table->decimal('qty_shipped', 12, 2)->default(0.00);
             $table->decimal('qty_received', 12, 2)->default(0.00);
             $table->decimal('qty_damaged', 12, 2)->default(0.00);
             $table->decimal('qty_missing', 12, 2)->default(0.00);
             $table->enum('missing_status', ['none', 'unresolved', 'resolved', 'confirmed_lost'])->default('none');
+            $table->string('missing_action', 20)->nullable()->default('lost');
             $table->string('condition', 20)->default('good');
             $table->decimal('unit_price', 12, 2)->nullable();
             $table->text('notes')->nullable();

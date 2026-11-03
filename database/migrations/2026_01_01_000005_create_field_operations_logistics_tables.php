@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('loan_number')->unique();
             $table->foreignId('from_warehouse_id')->constrained('warehouses');
             $table->foreignId('assigned_by_user_id')->constrained('users');
+            $table->foreignId('borrower_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->boolean('is_representative')->default(false);
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->string('borrower_name');
@@ -64,6 +66,8 @@ return new class extends Migration
             $table->string('borrower_phone')->nullable();
             $table->string('location_name')->nullable();
             $table->foreignId('assigned_by_user_id')->constrained('users');
+            $table->foreignId('borrower_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->boolean('is_representative')->default(false);
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('assigned_at')->useCurrent();
