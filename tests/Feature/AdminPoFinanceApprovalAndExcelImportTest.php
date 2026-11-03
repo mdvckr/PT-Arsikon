@@ -156,4 +156,39 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
             'reference_number' => 'TOPUP-PO-001',
         ]);
     }
+
+    public function test_admin_pusat_and_owner_see_read_only_status_without_approval_buttons(): void
+    {
+        $balanceRequest = ProjectBalanceRequest::create([
+            'project_id'       => $this->project->id,
+            'requested_by'     => $this->adminPoProyek->id,
+            'request_date'     => '2026-11-03',
+            'amount'           => 350000.00,
+            'purpose'          => 'Uji UI Read-Only Manajemen',
+            'urgency'          => 'normal',
+            'signer_requester' => $this->adminPoProyek->name,
+            'status'           => 'pending',
+        ]);
+
+        // 1. Admin Pusat mengunjungi halaman payments -> status read-only, tidak ada tombol Setujui/Tolak
+        $this->flushSession();
+        $resPusat = $this->actingAs($this->adminPusat)->get(route('payments.index'));
+        $resPusat->assertOk();
+        $resPusat->assertSee('Menunggu Approval Admin PO');
+        $resPusat->assertDontSee(route('payments.approveBalanceRequest', $balanceRequest));
+
+        // 2. Owner mengunjungi halaman payments -> status read-only
+        $this->flushSession();
+        $resOwner = $this->actingAs($this->owner)->get(route('payments.index'));
+        $resOwner->assertOk();
+        $resOwner->assertSee('Menunggu Approval Admin PO');
+        $resOwner->assertDontSee(route('payments.approveBalanceRequest', $balanceRequest));
+
+        // 3. Admin PO Pusat mengunjungi halaman payments -> ada tombol Setujui dan Tolak
+        $this->flushSession();
+        $resPo = $this->actingAs($this->adminPo)->get(route('payments.index'));
+        $resPo->assertOk();
+        $resPo->assertSee(route('payments.approveBalanceRequest', $balanceRequest));
+        $resPo->assertSee('Top-Up Saldo Langsung');
+    }
 }

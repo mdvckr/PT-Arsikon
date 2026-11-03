@@ -232,7 +232,7 @@
             <div class="sign-box">
                 <div>
                     <div class="sign-label-top">Disetujui Oleh</div>
-                    <div class="sign-role">Kantor Pusat / Owner / Keuangan</div>
+                    <div class="sign-role">Admin PO Pusat / Pengadaan</div>
                 </div>
                 <div class="sign-space">
                     @if($balanceRequest->status === 'approved')

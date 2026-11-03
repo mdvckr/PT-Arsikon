@@ -263,9 +263,11 @@
                             <span class="badge" style="background:#dc2626;color:#ffffff;font-size:10.5px;margin-left:4px;padding:2px 6px;border-radius:10px;">{{ $pendingBalanceRequestsCount }}</span>
                         @endif
                     </button>
+                    @if(auth()->user()->hasAnyRole(['Admin PO', 'Super Admin']))
                     <button type="button" onclick="openTopupModal()" class="btn btn-sm" style="background:#ffffff;color:#065f46;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                         <x-lucide-circle-plus class="me-1" /> Top-Up Saldo Langsung
                     </button>
+                    @endif
                     <button type="button" onclick="openBalanceHistoryModal()" class="btn btn-sm" style="background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.3);font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;">
                         <x-lucide-list class="me-1" /> Riwayat Mutasi
                     </button>
@@ -1508,7 +1510,7 @@
                                         <x-lucide-printer class="me-1" /> Cetak
                                     </a>
                                     @if($reqItem->status === 'pending')
-                                        @if(!$isRoleAdminPOProyek)
+                                        @if(auth()->user()->hasAnyRole(['Admin PO', 'Super Admin']))
                                             <form action="{{ route('payments.approveBalanceRequest', $reqItem) }}" method="POST" class="inline" onsubmit="return confirm('Setujui permintaan saldo Rp {{ number_format($reqItem->amount, 0, ',', '.') }} untuk {{ $reqItem->project?->name }}?')">
                                                 @csrf
                                                 <button type="submit" class="btn btn-xs btn-success" title="Setujui & Top-Up Saldo">
@@ -1519,7 +1521,7 @@
                                                 <x-lucide-x class="me-1" /> Tolak
                                             </button>
                                         @else
-                                            <span class="text-muted text-xs italic">Menunggu Pusat</span>
+                                            <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;border:1px solid #bae6fd;">Menunggu Approval Admin PO</span>
                                         @endif
                                     @else
                                         <span class="text-muted text-xs">
