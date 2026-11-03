@@ -195,4 +195,30 @@ class PurchaseOrderItemExcelImportTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['file']);
     }
+
+    public function test_purchase_order_create_and_edit_views_render_excel_import_actions(): void
+    {
+        $supplier = \App\Models\Supplier::firstOrCreate(['name' => 'Supplier Test UI Excel']);
+        $warehouse = \App\Models\Warehouse::first();
+        $po = \App\Models\PurchaseOrder::create([
+            'po_number'             => 'PO-TEST-EXCEL-UI-001',
+            'supplier_id'           => $supplier->id,
+            'delivery_warehouse_id' => $warehouse->id,
+            'status'                => 'draft',
+            'order_date'            => now()->toDateString(),
+            'created_by'            => $this->adminPo->id,
+        ]);
+
+        $resCreate = $this->actingAs($this->adminPo)->get(route('purchase-orders.create'));
+        $resCreate->assertOk();
+        $resCreate->assertSee('modalImportPoExcel');
+        $resCreate->assertSee(route('purchase-orders.template-items-excel'));
+        $resCreate->assertSee('Import Excel');
+
+        $resEdit = $this->actingAs($this->adminPo)->get(route('purchase-orders.edit', $po));
+        $resEdit->assertOk();
+        $resEdit->assertSee('modalImportPoExcel');
+        $resEdit->assertSee(route('purchase-orders.template-items-excel'));
+        $resEdit->assertSee('Import Excel');
+    }
 }

@@ -191,9 +191,17 @@
                     <h3 style="font-size:16px;font-weight:600;color:#1e293b;margin-bottom:2px;">Daftar Barang yang Dipesan</h3>
                     <p class="text-muted text-xs">Ubah material, kuantitas, harga satuan, dan catatan spesifikasi untuk masing-masing item.</p>
                 </div>
-                <button type="button" class="btn btn-sm btn-secondary" onclick="addPoRow()">
-                    <x-lucide-plus class="me-1" /> Tambah Item
-                </button>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('purchase-orders.template-items-excel') }}" class="btn btn-sm btn-outline-secondary" title="Unduh Template Excel Item PO">
+                        <x-lucide-download class="me-1" /> Unduh Template
+                    </a>
+                    <button type="button" class="btn btn-sm btn-success" onclick="openImportPoExcelModal()" title="Import Rincian Item dari Excel">
+                        <x-lucide-file-spreadsheet class="me-1" /> Import Excel
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addPoRow()">
+                        <x-lucide-plus class="me-1" /> Tambah Item
+                    </button>
+                </div>
             </div>
 
             <div class="table-wrap">
@@ -651,5 +659,216 @@
 
             updateGrandTotal();
         });
+
+        function openImportPoExcelModal() {
+            const modal = document.getElementById('modalImportPoExcel');
+            if (modal) {
+                modal.style.display = 'flex';
+                const fileInput = document.getElementById('poExcelFileInput');
+                if (fileInput) fileInput.value = '';
+                const errBox = document.getElementById('poExcelErrorBox');
+                if (errBox) {
+                    errBox.style.display = 'none';
+                    errBox.textContent = '';
+                }
+            }
+        }
+
+        function closeImportPoExcelModal() {
+            const modal = document.getElementById('modalImportPoExcel');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        async function handlePoExcelUpload() {
+            const fileInput = document.getElementById('poExcelFileInput');
+            const errBox = document.getElementById('poExcelErrorBox');
+            const btnSubmit = document.getElementById('btnSubmitPoExcel');
+
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                if (errBox) {
+                    errBox.textContent = 'Silakan pilih file Excel (.xlsx / .xls / .csv) terlebih dahulu.';
+                    errBox.style.display = 'block';
+                }
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const mode = document.querySelector('input[name="po_import_mode"]:checked')?.value || 'append';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            btnSubmit.disabled = true;
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengunggah...';
+            if (errBox) errBox.style.display = 'none';
+
+            try {
+                const response = await fetch('{{ route('purchase-orders.import-items-excel') }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'Gagal mengimpor file Excel'));
+                }
+
+                const items = data.items || [];
+                if (items.length === 0) {
+                    throw new Error('Tidak ada baris item yang berhasil dibaca dari file Excel.');
+                }
+
+                const tbody = document.getElementById('po-items-tbody');
+                if (mode === 'replace') {
+                    tbody.innerHTML = '';
+                }
+
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'po-item-row';
+                    const idx = poRowIdx++;
+
+                    const isCustom = item.is_custom || !item.material_id;
+                    const matId = item.material_id || '';
+                    const customName = isCustom ? (item.name || '') : '';
+                    const unit = item.unit || 'unit';
+                    const qty = parseFloat(item.quantity) || 1;
+                    const price = parseFloat(item.unit_price) || 0;
+                    const notes = item.notes || '';
+
+                    row.innerHTML = `
+                        <td>
+                            <input type="hidden" name="items[${idx}][material_id]" class="po-material-id" value="${matId}">
+                            <input type="hidden" name="items[${idx}][material_request_item_id]" class="po-mr-item-id" value="">
+                            <input type="hidden" name="items[${idx}][custom_item_name]" class="po-custom-name" value="${customName}">
+                            <input type="hidden" name="items[${idx}][custom_item_unit]" class="po-custom-unit" value="${unit}">
+
+                            <select class="form-control po-item-select" onchange="handleItemSelect(this)" required>
+                                ${optionsTemplateHtml}
+                            </select>
+
+                            <div class="po-extra-container mt-2" style="${isCustom ? 'display:block;' : 'display:none;'}">
+                                ${isCustom ? `
+                                    <div style="background:#fefce8;border:1px solid #fef08a;border-radius:6px;padding:8px 10px;font-size:12px;">
+                                        <span class="text-amber-800 font-semibold block mb-1">
+                                            <x-lucide-pencil class="me-1" /> Item Kustom Hasil Import Excel:
+                                        </span>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Nama barang..." value="${customName}" required oninput="syncManualName(this)">
+                                            <input type="text" class="form-control form-control-sm" placeholder="Satuan..." value="${unit}" required oninput="syncManualUnit(this)">
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-1">
+                                <input type="number" step="0.01" min="0.01" name="items[${idx}][quantity]" value="${qty}" class="form-control po-qty" oninput="calcPoRow(this)" required>
+                                <span class="po-unit-badge badge badge-secondary" style="font-size:11px;white-space:nowrap;">${unit}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" step="0.01" min="0" name="items[${idx}][unit_price]" value="${price}" class="form-control po-price" oninput="calcPoRow(this)" required>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control po-subtotal" readonly style="background:#f8fafc;" value="Rp 0">
+                        </td>
+                        <td>
+                            <input type="text" name="items[${idx}][notes]" value="${notes}" class="form-control form-control-sm po-notes" placeholder="Catatan spesifikasi / item...">
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-icon" onclick="removePoRow(this)"><x-lucide-trash-2 /></button>
+                        </td>
+                    `;
+
+                    tbody.appendChild(row);
+
+                    const selectEl = row.querySelector('.po-item-select');
+                    if (!isCustom && matId) {
+                        selectEl.value = 'mat:' + matId;
+                    } else {
+                        selectEl.value = 'manual:new';
+                    }
+
+                    calcPoRow(row.querySelector('.po-qty'));
+                });
+
+                closeImportPoExcelModal();
+                alert('Berhasil mengimpor ' + items.length + ' item dari file Excel!');
+            } catch (err) {
+                if (errBox) {
+                    errBox.textContent = err.message || 'Terjadi kesalahan saat mengunggah file.';
+                    errBox.style.display = 'block';
+                }
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalText;
+            }
+        }
     </script>
+
+    {{-- Modal Import PO Items Excel --}}
+    <div id="modalImportPoExcel" class="modal" tabindex="-1" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.6);align-items:center;justify-content:center;">
+        <div class="modal-dialog" style="max-width:520px;width:92%;background:#ffffff;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);overflow:hidden;">
+            <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
+                <div class="flex items-center gap-2">
+                    <div style="width:32px;height:32px;border-radius:8px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;">
+                        <x-lucide-file-spreadsheet class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h5 style="margin:0;font-size:15px;font-weight:700;color:#0f172a;">Import Item PO dari Excel</h5>
+                        <p style="margin:0;font-size:11.5px;color:#64748b;">Mendukung format .xlsx, .xls, atau .csv</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeImportPoExcelModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;line-height:1;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <div class="alert alert-info mb-3" style="font-size:12px;padding:10px 14px;border-radius:8px;background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;">
+                    <div class="font-bold mb-1"><x-lucide-info class="inline w-3.5 h-3.5 me-1" />Petunjuk Pengisian:</div>
+                    Gunakan template resmi agar nama kolom sesuai. Kolom mencakup: <strong>Nama Barang/SKU, Jumlah (Qty), Satuan, Harga Satuan, dan Catatan</strong>.
+                    <div class="mt-1.5">
+                        <a href="{{ route('purchase-orders.template-items-excel') }}" class="font-bold text-blue-700 underline inline-flex items-center gap-1">
+                            <x-lucide-download class="w-3.5 h-3.5" /> Unduh Template Excel (.xlsx)
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-bold text-xs text-slate-700">Pilih File Spreadsheet</label>
+                    <input type="file" id="poExcelFileInput" class="form-control" accept=".xlsx,.xls,.csv" style="font-size:13px;padding:8px 12px;border-radius:8px;">
+                    <small class="text-slate-400 text-[11px] mt-1 block">Maksimal ukuran file: 5 MB.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-bold text-xs text-slate-700 mb-1 block">Opsi Pemasukan Baris:</label>
+                    <div class="space-y-1.5">
+                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="radio" name="po_import_mode" value="append" checked class="text-orange-600 focus:ring-orange-500">
+                            <span><strong>Tambahkan</strong> ke daftar item yang sudah ada</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="radio" name="po_import_mode" value="replace" class="text-orange-600 focus:ring-orange-500">
+                            <span><strong>Gantikan semua</strong> baris item saat ini</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="poExcelErrorBox" style="display:none;" class="alert alert-danger text-xs p-2 rounded-lg bg-red-50 text-red-700 border border-red-200"></div>
+            </div>
+            <div class="modal-footer" style="padding:12px 20px;border-top:1px solid #e2e8f0;background:#f8fafc;display:flex;justify-content:flex-end;gap:8px;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="closeImportPoExcelModal()">Batal</button>
+                <button type="button" id="btnSubmitPoExcel" class="btn btn-sm btn-success" onclick="handlePoExcelUpload()">
+                    <x-lucide-upload class="me-1" /> Mulai Import
+                </button>
+            </div>
+        </div>
+    </div>
 </x-app-layout>
