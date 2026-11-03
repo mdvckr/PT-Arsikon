@@ -175,7 +175,7 @@
                                 <div class="flex items-center" style="gap:8px;">
                                     <x-lucide-chevron-down class="group-chev" style="font-size:10px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true" />
                                     <span class="fw-700" style="font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#0f172a;">
-                                        {{ $category->name }}
+                                        {{ preg_replace('/^DIVISI\s+/i', '', $category->name) }}
                                     </span>
                                     <span class="text-muted" style="font-size:12px;font-weight:500;">
                                         ({{ $totalMaterials }} material)
@@ -733,6 +733,7 @@
                 var qty = parseFloat(stg.qty || 0);
                 var receivedQty = parseFloat(stg.received_qty || 0);
                 var remainingQty = parseFloat(stg.remaining_qty || 0);
+                var lostQty = parseFloat(stg.lost_qty || 0);
 
                 if (isReceived) {
                     recQty += (receivedQty > 0 ? receivedQty : qty);
@@ -758,7 +759,10 @@
                 if (isPartial) {
                     displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#1e40af;">${numberFormat(receivedQty)} / ${numberFormat(stg.planned_qty || (receivedQty + remainingQty))} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div><div style="font-size:10.5px;color:#d97706;">Sisa: ${numberFormat(remainingQty)} ${unit}</div>`;
                 } else if (isReceived) {
-                    displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#15803d;">${numberFormat(receivedQty > 0 ? receivedQty : qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>`;
+                    var lostBadge = (lostQty > 0)
+                        ? `<div style="margin-top:2px;"><span class="badge" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:600;"><i class="fas fa-circle-exclamation me-1"></i>${numberFormat(lostQty)} ${unit} Hilang/Rusak</span></div>`
+                        : '';
+                    displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#15803d;">${numberFormat(receivedQty > 0 ? receivedQty : qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>${lostBadge}`;
                 } else {
                     displayQtyHtml = `<div style="font-weight:700;font-size:13px;color:#0f172a;">${numberFormat(remainingQty > 0 ? remainingQty : qty)} <span style="font-size:11px;font-weight:normal;color:#64748b;">${unit}</span></div>`;
                 }
