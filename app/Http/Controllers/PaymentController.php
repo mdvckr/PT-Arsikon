@@ -403,15 +403,8 @@ class PaymentController extends Controller
         $user = auth()->user();
         $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
-            return back()->with('error', 'Admin PO Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Kantor Pusat / Owner.');
+            return back()->with('error', 'Admin PO Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Admin PO Pusat.');
         }
-
-        $validated = $request->validate([
-            'project_id'       => 'required|exists:projects,id',
-            'amount'           => 'required|numeric|min:1000',
-            'reference_number' => 'nullable|string|max:100',
-            'notes'            => 'nullable|string|max:500',
-        ]);
 
         $project = DB::transaction(function () use ($validated) {
             $p = Project::where('id', $validated['project_id'])->lockForUpdate()->firstOrFail();
@@ -562,8 +555,8 @@ class PaymentController extends Controller
     public function approveBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin Pusat', 'Owner', 'Super Admin', 'Admin PO'])) {
-            abort(403, 'Hanya Admin Pusat atau Owner yang berwenang menyetujui permintaan saldo kas operasional.');
+        if (!$user->hasAnyRole(['Admin PO', 'Super Admin'])) {
+            abort(403, 'Wewenang persetujuan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
         if ($balanceRequest->status !== 'pending') {
@@ -614,8 +607,8 @@ class PaymentController extends Controller
     public function rejectBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin Pusat', 'Owner', 'Super Admin', 'Admin PO'])) {
-            abort(403, 'Hanya Admin Pusat atau Owner yang berwenang menolak permintaan saldo kas.');
+        if (!$user->hasAnyRole(['Admin PO', 'Super Admin'])) {
+            abort(403, 'Wewenang penolakan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
         if ($balanceRequest->status !== 'pending') {

@@ -18,6 +18,7 @@ class ProjectBalanceRequestItemizedTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminPusat;
+    protected User $adminPo;
     protected User $adminPoProyek;
     protected Project $project;
     protected Warehouse $warehouse;
@@ -34,6 +35,12 @@ class ProjectBalanceRequestItemizedTest extends TestCase
             ['name' => 'Admin Pusat Testing', 'password' => bcrypt('Password123!')]
         );
         $this->adminPusat->syncRoles(['Admin Pusat']);
+
+        $this->adminPo = User::firstOrCreate(
+            ['email' => 'admin.po.pkl.test@arsikon.com'],
+            ['name' => 'Admin PO Pusat Testing', 'password' => bcrypt('Password123!')]
+        );
+        $this->adminPo->syncRoles(['Admin PO']);
 
         $this->project = Project::firstOrCreate(
             ['code' => 'PRJ-TEST-PKL'],
@@ -234,7 +241,7 @@ class ProjectBalanceRequestItemizedTest extends TestCase
             'status'              => 'pending',
         ]);
 
-        $response = $this->actingAs($this->adminPusat)
+        $response = $this->actingAs($this->adminPo)
             ->post(route('payments.approveBalanceRequest', $balanceRequest), [
                 'reference_number' => 'BKK-PUSAT-0099',
                 'notes'            => 'Disetujui penuh via transfer bank',
@@ -245,7 +252,7 @@ class ProjectBalanceRequestItemizedTest extends TestCase
 
         $balanceRequest->refresh();
         $this->assertEquals('approved', $balanceRequest->status);
-        $this->assertEquals($this->adminPusat->id, $balanceRequest->approved_by);
+        $this->assertEquals($this->adminPo->id, $balanceRequest->approved_by);
         $this->assertEquals('BKK-PUSAT-0099', $balanceRequest->reference_number);
 
         $this->project->refresh();
@@ -275,7 +282,7 @@ class ProjectBalanceRequestItemizedTest extends TestCase
         ]);
 
         // POST tanpa reference_number & tanpa notes (seperti klik tombol Setujui langsung di modal/tabel)
-        $response = $this->actingAs($this->adminPusat)
+        $response = $this->actingAs($this->adminPo)
             ->post(route('payments.approveBalanceRequest', $balanceRequest), []);
 
         $response->assertSessionHasNoErrors();
