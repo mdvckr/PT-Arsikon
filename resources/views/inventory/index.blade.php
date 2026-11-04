@@ -369,16 +369,19 @@
             font-weight: 600 !important;
             color: #1e293b !important;
             line-height: 1.5 !important;
-            padding: 7px 38px 7px 16px !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
-            background-position: right 14px center !important;
-            background-repeat: no-repeat !important;
-            background-size: 13px 13px !important;
+            padding: 7px 36px 7px 16px !important;
             cursor: pointer !important;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
             transition: all 0.15s ease !important;
             white-space: nowrap !important;
-            max-width: 100%;
+        }
+
+        .inv-select-warehouse {
+            min-width: 220px !important;
+        }
+
+        .inv-select-status {
+            min-width: 145px !important;
         }
 
         .inv-filter-select:hover {
@@ -671,27 +674,33 @@
                 <div class="flex items-center gap-2.5 flex-wrap">
 
                     {{-- Lokasi / Gudang --}}
-                    <select name="warehouse_id" onchange="this.form.submit()"
-                        class="inv-filter-select">
-                        @if(!empty($canViewAllWarehouses))
-                            <option value="all" {{ ($selectedWarehouseId === 'all') ? 'selected' : '' }}>
-                                Semua Lokasi
-                            </option>
-                        @endif
-                        @foreach($accessibleWarehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="relative inline-flex items-center">
+                        <select name="warehouse_id" onchange="this.form.submit()"
+                            class="inv-filter-select inv-select-warehouse">
+                            @if(!empty($canViewAllWarehouses))
+                                <option value="all" {{ ($selectedWarehouseId === 'all') ? 'selected' : '' }}>
+                                    Semua Lokasi
+                                </option>
+                            @endif
+                            @foreach($accessibleWarehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ (string)$selectedWarehouseId === (string)$wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-lucide-chevron-down class="w-3.5 h-3.5 text-slate-400 absolute right-3 pointer-events-none" />
+                    </div>
 
                     {{-- Status Level --}}
-                    <select name="stock_level" onchange="this.form.submit()"
-                        class="inv-filter-select">
-                        <option value="">Semua Status</option>
-                        <option value="low" {{ request('stock_level') === 'low' ? 'selected' : '' }}>Menipis</option>
-                        <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Kritis / Habis</option>
-                    </select>
+                    <div class="relative inline-flex items-center">
+                        <select name="stock_level" onchange="this.form.submit()"
+                            class="inv-filter-select inv-select-status">
+                            <option value="">Semua Status</option>
+                            <option value="low" {{ request('stock_level') === 'low' ? 'selected' : '' }}>Menipis</option>
+                            <option value="out" {{ request('stock_level') === 'out' ? 'selected' : '' }}>Kritis / Habis</option>
+                        </select>
+                        <x-lucide-chevron-down class="w-3.5 h-3.5 text-slate-400 absolute right-3 pointer-events-none" />
+                    </div>
 
                     {{-- Reset Button --}}
                     @if(request('search') || request('stock_level') || request('category_id') || (request()->has('warehouse_id') && request('warehouse_id') != (auth()->user()->activeWarehouse()?->id ?? 'all')))

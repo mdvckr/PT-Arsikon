@@ -1832,16 +1832,13 @@
                 $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
                 $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
                 $isRoleAdminPOProyek = auth()->user()->hasRole('Admin PO Proyek');
-                $isRoleAdminProyek = auth()->user()->hasAnyRole(['Admin Gudang Proyek', 'Admin Proyek']);
-                $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
-                    auth()->user()->can('view material requests')
-                    || auth()->user()->can('view distributions')
-                );
-                $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && request()->routeIs(['material-requests.*', 'distributions.*']);
+                $isRoleTeknis = auth()->user()->hasAnyRole(['Admin Proyek', 'Site Manager', 'Site Engineer', 'Project Manager']);
+                $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && auth()->user()->can('view material requests');
+                $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && request()->routeIs(['material-requests.*', 'daily-log.*']);
             @endphp
             @if($canTeknis)
-            <div class="nav-section" @if(!$isRoleAdminProyek) x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }" @endif>
-                @if($isRoleAdminProyek)
+            <div class="nav-section" @if(!$isRoleTeknis) x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }" @endif>
+                @if($isRoleTeknis)
                 <div style="padding: 8px 12px 4px 12px;">
                     <span class="nav-section-label">TEKNIS</span>
                 </div>
@@ -1851,25 +1848,25 @@
                     <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 @endif
-                <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
+                <div @if(!$isRoleTeknis) x-show="open" @endif class="nav-section-body">
                     @can('view material requests')
                     <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
                         <x-lucide-file-plus class="nav-icon" aria-hidden="true" /> PO Lapangan
                     </a>
                     @endcan
 
-                    @can('view distributions')
-                    <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
-                        <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
+                    @if($isRoleTeknis && $canDailyLog)
+                    <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
+                        <x-lucide-calendar-check class="nav-icon" aria-hidden="true" /> Log Harian Proyek
                     </a>
-                    @endcan
+                    @endif
                 </div>
             </div>
             @endif
 
             <!-- 2. GRUP PENGADAAN -->
             @php
-                $canPengadaan = !$isRoleAdminProyek && !$isRoleAdminPOProyek && (
+                $canPengadaan = !$isRoleTeknis && !$isRoleAdminPOProyek && (
                     (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
@@ -1966,24 +1963,24 @@
 
             <!-- 3. GRUP LOGISTIK -->
             @php
+                $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
                 $canLogistik = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
-                    auth()->user()->can('view goods receipts')
+                    auth()->user()->can('view distributions')
+                    || auth()->user()->can('view goods receipts')
                     || auth()->user()->can('view material usages')
                     || auth()->user()->can('view inventory')
-                    || auth()->user()->can('view stock opname')
                     || auth()->user()->can('view materials')
-                    || auth()->user()->can('view returns')
                     || auth()->user()->can('view tools')
                     || auth()->user()->can('view tool assignments')
-                    || $canDailyLog
+                    || ($canDailyLog && !$isRoleGudangProyek && !$isRoleTeknis)
                 );
                 $isLogistikActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
-                    request()->routeIs(['goods-receipts.*', 'material-usages.*', 'inventory.*', 'stock-opnames.*', 'materials.*', 'returns.*', 'tools.*', 'tool-assignments.*', 'daily-log.*']) || request()->routeIs('reports.mutation')
+                    request()->routeIs(['distributions.*', 'goods-receipts.*', 'material-usages.*', 'inventory.*', 'materials.*', 'tools.*', 'tool-assignments.*']) || request()->routeIs('reports.mutation')
                 );
             @endphp
             @if($canLogistik)
-            <div class="nav-section" @if(!$isRoleAdminProyek) x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }" @endif>
-                @if($isRoleAdminProyek)
+            <div class="nav-section" @if(!$isRoleGudangProyek) x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }" @endif>
+                @if($isRoleGudangProyek)
                 <div style="padding: 8px 12px 4px 12px;">
                     <span class="nav-section-label">LOGISTIK</span>
                 </div>
@@ -1993,10 +1990,16 @@
                     <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 @endif
-                <div @if(!$isRoleAdminProyek) x-show="open" @endif class="nav-section-body">
-                    @can('view tools')
-                    <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
-                        <x-lucide-wrench class="nav-icon" aria-hidden="true" /> Alat
+                <div @if(!$isRoleGudangProyek) x-show="open" @endif class="nav-section-body">
+                    @can('view distributions')
+                    <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
+                        <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
+                    </a>
+                    @endcan
+
+                    @can('view goods receipts')
+                    <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+                        <x-lucide-package-check class="nav-icon" aria-hidden="true" /> Penerimaan Barang
                     </a>
                     @endcan
 
@@ -2006,15 +2009,15 @@
                     </a>
                     @endcan
 
-                    @if($canDailyLog)
-                    <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
-                        <x-lucide-calendar-check class="nav-icon" aria-hidden="true" /> Log Harian Proyek
-                    </a>
-                    @endif
-
                     @can('view materials')
                     <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
                         <x-lucide-package class="nav-icon" aria-hidden="true" /> Material
+                    </a>
+                    @endcan
+
+                    @can('view tools')
+                    <a href="{{ route('tools.index') }}" class="nav-item {{ request()->routeIs('tools.*') ? 'active' : '' }}">
+                        <x-lucide-wrench class="nav-icon" aria-hidden="true" /> Alat
                     </a>
                     @endcan
 
@@ -2030,23 +2033,11 @@
                     </a>
                     @endcan
 
-                    @can('view goods receipts')
-                    <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                        <x-lucide-package-check class="nav-icon" aria-hidden="true" /> Penerimaan Barang
+                    @if($canDailyLog && !$isRoleGudangProyek && !$isRoleTeknis)
+                    <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
+                        <x-lucide-calendar-check class="nav-icon" aria-hidden="true" /> Log Harian Proyek
                     </a>
-                    @endcan
-
-                    @can('view returns')
-                    <a href="{{ route('returns.index') }}" class="nav-item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
-                        <x-lucide-undo-2 class="nav-icon" aria-hidden="true" /> Retur Material
-                    </a>
-                    @endcan
-
-                    @can('view stock opname')
-                    <a href="{{ route('stock-opnames.index') }}" class="nav-item {{ request()->routeIs('stock-opnames.*') ? 'active' : '' }}">
-                        <x-lucide-clipboard-check class="nav-icon" aria-hidden="true" /> Stock Opname
-                    </a>
-                    @endcan
+                    @endif
                 </div>
             </div>
             @endif

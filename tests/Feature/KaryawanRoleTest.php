@@ -25,7 +25,7 @@ class KaryawanRoleTest extends TestCase
         $this->seed(\Database\Seeders\DatabaseSeeder::class);
 
         $this->karyawan     = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
-        $this->adminProyekA = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
+        $this->adminProyekA = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
     }
 
     // Karyawan BOLEH akses Material Requests (membuat permintaan material)
@@ -151,10 +151,11 @@ class KaryawanRoleTest extends TestCase
             ->assertOk();
     }
 
-    public function test_admin_proyek_can_still_view_distributions(): void
+    public function test_admin_proyek_cannot_view_distributions(): void
     {
+        // Surat Jalan kini dipindah ke Logistik (eksklusif Admin Gudang Proyek)
         $this->actingAs($this->adminProyekA)
             ->get('/distributions')
-            ->assertOk();
+            ->assertForbidden();
     }
 }
