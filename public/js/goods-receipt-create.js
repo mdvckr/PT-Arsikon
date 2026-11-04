@@ -466,21 +466,21 @@ function addRow(type, opts) {
         + '</select>'
         + '</td>'
 
-        // Col 9: Spesifikasi / Merek
+        // Col 5: Spesifikasi / Merek
         + '<td class="col-brand" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][brand]" id="item-brand-' + idx + '" class="form-control" '
         + 'placeholder="mis. Semen Gresik 50kg" value="' + escHtml(initialBrand) + '" '
         + 'style="font-size:12px;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 5: Satuan (Input + Shared Units Datalist)
+        // Col 6: Satuan (Input + Shared Units Datalist)
         + '<td class="col-unit" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + '<input type="text" name="items[' + idx + '][custom_unit]" id="item-unit-' + idx + '" class="form-control text-center" '
         + 'list="global-units-datalist" placeholder="Satuan" value="' + escHtml(initialUnit) + '" required '
         + 'style="font-size:12px;font-weight:700;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 6: Qty Surat Jalan / Nota Vendor
+        // Col 7: Qty Surat Jalan / Nota Vendor
         + '<td class="col-shipped" style="vertical-align:top;padding-top:10px;">'
         + '<input type="number" name="items[' + idx + '][qty_shipped]" id="item-shipped-' + idx + '" class="form-control text-center shipped-input" '
         + 'value="' + initialShipped + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
@@ -489,7 +489,7 @@ function addRow(type, opts) {
         + 'style="font-weight:700;font-size:13px;color:#334155;border-radius:7px;height:38px;" title="Kuantitas yang tertera di surat jalan atau nota vendor">'
         + '</td>'
 
-        // Col 7: Diterima (Stok) *
+        // Col 8: Diterima (Stok) *
         + '<td class="col-qty" style="vertical-align:top;padding-top:10px;">'
         + '<input type="number" name="items[' + idx + '][quantity]" id="item-qty-' + idx + '" class="form-control qty-input text-center" '
         + 'value="' + initialQty + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
@@ -498,7 +498,7 @@ function addRow(type, opts) {
         + 'style="font-weight:800;font-size:13.5px;color:#1e3a8a;border:2px solid #3b82f6;border-radius:7px;box-shadow:0 1px 3px rgba(37,99,235,0.08);height:38px;" title="Kuantitas fisik diterima baik yang menambah stok gudang">'
         + '</td>'
 
-        // Col 8: Selisih & Status Tindakan
+        // Col 9: Selisih & Status Tindakan
         + '<td class="col-diff" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + '<input type="hidden" name="items[' + idx + '][qty_missing]" id="item-missing-' + idx + '" value="' + initialMissing + '">'
         + '<div id="item-diff-badge-' + idx + '" style="font-size:11px;font-weight:700;margin-bottom:3px;display:' + (initialMissing > 0 ? 'inline-block' : 'none') + ';">'
@@ -518,15 +518,14 @@ function addRow(type, opts) {
         + '</select>'
         + '</td>'
 
-
-        // Col 8: Catatan Fisik
+        // Col 10: Catatan Fisik
         + '<td class="col-notes" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][notes]" id="item-notes-' + idx + '" class="form-control" '
         + 'placeholder="Kondisi fisik..." value="' + escHtml(initialNotes) + '" '
         + 'style="font-size:12px;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 9: Aksi Hapus
+        // Col 11: Aksi Hapus
         + '<td class="col-action" style="vertical-align:top;padding-top:12px;text-align:center;">'
         + '<button type="button" class="btn-delete-row" onclick="removeRow(' + idx + ')" title="Hapus Baris" style="width:32px;height:32px;border-radius:7px;border:none;background:#fee2e2;color:#dc2626;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">'
         + '<i class="fas fa-trash-can"></i></button>'

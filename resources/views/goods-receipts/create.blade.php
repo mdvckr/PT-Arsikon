@@ -1138,20 +1138,20 @@
                     </div>
                 </div>
 
-                <div class="table-wrap">
-                    <table class="data-table receipt-items-table mb-0" id="itemsTable">
+                <div class="table-wrap" style="overflow-x:auto;">
+                    <table class="data-table receipt-items-table mb-0" id="itemsTable" style="min-width:1160px;width:100%;">
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
-                                <th style="width:80px;text-align:center;">Tipe</th>
+                                <th style="width:75px;text-align:center;">Tipe</th>
                                 <th style="width:125px;">Kode Material</th>
-                                <th style="min-width:180px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
+                                <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
                                 <th style="width:140px;">Kategori <span class="text-danger">*</span></th>
+                                <th style="width:145px;">Spesifikasi / Merek</th>
                                 <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
-                                <th style="width:140px;">Spesifikasi / Merek</th>
                                 <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
                                 <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:145px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
-                                <th style="min-width:120px;">Catatan Fisik</th>
+                                <th style="width:160px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
+                                <th style="min-width:130px;">Catatan Fisik</th>
                                 <th style="width:40px;text-align:center;"></th>
                             </tr>
                         </thead>
@@ -1168,13 +1168,6 @@
                         <span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><span id="count-all">0</span> Item</span>
                         <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material">0</span> Material</span>
                         <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool">0</span> Alat</span>
-                    </div>
-                    <div class="flex items-center gap-2 summary-links" style="font-size:11.5px;color:#64748b;">
-                        <x-lucide-help-circle style="font-size:13px;color:#94a3b8;" />
-                        <span>Barang belum ada di sistem?</span>
-                        <a href="{{ route('materials.create') }}" target="_blank" class="text-primary fw-600 hover:underline">+ Master Material</a>
-                        <span style="color:#cbd5e1;">•</span>
-                        <a href="{{ route('tools.create') }}" target="_blank" class="text-warning fw-600 hover:underline" style="color:#d97706 !important;">+ Master Alat</a>
                     </div>
                 </div>
             </div>
