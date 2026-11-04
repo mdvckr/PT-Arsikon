@@ -555,8 +555,15 @@ class GoodsReceiptController extends Controller
                     $items[$k]['quantity'] = (float) $qty;
                     $items[$k]['qty_received'] = (float) $qty;
                 }
-                if (!isset($items[$k]['qty_shipped']) && $qty !== null) {
+                if ((!isset($items[$k]['qty_shipped']) || $items[$k]['qty_shipped'] === '' || $items[$k]['qty_shipped'] === null) && $qty !== null) {
                     $items[$k]['qty_shipped'] = (float) $qty;
+                }
+                $shippedVal = isset($items[$k]['qty_shipped']) ? (float) $items[$k]['qty_shipped'] : (float) ($qty ?? 0);
+                $receivedVal = (float) ($qty ?? 0);
+                $items[$k]['qty_shipped'] = $shippedVal;
+                $items[$k]['qty_missing'] = max(0, $shippedVal - $receivedVal);
+                if ($items[$k]['qty_missing'] > 0 && empty($items[$k]['missing_action'])) {
+                    $items[$k]['missing_action'] = 'lost';
                 }
 
                 $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);
@@ -1009,8 +1016,15 @@ class GoodsReceiptController extends Controller
                     $items[$k]['quantity'] = (float) $qty;
                     $items[$k]['qty_received'] = (float) $qty;
                 }
-                if (!isset($items[$k]['qty_shipped']) && $qty !== null) {
+                if ((!isset($items[$k]['qty_shipped']) || $items[$k]['qty_shipped'] === '' || $items[$k]['qty_shipped'] === null) && $qty !== null) {
                     $items[$k]['qty_shipped'] = (float) $qty;
+                }
+                $shippedVal = isset($items[$k]['qty_shipped']) ? (float) $items[$k]['qty_shipped'] : (float) ($qty ?? 0);
+                $receivedVal = (float) ($qty ?? 0);
+                $items[$k]['qty_shipped'] = $shippedVal;
+                $items[$k]['qty_missing'] = max(0, $shippedVal - $receivedVal);
+                if ($items[$k]['qty_missing'] > 0 && empty($items[$k]['missing_action'])) {
+                    $items[$k]['missing_action'] = 'lost';
                 }
 
                 $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);

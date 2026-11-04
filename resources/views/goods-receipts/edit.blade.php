@@ -1069,13 +1069,15 @@
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
                                 <th style="width:80px;text-align:center;">Tipe</th>
-                                <th style="width:130px;">Kode Material</th>
-                                <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
-                                <th style="width:170px;">Kategori <span class="text-danger">*</span></th>
-                                <th style="width:110px;text-align:center;">Satuan <span class="text-danger">*</span></th>
-                                <th style="width:130px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Jumlah Diterima (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:160px;">Spesifikasi / Merek</th>
-                                <th style="min-width:140px;">Catatan Fisik</th>
+                                <th style="width:125px;">Kode Material</th>
+                                <th style="min-width:180px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
+                                <th style="width:140px;">Kategori <span class="text-danger">*</span></th>
+                                <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
+                                <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
+                                <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
+                                <th style="width:95px;text-align:center;" title="Selisih kurang/hilang antara Nota Vendor dengan fisik diterima">Selisih/Hilang</th>
+                                <th style="width:140px;">Spesifikasi / Merek</th>
+                                <th style="min-width:120px;">Catatan Fisik</th>
                                 <th style="width:40px;text-align:center;"></th>
                             </tr>
                         </thead>

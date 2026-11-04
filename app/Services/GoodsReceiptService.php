@@ -445,8 +445,12 @@ class GoodsReceiptService
                             'warehouse_id'   => $warehouse->id,
                             'warehouse_name' => $warehouse->name,
                             'qty'            => (float) $item->qty_received,
+                            'shipped_qty'    => (float) $item->qty_shipped,
+                            'received_qty'   => (float) $item->qty_received,
+                            'lost_qty'       => (float) $item->qty_missing,
+                            'damaged_qty'    => (float) $item->qty_damaged,
                             'date'           => $receiptDateStr,
-                            'status'         => 'received',
+                            'status'         => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0) ? 'partial' : 'received',
                             'condition'      => $item->condition,
                             'notes'          => $item->notes,
                             'created_at'     => now()->toISOString(),
@@ -520,8 +524,12 @@ class GoodsReceiptService
                                 'warehouse_id'   => $warehouse->id,
                                 'warehouse_name' => $warehouse->name,
                                 'qty'            => (float) $item->qty_received,
+                                'shipped_qty'    => (float) $item->qty_shipped,
+                                'received_qty'   => (float) $item->qty_received,
+                                'lost_qty'       => (float) $item->qty_missing,
+                                'damaged_qty'    => (float) $item->qty_damaged,
                                 'date'           => $receiptDateStr,
-                                'status'         => 'received',
+                                'status'         => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0) ? 'partial' : 'received',
                                 'condition'      => $item->condition,
                                 'notes'          => $item->notes,
                                 'created_at'     => now()->toISOString(),
@@ -535,22 +543,24 @@ class GoodsReceiptService
                         }
 
                         // Penanganan selisih kuantitas (qty_missing)
-                        if ($poItem && (float) $item->qty_missing > 0) {
-                            $isLostAction = ($item->missing_action === 'lost');
+                        if ((float) $item->qty_missing > 0) {
+                            $isLostAction = ($item->missing_action === 'lost') || (!$poItem && empty($item->missing_action));
                             if ($isLostAction) {
-                                $poItem->increment('lost_qty', (float) $item->qty_missing);
+                                if ($poItem) {
+                                    $poItem->increment('lost_qty', (float) $item->qty_missing);
+                                }
                                 $item->update(['missing_status' => 'confirmed_lost']);
 
                                 if (\Illuminate\Support\Facades\Schema::hasTable('transit_losses')) {
-                                    $unitPrice = (float) ($poItem->unit_price ?? $item->unit_price ?? 0);
+                                    $unitPrice = (float) ($poItem?->unit_price ?? $item->unit_price ?? 0);
                                     \App\Models\TransitLoss::firstOrCreate(
                                         [
                                             'goods_receipt_id'      => $receipt->id,
                                             'goods_receipt_item_id' => $item->id,
                                         ],
                                         [
-                                            'purchase_order_id'      => $poItem->purchase_order_id,
-                                            'purchase_order_item_id' => $poItem->id,
+                                            'purchase_order_id'      => $poItem?->purchase_order_id,
+                                            'purchase_order_item_id' => $poItem?->id,
                                             'material_id'            => $item->material_id,
                                             'tool_id'                => $item->tool_id,
                                             'qty'                    => $item->qty_missing,

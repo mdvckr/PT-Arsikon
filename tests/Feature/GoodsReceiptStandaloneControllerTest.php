@@ -73,7 +73,9 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('name="purchase_order_id"', false);
         $response->assertDontSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
-        $response->assertDontSee('Selisih');
+        $response->assertSee('Qty Nota / SJ');
+        $response->assertSee('Selisih/Hilang');
+        $response->assertSee('Diterima (Stok)');
         $response->assertSee('Kode Material');
     }
 
@@ -133,8 +135,9 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('name="purchase_order_id"', false);
         $response->assertDontSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
-        $response->assertDontSee('Selisih');
-        $response->assertSee('Jumlah Diterima (Stok)');
+        $response->assertSee('Qty Nota / SJ');
+        $response->assertSee('Selisih/Hilang');
+        $response->assertSee('Diterima (Stok)');
         $response->assertSee('Kategori');
         $response->assertSee('Satuan');
         $response->assertSee('Kode Material');
@@ -175,6 +178,58 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $this->assertCount(1, $gr->items);
         $this->assertEquals('Bata Merah Press Super', $gr->items->first()->item_name);
         $this->assertEquals(1000, (float) $gr->items->first()->qty_received);
+    }
+
+    public function test_direct_goods_receipt_with_discrepancy_saves_missing_qty_and_records_in_dynamic_stages(): void
+    {
+        $response = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), [
+            'warehouse_id'    => $this->warehouse->id,
+            'supplier_id'     => $this->supplier->id,
+            'received_at'     => now()->toDateString(),
+            'invoice_number'  => 'DO-VENDOR-SELISIH-01',
+            'notes'           => 'Barang ada selisih di jalan',
+            'items' => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Semen Gresik 50kg Selisih',
+                    'category_id'   => $this->category->id,
+                    'custom_unit'   => 'sak',
+                    'qty_shipped'   => 100,
+                    'quantity'      => 95,
+                    'qty_missing'   => 5,
+                    'missing_action'=> 'lost',
+                    'condition'     => 'good',
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $item = $gr->items->first();
+        $this->assertEquals(100, (float) $item->qty_shipped);
+        $this->assertEquals(95, (float) $item->qty_received);
+        $this->assertEquals(5, (float) $item->qty_missing);
+
+        // Konfirmasi Goods Receipt
+        $service = app(\App\Services\GoodsReceiptService::class);
+        $service->confirm($gr, $this->gudangUser->id);
+
+        $item->refresh();
+        $this->assertEquals('confirmed_lost', $item->missing_status);
+
+        // Verifikasi material terdaftar dan tahapan masuk mencatat selisih hilang
+        $material = \App\Models\Material::where('name', 'Semen Gresik 50kg Selisih')->first();
+        $this->assertNotNull($material);
+
+        $stages = $material->getDynamicIncomingStages();
+        $this->assertNotEmpty($stages);
+        $stage = $stages->first();
+        $this->assertEquals(100, $stage['planned_qty']);
+        $this->assertEquals(95, $stage['received_qty']);
+        $this->assertEquals(5, $stage['lost_qty']);
+        $this->assertEquals('partial', $stage['status']);
+        $this->assertStringContainsString('Masuk Ada Selisih', $stage['status_label']);
     }
 }
 

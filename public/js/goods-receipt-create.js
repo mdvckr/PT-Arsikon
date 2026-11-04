@@ -148,7 +148,7 @@ function checkEmptyState(customMessage) {
         if (!emptyRow) {
             const desc = customMessage || 'Tambahkan baris material atau alat langsung sesuai nota fisik / surat jalan yang diterima.';
             const html = '<tr id="emptyItemsRow" class="empty-receipt-row">'
-                + '<td colspan="9" class="empty-receipt-canvas">'
+                + '<td colspan="11" class="empty-receipt-canvas">'
                 + '<div class="empty-receipt-card">'
                 + '<div class="empty-icon-circle">'
                 + '<i class="fas fa-boxes-stacked"></i>'
@@ -319,6 +319,14 @@ function toggleRowType(idx) {
             validateQtyInput(qtyInput, true);
         }
     }
+    const shippedInput = document.getElementById('item-shipped-' + idx);
+    if (shippedInput) {
+        shippedInput.min = isTool ? '1' : '0.01';
+        shippedInput.step = isTool ? '1' : 'any';
+        if (isTool) {
+            validateQtyInput(shippedInput, true);
+        }
+    }
 
     // Re-check item name & SKU placeholder
     const nameInput = document.getElementById('item-name-' + idx);
@@ -373,6 +381,15 @@ function addRow(type, opts) {
     if (isTool && initialQty !== '' && initialQty !== null) {
         const numQty = parseFloat(initialQty);
         initialQty = (isNaN(numQty) || numQty < 1) ? 1 : Math.round(numQty);
+    }
+    let initialShipped = (opts.qty_shipped != null && opts.qty_shipped !== '') ? opts.qty_shipped : initialQty;
+    if (isTool && initialShipped !== '' && initialShipped !== null) {
+        const numShip = parseFloat(initialShipped);
+        initialShipped = (isNaN(numShip) || numShip < 1) ? 1 : Math.round(numShip);
+    }
+    let initialMissing = (opts.qty_missing != null && opts.qty_missing !== '') ? parseFloat(opts.qty_missing) : 0;
+    if (initialShipped !== '' && initialQty !== '' && (opts.qty_missing == null || opts.qty_missing === '')) {
+        initialMissing = Math.max(0, (parseFloat(initialShipped) || 0) - (parseFloat(initialQty) || 0));
     }
     const initialBrand = opts.brand || (foundMasterItem ? (foundMasterItem.brand || '') : '');
     const initialNotes = opts.notes || '';
@@ -452,16 +469,35 @@ function addRow(type, opts) {
         + 'style="font-size:12px;font-weight:700;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 6: Jumlah Diterima (Stok) *
+        // Col 6: Qty Surat Jalan / Nota Vendor
+        + '<td class="col-shipped" style="vertical-align:top;padding-top:10px;">'
+        + '<input type="number" name="items[' + idx + '][qty_shipped]" id="item-shipped-' + idx + '" class="form-control text-center shipped-input" '
+        + 'value="' + initialShipped + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
+        + 'placeholder="' + (isTool ? '1' : '0') + '" data-idx="' + idx + '" '
+        + 'oninput="onShippedInput(' + idx + ')" onchange="validateQtyInput(this, ' + (isTool ? 'true' : 'false') + '); onShippedInput(' + idx + ');" '
+        + 'style="font-weight:700;font-size:13px;color:#334155;border-radius:7px;height:38px;" title="Kuantitas yang tertera di surat jalan atau nota vendor">'
+        + '</td>'
+
+        // Col 7: Diterima (Stok) *
         + '<td class="col-qty" style="vertical-align:top;padding-top:10px;">'
         + '<input type="number" name="items[' + idx + '][quantity]" id="item-qty-' + idx + '" class="form-control qty-input text-center" '
         + 'value="' + initialQty + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
         + 'placeholder="' + (isTool ? '1' : '0') + '" required data-idx="' + idx + '" '
-        + 'oninput="updateGrandTotal()" onchange="validateQtyInput(this, ' + (isTool ? 'true' : 'false') + ')" '
-        + 'style="font-weight:800;font-size:13.5px;color:#1e3a8a;border:2px solid #3b82f6;border-radius:7px;box-shadow:0 1px 3px rgba(37,99,235,0.08);height:38px;">'
+        + 'oninput="onReceivedInput(' + idx + ')" onchange="validateQtyInput(this, ' + (isTool ? 'true' : 'false') + '); onReceivedInput(' + idx + ');" '
+        + 'style="font-weight:800;font-size:13.5px;color:#1e3a8a;border:2px solid #3b82f6;border-radius:7px;box-shadow:0 1px 3px rgba(37,99,235,0.08);height:38px;" title="Kuantitas fisik diterima baik yang menambah stok gudang">'
         + '</td>'
 
-        // Col 7: Spesifikasi / Merek
+        // Col 8: Selisih / Hilang
+        + '<td class="col-diff" style="vertical-align:top;padding-top:10px;text-align:center;">'
+        + '<input type="hidden" name="items[' + idx + '][qty_missing]" id="item-missing-' + idx + '" value="' + initialMissing + '">'
+        + '<input type="hidden" name="items[' + idx + '][missing_action]" id="item-missing-action-' + idx + '" value="lost">'
+        + '<div id="item-diff-badge-' + idx + '" style="height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-weight:700;font-size:12px;'
+        + (initialMissing > 0 ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;' : 'background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;') + '">'
+        + (initialMissing > 0 ? ('<i class="fas fa-triangle-exclamation me-1" style="font-size:10px;"></i> -' + initialMissing) : '0')
+        + '</div>'
+        + '</td>'
+
+        // Col 9: Spesifikasi / Merek
         + '<td class="col-brand" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][brand]" id="item-brand-' + idx + '" class="form-control" '
         + 'placeholder="mis. Semen Gresik 50kg" value="' + escHtml(initialBrand) + '" '
@@ -1485,7 +1521,7 @@ function filterItemsTab(type) {
             const icon = (type === 'tool' ? 'fa-helmet-safety' : 'fa-box-open');
             const tr = document.createElement('tr');
             tr.id = 'empty-filter-notice';
-            tr.innerHTML = '<td colspan="9" style="text-align:center;padding:36px 16px;background:#fafcff;">'
+            tr.innerHTML = '<td colspan="11" style="text-align:center;padding:36px 16px;background:#fafcff;">'
                 + '<div style="max-width:380px;margin:0 auto;display:flex;flex-direction:column;align-items:center;">'
                 + '<div style="width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;">'
                 + '<i class="fas ' + icon + '"></i></div>'
@@ -1501,13 +1537,68 @@ function filterItemsTab(type) {
     }
 }
 
+function onReceivedInput(idx) {
+    const qtyInput = document.getElementById('item-qty-' + idx);
+    const shippedInput = document.getElementById('item-shipped-' + idx);
+    if (!qtyInput) return;
+
+    if (shippedInput && (shippedInput.value === '' || shippedInput.dataset.autoSynced !== 'false')) {
+        shippedInput.value = qtyInput.value;
+        shippedInput.dataset.autoSynced = 'true';
+    }
+    recalcItemDiscrepancy(idx);
+    updateGrandTotal();
+}
+
+function onShippedInput(idx) {
+    const shippedInput = document.getElementById('item-shipped-' + idx);
+    if (shippedInput) {
+        shippedInput.dataset.autoSynced = 'false';
+    }
+    recalcItemDiscrepancy(idx);
+    updateGrandTotal();
+}
+
+function recalcItemDiscrepancy(idx) {
+    const qtyInput = document.getElementById('item-qty-' + idx);
+    const shippedInput = document.getElementById('item-shipped-' + idx);
+    const missingHidden = document.getElementById('item-missing-' + idx);
+    const badge = document.getElementById('item-diff-badge-' + idx);
+
+    if (!qtyInput || !missingHidden || !badge) return;
+
+    const recVal = parseFloat(qtyInput.value) || 0;
+    const shipVal = (shippedInput && shippedInput.value !== '') ? (parseFloat(shippedInput.value) || 0) : recVal;
+
+    const diff = Math.max(0, shipVal - recVal);
+    missingHidden.value = diff;
+
+    if (diff > 0) {
+        badge.style.background = '#fee2e2';
+        badge.style.color = '#991b1b';
+        badge.style.border = '1px solid #fca5a5';
+        badge.innerHTML = '<i class="fas fa-triangle-exclamation me-1" style="font-size:10px;"></i> -' + diff;
+        badge.title = 'Selisih kurang/hilang dari nota: ' + diff;
+    } else {
+        badge.style.background = '#f8fafc';
+        badge.style.color = '#94a3b8';
+        badge.style.border = '1px solid #e2e8f0';
+        badge.innerHTML = '0';
+        badge.title = 'Tidak ada selisih';
+    }
+}
+
 function updateGrandTotal() {
     const rows = document.querySelectorAll('#itemsBody tr.item-row');
-    let countAll = rows.length, countMaterial = 0, countTool = 0;
+    let countAll = rows.length, countMaterial = 0, countTool = 0, totalMissing = 0;
     rows.forEach(function(tr) {
         if (tr.getAttribute('data-type') === 'tool') countTool++;
         else countMaterial++;
     });
+    document.querySelectorAll('input[id^="item-missing-"]').forEach(function(inp) {
+        totalMissing += parseFloat(inp.value) || 0;
+    });
+
     const elAll = document.getElementById('count-all');
     if (elAll) elAll.textContent = countAll;
     const elMat = document.getElementById('count-material');
@@ -1516,10 +1607,15 @@ function updateGrandTotal() {
     if (elTool) elTool.textContent = countTool;
     const totalEl = document.getElementById('totalItemCount');
     if (totalEl) {
+        let diffBadge = '';
+        if (totalMissing > 0) {
+            diffBadge = ' <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><i class="fas fa-triangle-exclamation me-1"></i>Selisih/Hilang: ' + totalMissing + '</span>';
+        }
         totalEl.innerHTML = '<span style="font-size:12px;color:#64748b;font-weight:600;">Total:</span> '
             + '<span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;">' + countAll + ' Item</span> '
             + '<span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">' + countMaterial + ' Material</span> '
-            + '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">' + countTool + ' Alat</span>';
+            + '<span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;">' + countTool + ' Alat</span>'
+            + diffBadge;
     }
     filterItemsTab(currentTabFilter);
 }

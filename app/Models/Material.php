@@ -257,6 +257,17 @@ class Material extends Model
             $qtyRec = (float) $grItem->qty_received;
             if ($qtyRec <= 0) continue;
 
+            $qtyShipped = (float) $grItem->qty_shipped;
+            $qtyMissing = (float) $grItem->qty_missing;
+            $qtyDamaged = (float) $grItem->qty_damaged;
+            $plannedQty = $qtyShipped > 0 ? $qtyShipped : ($qtyRec + $qtyMissing + $qtyDamaged);
+            $hasDiscrepancy = ($qtyMissing > 0 || $qtyDamaged > 0);
+
+            $status = $hasDiscrepancy ? 'partial' : 'received';
+            $statusLabel = $hasDiscrepancy
+                ? 'Masuk Ada Selisih (' . number_format($qtyRec, 0, ',', '.') . '/' . number_format($plannedQty, 0, ',', '.') . ')'
+                : 'Lengkap Masuk';
+
             $refDisplay = $gr->receipt_number;
             if ($gr->materialRequest) {
                 $refDisplay .= ' (MR: ' . $gr->materialRequest->request_number . ')';
@@ -270,12 +281,14 @@ class Material extends Model
                 'warehouse_name' => $gr->warehouse?->name,
                 'warehouse_id'   => $gr->warehouse_id,
                 'qty'            => $qtyRec,
-                'planned_qty'    => $qtyRec,
+                'planned_qty'    => $plannedQty,
                 'received_qty'   => $qtyRec,
                 'remaining_qty'  => 0,
+                'lost_qty'       => $qtyMissing,
+                'damaged_qty'    => $qtyDamaged,
                 'date'           => $gr->receipt_date ? $gr->receipt_date->format('Y-m-d') : null,
-                'status'         => 'received',
-                'status_label'   => 'Lengkap Masuk',
+                'status'         => $status,
+                'status_label'   => $statusLabel,
                 'notes'          => $gr->notes ?: null,
             ]);
         }
