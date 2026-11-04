@@ -148,6 +148,44 @@ class GoodsReceiptService
                 // T9: GR tidak menerima unit_price dari request untuk item ber-PO. Selalu salin dari PO item.
                 $unitPrice = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
 
+                $materialId = $isTool ? null : ($item['material_id'] ?? null);
+                $toolId     = $isTool ? ($item['tool_id'] ?? null) : null;
+
+                if ($isTool) {
+                    if (!$toolId && !empty($item['name'])) {
+                        $toolName = trim($item['name']);
+                        $tool = Tool::whereRaw('LOWER(name) = ?', [strtolower($toolName)])->first();
+                        if (!$tool) {
+                            $tool = Tool::autoRegisterCustom(
+                                $toolName,
+                                !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                                $item['custom_type'] ?? null,
+                                null,
+                                $item['specification'] ?? null,
+                                $item['custom_sku'] ?? null
+                            );
+                        }
+                        $toolId = $tool->id;
+                    }
+                } else {
+                    if (!$materialId && !empty($item['name'])) {
+                        $matName = trim($item['name']);
+                        $mat = Material::whereRaw('LOWER(name) = ?', [strtolower($matName)])->first();
+                        if (!$mat) {
+                            $mat = Material::autoRegisterCustom(
+                                $matName,
+                                $item['custom_unit'] ?? ($item['unit'] ?? 'unit'),
+                                !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                                $item['custom_type'] ?? null,
+                                null,
+                                $item['specification'] ?? null,
+                                $item['custom_sku'] ?? null
+                            );
+                        }
+                        $materialId = $mat->id;
+                    }
+                }
+
                 GoodsReceiptItem::create([
                     'goods_receipt_id'         => $receipt->id,
                     'item_type'                => $isTool ? 'tool' : 'material',
@@ -155,8 +193,8 @@ class GoodsReceiptService
                     'material_request_item_id' => $mrItemId,
                     'po_delivery_schedule_id'  => $item['po_delivery_schedule_id'] ?? null,
                     'stage_reference'          => $item['stage_reference'] ?? null,
-                    'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
-                    'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'material_id'              => $materialId,
+                    'tool_id'                  => $toolId,
                     'custom_sku'               => !empty($item['custom_sku']) ? trim($item['custom_sku']) : null,
                     'category_id'              => !empty($item['category_id']) ? (int) $item['category_id'] : null,
                     'custom_type'              => !empty($item['custom_type']) ? trim($item['custom_type']) : null,
@@ -249,6 +287,44 @@ class GoodsReceiptService
                 $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
                 $unitPrice     = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
 
+                $materialId = $isTool ? null : ($item['material_id'] ?? null);
+                $toolId     = $isTool ? ($item['tool_id'] ?? null) : null;
+
+                if ($isTool) {
+                    if (!$toolId && !empty($item['name'])) {
+                        $toolName = trim($item['name']);
+                        $tool = Tool::whereRaw('LOWER(name) = ?', [strtolower($toolName)])->first();
+                        if (!$tool) {
+                            $tool = Tool::autoRegisterCustom(
+                                $toolName,
+                                !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                                $item['custom_type'] ?? null,
+                                null,
+                                $item['specification'] ?? null,
+                                $item['custom_sku'] ?? null
+                            );
+                        }
+                        $toolId = $tool->id;
+                    }
+                } else {
+                    if (!$materialId && !empty($item['name'])) {
+                        $matName = trim($item['name']);
+                        $mat = Material::whereRaw('LOWER(name) = ?', [strtolower($matName)])->first();
+                        if (!$mat) {
+                            $mat = Material::autoRegisterCustom(
+                                $matName,
+                                $item['custom_unit'] ?? ($item['unit'] ?? 'unit'),
+                                !empty($item['category_id']) ? (int) $item['category_id'] : null,
+                                $item['custom_type'] ?? null,
+                                null,
+                                $item['specification'] ?? null,
+                                $item['custom_sku'] ?? null
+                            );
+                        }
+                        $materialId = $mat->id;
+                    }
+                }
+
                 GoodsReceiptItem::create([
                     'goods_receipt_id'         => $receipt->id,
                     'item_type'                => $isTool ? 'tool' : 'material',
@@ -256,8 +332,8 @@ class GoodsReceiptService
                     'material_request_item_id' => $mrItemId,
                     'po_delivery_schedule_id'  => $item['po_delivery_schedule_id'] ?? null,
                     'stage_reference'          => $item['stage_reference'] ?? null,
-                    'material_id'              => $isTool ? null : ($item['material_id'] ?? null),
-                    'tool_id'                  => $isTool ? ($item['tool_id'] ?? null) : null,
+                    'material_id'              => $materialId,
+                    'tool_id'                  => $toolId,
                     'custom_sku'               => !empty($item['custom_sku']) ? trim($item['custom_sku']) : null,
                     'category_id'              => !empty($item['category_id']) ? (int) $item['category_id'] : null,
                     'custom_type'              => !empty($item['custom_type']) ? trim($item['custom_type']) : null,
@@ -358,6 +434,24 @@ class GoodsReceiptService
                                 $tool->update(['owner_warehouse_id' => $centralWarehouse->id]);
                             }
                         }
+
+                        // Catat transaksi sebagai tahapan masuk (incoming_stages) pada master Tool
+                        $stages = $tool->incoming_stages ?? [];
+                        $stages[] = [
+                            'stage_name'     => "Penerimaan #{$receipt->receipt_number}",
+                            'receipt_number' => $receipt->receipt_number,
+                            'invoice_number' => $receipt->invoice_number,
+                            'supplier_name'  => $receipt->supplier_name ?: $receipt->supplier?->name,
+                            'warehouse_id'   => $warehouse->id,
+                            'warehouse_name' => $warehouse->name,
+                            'qty'            => (float) $item->qty_received,
+                            'date'           => $receiptDateStr,
+                            'status'         => 'received',
+                            'condition'      => $item->condition,
+                            'notes'          => $item->notes,
+                            'created_at'     => now()->toISOString(),
+                        ];
+                        $tool->update(['incoming_stages' => $stages]);
                     }
 
                     // T11 BUGFIX: cabang ALAT menaikkan received_qty PO item persis seperti cabang material
@@ -415,6 +509,24 @@ class GoodsReceiptService
                                 $userId,
                                 "Penerimaan Supplier #{$receipt->receipt_number} — {$receipt->supplier?->name}"
                             );
+
+                            // Catat transaksi sebagai tahapan masuk (incoming_stages) pada master Material
+                            $stages = $material->incoming_stages ?? [];
+                            $stages[] = [
+                                'stage_name'     => "Penerimaan #{$receipt->receipt_number}",
+                                'receipt_number' => $receipt->receipt_number,
+                                'invoice_number' => $receipt->invoice_number,
+                                'supplier_name'  => $receipt->supplier_name ?: $receipt->supplier?->name,
+                                'warehouse_id'   => $warehouse->id,
+                                'warehouse_name' => $warehouse->name,
+                                'qty'            => (float) $item->qty_received,
+                                'date'           => $receiptDateStr,
+                                'status'         => 'received',
+                                'condition'      => $item->condition,
+                                'notes'          => $item->notes,
+                                'created_at'     => now()->toISOString(),
+                            ];
+                            $material->update(['incoming_stages' => $stages]);
                         }
 
                         // Update received_qty di PO item (HANYA dari qty_received baik)
