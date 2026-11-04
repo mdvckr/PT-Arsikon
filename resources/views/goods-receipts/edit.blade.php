@@ -842,19 +842,6 @@
     </div>
     @endif
 
-                        <span style="color:#64748b;">• Tujuan: <strong style="color:#0f172a;">{{ $dist->toWarehouse?->name }}</strong></span>
-                        <span style="color:#64748b;">• Supir: {{ $dist->driver_name ?? '-' }} ({{ $dist->vehicle_number ?? '-' }})</span>
-                    </div>
-                    <a href="{{ route('distributions.show', $dist) }}" class="btn btn-sm btn-primary" style="font-size:11.5px;font-weight:700;padding:5px 14px;border-radius:6px;box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-                        <x-lucide-boxes class="me-1" /> Terima Surat Jalan Ini
-                    </a>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-    @endif
-
     {{-- Edit Mode Banner --}}
     <div class="card mb-3" style="border:1.5px solid #fde68a;border-radius:12px;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);">
         <div class="card-body" style="padding:12px 18px;display:flex;align-items:center;gap:12px;">
@@ -935,13 +922,13 @@
                             </div>
                         </div>
 
-                        {{-- ─── Kolom 2: Supplier & PO ─── --}}
+                        {{-- ─── Kolom 2: Pemasok & Dokumen Pengiriman / Nota ─── --}}
                         <div class="session-field-group">
                             <div class="group-label" style="color:#059669;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;">
                                     <x-lucide-building-2 style="font-size:11px;color:#059669;" />
                                 </span>
-                                Pemasok &amp; Dokumen PO
+                                Pemasok / Vendor &amp; Nota
                             </div>
 
                             <div class="mb-3">
@@ -974,81 +961,29 @@
                                 @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
                             </div>
 
-                            {{-- Field Hubungkan PO Lapangan --}}
-                            <div class="mb-3">
-                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
-                                    <span>Hubungkan PO Lapangan</span>
-                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Permintaan Proyek)</span>
-                                </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-clipboard-check class="input-icon" />
-                                    <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
-                                        <option value="">— Pilih PO Lapangan (Opsional) —</option>
-                                        @foreach($materialRequests as $mr)
-                                        @php
-                                            $projectName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
-                                            $poIds = $mr->purchaseOrders->pluck('id')
-                                                ->merge($mr->items->flatMap->purchaseOrderItems->pluck('purchase_order_id'))
-                                                ->filter()->unique()->implode(',');
-                                            $inTransitCount = $mr->distributions->where('status', 'in_transit')->count();
-                                        @endphp
-                                        <option value="{{ $mr->id }}"
-                                            data-warehouse-id="{{ $mr->to_warehouse_id }}"
-                                            data-project="{{ $projectName }}"
-                                            data-po-ids="{{ $poIds }}"
-                                            data-in-transit="{{ $inTransitCount }}"
-                                            {{ (old('material_request_id', $selectedMrId) == $mr->id) ? 'selected' : '' }}>
-                                            #{{ $mr->request_number }} • {{ $projectName }} ({{ $mr->requestedBy?->name ?? '-' }})
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div id="mrInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
-                                    <x-lucide-circle-check class="me-1" />
-                                    <span id="mrBannerText"></span>
-                                </div>
-                            </div>
-
                             <div class="mb-0">
                                 <label class="form-label">
-                                    Hubungkan Purchase Order (PO)
-                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
+                                    No. Surat Jalan / Nota Fisik Vendor
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <x-lucide-file-text class="input-icon" />
-                                    <select id="poSelect" name="purchase_order_id" class="form-control" onchange="onPoSelectChange(this.value)">
-                                        <option value="">— Tanpa PO (Pembelian Langsung) —</option>
-                                        @foreach($purchaseOrders as $po)
-                                        @php
-                                            $mrInfo = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
-                                            $mrText = $mrInfo ? ' [PO Lapangan: #' . $mrInfo->request_number . ' - ' . ($mrInfo->toWarehouse?->project?->name ?? $mrInfo->toWarehouse?->name) . ']' : '';
-                                        @endphp
-                                        <option value="{{ $po->id }}"
-                                            data-supplier="{{ $po->supplier_id }}"
-                                            data-supplier-name="{{ $po->supplier?->name }}"
-                                            data-warehouse-id="{{ $po->delivery_warehouse_id }}"
-                                            data-mr-id="{{ $po->material_request_id ?? $mrInfo?->id ?? '' }}"
-                                            {{ (old('purchase_order_id', $selectedPoId) == $po->id) ? 'selected' : '' }}>
-                                            #{{ $po->po_number }} • {{ $po->supplier?->name }}{{ $mrText }}
-                                            @if($po->status === 'partial_received') (Sebagian Diterima) @endif
-                                        </option>
-                                        @endforeach
-                                    </select>
+                                    <x-lucide-hash class="input-icon" />
+                                    <input type="text" name="invoice_number" value="{{ old('invoice_number', $goodsReceipt->invoice_number) }}"
+                                        class="form-control" placeholder="Contoh: SJ-2026/09/001 atau Nota #042">
                                 </div>
-                                <div id="poInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#eff6ff;border-radius:7px;border:1px solid #bfdbfe;font-size:11px;color:#1d4ed8;line-height:1.5;">
-                                    <x-lucide-link class="me-1" />
-                                    <span id="poBannerText"></span>
+                                <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
+                                    <x-lucide-info style="color:#94a3b8;" />
+                                    Nomor nota / surat jalan fisik yang diperiksa oleh petugas gudang
                                 </div>
                             </div>
                         </div>
 
-                        {{-- ─── Kolom 3: Penerima, Surat Jalan & Catatan ─── --}}
+                        {{-- ─── Kolom 3: Penerima & Catatan ─── --}}
                         <div class="session-field-group">
                             <div class="group-label" style="color:#d97706;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#fffbeb;display:inline-flex;align-items:center;justify-content:center;">
                                     <x-lucide-user-check style="font-size:11px;color:#d97706;" />
                                 </span>
-                                Penerima &amp; Referensi
+                                Penerima &amp; Catatan
                             </div>
 
                             <div class="mb-3">
@@ -1067,17 +1002,6 @@
                                 <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
                                     <x-lucide-info style="color:#94a3b8;" />
                                     Terisi otomatis nama Anda — ubah jika penerima orang lain
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    No. Surat Jalan / Faktur Vendor
-                                </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-hash class="input-icon" />
-                                    <input type="text" name="invoice_number" value="{{ old('invoice_number', $goodsReceipt->invoice_number) }}"
-                                        class="form-control" placeholder="Contoh: SJ-2026/09/001">
                                 </div>
                             </div>
 
@@ -1126,10 +1050,10 @@
                         </div>
                     </div>
 
-                    {{-- Tombol Tambah & Tarik dari Jadwal --}}
+                    {{-- Tombol Tambah --}}
                     <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
-                        <button type="button" class="btn btn-sm btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s ease;">
-                            <x-lucide-calendar-check style="font-size:13px;color:#0284c7;" /> Tarik dari Jadwal <span class="badge" id="badgeSchedCount" style="background:#0284c7;color:#ffffff;font-size:10px;margin-left:3px;display:none;padding:2px 5px;border-radius:6px;">0</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahBarisDirect" onclick="addRow('material')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;display:inline-flex;align-items:center;gap:5px;">
+                            <x-lucide-plus-circle style="font-size:13px;" /> Tambah Baris Barang
                         </button>
                         <button type="button" class="btn btn-sm btn-primary btn-add-mat" id="btnAddMaterial" onclick="addRow('material')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 13px;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
                             <x-lucide-plus style="font-size:13px;" /> Material
@@ -1140,38 +1064,22 @@
                     </div>
                 </div>
 
-                {{-- Fast 1-Click Scheduled Import Banner --}}
-                <div id="scheduledBanner" style="display:none;margin:12px 18px 0;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                    <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:#166534;">
-                        <x-lucide-zap class="text-warning" style="font-size:16px;" />
-                        <span>Terdeteksi <strong id="scheduledBannerCount">0</strong> barang dalam jadwal rencana kedatangan.</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <button type="button" class="btn btn-sm btn-success" onclick="autoImportAllScheduled()" style="font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                            <x-lucide-check-check class="me-1" /> Tarik Semua Otomatis (Cepat)
-                        </button>
-                        <button type="button" class="btn btn-sm btn-light border" onclick="openScheduledModal()" style="font-size:11.5px;padding:5px 10px;border-radius:6px;">
-                            Pilih Satuan
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-wrap">
                     <table class="data-table receipt-items-table mb-0" id="itemsTable">
                         <thead>
-                            <tr>
-                                <th style="width:105px;text-align:center;">Tipe</th>
-                                <th style="min-width:240px;">Nama Barang / Item &amp; Referensi <span class="text-danger">*</span></th>
-                                <th style="width:120px;text-align:center;" title="Kuantitas yang dipesan pada Purchase Order / PO Lapangan">Qty Target (PO)</th>
-                                <th style="width:130px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Qty Masuk (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:110px;text-align:center;" title="Selisih jika barang tidak sesuai PO (misal PO 100, selisih 5, maka stok update 95)">Selisih</th>
-                                <th style="width:85px;text-align:center;">Satuan</th>
-                                <th style="width:170px;">Catatan / Keterangan</th>
-                                <th style="width:45px;text-align:center;"></th>
+                            <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
+                                <th style="width:80px;text-align:center;">Tipe</th>
+                                <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
+                                <th style="width:170px;">Kategori <span class="text-danger">*</span></th>
+                                <th style="width:110px;text-align:center;">Satuan <span class="text-danger">*</span></th>
+                                <th style="width:130px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Jumlah Diterima (Stok) <span class="text-danger">*</span></th>
+                                <th style="width:160px;">Spesifikasi / Merek</th>
+                                <th style="min-width:140px;">Catatan Fisik</th>
+                                <th style="width:40px;text-align:center;"></th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
-                            {{-- Diisi oleh JS addRow() atau prefill AJAX dari PO / Jadwal --}}
+                            {{-- Diisi secara dinamis oleh addRow() --}}
                         </tbody>
                     </table>
                 </div>
@@ -1273,6 +1181,8 @@
     // Data dari server
     var grMaterials = @json($materialsJson);
     var grTools     = @json($toolsJson);
+    var grMaterialCategories = @json($materialCategories->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'code' => $c->code]));
+    var grToolCategories     = @json($toolCategories->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'code' => $c->code]));
     @php
         $suppliersData = $suppliers->map(function($s) {
             return ['id' => $s->id, 'name' => $s->name];

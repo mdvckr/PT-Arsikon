@@ -62,7 +62,14 @@ class GoodsReceiptController extends Controller
         $user       = auth()->user();
         $suppliers  = Supplier::orderBy('name')->get();
         $warehouses = $this->accessibleWarehouses();
-        $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
+        $accessibleWarehouseIds = $warehouses->pluck('id');
+
+        // Referensi material difilter khusus inventori gudang akun/user sendiri
+        $matQuery = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse']);
+        if (!$user->hasAnyRole(['Owner', 'Super Admin']) || $accessibleWarehouseIds->isNotEmpty()) {
+            $matQuery->whereHas('inventories', fn($q) => $q->whereIn('warehouse_id', $accessibleWarehouseIds));
+        }
+        $materials = $matQuery->orderBy('name')->get();
 
         $materialsJson = $materials->map(function ($m) {
             $dyn = $m->getDynamicIncomingStages();
@@ -80,6 +87,7 @@ class GoodsReceiptController extends Controller
                 'brand'           => $m->brand,
                 'type'            => $m->type,
                 'size'            => $m->size,
+                'category_id'     => $m->category_id,
                 'category_name'   => $m->category?->name ?? 'Lainnya',
                 'abbr'            => $m->unit?->abbreviation ?? $m->unit?->name ?? 'Unit',
                 'price'           => $m->unit_price ?? 0,
@@ -94,7 +102,15 @@ class GoodsReceiptController extends Controller
             ];
         });
 
-        $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true)->orderBy('name')->get();
+        // Referensi alat difilter khusus inventori gudang akun/user sendiri
+        $toolsQuery = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true);
+        if (!$user->hasAnyRole(['Owner', 'Super Admin']) || $accessibleWarehouseIds->isNotEmpty()) {
+            $toolsQuery->where(function ($tq) use ($accessibleWarehouseIds) {
+                $tq->whereIn('current_warehouse_id', $accessibleWarehouseIds)
+                   ->orWhereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $accessibleWarehouseIds));
+            });
+        }
+        $tools = $toolsQuery->orderBy('name')->get();
 
         $toolsJson = $tools->map(function ($t) {
             $dyn = $t->getDynamicIncomingStages();
@@ -111,6 +127,7 @@ class GoodsReceiptController extends Controller
                 'brand'           => $t->brand,
                 'type'            => $t->type,
                 'size'            => $t->size,
+                'category_id'     => $t->category_id,
                 'category_name'   => $t->category?->name ?? 'Alat / Mesin',
                 'abbr'            => 'Unit',
                 'price'           => 0,
@@ -122,8 +139,6 @@ class GoodsReceiptController extends Controller
                 'has_stages'      => $stages->isNotEmpty(),
             ];
         });
-
-        $accessibleWarehouseIds = $warehouses->pluck('id');
 
         // PO yang statusnya bisa diterima barangnya dan masih memiliki sisa barang yang belum diterima (outstanding > 0)
         $poQuery = PurchaseOrder::with([
@@ -155,30 +170,17 @@ class GoodsReceiptController extends Controller
             'purchaseOrders',
             'items.purchaseOrderItems.purchaseOrder',
             'distributions' => fn($dq) => $dq->where('status', 'in_transit')
-        ])
-        ->whereIn('status', ['approved', 'partially_fulfilled'])
-        ->whereHas('items', function ($iq) {
-            $iq->whereRaw('(COALESCE(qty_approved, qty_requested) - qty_received) > 0');
-        });
+        ])->whereIn('status', ['approved', 'partially_fulfilled']);
 
         if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
             $mrQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
         }
 
         $materialRequests = $mrQuery->latest()->get();
+        $inTransitDistributions = collect();
 
-        // Surat Jalan yang sedang dikirim (in_transit) menuju gudang user
-        $distQuery = \App\Models\Distribution::with(['fromWarehouse', 'toWarehouse.project', 'materialRequest'])
-            ->where('status', 'in_transit');
-
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
-            $distQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
-        }
-
-        $inTransitDistributions = $distQuery->latest()->get();
-
-        $selectedMrId = $request->query('from_mr_id', $request->query('material_request_id', $request->query('mr_id')));
-        $selectedPoId = $request->query('purchase_order_id', $request->query('po_id'));
+        $selectedMrId = $request->query('material_request_id');
+        $selectedPoId = $request->query('purchase_order_id');
 
         $materialCategories = \App\Models\Category::where('type', 'material')->orderBy('name')->get();
         $toolCategories = \App\Models\Category::where('type', 'tool')->orderBy('name')->get();
@@ -702,6 +704,9 @@ class GoodsReceiptController extends Controller
             'notes'                          => 'nullable|string|max:2000',
             'items'                          => 'required|array|min:1',
             'items.*.item_type'              => 'nullable|in:material,tool',
+            'items.*.name'                   => 'nullable|string|max:255',
+            'items.*.custom_unit'            => 'nullable|string|max:50',
+            'items.*.brand'                  => 'nullable|string|max:100',
             'items.*.material_id'            => 'nullable|required_without_all:items.*.tool_id,items.*.purchase_order_item_id,items.*.material_request_item_id|exists:materials,id',
             'items.*.tool_id'                => 'nullable|required_without_all:items.*.material_id,items.*.purchase_order_item_id,items.*.material_request_item_id|exists:tools,id',
             'items.*.custom_sku'             => 'nullable|string|max:50',
@@ -798,7 +803,14 @@ class GoodsReceiptController extends Controller
         $user       = auth()->user();
         $suppliers  = Supplier::orderBy('name')->get();
         $warehouses = $this->accessibleWarehouses();
-        $materials  = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse'])->orderBy('name')->get();
+        $accessibleWarehouseIds = $warehouses->pluck('id');
+
+        // Referensi material difilter khusus inventori gudang akun/user sendiri
+        $matQuery = Material::with(['unit', 'category', 'supplier', 'inventories.warehouse']);
+        if (!$user->hasAnyRole(['Owner', 'Super Admin']) || $accessibleWarehouseIds->isNotEmpty()) {
+            $matQuery->whereHas('inventories', fn($q) => $q->whereIn('warehouse_id', $accessibleWarehouseIds));
+        }
+        $materials = $matQuery->orderBy('name')->get();
 
         $materialsJson = $materials->map(function ($m) {
             $dyn = $m->getDynamicIncomingStages();
@@ -815,6 +827,7 @@ class GoodsReceiptController extends Controller
                 'brand'           => $m->brand,
                 'type'            => $m->type,
                 'size'            => $m->size,
+                'category_id'     => $m->category_id,
                 'category_name'   => $m->category?->name ?? 'Lainnya',
                 'abbr'            => $m->unit?->abbreviation ?? $m->unit?->name ?? 'Unit',
                 'price'           => $m->unit_price ?? 0,
@@ -829,7 +842,15 @@ class GoodsReceiptController extends Controller
             ];
         });
 
-        $tools = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true)->orderBy('name')->get();
+        // Referensi alat difilter khusus inventori gudang akun/user sendiri
+        $toolsQuery = \App\Models\Tool::with(['category', 'currentWarehouse', 'inventories.warehouse'])->where('is_active', true);
+        if (!$user->hasAnyRole(['Owner', 'Super Admin']) || $accessibleWarehouseIds->isNotEmpty()) {
+            $toolsQuery->where(function ($tq) use ($accessibleWarehouseIds) {
+                $tq->whereIn('current_warehouse_id', $accessibleWarehouseIds)
+                   ->orWhereHas('inventories', fn($iq) => $iq->whereIn('warehouse_id', $accessibleWarehouseIds));
+            });
+        }
+        $tools = $toolsQuery->orderBy('name')->get();
 
         $toolsJson = $tools->map(function ($t) {
             $dyn = $t->getDynamicIncomingStages();
@@ -846,6 +867,7 @@ class GoodsReceiptController extends Controller
                 'brand'           => $t->brand,
                 'type'            => $t->type,
                 'size'            => $t->size,
+                'category_id'     => $t->category_id,
                 'category_name'   => $t->category?->name ?? 'Alat / Mesin',
                 'abbr'            => 'Unit',
                 'price'           => 0,
@@ -857,8 +879,6 @@ class GoodsReceiptController extends Controller
                 'has_stages'      => $stages->isNotEmpty(),
             ];
         });
-
-        $accessibleWarehouseIds = $warehouses->pluck('id');
 
         $poQuery = PurchaseOrder::with([
             'supplier',
@@ -910,7 +930,9 @@ class GoodsReceiptController extends Controller
                 'name'                     => $item->item_name,
                 'code'                     => $item->item_code,
                 'abbr'                     => $item->item_unit,
+                'category_id'              => $isTool ? $item->tool?->category_id : $item->material?->category_id,
                 'category_name'            => $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Material'),
+                'brand'                    => $isTool ? ($item->tool?->brand ?? '') : ($item->material?->brand ?? ''),
                 'qty_shipped'              => (float) $item->qty_shipped,
                 'qty_received'             => (float) $item->qty_received,
                 'quantity'                 => (float) $item->qty_received,
@@ -926,10 +948,13 @@ class GoodsReceiptController extends Controller
         $selectedPoId = $goodsReceipt->purchase_order_id;
         $inTransitDistributions = collect();
 
+        $materialCategories = \App\Models\Category::where('type', 'material')->orderBy('name')->get();
+        $toolCategories = \App\Models\Category::where('type', 'tool')->orderBy('name')->get();
+
         return view('goods-receipts.edit', compact(
             'goodsReceipt', 'suppliers', 'warehouses', 'materials', 'materialsJson',
             'tools', 'toolsJson', 'purchaseOrders', 'materialRequests', 'inTransitDistributions',
-            'selectedMrId', 'selectedPoId', 'existingItemsJson'
+            'selectedMrId', 'selectedPoId', 'existingItemsJson', 'materialCategories', 'toolCategories'
         ));
     }
 
@@ -975,6 +1000,60 @@ class GoodsReceiptController extends Controller
             }
         }
 
+        // Normalisasi items langsung (nama bebas, unit bebas, create material/alat auto register)
+        if ($request->has('items') && is_array($request->items)) {
+            $items = $request->items;
+            foreach ($items as $k => $v) {
+                $qty = $v['quantity'] ?? ($v['qty_received'] ?? null);
+                if ($qty !== null) {
+                    $items[$k]['quantity'] = (float) $qty;
+                    $items[$k]['qty_received'] = (float) $qty;
+                }
+                if (!isset($items[$k]['qty_shipped']) && $qty !== null) {
+                    $items[$k]['qty_shipped'] = (float) $qty;
+                }
+
+                $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);
+
+                if (empty($v['material_id']) && empty($v['tool_id'])) {
+                    $directName = trim($v['name'] ?? ($v['custom_item_name'] ?? ''));
+                    if (!empty($directName)) {
+                        $catId = !empty($v['category_id']) ? (int) $v['category_id'] : null;
+                        $spec  = $v['specification'] ?? ($v['size'] ?? ($v['brand'] ?? null));
+                        $typeName = !empty($v['custom_type']) ? $v['custom_type'] : ($v['type'] ?? null);
+                        $customSku = !empty($v['custom_sku']) ? trim($v['custom_sku']) : null;
+
+                        if ($isTool) {
+                            $tool = \App\Models\Tool::autoRegisterCustom(
+                                $directName,
+                                $catId,
+                                $typeName,
+                                $v['brand'] ?? null,
+                                $spec,
+                                $customSku
+                            );
+                            $items[$k]['tool_id'] = $tool->id;
+                            $items[$k]['item_type'] = 'tool';
+                        } else {
+                            $unit = $v['custom_unit'] ?? ($v['unit'] ?? 'unit');
+                            $mat = Material::autoRegisterCustom(
+                                $directName,
+                                $unit,
+                                $catId,
+                                $typeName,
+                                $v['brand'] ?? null,
+                                $spec,
+                                $customSku
+                            );
+                            $items[$k]['material_id'] = $mat->id;
+                            $items[$k]['item_type'] = 'material';
+                        }
+                    }
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
         $validated = $request->validate([
             'purchase_order_id'               => 'nullable|exists:purchase_orders,id',
             'material_request_id'             => 'nullable|exists:material_requests,id',
@@ -987,6 +1066,9 @@ class GoodsReceiptController extends Controller
             'notes'                           => 'nullable|string|max:2000',
             'items'                           => 'required|array|min:1',
             'items.*.item_type'               => 'nullable|in:material,tool',
+            'items.*.name'                    => 'nullable|string|max:255',
+            'items.*.custom_unit'             => 'nullable|string|max:50',
+            'items.*.brand'                   => 'nullable|string|max:100',
             'items.*.material_id'             => 'nullable|exists:materials,id',
             'items.*.tool_id'                 => 'nullable|exists:tools,id',
             'items.*.custom_sku'              => 'nullable|string|max:50',

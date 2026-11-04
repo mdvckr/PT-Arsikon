@@ -68,6 +68,111 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertSee('Penerimaan Barang Langsung');
         $response->assertSee('Tambah Baris Barang');
         $response->assertDontSee('Pilih Purchase Order (Wajib)');
+        $response->assertDontSee('Hubungkan PO Lapangan');
+        $response->assertDontSee('Hubungkan Purchase Order (PO)');
+        $response->assertDontSee('name="purchase_order_id"', false);
+        $response->assertDontSee('name="material_request_id"', false);
+        $response->assertDontSee('Qty Target (PO)');
+        $response->assertDontSee('Selisih');
+    }
+
+    public function test_goods_receipt_create_only_references_items_from_users_own_warehouse(): void
+    {
+        $unit = \App\Models\Unit::firstOrCreate(['code' => 'ZAK'], ['name' => 'Zak']);
+        $otherWarehouse = Warehouse::firstOrCreate(['code' => 'W-OTHER-002'], ['name' => 'Gudang Proyek Lain', 'is_central' => false]);
+
+        $materialOwn = \App\Models\Material::create([
+            'sku' => 'MAT-OWN-01',
+            'name' => 'Semen Padang Gudang Sendiri',
+            'category_id' => $this->category->id,
+            'unit_id' => $unit->id,
+        ]);
+        \App\Models\Inventory::create([
+            'material_id' => $materialOwn->id,
+            'warehouse_id' => $this->warehouse->id,
+            'quantity' => 10,
+        ]);
+
+        $materialOther = \App\Models\Material::create([
+            'sku' => 'MAT-OTHER-02',
+            'name' => 'Besi Ulir Gudang Orang Lain',
+            'category_id' => $this->category->id,
+            'unit_id' => $unit->id,
+        ]);
+        \App\Models\Inventory::create([
+            'material_id' => $materialOther->id,
+            'warehouse_id' => $otherWarehouse->id,
+            'quantity' => 20,
+        ]);
+
+        $response = $this->actingAs($this->gudangUser)->get(route('goods-receipts.create'));
+        $response->assertOk();
+
+        $responseMaterials = $response->viewData('materials');
+        $this->assertTrue($responseMaterials->contains('id', $materialOwn->id));
+        $this->assertFalse($responseMaterials->contains('id', $materialOther->id));
+    }
+
+    public function test_goods_receipt_edit_view_renders_direct_item_inputs_without_po_select(): void
+    {
+        $gr = GoodsReceipt::create([
+            'receipt_number' => 'GR-TEST-001',
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'receipt_date' => now()->toDateString(),
+            'status' => 'draft',
+            'received_by_user_id' => $this->gudangUser->id,
+        ]);
+
+        $response = $this->actingAs($this->gudangUser)->get(route('goods-receipts.edit', $gr));
+        $response->assertOk();
+        $response->assertSee('Tambah Baris Barang');
+        $response->assertDontSee('Hubungkan PO Lapangan');
+        $response->assertDontSee('Hubungkan Purchase Order (PO)');
+        $response->assertDontSee('name="purchase_order_id"', false);
+        $response->assertDontSee('name="material_request_id"', false);
+        $response->assertDontSee('Qty Target (PO)');
+        $response->assertDontSee('Selisih');
+        $response->assertSee('Jumlah Diterima (Stok)');
+        $response->assertSee('Kategori');
+        $response->assertSee('Satuan');
+    }
+
+    public function test_can_update_draft_goods_receipt_with_direct_material_inputs(): void
+    {
+        $gr = GoodsReceipt::create([
+            'receipt_number' => 'GR-TEST-UPDATE-01',
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'receipt_date' => now()->toDateString(),
+            'status' => 'draft',
+            'received_by_user_id' => $this->gudangUser->id,
+        ]);
+
+        $response = $this->actingAs($this->gudangUser)->put(route('goods-receipts.update', $gr), [
+            'warehouse_id'    => $this->warehouse->id,
+            'supplier_id'     => $this->supplier->id,
+            'received_at'     => now()->toDateString(),
+            'invoice_number'  => 'INV-UPDATED-99',
+            'notes'           => 'Update draft catatan',
+            'items' => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Bata Merah Press Super',
+                    'category_id'   => $this->category->id,
+                    'custom_unit'   => 'pcs',
+                    'quantity'      => 1000,
+                    'condition'     => 'good',
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $gr->refresh();
+        $this->assertEquals('INV-UPDATED-99', $gr->invoice_number);
+        $this->assertCount(1, $gr->items);
+        $this->assertEquals('Bata Merah Press Super', $gr->items->first()->item_name);
+        $this->assertEquals(1000, (float) $gr->items->first()->qty_received);
     }
 }
 
