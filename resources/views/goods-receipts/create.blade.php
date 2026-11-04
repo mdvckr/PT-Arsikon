@@ -861,10 +861,10 @@
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
             <h2 class="fw-700" style="font-size:18px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <x-lucide-package-check class="text-primary" /> Catat Penerimaan Barang & Alat Masuk
+                <x-lucide-package-check class="text-primary" /> Penerimaan Barang Langsung (Material &amp; Alat)
             </h2>
             <p class="text-muted" style="font-size:12.5px;margin-top:2px;margin-bottom:0;">
-                Input kedatangan fisik material dan alat kerja dari supplier atau PO dalam satu sesi dokumen penerimaan.
+                Input langsung kedatangan fisik material dan alat kerja ke gudang tanpa wajib PO, otomatis menyelaraskan stok gudang dan mencatat riwayat tahapan masuk.
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
@@ -1193,6 +1193,9 @@
 
                     {{-- Tombol Tambah & Tarik dari Jadwal --}}
                     <div class="flex items-center gap-2 flex-wrap receipt-btn-actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahBarisDirect" onclick="addRow('material')" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;display:inline-flex;align-items:center;gap:5px;">
+                            <x-lucide-plus-circle style="font-size:13px;" /> Tambah Baris Barang
+                        </button>
                         <button type="button" class="btn btn-sm btn-sched-import" id="btnOpenScheduleModal" onclick="openScheduledModal()" style="border-radius:7px;font-size:12px;font-weight:600;padding:6px 12px;color:#0369a1;background:#f0f9ff;border:1px solid #bae6fd;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s ease;">
                             <x-lucide-calendar-check style="font-size:13px;color:#0284c7;" /> Tarik dari Jadwal <span class="badge" id="badgeSchedCount" style="background:#0284c7;color:#ffffff;font-size:10px;margin-left:3px;display:none;padding:2px 5px;border-radius:6px;">0</span>
                         </button>

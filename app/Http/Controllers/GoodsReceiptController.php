@@ -543,12 +543,56 @@ class GoodsReceiptController extends Controller
     {
         $this->authorize('create goods receipts');
 
-        // Auto-register custom items from PO or Material Request if material_id is not yet created
+        // Auto-register custom items or direct entry items if material_id / tool_id is not yet created
         if ($request->has('items') && is_array($request->items)) {
             $items = $request->items;
             foreach ($items as $k => $v) {
+                // Ensure quantity / qty_received interoperability
+                $qty = $v['quantity'] ?? ($v['qty_received'] ?? null);
+                if ($qty !== null) {
+                    $items[$k]['quantity'] = (float) $qty;
+                    $items[$k]['qty_received'] = (float) $qty;
+                }
+                if (!isset($items[$k]['qty_shipped']) && $qty !== null) {
+                    $items[$k]['qty_shipped'] = (float) $qty;
+                }
+
+                $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);
+
                 if (empty($v['material_id']) && empty($v['tool_id'])) {
-                    if (!empty($v['purchase_order_item_id'])) {
+                    $directName = trim($v['name'] ?? ($v['custom_item_name'] ?? ''));
+                    if (!empty($directName)) {
+                        $catId = !empty($v['category_id']) ? (int) $v['category_id'] : null;
+                        $spec  = $v['specification'] ?? ($v['size'] ?? null);
+                        $typeName = !empty($v['custom_type']) ? $v['custom_type'] : ($v['type'] ?? null);
+                        $customSku = !empty($v['custom_sku']) ? trim($v['custom_sku']) : null;
+
+                        if ($isTool) {
+                            $tool = \App\Models\Tool::autoRegisterCustom(
+                                $directName,
+                                $catId,
+                                $typeName,
+                                $v['brand'] ?? null,
+                                $spec,
+                                $customSku
+                            );
+                            $items[$k]['tool_id'] = $tool->id;
+                            $items[$k]['item_type'] = 'tool';
+                        } else {
+                            $unit = $v['custom_unit'] ?? ($v['unit'] ?? 'unit');
+                            $mat = Material::autoRegisterCustom(
+                                $directName,
+                                $unit,
+                                $catId,
+                                $typeName,
+                                $v['brand'] ?? null,
+                                $spec,
+                                $customSku
+                            );
+                            $items[$k]['material_id'] = $mat->id;
+                            $items[$k]['item_type'] = 'material';
+                        }
+                    } elseif (!empty($v['purchase_order_item_id'])) {
                         $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
                         if ($poItem && !empty($poItem->custom_item_name)) {
                             $mrItem = $poItem->materialRequestItem;
@@ -590,18 +634,6 @@ class GoodsReceiptController extends Controller
                             $items[$k]['material_id'] = $mat->id;
                             $mrItem->update(['material_id' => $mat->id]);
                         }
-                    } elseif (!empty($v['custom_item_name'])) {
-                        $customSku = !empty($v['custom_sku']) ? trim($v['custom_sku']) : null;
-                        $mat = Material::autoRegisterCustom(
-                            $v['custom_item_name'],
-                            $v['custom_item_unit'] ?? 'unit',
-                            !empty($v['category_id']) ? (int) $v['category_id'] : null,
-                            $v['custom_type'] ?? ($v['type'] ?? null),
-                            $v['brand'] ?? null,
-                            $v['specification'] ?? ($v['size'] ?? null),
-                            $customSku
-                        );
-                        $items[$k]['material_id'] = $mat->id;
                     }
                 }
             }
