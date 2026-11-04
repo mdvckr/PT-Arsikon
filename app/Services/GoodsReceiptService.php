@@ -142,8 +142,11 @@ class GoodsReceiptService
                 }
 
                 $qtyMissing    = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
-                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? null) : null;
-                $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
+                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? 'pending') : null;
+                if ($missingAction === 'none') {
+                    $missingAction = 'pending';
+                }
+                $missingStatus = $qtyMissing > 0 ? ($missingAction === 'lost' ? 'confirmed_lost' : 'unresolved') : 'none';
 
                 // T9: GR tidak menerima unit_price dari request untuk item ber-PO. Selalu salin dari PO item.
                 $unitPrice = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
@@ -283,8 +286,11 @@ class GoodsReceiptService
                 }
 
                 $qtyMissing    = max(0, $qtyShipped - $qtyReceived - $qtyDamaged);
-                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? null) : null;
-                $missingStatus = $qtyMissing > 0 ? 'unresolved' : 'none';
+                $missingAction = $qtyMissing > 0 ? ($item['missing_action'] ?? 'pending') : null;
+                if ($missingAction === 'none') {
+                    $missingAction = 'pending';
+                }
+                $missingStatus = $qtyMissing > 0 ? ($missingAction === 'lost' ? 'confirmed_lost' : 'unresolved') : 'none';
                 $unitPrice     = $poItem ? (float) $poItem->unit_price : (float) ($item['unit_price'] ?? 0);
 
                 $materialId = $isTool ? null : ($item['material_id'] ?? null);
@@ -451,6 +457,10 @@ class GoodsReceiptService
                             'damaged_qty'    => (float) $item->qty_damaged,
                             'date'           => $receiptDateStr,
                             'status'         => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0) ? 'partial' : 'received',
+                            'status_label'   => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0)
+                                ? (($item->missing_action === 'lost') ? 'Masuk Ada Selisih Hilang' : 'Belum Dikirim Semua (Sisa Susulan)')
+                                : 'Lengkap Masuk',
+                            'missing_action' => $item->missing_action,
                             'condition'      => $item->condition,
                             'notes'          => $item->notes,
                             'created_at'     => now()->toISOString(),
@@ -530,6 +540,10 @@ class GoodsReceiptService
                                 'damaged_qty'    => (float) $item->qty_damaged,
                                 'date'           => $receiptDateStr,
                                 'status'         => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0) ? 'partial' : 'received',
+                                'status_label'   => ((float) $item->qty_missing > 0 || (float) $item->qty_damaged > 0)
+                                    ? (($item->missing_action === 'lost') ? 'Masuk Ada Selisih Hilang' : 'Belum Dikirim Semua (Sisa Susulan)')
+                                    : 'Lengkap Masuk',
+                                'missing_action' => $item->missing_action,
                                 'condition'      => $item->condition,
                                 'notes'          => $item->notes,
                                 'created_at'     => now()->toISOString(),

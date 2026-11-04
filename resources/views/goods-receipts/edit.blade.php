@@ -1075,7 +1075,7 @@
                                 <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
                                 <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
                                 <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:95px;text-align:center;" title="Selisih kurang/hilang antara Nota Vendor dengan fisik diterima">Selisih/Hilang</th>
+                                <th style="width:145px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
                                 <th style="width:140px;">Spesifikasi / Merek</th>
                                 <th style="min-width:120px;">Catatan Fisik</th>
                                 <th style="width:40px;text-align:center;"></th>

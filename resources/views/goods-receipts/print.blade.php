@@ -221,7 +221,7 @@
                 <td style="text-align:center;" class="{{ $item->qty_missing > 0 ? 'qty-missing' : '' }}">
                     {{ $item->qty_missing > 0 ? format_quantity($item->qty_missing) : '-' }}
                     @if($item->qty_missing > 0)
-                        <div style="font-size:9px;margin-top:1px;">{{ $item->missing_status === 'resolved' ? 'Selesai' : 'Belum Selesai' }}</div>
+                        <div style="font-size:9px;margin-top:1px;">{{ ($item->missing_action === 'lost' || $item->missing_status === 'confirmed_lost') ? 'Hilang' : ($item->missing_status === 'resolved' ? 'Selesai' : 'Belum Semua') }}</div>
                     @endif
                 </td>
                 <td style="text-align:center;font-weight:600;color:#475569;">{{ $item->item_unit }}</td>

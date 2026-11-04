@@ -211,10 +211,15 @@ class Tool extends Model
             $plannedQty = $qtyShipped > 0 ? $qtyShipped : ($qtyRec + $qtyMissing + $qtyDamaged);
             $hasDiscrepancy = ($qtyMissing > 0 || $qtyDamaged > 0);
 
+            $isLost = ($grItem->missing_action === 'lost' || $grItem->missing_status === 'confirmed_lost');
             $status = $hasDiscrepancy ? 'partial' : 'received';
-            $statusLabel = $hasDiscrepancy
-                ? 'Masuk Ada Selisih (' . number_format($qtyRec, 0, ',', '.') . '/' . number_format($plannedQty, 0, ',', '.') . ')'
-                : 'Lengkap Masuk';
+            if (!$hasDiscrepancy) {
+                $statusLabel = 'Lengkap Masuk';
+            } elseif ($isLost) {
+                $statusLabel = 'Masuk Ada Selisih Hilang (' . number_format($qtyRec, 0, ',', '.') . '/' . number_format($plannedQty, 0, ',', '.') . ')' ;
+            } else {
+                $statusLabel = 'Belum Dikirim Semua (' . number_format($qtyRec, 0, ',', '.') . '/' . number_format($plannedQty, 0, ',', '.') . ' • Sisa ' . number_format($qtyMissing, 0, ',', '.') . ')';
+            }
 
             $refDisplay = $gr->receipt_number;
             if ($gr->materialRequest) {

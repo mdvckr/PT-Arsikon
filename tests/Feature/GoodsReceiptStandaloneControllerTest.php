@@ -74,7 +74,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
         $response->assertSee('Qty Nota / SJ');
-        $response->assertSee('Selisih/Hilang');
+        $response->assertSee('Selisih &amp; Status', false);
         $response->assertSee('Diterima (Stok)');
         $response->assertSee('Kode Material');
     }
@@ -136,7 +136,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
         $response->assertSee('Qty Nota / SJ');
-        $response->assertSee('Selisih/Hilang');
+        $response->assertSee('Selisih &amp; Status', false);
         $response->assertSee('Diterima (Stok)');
         $response->assertSee('Kategori');
         $response->assertSee('Satuan');
@@ -230,6 +230,60 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $this->assertEquals(5, $stage['lost_qty']);
         $this->assertEquals('partial', $stage['status']);
         $this->assertStringContainsString('Masuk Ada Selisih', $stage['status_label']);
+    }
+
+    public function test_direct_goods_receipt_with_pending_discrepancy_records_as_belum_dikirim_semua(): void
+    {
+        $response = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), [
+            'warehouse_id'    => $this->warehouse->id,
+            'supplier_id'     => $this->supplier->id,
+            'received_at'     => now()->toDateString(),
+            'invoice_number'  => 'DO-VENDOR-PENDING-02',
+            'notes'           => 'Armada pertama baru bawa 70, sisanya besok',
+            'items' => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Besi Beton Ulir 12mm',
+                    'category_id'   => $this->category->id,
+                    'custom_unit'   => 'batang',
+                    'qty_shipped'   => 100,
+                    'quantity'      => 70,
+                    'qty_missing'   => 30,
+                    'missing_action'=> 'pending',
+                    'condition'     => 'good',
+                ]
+            ]
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $item = $gr->items->first();
+        $this->assertEquals(100, (float) $item->qty_shipped);
+        $this->assertEquals(70, (float) $item->qty_received);
+        $this->assertEquals(30, (float) $item->qty_missing);
+        $this->assertEquals('pending', $item->missing_action);
+
+        // Konfirmasi Goods Receipt
+        $service = app(\App\Services\GoodsReceiptService::class);
+        $service->confirm($gr, $this->gudangUser->id);
+
+        $item->refresh();
+        $this->assertEquals('unresolved', $item->missing_status);
+
+        // Verifikasi material terdaftar dan tahapan masuk mencatat 'Belum Dikirim Semua'
+        $material = \App\Models\Material::where('name', 'Besi Beton Ulir 12mm')->first();
+        $this->assertNotNull($material);
+
+        $stages = $material->getDynamicIncomingStages();
+        $this->assertNotEmpty($stages);
+        $stage = $stages->first();
+        $this->assertEquals(100, $stage['planned_qty']);
+        $this->assertEquals(70, $stage['received_qty']);
+        $this->assertEquals(30, $stage['lost_qty']);
+        $this->assertEquals('partial', $stage['status']);
+        $this->assertStringContainsString('Belum Dikirim Semua', $stage['status_label']);
+        $this->assertStringContainsString('Sisa 30', $stage['status_label']);
     }
 }
 

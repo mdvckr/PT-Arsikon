@@ -562,8 +562,11 @@ class GoodsReceiptController extends Controller
                 $receivedVal = (float) ($qty ?? 0);
                 $items[$k]['qty_shipped'] = $shippedVal;
                 $items[$k]['qty_missing'] = max(0, $shippedVal - $receivedVal);
-                if ($items[$k]['qty_missing'] > 0 && empty($items[$k]['missing_action'])) {
-                    $items[$k]['missing_action'] = 'lost';
+                if ($items[$k]['qty_missing'] > 0) {
+                    $action = $items[$k]['missing_action'] ?? null;
+                    $items[$k]['missing_action'] = (empty($action) || $action === 'none') ? 'pending' : $action;
+                } else {
+                    $items[$k]['missing_action'] = null;
                 }
 
                 $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);
@@ -727,7 +730,7 @@ class GoodsReceiptController extends Controller
             'items.*.quantity'               => 'required|numeric|min:0.01',
             'items.*.qty_shipped'            => 'nullable|numeric|min:0',
             'items.*.qty_missing'            => 'nullable|numeric|min:0',
-            'items.*.missing_action'         => 'nullable|in:lost,pending',
+            'items.*.missing_action'         => 'nullable|in:lost,pending,none',
             'items.*.qty_damaged'            => 'nullable|numeric|min:0',
             'items.*.unit_price'             => 'nullable|numeric|min:0',
             'items.*.notes'                  => 'nullable|string|max:500',
@@ -944,6 +947,7 @@ class GoodsReceiptController extends Controller
                 'qty_received'             => (float) $item->qty_received,
                 'quantity'                 => (float) $item->qty_received,
                 'qty_missing'              => (float) $item->qty_missing,
+                'missing_action'           => $item->missing_action ?? ($item->qty_missing > 0 ? 'pending' : 'none'),
                 'qty_damaged'              => (float) $item->qty_damaged,
                 'unit_price'               => (float) $item->unit_price,
                 'notes'                    => $item->notes,
@@ -1023,8 +1027,11 @@ class GoodsReceiptController extends Controller
                 $receivedVal = (float) ($qty ?? 0);
                 $items[$k]['qty_shipped'] = $shippedVal;
                 $items[$k]['qty_missing'] = max(0, $shippedVal - $receivedVal);
-                if ($items[$k]['qty_missing'] > 0 && empty($items[$k]['missing_action'])) {
-                    $items[$k]['missing_action'] = 'lost';
+                if ($items[$k]['qty_missing'] > 0) {
+                    $action = $items[$k]['missing_action'] ?? null;
+                    $items[$k]['missing_action'] = (empty($action) || $action === 'none') ? 'pending' : $action;
+                } else {
+                    $items[$k]['missing_action'] = null;
                 }
 
                 $isTool = ($v['item_type'] ?? '') === 'tool' || !empty($v['tool_id']);
@@ -1096,7 +1103,7 @@ class GoodsReceiptController extends Controller
             'items.*.quantity'                => 'required|numeric|min:0.01',
             'items.*.qty_shipped'             => 'nullable|numeric|min:0',
             'items.*.qty_missing'             => 'nullable|numeric|min:0',
-            'items.*.missing_action'          => 'nullable|in:lost,pending',
+            'items.*.missing_action'          => 'nullable|in:lost,pending,none',
             'items.*.qty_damaged'             => 'nullable|numeric|min:0',
             'items.*.unit_price'              => 'nullable|numeric|min:0',
             'items.*.notes'                   => 'nullable|string|max:500',

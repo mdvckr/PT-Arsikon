@@ -237,11 +237,14 @@
                                 </td>
                                 <td style="text-align:center;">
                                     @if($item->qty_missing > 0)
-                                        <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-weight:700;">
+                                        @php
+                                            $isLost = ($item->missing_action === 'lost' || $item->missing_status === 'confirmed_lost');
+                                        @endphp
+                                        <span class="badge" style="{{ $isLost ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;' : 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;' }}font-weight:700;">
                                             {{ format_quantity($item->qty_missing) }}
                                         </span>
-                                        <div style="font-size:10px;color:#991b1b;margin-top:2px;font-weight:600;">
-                                            {{ $item->missing_status === 'resolved' ? 'Terselesaikan' : ($item->missing_status === 'confirmed_lost' ? 'Dinyatakan Hilang' : 'Belum Selesai') }}
+                                        <div style="font-size:10px;margin-top:2px;font-weight:600;color:{{ $isLost ? '#991b1b' : '#92400e' }};">
+                                            {{ $item->missing_status === 'resolved' ? 'Terselesaikan' : ($isLost ? 'Dinyatakan Hilang' : 'Belum Dikirim Semua') }}
                                         </div>
                                         @if($item->missing_status === 'unresolved' && auth()->user()->can('create transit losses'))
                                             <div style="margin-top:4px;">

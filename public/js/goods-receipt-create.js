@@ -30,7 +30,7 @@ function checkAndUpdateWarehouseLock() {
     let lockedStageName = null;
     let hasAnyItemWithStage = false;
 
-    rows.forEach(function(row) {
+    rows.forEach(function (row) {
         const rowType = row.getAttribute('data-type');
         const isTool = (rowType === 'tool');
         const sel = row.querySelector('.item-select');
@@ -39,7 +39,7 @@ function checkAndUpdateWarehouseLock() {
 
         if (sel && sel.value) {
             const list = isTool ? grTools : grMaterials;
-            const item = list.find(function(i) { return i.id == sel.value; });
+            const item = list.find(function (i) { return i.id == sel.value; });
             if (item) {
                 // Barang dianggap punya tahapan jika:
                 // 1. Memiliki planned_stages atau has_stages
@@ -119,7 +119,7 @@ function focusAndHighlightField(fieldId) {
     const el = document.getElementById(fieldId);
     if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(function() {
+        setTimeout(function () {
             el.focus();
             flashEl(el, '#bfdbfe');
         }, 250);
@@ -131,7 +131,7 @@ function ensureUnitsDatalist() {
     const dl = document.createElement('datalist');
     dl.id = 'global-units-datalist';
     const standardUnits = ['Zak', 'Batang', 'M3', 'Kg', 'Lembar', 'Unit', 'Pcs', 'Dus', 'Roll', 'Meter', 'Liter', 'Can', 'Set', 'Btl', 'Btg', 'Box', 'Pak'];
-    standardUnits.forEach(function(u) {
+    standardUnits.forEach(function (u) {
         const opt = document.createElement('option');
         opt.value = u;
         dl.appendChild(opt);
@@ -206,7 +206,7 @@ function onItemNameInput(idx, val) {
     }
 
     // Cari item yang cocok di inventori gudang user sendiri
-    const match = itemsList.find(function(item) {
+    const match = itemsList.find(function (item) {
         return (item.name || '').trim().toLowerCase() === clean;
     });
 
@@ -288,7 +288,7 @@ function toggleRowType(idx) {
     const catSelect = document.getElementById('item-cat-' + idx);
     if (catSelect) {
         let catOptions = '<option value="">— Pilih Kategori —</option>';
-        catList.forEach(function(cat) {
+        catList.forEach(function (cat) {
             catOptions += '<option value="' + cat.id + '">' + escHtml(cat.name) + '</option>';
         });
         catSelect.innerHTML = catOptions;
@@ -299,7 +299,7 @@ function toggleRowType(idx) {
     const datalist = document.getElementById('items-datalist-' + idx);
     if (datalist) {
         let datalistOptions = '';
-        itemsList.forEach(function(item) {
+        itemsList.forEach(function (item) {
             const brandText = item.brand ? ' · ' + item.brand : '';
             const sizeText = item.size ? ' (' + item.size + ')' : '';
             const codeText = (item.sku || item.code) ? ' [' + (item.sku || item.code) + ']' : '';
@@ -363,11 +363,11 @@ function addRow(type, opts) {
     let targetId = isTool ? opts.tool_id : opts.material_id;
     let foundMasterItem = null;
     if (targetId) {
-        foundMasterItem = itemsList.find(function(i) { return i.id == targetId; });
+        foundMasterItem = itemsList.find(function (i) { return i.id == targetId; });
     }
     const initialName = opts.name || opts.material_name || opts.custom_item_name || (foundMasterItem ? foundMasterItem.name : '');
     if (!foundMasterItem && initialName) {
-        foundMasterItem = itemsList.find(function(i) {
+        foundMasterItem = itemsList.find(function (i) {
             return (i.name || '').trim().toLowerCase() === initialName.trim().toLowerCase();
         });
         if (foundMasterItem) {
@@ -391,20 +391,24 @@ function addRow(type, opts) {
     if (initialShipped !== '' && initialQty !== '' && (opts.qty_missing == null || opts.qty_missing === '')) {
         initialMissing = Math.max(0, (parseFloat(initialShipped) || 0) - (parseFloat(initialQty) || 0));
     }
+    let initialAction = opts.missing_action || ((initialMissing > 0) ? 'pending' : 'none');
+    if (initialMissing <= 0) {
+        initialAction = 'none';
+    }
     const initialBrand = opts.brand || (foundMasterItem ? (foundMasterItem.brand || '') : '');
     const initialNotes = opts.notes || '';
     const initialSku = foundMasterItem ? (foundMasterItem.sku || foundMasterItem.code || '') : (opts.sku || opts.custom_sku || '');
 
     // Options for categories
     let catOptions = '<option value="">— Pilih Kategori —</option>';
-    catList.forEach(function(cat) {
+    catList.forEach(function (cat) {
         const isSel = (initialCatId && cat.id == initialCatId) ? ' selected' : '';
         catOptions += '<option value="' + cat.id + '"' + isSel + '>' + escHtml(cat.name) + '</option>';
     });
 
     // Datalist options for items in own warehouse
     let datalistOptions = '';
-    itemsList.forEach(function(item) {
+    itemsList.forEach(function (item) {
         const brandText = item.brand ? ' · ' + item.brand : '';
         const sizeText = item.size ? ' (' + item.size + ')' : '';
         const codeText = (item.sku || item.code) ? ' [' + (item.sku || item.code) + ']' : '';
@@ -462,6 +466,13 @@ function addRow(type, opts) {
         + '</select>'
         + '</td>'
 
+        // Col 9: Spesifikasi / Merek
+        + '<td class="col-brand" style="vertical-align:top;padding-top:10px;">'
+        + '<input type="text" name="items[' + idx + '][brand]" id="item-brand-' + idx + '" class="form-control" '
+        + 'placeholder="mis. Semen Gresik 50kg" value="' + escHtml(initialBrand) + '" '
+        + 'style="font-size:12px;height:38px;border-radius:7px;">'
+        + '</td>'
+
         // Col 5: Satuan (Input + Shared Units Datalist)
         + '<td class="col-unit" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + '<input type="text" name="items[' + idx + '][custom_unit]" id="item-unit-' + idx + '" class="form-control text-center" '
@@ -487,22 +498,26 @@ function addRow(type, opts) {
         + 'style="font-weight:800;font-size:13.5px;color:#1e3a8a;border:2px solid #3b82f6;border-radius:7px;box-shadow:0 1px 3px rgba(37,99,235,0.08);height:38px;" title="Kuantitas fisik diterima baik yang menambah stok gudang">'
         + '</td>'
 
-        // Col 8: Selisih / Hilang
+        // Col 8: Selisih & Status Tindakan
         + '<td class="col-diff" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + '<input type="hidden" name="items[' + idx + '][qty_missing]" id="item-missing-' + idx + '" value="' + initialMissing + '">'
-        + '<input type="hidden" name="items[' + idx + '][missing_action]" id="item-missing-action-' + idx + '" value="lost">'
-        + '<div id="item-diff-badge-' + idx + '" style="height:38px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-weight:700;font-size:12px;'
-        + (initialMissing > 0 ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;' : 'background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;') + '">'
-        + (initialMissing > 0 ? ('<i class="fas fa-triangle-exclamation me-1" style="font-size:10px;"></i> -' + initialMissing) : '0')
+        + '<div id="item-diff-badge-' + idx + '" style="font-size:11px;font-weight:700;margin-bottom:3px;display:' + (initialMissing > 0 ? 'inline-block' : 'none') + ';">'
+        + '<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:10.5px;padding:2px 7px;border-radius:5px;">'
+        + '<i class="fas fa-triangle-exclamation me-1" style="font-size:9px;"></i> Selisih: -' + initialMissing
+        + '</span>'
         + '</div>'
+        + '<select name="items[' + idx + '][missing_action]" id="item-missing-action-' + idx + '" '
+        + 'class="form-control form-control-sm text-center missing-action-select" '
+        + 'onchange="onMissingActionChange(' + idx + ')" '
+        + 'style="font-size:11px;font-weight:600;height:34px;border-radius:7px;padding:2px 5px;cursor:pointer;'
+        + (initialMissing > 0 ? (initialAction === 'lost' ? 'background:#fee2e2;color:#991b1b;border-color:#fca5a5;' : 'background:#fef3c7;color:#92400e;border-color:#fde68a;') : 'background:#f8fafc;color:#94a3b8;border-color:#e2e8f0;') + '" '
+        + 'title="Pilihan tindakan selisih">'
+        + '<option value="none"' + (initialMissing <= 0 ? ' selected' : '') + '>✓ Sesuai (0)</option>'
+        + '<option value="pending"' + (initialMissing > 0 && initialAction !== 'lost' ? ' selected' : '') + '>⏳ Belum Dikirim Semua</option>'
+        + '<option value="lost"' + (initialMissing > 0 && initialAction === 'lost' ? ' selected' : '') + '>❌ Dinyatakan Hilang</option>'
+        + '</select>'
         + '</td>'
 
-        // Col 9: Spesifikasi / Merek
-        + '<td class="col-brand" style="vertical-align:top;padding-top:10px;">'
-        + '<input type="text" name="items[' + idx + '][brand]" id="item-brand-' + idx + '" class="form-control" '
-        + 'placeholder="mis. Semen Gresik 50kg" value="' + escHtml(initialBrand) + '" '
-        + 'style="font-size:12px;height:38px;border-radius:7px;">'
-        + '</td>'
 
         // Col 8: Catatan Fisik
         + '<td class="col-notes" style="vertical-align:top;padding-top:10px;">'
@@ -529,7 +544,7 @@ function addRow(type, opts) {
 
 function prefillExistingItems(items) {
     if (Array.isArray(items)) {
-        items.forEach(function(item) {
+        items.forEach(function (item) {
             addRow(item.item_type || 'material', item);
         });
     }
@@ -581,7 +596,7 @@ function onItemChange(sel, idx, isTool) {
     }
 
     const itemsList = isTool ? grTools : grMaterials;
-    const item = itemsList.find(function(i) { return i.id == opt.value; });
+    const item = itemsList.find(function (i) { return i.id == opt.value; });
     if (!item) return;
 
     if (skuBadge) skuBadge.textContent = item.sku || item.code || '-';
@@ -646,7 +661,7 @@ function onItemChange(sel, idx, isTool) {
     }
 
     // Render tahapan hanya jika ada rencana yang belum masuk (hindari kotak kuning kosong jika 0 rencana)
-    const plannedStages = (item.planned_stages || []).filter(function(stg) { return stg.status === 'planned'; });
+    const plannedStages = (item.planned_stages || []).filter(function (stg) { return stg.status === 'planned'; });
     if (plannedStages.length > 0) {
         const stageInputEl = document.getElementById('stage-input-' + idx);
         const currentStageLower = stageInputEl ? stageInputEl.value.trim().toLowerCase() : '';
@@ -654,7 +669,7 @@ function onItemChange(sel, idx, isTool) {
         metaHtml += '<div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
             + '<span style="font-size:11px;font-weight:600;color:#92400e;display:inline-flex;align-items:center;gap:3px;"><i class="fas fa-clock text-warning"></i> Pilih Tahap:</span>';
 
-        plannedStages.forEach(function(stg, sIdx) {
+        plannedStages.forEach(function (stg, sIdx) {
             const stageDate = stg.date ? formatDmy(stg.date) : '-';
             const safeStage = escHtml(stg.stage || ('Tahap ' + (sIdx + 1)));
             const isSelected = currentStageLower && (currentStageLower === safeStage.toLowerCase());
@@ -677,8 +692,8 @@ function onItemChange(sel, idx, isTool) {
                 + '</button>';
 
             if (isSelected || isAutoFirst) {
-                (function(s, sI, sQty, sWhId, sWhName) {
-                    setTimeout(function() {
+                (function (s, sI, sQty, sWhId, sWhName) {
+                    setTimeout(function () {
                         selectStageForItem(idx, s.stage || ('T' + (sI + 1)), sQty, s.date || '', sI, item.supplier_id, item.supplier_name, sWhId, sWhName);
                     }, 0);
                 })(stg, sIdx, safeQty, (stg.warehouse_id || item.warehouse_id || null), (stg.warehouse_name || item.warehouse_name || null));
@@ -738,7 +753,7 @@ function selectStageForItem(idx, stageName, qty, date, sIdx, supplierId, supplie
 
     // 6. Highlight pill aktif
     const allPills = document.querySelectorAll('[id^="stage-pill-' + idx + '-"]');
-    allPills.forEach(function(p) { p.classList.remove('active'); });
+    allPills.forEach(function (p) { p.classList.remove('active'); });
     const activePill = document.getElementById('stage-pill-' + idx + '-' + sIdx);
     if (activePill) activePill.classList.add('active');
 
@@ -753,7 +768,7 @@ function onSupplierInput(input) {
     const val = input.value.trim().toLowerCase();
     const hiddenId = document.getElementById('supplierIdHidden');
     const hint = document.getElementById('supplierHint');
-    const found = grSuppliers.find(function(s) { return s.name.toLowerCase() === val; });
+    const found = grSuppliers.find(function (s) { return s.name.toLowerCase() === val; });
     if (found) {
         if (hiddenId) hiddenId.value = found.id;
         if (hint) hint.innerHTML = '<i class="fas fa-check-circle me-1" style="color:#16a34a;"></i>'
@@ -806,16 +821,16 @@ function loadPoItems(poId) {
     if (bannerText) bannerText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengambil data item PO...';
 
     fetch(grConfig.poItemsUrl + '/' + poId)
-        .then(function(r) {
+        .then(function (r) {
             if (!r.ok) throw new Error('HTTP error ' + r.status);
             return r.json();
         })
-        .then(function(data) {
+        .then(function (data) {
             // Auto-fill supplier dari PO
             if (data.supplier_id && data.supplier_name) {
                 setSupplierByName(data.supplier_name, data.supplier_id);
             } else if (data.supplier_id) {
-                const sup = grSuppliers.find(function(s) { return s.id == data.supplier_id; });
+                const sup = grSuppliers.find(function (s) { return s.id == data.supplier_id; });
                 if (sup) setSupplierByName(sup.name, sup.id);
             } else if (data.supplier_name) {
                 setSupplierByName(data.supplier_name, '');
@@ -847,7 +862,7 @@ function loadPoItems(poId) {
             rowCount = 0;
 
             if (data.items && data.items.length > 0) {
-                data.items.forEach(function(item) {
+                data.items.forEach(function (item) {
                     const targetQty = (item.qty_remaining != null) ? item.qty_remaining : item.qty_ordered;
                     addRow(item.item_type || 'material', {
                         material_id: item.material_id,
@@ -887,7 +902,7 @@ function loadPoItems(poId) {
                 checkEmptyState('Seluruh item pada PO ini telah diterima secara penuh atau belum memiliki rincian item.');
             }
         })
-        .catch(function(err) {
+        .catch(function (err) {
             console.error('Error loadPoItems:', err);
             alert('Gagal memuat rincian item PO: ' + (err.message || err));
             if (document.querySelectorAll('#itemsBody tr.item-row').length === 0) {
@@ -920,7 +935,7 @@ function onMrSelectChange(mrId) {
         return;
     }
 
-    const mr = (typeof grMaterialRequests !== 'undefined' ? grMaterialRequests : []).find(function(m) { return m.id == mrId; });
+    const mr = (typeof grMaterialRequests !== 'undefined' ? grMaterialRequests : []).find(function (m) { return m.id == mrId; });
 
     // 1. Pilih gudang tujuan sesuai gudang proyek pemohon
     if (mr && mr.warehouse_id && whSelect) {
@@ -971,11 +986,11 @@ function loadMrItems(mrId, filterPoId) {
     const fetchUrl = grConfig.mrItemsUrl + '/' + mrId + (filterPoId ? '?purchase_order_id=' + encodeURIComponent(filterPoId) : '');
 
     fetch(fetchUrl)
-        .then(function(r) {
+        .then(function (r) {
             if (!r.ok) throw new Error('HTTP error ' + r.status);
             return r.json();
         })
-        .then(function(data) {
+        .then(function (data) {
             if (data.warehouse_id) {
                 const whSelect = document.getElementById('warehouseSelect');
                 if (whSelect) {
@@ -998,7 +1013,7 @@ function loadMrItems(mrId, filterPoId) {
                     if (data.purchase_orders.length > 1) {
                         poOptionsHtml += '<option value="">-- Pilih PO Vendor yang Sedang Datang (' + data.purchase_orders.length + ' Vendor Terhubung) --</option>';
                     }
-                    data.purchase_orders.forEach(function(po) {
+                    data.purchase_orders.forEach(function (po) {
                         const isSelected = (filterPoId && filterPoId == po.id) ? ' selected' : '';
                         let statusLabel = '';
                         if (po.unreceived_count != null && po.unreceived_count > 0) {
@@ -1007,7 +1022,7 @@ function loadMrItems(mrId, filterPoId) {
                             statusLabel = ' [Sudah Lengkap Diterima]';
                         }
                         poOptionsHtml += '<option value="' + po.id + '" data-mr-id="' + data.material_request_id + '"' + isSelected + '>'
-                            + '#' + escHtml(po.po_number) + ' • ' + escHtml(po.supplier_name || 'Vendor') 
+                            + '#' + escHtml(po.po_number) + ' • ' + escHtml(po.supplier_name || 'Vendor')
                             + statusLabel
                             + (po.items_summary ? ' (' + escHtml(po.items_summary) + ')' : '')
                             + '</option>';
@@ -1091,7 +1106,7 @@ function loadMrItems(mrId, filterPoId) {
             rowCount = 0;
 
             if (displayItems.length > 0) {
-                displayItems.forEach(function(item) {
+                displayItems.forEach(function (item) {
                     const targetQty = (item.qty_remaining != null) ? item.qty_remaining : item.qty_ordered;
                     addRow(item.item_type || 'material', {
                         material_id: item.material_id,
@@ -1126,7 +1141,7 @@ function loadMrItems(mrId, filterPoId) {
                 }
             }
         })
-        .catch(function(err) {
+        .catch(function (err) {
             console.error('Gagal memuat item MR:', err);
             alert('Gagal memuat rincian item PO Lapangan: ' + (err.message || err));
             if (document.querySelectorAll('#itemsBody tr.item-row').length === 0) {
@@ -1143,8 +1158,8 @@ let currentModalFilter = 'all';
 
 function getAllPlannedStages() {
     const list = [];
-    (grMaterials || []).forEach(function(m) {
-        (m.planned_stages || []).forEach(function(stg, sIdx) {
+    (grMaterials || []).forEach(function (m) {
+        (m.planned_stages || []).forEach(function (stg, sIdx) {
             list.push({
                 item_type: 'material',
                 material_id: m.id,
@@ -1162,8 +1177,8 @@ function getAllPlannedStages() {
             });
         });
     });
-    (grTools || []).forEach(function(t) {
-        (t.planned_stages || []).forEach(function(stg, sIdx) {
+    (grTools || []).forEach(function (t) {
+        (t.planned_stages || []).forEach(function (stg, sIdx) {
             list.push({
                 item_type: 'tool',
                 material_id: null,
@@ -1181,7 +1196,7 @@ function getAllPlannedStages() {
             });
         });
     });
-    list.sort(function(a, b) {
+    list.sort(function (a, b) {
         return (a.scheduled_date || '').localeCompare(b.scheduled_date || '');
     });
     return list;
@@ -1219,7 +1234,7 @@ function checkAndShowScheduledPrompt() {
     if (countAllEl) countAllEl.textContent = count;
 
     const todayDate = grConfig.today || new Date().toISOString().split('T')[0];
-    const todayCount = planned.filter(function(i) { return i.scheduled_date === todayDate; }).length;
+    const todayCount = planned.filter(function (i) { return i.scheduled_date === todayDate; }).length;
     const countTodayEl = document.getElementById('countSchedToday');
     if (countTodayEl) countTodayEl.textContent = todayCount;
 }
@@ -1240,7 +1255,7 @@ function autoImportAllScheduled() {
 
     let firstSupplierId = null, firstSupplierName = null, firstScheduledDate = null;
 
-    planned.forEach(function(item) {
+    planned.forEach(function (item) {
         if (item.supplier_id && !firstSupplierId) {
             firstSupplierId = item.supplier_id;
             firstSupplierName = item.supplier_name || null;
@@ -1263,7 +1278,7 @@ function autoImportAllScheduled() {
     if (firstSupplierId || firstSupplierName) {
         const existingInput = document.getElementById('supplierNameInput');
         if (existingInput && !existingInput.value.trim()) {
-            const sup = firstSupplierId ? grSuppliers.find(function(s) { return s.id == firstSupplierId; }) : null;
+            const sup = firstSupplierId ? grSuppliers.find(function (s) { return s.id == firstSupplierId; }) : null;
             if (sup) setSupplierByName(sup.name, sup.id);
             else if (firstSupplierName) setSupplierByName(firstSupplierName, firstSupplierId || '');
         }
@@ -1346,8 +1361,8 @@ function fetchScheduledItems(filterType) {
     const url = grConfig.scheduledUrl + '?date=' + encodeURIComponent(dateParam);
 
     fetch(url)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
             currentScheduledData = data.items || [];
             if (currentScheduledData.length === 0) {
                 const ket = (filterType === 'today') ? 'hari ini' : ((filterType === 'date') ? 'tanggal ini' : 'gudang ini');
@@ -1364,13 +1379,13 @@ function fetchScheduledItems(filterType) {
                 + '<span style="font-size:12px;color:#334155;">Ditemukan <strong>' + currentScheduledData.length + '</strong> barang rencana kedatangan:</span>'
                 + '<button type="button" class="btn btn-sm btn-light border" onclick="toggleSelectAllScheduled(true)" style="font-size:11px;padding:2px 8px;font-weight:600;">Centang Semua</button></div>';
 
-            currentScheduledData.forEach(function(item, i) {
+            currentScheduledData.forEach(function (item, i) {
                 const isTool = item.item_type === 'tool';
                 const badge = isTool
                     ? '<span class="badge" style="background:#fef3c7;color:#b45309;"><i class="fas fa-helmet-safety"></i> Alat</span>'
                     : '<span class="badge" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-box"></i> Material</span>';
-                
-                const supplierBadge = item.supplier_name 
+
+                const supplierBadge = item.supplier_name
                     ? '<span class="badge" style="background:#f0fdf4;color:#166534;font-size:10px;border:1px solid #bbf7d0;"><i class="fas fa-building me-1"></i>' + escHtml(item.supplier_name) + '</span>'
                     : '';
 
@@ -1391,7 +1406,7 @@ function fetchScheduledItems(filterType) {
 
             container.innerHTML = html;
         })
-        .catch(function() {
+        .catch(function () {
             container.innerHTML = '<div class="alert alert-danger" style="font-size:12px;">Gagal memuat jadwal kedatangan.</div>';
         });
 }
@@ -1406,7 +1421,7 @@ function toggleSelectAllScheduled(forceState) {
         const checkedCount = document.querySelectorAll('.scheduled-checkbox:checked').length;
         shouldCheck = (checkedCount < checkboxes.length);
     }
-    checkboxes.forEach(function(cb) { cb.checked = shouldCheck; });
+    checkboxes.forEach(function (cb) { cb.checked = shouldCheck; });
 }
 
 function applySelectedScheduledItems() {
@@ -1423,7 +1438,7 @@ function applySelectedScheduledItems() {
     let firstSupplierId = null, firstSupplierName = null, firstScheduledDate = null;
     let firstWarehouseId = null, firstWarehouseName = null;
 
-    checkboxes.forEach(function(cb) {
+    checkboxes.forEach(function (cb) {
         const idx = parseInt(cb.value);
         const item = currentScheduledData[idx];
         if (!item) return;
@@ -1456,7 +1471,7 @@ function applySelectedScheduledItems() {
     if (firstSupplierId || firstSupplierName) {
         const existingInput = document.getElementById('supplierNameInput');
         if (existingInput && !existingInput.value.trim()) {
-            const sup = firstSupplierId ? grSuppliers.find(function(s) { return s.id == firstSupplierId; }) : null;
+            const sup = firstSupplierId ? grSuppliers.find(function (s) { return s.id == firstSupplierId; }) : null;
             if (sup) setSupplierByName(sup.name, sup.id);
             else if (firstSupplierName) setSupplierByName(firstSupplierName, firstSupplierId || '');
         }
@@ -1487,7 +1502,7 @@ function showToast(msg) {
         + 'box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;';
     toast.innerHTML = '<i class="fas fa-check-circle text-success" style="font-size:16px;"></i> ' + escHtml(msg);
     document.body.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 3500);
+    setTimeout(function () { toast.remove(); }, 3500);
 }
 
 // ============================================================
@@ -1496,7 +1511,7 @@ function showToast(msg) {
 
 function filterItemsTab(type) {
     currentTabFilter = type;
-    ['all', 'material', 'tool'].forEach(function(t) {
+    ['all', 'material', 'tool'].forEach(function (t) {
         const btn = document.getElementById('tab-btn-' + t);
         if (btn) {
             if (t === type) btn.classList.add('active');
@@ -1506,7 +1521,7 @@ function filterItemsTab(type) {
 
     const rows = document.querySelectorAll('#itemsBody tr.item-row');
     let visibleCount = 0;
-    rows.forEach(function(tr) {
+    rows.forEach(function (tr) {
         const rowType = tr.getAttribute('data-type');
         if (type === 'all' || rowType === type) { tr.style.display = ''; visibleCount++; }
         else tr.style.display = 'none';
@@ -1559,13 +1574,33 @@ function onShippedInput(idx) {
     updateGrandTotal();
 }
 
+function onMissingActionChange(idx) {
+    const actionSelect = document.getElementById('item-missing-action-' + idx);
+    if (!actionSelect) return;
+    const action = actionSelect.value;
+    if (action === 'lost') {
+        actionSelect.style.background = '#fee2e2';
+        actionSelect.style.color = '#991b1b';
+        actionSelect.style.borderColor = '#fca5a5';
+    } else if (action === 'pending') {
+        actionSelect.style.background = '#fef3c7';
+        actionSelect.style.color = '#92400e';
+        actionSelect.style.borderColor = '#fde68a';
+    } else {
+        actionSelect.style.background = '#f8fafc';
+        actionSelect.style.color = '#94a3b8';
+        actionSelect.style.borderColor = '#e2e8f0';
+    }
+}
+
 function recalcItemDiscrepancy(idx) {
     const qtyInput = document.getElementById('item-qty-' + idx);
     const shippedInput = document.getElementById('item-shipped-' + idx);
     const missingHidden = document.getElementById('item-missing-' + idx);
-    const badge = document.getElementById('item-diff-badge-' + idx);
+    const badgeWrap = document.getElementById('item-diff-badge-' + idx);
+    const actionSelect = document.getElementById('item-missing-action-' + idx);
 
-    if (!qtyInput || !missingHidden || !badge) return;
+    if (!qtyInput || !missingHidden) return;
 
     const recVal = parseFloat(qtyInput.value) || 0;
     const shipVal = (shippedInput && shippedInput.value !== '') ? (parseFloat(shippedInput.value) || 0) : recVal;
@@ -1574,28 +1609,36 @@ function recalcItemDiscrepancy(idx) {
     missingHidden.value = diff;
 
     if (diff > 0) {
-        badge.style.background = '#fee2e2';
-        badge.style.color = '#991b1b';
-        badge.style.border = '1px solid #fca5a5';
-        badge.innerHTML = '<i class="fas fa-triangle-exclamation me-1" style="font-size:10px;"></i> -' + diff;
-        badge.title = 'Selisih kurang/hilang dari nota: ' + diff;
+        if (badgeWrap) {
+            badgeWrap.style.display = 'inline-block';
+            badgeWrap.innerHTML = '<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:10.5px;padding:2px 7px;border-radius:5px;"><i class="fas fa-triangle-exclamation me-1" style="font-size:9px;"></i> Selisih: -' + diff + '</span>';
+        }
+        if (actionSelect) {
+            if (actionSelect.value === 'none') {
+                actionSelect.value = 'pending';
+            }
+            onMissingActionChange(idx);
+        }
     } else {
-        badge.style.background = '#f8fafc';
-        badge.style.color = '#94a3b8';
-        badge.style.border = '1px solid #e2e8f0';
-        badge.innerHTML = '0';
-        badge.title = 'Tidak ada selisih';
+        if (badgeWrap) {
+            badgeWrap.style.display = 'none';
+            badgeWrap.innerHTML = '';
+        }
+        if (actionSelect) {
+            actionSelect.value = 'none';
+            onMissingActionChange(idx);
+        }
     }
 }
 
 function updateGrandTotal() {
     const rows = document.querySelectorAll('#itemsBody tr.item-row');
     let countAll = rows.length, countMaterial = 0, countTool = 0, totalMissing = 0;
-    rows.forEach(function(tr) {
+    rows.forEach(function (tr) {
         if (tr.getAttribute('data-type') === 'tool') countTool++;
         else countMaterial++;
     });
-    document.querySelectorAll('input[id^="item-missing-"]').forEach(function(inp) {
+    document.querySelectorAll('input[id^="item-missing-"]').forEach(function (inp) {
         totalMissing += parseFloat(inp.value) || 0;
     });
 
@@ -1670,14 +1713,14 @@ function flashEl(el, color) {
     if (!el) return;
     el.style.transition = 'background 0.3s ease';
     el.style.background = color;
-    setTimeout(function() { el.style.background = ''; }, 800);
+    setTimeout(function () { el.style.background = ''; }, 800);
 }
 
 // ============================================================
 // INIT
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     ensureUnitsDatalist();
 
     const mrSelect = document.getElementById('mrSelect');
