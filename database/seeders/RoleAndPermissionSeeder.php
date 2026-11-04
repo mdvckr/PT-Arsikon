@@ -111,44 +111,56 @@ class RoleAndPermissionSeeder extends Seeder
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view tool assignments', 'create tool assignments', 'return tool assignments',
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
-            'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
-            'view returns', 'approve returns', 'receive returns',
             'create transit losses',
             'view reports',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
 
-        // --- Admin Gudang Proyek: Pengelolaan Logistik di Site Proyek ---
-        $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
-        $proyekPermissions = [
-            // Material & Tool CRUD
+        // --- Admin Gudang Proyek (Gudang Proyek): Akses HANYA Seluruh Operasional Logistik Fisik ---
+        $adminGudangProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
+        $gudangProyekPermissions = [
+            // Surat Jalan (Dipindahkan ke Logistik)
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
+            // Penerimaan Barang (Goods Receipts)
+            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
+            // Pemakaian Material
+            'view material usages', 'create material usages', 'cancel material usages',
+            // Peminjaman Alat
+            'view tool assignments', 'create tool assignments', 'return tool assignments',
+            'approve tool assignments', 'inspect return tool assignments', 'cancel tool assignments',
+            // Inventori & Master Data Barang
+            'view inventory',
             'view materials', 'create materials', 'edit materials', 'delete materials',
             'view tools', 'create tools', 'edit tools', 'delete tools',
             'view categories', 'create categories', 'edit categories', 'delete categories',
-            // Goods Receipts
-            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            // Material Requests
-            'view material requests', 'create material requests',
-            // Material Usages
-            'view material usages', 'create material usages', 'cancel material usages',
-            // Distributions
-            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
-            // Tool Assignments
-            'view tool assignments', 'create tool assignments', 'return tool assignments',
-            'approve tool assignments', 'inspect return tool assignments', 'cancel tool assignments',
-            // Stock Opname
-            'view stock opname', 'create stock opname',
-            // Inventory
-            'view inventory', 'delete inventory',
-            // Returns
-            'view returns', 'create returns', 'receive returns',
-            // Transit Losses
+            'view suppliers',
             'create transit losses',
-            // Reports
-            'view reports',
         ];
-        $adminProyekRole->syncPermissions($proyekPermissions);
+        $adminGudangProyekRole->syncPermissions($gudangProyekPermissions);
+
+        // --- Peran Teknis Lapangan: Admin Proyek, Site Manager, Site Engineer, Project Manager ---
+        // Fokus teknis: PO Lapangan (material requests), Inventory, dan Log Harian (reports)
+        $teknisPermissions = [
+            'view material requests', 'create material requests', 'approve material requests',
+            'view inventory',
+            'view reports',
+            'view materials',
+            'view tools',
+            'view categories',
+        ];
+
+        $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Proyek']);
+        $adminProyekRole->syncPermissions($teknisPermissions);
+
+        $siteManagerRole = Role::firstOrCreate(['name' => 'Site Manager']);
+        $siteManagerRole->syncPermissions($teknisPermissions);
+
+        $siteEngineerRole = Role::firstOrCreate(['name' => 'Site Engineer']);
+        $siteEngineerRole->syncPermissions($teknisPermissions);
+
+        $projectManagerRole = Role::firstOrCreate(['name' => 'Project Manager']);
+        $projectManagerRole->syncPermissions($teknisPermissions);
 
         // --- Karyawan: akses terbatas (lihat stok, pinjam alat, request material/PO Lapangan) ---
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
@@ -318,10 +330,10 @@ class RoleAndPermissionSeeder extends Seeder
             ]
         );
         $adminProyek1->update(['password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password'))]);
-        $adminProyek1->syncRoles([$adminProyekRole]);
+        $adminProyek1->syncRoles([$adminGudangProyekRole]);
         $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
 
-        // 5. User Proyek (Proyek A)
+        // 5. User Proyek / Admin Proyek (Proyek A)
         $userProyek = User::firstOrCreate(
             ['email' => 'user.proyek@arsikon.co.id'],
             [
