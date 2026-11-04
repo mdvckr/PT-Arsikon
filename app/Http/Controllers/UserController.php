@@ -182,7 +182,19 @@ class UserController extends Controller
      */
     protected function getOrderedRoles()
     {
-        $order = ['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Karyawan'];
+        $order = [
+            'Owner',
+            'Admin Pusat',
+            'Admin Gudang Pusat',
+            'Admin Gudang Proyek',
+            'Admin Proyek',
+            'Site Engineer',
+            'Site Manager',
+            'Project Manager',
+            'Admin PO',
+            'Admin PO Proyek',
+            'admin-po-nota',
+        ];
         return Role::all()->sortBy(function ($r) use ($order) {
             $pos = array_search($r->name, $order, true);
             return $pos === false ? 999 : $pos;

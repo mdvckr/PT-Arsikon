@@ -861,10 +861,10 @@
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
         <div>
             <h2 class="fw-700" style="font-size:18px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
-                <x-lucide-package-check class="text-primary" /> Penerimaan Barang Langsung (Material &amp; Alat)
+                <x-lucide-package-check class="text-primary" /> Penerimaan Barang  (Material &amp; Alat)
             </h2>
             <p class="text-muted" style="font-size:12.5px;margin-top:2px;margin-bottom:0;">
-                Input langsung kedatangan fisik material dan alat kerja ke gudang tanpa wajib PO, otomatis menyelaraskan stok gudang dan mencatat riwayat tahapan masuk.
+                Input langsung kedatangan fisik material dan alat kerja ke gudang dengan, otomatis menyelaraskan stok gudang dan mencatat riwayat tahapan masuk.
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
@@ -1144,9 +1144,9 @@
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
                                 <th style="width:75px;text-align:center;">Tipe</th>
                                 <th style="width:125px;">Kode Material</th>
-                                <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
+                                <th style="min-width:210px;">Nama Barang <span class="text-danger">*</span></th>
                                 <th style="width:140px;">Kategori <span class="text-danger">*</span></th>
-                                <th style="width:145px;">Spesifikasi / Merek</th>
+                                <th style="width:145px;">Merek</th>
                                 <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
                                 <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
                                 <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
@@ -1184,7 +1184,7 @@
                             <x-lucide-arrow-left class="me-1" /> Kembali
                         </a>
                         <button type="submit" class="save-btn">
-                            <x-lucide-save class="me-2" /> Simpan Penerimaan (Draft)
+                            <x-lucide-save class="me-2" /> Simpan Penerimaan
                         </button>
                     </div>
                 </div>

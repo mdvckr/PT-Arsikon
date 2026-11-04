@@ -276,6 +276,18 @@
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
+/* ===== SIDEBAR RESPONSIVE: Hide on tablet/mobile ===== */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: min(280px, 82vw) !important;
+        transform: translateX(-100%) !important;
+    }
+    .sidebar.open {
+        transform: translateX(0) !important;
+        box-shadow: 6px 0 28px rgba(0, 0, 0, 0.4);
+    }
+}
+
 .sidebar::-webkit-scrollbar {
     width: 5px;
 }
@@ -380,6 +392,9 @@
     .sidebar-nav-item,
     .sidebar-group-arrow {
         transition: none !important;
+    }
+    .sidebar-nav-item,
+    .sidebar-group-arrow {
         transform: none !important;
     }
     .sidebar-nav-item:hover:not(.active) {

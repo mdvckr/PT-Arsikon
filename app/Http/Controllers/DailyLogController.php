@@ -18,10 +18,6 @@ class DailyLogController extends Controller
     {
         $this->authorize('view reports');
 
-        if (auth()->user()->hasRole('Karyawan') && !auth()->user()->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Owner'])) {
-            abort(403, 'Akses ditolak.');
-        }
-
         $data = $this->compileDailyData($request);
 
         return view('daily-log.index', $data);
@@ -33,10 +29,6 @@ class DailyLogController extends Controller
     public function print(Request $request)
     {
         $this->authorize('view reports');
-
-        if (auth()->user()->hasRole('Karyawan') && !auth()->user()->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin PO', 'Owner'])) {
-            abort(403, 'Akses ditolak.');
-        }
 
         $data = $this->compileDailyData($request);
 

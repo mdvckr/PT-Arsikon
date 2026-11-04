@@ -146,46 +146,71 @@ class SyncProcurementPermissions extends Command
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
         $this->line('  - Role Admin Gudang Pusat: disinkronkan (' . count($gudangPusatPermissions) . ' permissions).');
 
-        // E. Admin Gudang Proyek:
-        //    Boleh: create & confirm GR, create transit losses untuk gudangnya.
+        // E. Admin Gudang Proyek: Khusus seluruh operasional logistik fisik gudang proyek
         $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek', 'guard_name' => 'web']);
         $proyekPermissions = [
-            'view materials', 'create materials', 'edit materials', 'delete materials',
-            'view tools', 'create tools', 'edit tools', 'delete tools',
-            'view categories', 'create categories', 'edit categories', 'delete categories',
+            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
             'view material requests', 'create material requests',
             'view material usages', 'create material usages', 'cancel material usages',
-            'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view tool assignments', 'create tool assignments', 'return tool assignments',
             'approve tool assignments', 'inspect return tool assignments', 'cancel tool assignments',
-            'view stock opname', 'create stock opname',
-            'view inventory', 'delete inventory',
-            'view procurement', 'create procurement',
+            'view inventory',
+            'view reports',
+            'view materials',
+            'view tools',
+            'view categories',
+            'view suppliers',
             'view returns', 'create returns', 'receive returns',
             'create transit losses',
-            'view reports',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
         $this->line('  - Role Admin Gudang Proyek: disinkronkan (' . count($proyekPermissions) . ' permissions).');
 
-        // F. Karyawan:
-        //    Boleh: create material requests.
-        //    HAPUS: create distributions.
-        $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan', 'guard_name' => 'web']);
-        $karyawanPermissions = [
+        // F. Peran Teknis Lapangan: Admin Proyek, Site Engineer, Site Manager, Project Manager
+        $teknisStaffPermissions = [
+            'view material requests', 'create material requests',
+            'view inventory',
+            'view reports',
             'view materials',
             'view tools',
-            'view inventory',
-            'view tool assignments',
-            'create tool assignments',
-            'view material requests',
-            'create material requests',
-            'view material usages',
-            'view distributions',
+            'view categories',
+            'projects.manage',
         ];
-        $karyawanRole->syncPermissions($karyawanPermissions);
-        $this->line('  - Role Karyawan: disinkronkan (' . count($karyawanPermissions) . ' permissions, tanpa create distributions).');
+        $teknisManagerPermissions = [
+            'view material requests', 'create material requests', 'approve material requests',
+            'view inventory',
+            'view reports',
+            'view materials',
+            'view tools',
+            'view categories',
+            'projects.manage',
+        ];
+
+        $adminProyekRoleModel = Role::firstOrCreate(['name' => 'Admin Proyek', 'guard_name' => 'web']);
+        $adminProyekRoleModel->syncPermissions($teknisStaffPermissions);
+
+        $siteEngineerRole = Role::firstOrCreate(['name' => 'Site Engineer', 'guard_name' => 'web']);
+        $siteEngineerRole->syncPermissions($teknisStaffPermissions);
+
+        $siteManagerRole = Role::firstOrCreate(['name' => 'Site Manager', 'guard_name' => 'web']);
+        $siteManagerRole->syncPermissions($teknisManagerPermissions);
+
+        $projectManagerRole = Role::firstOrCreate(['name' => 'Project Manager', 'guard_name' => 'web']);
+        $projectManagerRole->syncPermissions($teknisManagerPermissions);
+        $this->line('  - Role Teknis Lapangan (Admin Proyek, Site Engineer, Site Manager, Project Manager): disinkronkan.');
+
+        // G. Decommission Role Karyawan
+        $karyawanRole = Role::where('name', 'Karyawan')->first();
+        if ($karyawanRole) {
+            foreach ($karyawanRole->users as $user) {
+                $user->assignRole($adminProyekRoleModel);
+                $user->removeRole($karyawanRole);
+            }
+            $karyawanRole->permissions()->detach();
+            $karyawanRole->delete();
+            $this->line('  - Role Karyawan: berhasil didekomisi dan user dialihkan ke Admin Proyek.');
+        }
 
         // Reset cache kembali
         app()[PermissionRegistrar::class]->forgetCachedPermissions();

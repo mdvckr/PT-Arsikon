@@ -65,7 +65,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
     {
         $response = $this->actingAs($this->gudangUser)->get(route('goods-receipts.create'));
         $response->assertOk();
-        $response->assertSee('Penerimaan Barang Langsung');
+        $response->assertSee('Penerimaan Barang');
         $response->assertSee('Tambah Baris Barang');
         $response->assertDontSee('Pilih Purchase Order (Wajib)');
         $response->assertDontSee('Hubungkan PO Lapangan');

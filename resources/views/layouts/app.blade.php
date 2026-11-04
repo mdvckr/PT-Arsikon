@@ -1204,25 +1204,58 @@
 
         /* Sidebar backdrop overlay for mobile */
         .sidebar-overlay {
-            display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.55);
             z-index: 999;
             opacity: 0;
+            pointer-events: none;
             transition: opacity 0.3s ease;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
         }
         .sidebar-overlay.active {
-            display: block;
             opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Sidebar close button (mobile only) */
+        .sidebar-close-btn {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: background 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+        .sidebar-close-btn:hover {
+            background: rgba(255,255,255,0.28);
+            transform: scale(1.1);
         }
 
         /* ===== TABLET (max 1024px) ===== */
         @media (max-width: 1024px) {
             .mobile-toggle { display: flex !important; }
-            .topbar-brand { width: auto; border-right: none; padding: 0 12px; }
+            .topbar-brand {
+                width: auto;
+                background: transparent !important;
+                border-right: none !important;
+                padding: 0 12px;
+                gap: 10px;
+            }
             .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
+            .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
             .main-wrapper { margin-left: 0; }
             .grid-4 { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -1316,6 +1349,7 @@
                 padding-right: 12px;
                 margin-left: auto;
             }
+            .topbar-action-separator { display: none !important; }
             .topbar-circle-btn { width: 34px; height: 34px; font-size: 13px; }
             .topbar-user-name { max-width: 90px; font-size: 11.5px; }
 
@@ -1416,6 +1450,13 @@
                 display: none !important;
             }
             .topbar-user-name { display: none; }
+            .topbar-user-chip {
+                padding: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .topbar-user-avatar { width: 34px; height: 34px; font-size: 13px; }
         }
 
         @media (max-width: 380px) {
@@ -1699,8 +1740,15 @@
     <!-- TOPBAR (Full Width) — Premium Design -->
     <header class="topbar" id="mainTopbar">
         <div class="topbar-brand">
-            <button type="button" class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu">
-                <x-lucide-menu class="w-5 h-5" aria-hidden="true" />
+            <button type="button" class="mobile-toggle" id="mobileToggleBtn" onclick="toggleSidebar()" aria-label="Toggle Menu">
+                <!-- Menu icon (≡) shown when sidebar closed -->
+                <span id="mobileToggleIconMenu" style="display:flex;align-items:center;justify-content:center;">
+                    <x-lucide-menu class="w-5 h-5" aria-hidden="true" />
+                </span>
+                <!-- X icon shown when sidebar open -->
+                <span id="mobileToggleIconClose" style="display:none;align-items:center;justify-content:center;">
+                    <x-lucide-x class="w-5 h-5" aria-hidden="true" />
+                </span>
             </button>
             <a href="{{ route('dashboard') }}" class="brand-link">
                 <img src="{{ asset('assets/Logo-Dashboard.png') }}" class="brand-logo" alt="PT ARSIKON CIPTA KARYA">
@@ -2102,16 +2150,20 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            if (sidebar) {
-                const isOpen = sidebar.classList.toggle('open');
-                if (overlay) {
-                    if (isOpen) {
-                        overlay.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                    } else {
-                        overlay.classList.remove('active');
-                        document.body.style.overflow = '';
-                    }
+            const iconMenu = document.getElementById('mobileToggleIconMenu');
+            const iconClose = document.getElementById('mobileToggleIconClose');
+            if (!sidebar) return;
+            const isOpen = sidebar.classList.toggle('open');
+            // Swap toggle icon: ≡ ↔ ✕
+            if (iconMenu) iconMenu.style.display = isOpen ? 'none' : 'flex';
+            if (iconClose) iconClose.style.display = isOpen ? 'flex' : 'none';
+            if (overlay) {
+                if (isOpen) {
+                    overlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
                 }
             }
         }
@@ -2120,9 +2172,13 @@
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
+            const iconMenu = document.getElementById('mobileToggleIconMenu');
+            const iconClose = document.getElementById('mobileToggleIconClose');
             if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('open')) {
                 if (!sidebar.contains(e.target) && !e.target.closest('.mobile-toggle')) {
                     sidebar.classList.remove('open');
+                    if (iconMenu) iconMenu.style.display = 'flex';
+                    if (iconClose) iconClose.style.display = 'none';
                     if (overlay) overlay.classList.remove('active');
                     document.body.style.overflow = '';
                 }
@@ -2133,7 +2189,11 @@
             if (window.innerWidth > 1024) {
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
+                const iconMenu = document.getElementById('mobileToggleIconMenu');
+                const iconClose = document.getElementById('mobileToggleIconClose');
                 if (sidebar) sidebar.classList.remove('open');
+                if (iconMenu) iconMenu.style.display = 'flex';
+                if (iconClose) iconClose.style.display = 'none';
                 if (overlay) overlay.classList.remove('active');
                 document.body.style.overflow = '';
             }
@@ -2206,17 +2266,22 @@
             return audioCtx;
         }
 
-        // Unlock Web Audio on any user interaction
+        // Unlock Web Audio only on legitimate user gestures (click / touchend)
         (function initAudioUnlock() {
-            const unlockEvents = ['click', 'touchstart', 'keydown', 'mousedown', 'scroll'];
+            const unlockEvents = ['click', 'touchend'];
             const unlock = () => {
-                const ctx = getAudioContext();
-                if (ctx && ctx.state === 'suspended') {
-                    ctx.resume().catch(() => {});
-                }
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!audioCtx && AudioContext) {
+                        audioCtx = new AudioContext();
+                    }
+                    if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume().catch(() => {});
+                    }
+                } catch (e) {}
                 unlockEvents.forEach(e => document.removeEventListener(e, unlock));
             };
-            unlockEvents.forEach(e => document.addEventListener(e, unlock, { once: true }));
+            unlockEvents.forEach(e => document.addEventListener(e, unlock, { once: true, passive: true }));
         })();
 
         function playNotificationChime(soundType) {

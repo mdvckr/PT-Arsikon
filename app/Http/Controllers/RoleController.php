@@ -18,9 +18,13 @@ class RoleController extends Controller
         'Admin Pusat',
         'Admin Gudang Pusat',
         'Admin Gudang Proyek',
+        'Admin Proyek',
+        'Site Engineer',
+        'Site Manager',
+        'Project Manager',
         'Admin PO',
         'Admin PO Proyek',
-        'Karyawan',
+        'admin-po-nota',
     ];
 
     /**
@@ -36,6 +40,7 @@ class RoleController extends Controller
         'root',
         'system',
         'guest',
+        'karyawan',
     ];
 
     /**
@@ -64,11 +69,39 @@ class RoleController extends Controller
             'description' => 'Operasional gudang sentral, penerimaan barang supplier, dan distribusi ke proyek.',
         ],
         'Admin Gudang Proyek' => [
-            'category'    => 'Site Proyek',
+            'category'    => 'Site Proyek - Logistik',
             'badge_color' => '#9a3412',
             'badge_bg'    => '#ffedd5',
             'icon'        => 'hard-hat',
-            'description' => 'Logistik lapangan site proyek, penerimaan distribusi, dan pemakaian material proyek.',
+            'description' => 'Operasional logistik fisik gudang proyek: penerimaan barang, surat jalan, dan stok.',
+        ],
+        'Admin Proyek' => [
+            'category'    => 'Site Proyek - Teknis',
+            'badge_color' => '#0369a1',
+            'badge_bg'    => '#e0f2fe',
+            'icon'        => 'clipboard-list',
+            'description' => 'Administrasi teknis lapangan, pengajuan PO Lapangan, log harian, dan pantau stok proyek.',
+        ],
+        'Site Engineer' => [
+            'category'    => 'Site Proyek - Teknis',
+            'badge_color' => '#0284c7',
+            'badge_bg'    => '#e0f2fe',
+            'icon'        => 'drafting-compass',
+            'description' => 'Pengawasan teknis & rekayasa lapangan, spesifikasi PO Lapangan, log harian, dan inventori.',
+        ],
+        'Site Manager' => [
+            'category'    => 'Site Proyek - Manajemen',
+            'badge_color' => '#15803d',
+            'badge_bg'    => '#dcfce7',
+            'icon'        => 'briefcase',
+            'description' => 'Manajemen operasional lapangan, persetujuan PO Lapangan, evaluasi log harian, dan pengawasan proyek.',
+        ],
+        'Project Manager' => [
+            'category'    => 'Site Proyek - Manajemen',
+            'badge_color' => '#166534',
+            'badge_bg'    => '#dcfce7',
+            'icon'        => 'award',
+            'description' => 'Pimpinan proyek, persetujuan penuh PO Lapangan, evaluasi aktivitas proyek, dan kontrol inventori.',
         ],
         'Admin PO' => [
             'category'    => 'Pengadaan Pusat',
@@ -84,12 +117,12 @@ class RoleController extends Controller
             'icon'        => 'receipt',
             'description' => 'Khusus pengisian & pencatatan nota pembelian harian bon toko di proyek.',
         ],
-        'Karyawan' => [
-            'category'    => 'Operasional Lapangan',
-            'badge_color' => '#374151',
-            'badge_bg'    => '#f3f4f6',
-            'icon'        => 'id-card',
-            'description' => 'Peminjaman alat kerja mandiri dan pembuatan PO Lapangan.',
+        'admin-po-nota' => [
+            'category'    => 'Site Proyek',
+            'badge_color' => '#0891b2',
+            'badge_bg'    => '#cffafe',
+            'icon'        => 'receipt',
+            'description' => 'Pencatatan nota pembelian harian belanja proyek dan monitoring PO Lapangan.',
         ],
     ];
 

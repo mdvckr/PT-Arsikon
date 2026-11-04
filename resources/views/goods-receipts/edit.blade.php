@@ -1069,16 +1069,15 @@
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
                                 <th style="width:75px;text-align:center;">Tipe</th>
-                                <th style="width:125px;">Kode Material</th>
-                                <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
-                                <th style="width:140px;">Kategori <span class="text-danger">*</span></th>
-                                <th style="width:145px;">Spesifikasi / Merek</th>
-                                <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
-                                <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
-                                <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
-                                <th style="width:160px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
-                                <th style="min-width:130px;">Catatan Fisik</th>
-                                <th style="width:40px;text-align:center;"></th>
+                                <th style="width:115px;text-align:center;">Kode Material</th>
+                                <th style="min-width:260px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
+                                <th style="width:160px;">Kategori &amp; Kelompok</th>
+                                <th style="width:105px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
+                                <th style="width:115px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
+                                <th style="width:170px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
+                                <th style="width:85px;text-align:center;">Satuan</th>
+                                <th style="min-width:140px;">Catatan Fisik</th>
+                                <th style="width:42px;text-align:center;"></th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
@@ -1095,12 +1094,12 @@
                         <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material">0</span> Material</span>
                         <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool">0</span> Alat</span>
                     </div>
-                    <div class="flex items-center gap-2 summary-links" style="font-size:11.5px;color:#64748b;">
+                    <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;">
                         <x-lucide-help-circle style="font-size:13px;color:#94a3b8;" />
                         <span>Barang belum ada di sistem?</span>
-                        <a href="{{ route('materials.create') }}" target="_blank" class="text-primary fw-600 hover:underline">+ Master Material</a>
+                        <button type="button" class="btn btn-link p-0 text-primary fw-600" style="font-size:11.5px;text-decoration:none;" onclick="openQuickNewItemModal('material')">+ Master Material</button>
                         <span style="color:#cbd5e1;">•</span>
-                        <a href="{{ route('tools.create') }}" target="_blank" class="text-warning fw-600 hover:underline" style="color:#d97706 !important;">+ Master Alat</a>
+                        <button type="button" class="btn btn-link p-0 text-warning fw-600" style="font-size:11.5px;text-decoration:none;color:#d97706 !important;" onclick="openQuickNewItemModal('tool')">+ Master Alat</button>
                     </div>
                 </div>
             </div>
@@ -1175,6 +1174,91 @@
                         <x-lucide-check-check class="me-1" /> Masukkan Barang Terpilih
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    
+    {{-- ── Modal: Tambah Barang / Alat Baru Cepat ── --}}
+    <div class="scheduled-modal-overlay" id="quickNewItemModal">
+        <div class="scheduled-modal-box" style="max-width:520px;">
+            <div class="scheduled-modal-header">
+                <div class="flex items-center gap-2">
+                    <div style="width:34px;height:34px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#2563eb;">
+                        <x-lucide-plus-circle style="font-size:17px;" />
+                    </div>
+                    <div>
+                        <h4 class="fw-700" style="font-size:15px;margin:0;color:#0f172a;" id="quickModalTitle">Tambah Barang / Alat Baru</h4>
+                        <p class="text-muted" style="font-size:11.5px;margin:1px 0 0 0;">Daftarkan barang langsung ke penerimaan ini.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeQuickNewItemModal()">&times;</button>
+            </div>
+
+            <div class="scheduled-modal-body" style="padding:18px 20px;">
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:6px;">Tipe Item</label>
+                    <div style="display:flex;gap:12px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+                            <input type="radio" name="quick_item_type" id="quickItemTypeMat" value="material" checked onchange="updateQuickItemModalType('material')">
+                            <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11.5px;padding:4px 9px;">Material</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
+                            <input type="radio" name="quick_item_type" id="quickItemTypeTool" value="tool" onchange="updateQuickItemModalType('tool')">
+                            <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11.5px;padding:4px 9px;">Alat / Mesin</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Nama Barang <span class="text-danger">*</span></label>
+                    <input type="text" id="quickItemName" class="form-control" placeholder="mis. Semen Gresik 40kg / Bor Listrik..." style="font-size:12.5px;border-radius:7px;">
+                </div>
+
+                <div class="row g-2 mb-3" style="display:flex;gap:10px;">
+                    <div style="flex:1;">
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Kode SKU / Material</label>
+                        <input type="text" id="quickItemSku" class="form-control text-uppercase text-center" placeholder="mis. MAT-042" style="font-family:monospace;font-size:12px;border-radius:7px;font-weight:700;">
+                    </div>
+                    <div style="flex:1;">
+                        <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Satuan <span class="text-danger">*</span></label>
+                        <select id="quickItemUnit" class="form-control form-select text-center" style="font-size:12px;font-weight:700;border-radius:7px;background:#ffffff;">
+                            <option value="Zak">Zak</option>
+                            <option value="Batang">Batang</option>
+                            <option value="M3">M3</option>
+                            <option value="Kg">Kg</option>
+                            <option value="Lembar">Lembar</option>
+                            <option value="Unit">Unit</option>
+                            <option value="Pcs">Pcs</option>
+                            <option value="Dus">Dus</option>
+                            <option value="Roll">Roll</option>
+                            <option value="Meter">Meter</option>
+                            <option value="Liter">Liter</option>
+                            <option value="Box">Box</option>
+                            <option value="Pak">Pak</option>
+                            <option value="Set">Set</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Kategori <span class="text-danger">*</span></label>
+                    <select id="quickItemCat" class="form-control" style="font-size:12px;border-radius:7px;">
+                        <option value="">— Pilih Kategori —</option>
+                    </select>
+                </div>
+
+                <div class="mb-0">
+                    <label class="form-label" style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:4px;">Merek / Spesifikasi (Opsional)</label>
+                    <input type="text" id="quickItemBrand" class="form-control" placeholder="mis. Semen Gresik / 450W / tebal 2mm..." style="font-size:12px;border-radius:7px;">
+                </div>
+            </div>
+
+            <div class="scheduled-modal-footer" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeQuickNewItemModal()" style="font-size:12px;border-radius:6px;">Batal</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitQuickNewItem()" style="font-size:12px;font-weight:700;border-radius:6px;padding:6px 16px;">
+                    <x-lucide-plus class="me-1" /> Tambahkan ke Tabel
+                </button>
             </div>
         </div>
     </div>
