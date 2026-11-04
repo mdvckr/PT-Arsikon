@@ -1069,6 +1069,7 @@
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
                                 <th style="width:80px;text-align:center;">Tipe</th>
+                                <th style="width:130px;">Kode Material</th>
                                 <th style="min-width:210px;">Nama Barang (Material / Alat) <span class="text-danger">*</span></th>
                                 <th style="width:170px;">Kategori <span class="text-danger">*</span></th>
                                 <th style="width:110px;text-align:center;">Satuan <span class="text-danger">*</span></th>

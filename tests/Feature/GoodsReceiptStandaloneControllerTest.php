@@ -74,6 +74,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
         $response->assertDontSee('Selisih');
+        $response->assertSee('Kode Material');
     }
 
     public function test_goods_receipt_create_only_references_items_from_users_own_warehouse(): void
@@ -136,6 +137,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertSee('Jumlah Diterima (Stok)');
         $response->assertSee('Kategori');
         $response->assertSee('Satuan');
+        $response->assertSee('Kode Material');
     }
 
     public function test_can_update_draft_goods_receipt_with_direct_material_inputs(): void

@@ -148,7 +148,7 @@ function checkEmptyState(customMessage) {
         if (!emptyRow) {
             const desc = customMessage || 'Tambahkan baris material atau alat langsung sesuai nota fisik / surat jalan yang diterima.';
             const html = '<tr id="emptyItemsRow" class="empty-receipt-row">'
-                + '<td colspan="8" class="empty-receipt-canvas">'
+                + '<td colspan="9" class="empty-receipt-canvas">'
                 + '<div class="empty-receipt-card">'
                 + '<div class="empty-icon-circle">'
                 + '<i class="fas fa-boxes-stacked"></i>'
@@ -229,16 +229,22 @@ function onItemNameInput(idx, val) {
             brandInput.value = match.brand;
         }
         const sku = match.sku || match.code || '';
-        if (skuInput) skuInput.value = sku;
+        if (skuInput) {
+            skuInput.value = sku;
+            skuInput.style.backgroundColor = '#f8fafc';
+        }
         if (metaContainer) {
-            metaContainer.innerHTML = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-family:monospace;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang: ' + escHtml(sku || '-') + '</span>';
+            metaContainer.innerHTML = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang</span>';
         }
     } else {
         // Barang belum ada di inventori gudang -> didaftarkan sebagai item baru
         if (matIdInput) matIdInput.value = '';
         if (toolIdInput) toolIdInput.value = '';
-        if (skuInput && !skuInput.value) {
-            skuInput.value = suggestCustomSku(val, isTool);
+        if (skuInput) {
+            if (!skuInput.value || skuInput.value.startsWith('MAT-') || skuInput.value.startsWith('TL-')) {
+                skuInput.value = suggestCustomSku(val, isTool);
+            }
+            skuInput.style.backgroundColor = '#ffffff';
         }
         if (metaContainer) {
             metaContainer.innerHTML = '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:600;font-size:10px;"><i class="fas fa-sparkles me-1 text-warning"></i>Barang Baru (Didaftarkan ke Sistem)</span>';
@@ -314,8 +320,15 @@ function toggleRowType(idx) {
         }
     }
 
-    // Re-check item name
+    // Re-check item name & SKU placeholder
     const nameInput = document.getElementById('item-name-' + idx);
+    const skuInput = document.getElementById('sku-input-' + idx);
+    if (skuInput) {
+        skuInput.placeholder = isTool ? 'mis. TL-001' : 'mis. MAT-001';
+        if (nameInput && nameInput.value && (!skuInput.value || skuInput.value.startsWith('MAT-') || skuInput.value.startsWith('TL-'))) {
+            skuInput.value = suggestCustomSku(nameInput.value, isTool);
+        }
+    }
     if (nameInput) {
         onItemNameInput(idx, nameInput.value);
     }
@@ -391,7 +404,7 @@ function addRow(type, opts) {
     // Meta Badge
     let metaBadgeHtml = '';
     if (foundMasterItem) {
-        metaBadgeHtml = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-family:monospace;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang: ' + escHtml(initialSku || '-') + '</span>';
+        metaBadgeHtml = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang</span>';
     } else if (initialName) {
         metaBadgeHtml = '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:600;font-size:10px;"><i class="fas fa-sparkles me-1 text-warning"></i>Barang Baru (Didaftarkan)</span>';
     }
@@ -404,11 +417,18 @@ function addRow(type, opts) {
         + '<input type="hidden" name="items[' + idx + '][tool_id]" id="tool-id-' + idx + '" value="' + (isTool ? (targetId || '') : '') + '">'
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="' + (opts.unit_price || 0) + '">'
-        + '<input type="hidden" name="items[' + idx + '][custom_sku]" id="sku-input-' + idx + '" value="' + escHtml(initialSku) + '">'
         + typeBadgeHtml
         + '</td>'
 
-        // Col 2: Nama Barang (Input text + Datalist dari inventori sendiri)
+        // Col 2: Kode Material (SKU)
+        + '<td class="col-sku" style="vertical-align:top;padding-top:10px;">'
+        + '<input type="text" name="items[' + idx + '][custom_sku]" id="sku-input-' + idx + '" class="form-control text-uppercase" '
+        + 'placeholder="' + (isTool ? 'mis. TL-001' : 'mis. MAT-001') + '" value="' + escHtml(initialSku) + '" '
+        + 'style="font-family:monospace;font-weight:700;font-size:12px;height:38px;border-radius:7px;' + (foundMasterItem ? 'background:#f8fafc;' : 'background:#ffffff;') + '" '
+        + 'title="Kode Material / Alat (SKU)">'
+        + '</td>'
+
+        // Col 3: Nama Barang (Input text + Datalist dari inventori sendiri)
         + '<td class="col-name" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][name]" id="item-name-' + idx + '" class="form-control item-name-input" '
         + 'list="items-datalist-' + idx + '" placeholder="Ketik / cari barang di gudang..." value="' + escHtml(initialName) + '" '
@@ -418,21 +438,21 @@ function addRow(type, opts) {
         + '<div id="item-meta-' + idx + '" class="item-meta-container" style="margin-top:3px;">' + metaBadgeHtml + '</div>'
         + '</td>'
 
-        // Col 3: Kategori (Select)
+        // Col 4: Kategori (Select)
         + '<td class="col-cat" style="vertical-align:top;padding-top:10px;">'
         + '<select name="items[' + idx + '][category_id]" id="item-cat-' + idx + '" class="form-control" required style="font-size:11.5px;height:38px;border-radius:7px;">'
         + catOptions
         + '</select>'
         + '</td>'
 
-        // Col 4: Satuan (Input + Shared Units Datalist)
+        // Col 5: Satuan (Input + Shared Units Datalist)
         + '<td class="col-unit" style="vertical-align:top;padding-top:10px;text-align:center;">'
         + '<input type="text" name="items[' + idx + '][custom_unit]" id="item-unit-' + idx + '" class="form-control text-center" '
         + 'list="global-units-datalist" placeholder="Satuan" value="' + escHtml(initialUnit) + '" required '
         + 'style="font-size:12px;font-weight:700;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 5: Jumlah Diterima (Stok) *
+        // Col 6: Jumlah Diterima (Stok) *
         + '<td class="col-qty" style="vertical-align:top;padding-top:10px;">'
         + '<input type="number" name="items[' + idx + '][quantity]" id="item-qty-' + idx + '" class="form-control qty-input text-center" '
         + 'value="' + initialQty + '" min="' + (isTool ? '1' : '0.01') + '" step="' + (isTool ? '1' : 'any') + '" '
@@ -441,21 +461,21 @@ function addRow(type, opts) {
         + 'style="font-weight:800;font-size:13.5px;color:#1e3a8a;border:2px solid #3b82f6;border-radius:7px;box-shadow:0 1px 3px rgba(37,99,235,0.08);height:38px;">'
         + '</td>'
 
-        // Col 6: Spesifikasi / Merek
+        // Col 7: Spesifikasi / Merek
         + '<td class="col-brand" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][brand]" id="item-brand-' + idx + '" class="form-control" '
         + 'placeholder="mis. Semen Gresik 50kg" value="' + escHtml(initialBrand) + '" '
         + 'style="font-size:12px;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 7: Catatan Fisik
+        // Col 8: Catatan Fisik
         + '<td class="col-notes" style="vertical-align:top;padding-top:10px;">'
         + '<input type="text" name="items[' + idx + '][notes]" id="item-notes-' + idx + '" class="form-control" '
         + 'placeholder="Kondisi fisik..." value="' + escHtml(initialNotes) + '" '
         + 'style="font-size:12px;height:38px;border-radius:7px;">'
         + '</td>'
 
-        // Col 8: Aksi Hapus
+        // Col 9: Aksi Hapus
         + '<td class="col-action" style="vertical-align:top;padding-top:12px;text-align:center;">'
         + '<button type="button" class="btn-delete-row" onclick="removeRow(' + idx + ')" title="Hapus Baris" style="width:32px;height:32px;border-radius:7px;border:none;background:#fee2e2;color:#dc2626;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">'
         + '<i class="fas fa-trash-can"></i></button>'
@@ -1465,7 +1485,7 @@ function filterItemsTab(type) {
             const icon = (type === 'tool' ? 'fa-helmet-safety' : 'fa-box-open');
             const tr = document.createElement('tr');
             tr.id = 'empty-filter-notice';
-            tr.innerHTML = '<td colspan="8" style="text-align:center;padding:36px 16px;background:#fafcff;">'
+            tr.innerHTML = '<td colspan="9" style="text-align:center;padding:36px 16px;background:#fafcff;">'
                 + '<div style="max-width:380px;margin:0 auto;display:flex;flex-direction:column;align-items:center;">'
                 + '<div style="width:48px;height:48px;border-radius:12px;background:#f1f5f9;color:#64748b;display:inline-flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px;">'
                 + '<i class="fas ' + icon + '"></i></div>'
