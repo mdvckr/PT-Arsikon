@@ -363,25 +363,29 @@
             -webkit-appearance: none !important;
             -moz-appearance: none !important;
             background-color: #ffffff !important;
+            background-image: none !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 9999px !important;
             font-size: 12px !important;
             font-weight: 600 !important;
             color: #1e293b !important;
             line-height: 1.5 !important;
-            padding: 7px 36px 7px 16px !important;
+            padding: 7px 38px 7px 16px !important;
             cursor: pointer !important;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
             transition: all 0.15s ease !important;
             white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
         }
 
         .inv-select-warehouse {
-            min-width: 220px !important;
+            min-width: 250px !important;
+            max-width: 320px !important;
         }
 
         .inv-select-status {
-            min-width: 145px !important;
+            min-width: 140px !important;
         }
 
         .inv-filter-select:hover {

@@ -70,3 +70,4 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertDontSee('Pilih Purchase Order (Wajib)');
     }
 }
+

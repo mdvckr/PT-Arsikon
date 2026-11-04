@@ -578,6 +578,14 @@ class GoodsReceiptController extends Controller
                             );
                             $items[$k]['tool_id'] = $tool->id;
                             $items[$k]['item_type'] = 'tool';
+                            if (!empty($v['purchase_order_item_id'])) {
+                                $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
+                                $poItem?->update(['tool_id' => $tool->id]);
+                                $poItem?->materialRequestItem?->update(['tool_id' => $tool->id]);
+                            }
+                            if (!empty($v['material_request_item_id'])) {
+                                \App\Models\MaterialRequestItem::find($v['material_request_item_id'])?->update(['tool_id' => $tool->id]);
+                            }
                         } else {
                             $unit = $v['custom_unit'] ?? ($v['unit'] ?? 'unit');
                             $mat = Material::autoRegisterCustom(
@@ -591,6 +599,14 @@ class GoodsReceiptController extends Controller
                             );
                             $items[$k]['material_id'] = $mat->id;
                             $items[$k]['item_type'] = 'material';
+                            if (!empty($v['purchase_order_item_id'])) {
+                                $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
+                                $poItem?->update(['material_id' => $mat->id]);
+                                $poItem?->materialRequestItem?->update(['material_id' => $mat->id]);
+                            }
+                            if (!empty($v['material_request_item_id'])) {
+                                \App\Models\MaterialRequestItem::find($v['material_request_item_id'])?->update(['material_id' => $mat->id]);
+                            }
                         }
                     } elseif (!empty($v['purchase_order_item_id'])) {
                         $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
