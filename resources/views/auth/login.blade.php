@@ -95,21 +95,33 @@
             transform: scale(1.008);
         }
 
-        /* ===== HIGH VISIBILITY SHAKE ANIMATION ===== */
-        @keyframes shakeX {
+        /* ===== SMOOTH SPRING SHAKE ANIMATION ===== */
+        @keyframes smoothShake {
             0%, 100% {
                 transform: translate3d(0, 0, 0);
             }
-            10%, 30%, 50%, 70%, 90% {
-                transform: translate3d(-18px, 0, 0);
+            15% {
+                transform: translate3d(-9px, 0, 0);
             }
-            20%, 40%, 60%, 80% {
-                transform: translate3d(18px, 0, 0);
+            30% {
+                transform: translate3d(8px, 0, 0);
+            }
+            45% {
+                transform: translate3d(-6px, 0, 0);
+            }
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
+            75% {
+                transform: translate3d(-2px, 0, 0);
+            }
+            88% {
+                transform: translate3d(1px, 0, 0);
             }
         }
 
         .shake-error {
-            animation: shakeX 0.7s ease-in-out both !important;
+            animation: smoothShake 0.48s cubic-bezier(0.25, 0.8, 0.25, 1) both !important;
             will-change: transform;
         }
     </style>
@@ -229,17 +241,10 @@
 
         function triggerCardShake() {
             const card = document.querySelector('.login-card');
-            const alertBox = document.getElementById('loginGlobalAlert');
-            const emailWrap = document.getElementById('emailWrap');
-            const passWrap = document.getElementById('passwordWrap');
-
-            const targets = [card, alertBox, emailWrap, passWrap].filter(Boolean);
-
-            targets.forEach(function (el) {
-                el.classList.remove('shake-error');
-                void el.offsetWidth; // Force synchronous browser DOM reflow
-                el.classList.add('shake-error');
-            });
+            if (!card) return;
+            card.classList.remove('shake-error');
+            void card.offsetWidth; // Force synchronous browser DOM reflow
+            card.classList.add('shake-error');
         }
 
         // Accessibility & Autofocus Management
