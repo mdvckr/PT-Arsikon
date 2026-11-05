@@ -11,7 +11,7 @@
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
     @click="panelOpen = false"
-    class="fixed inset-0 bg-slate-950/45 backdrop-blur-xs z-40 sm:hidden"
+    class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm z-40 sm:hidden"
     style="display: none;"
     aria-hidden="true"
 ></div>
@@ -27,8 +27,8 @@
     x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
     @click.away="panelOpen = false"
     class="fixed inset-x-3 top-[calc(var(--topbar-height,64px)+8px)] mx-auto max-w-[480px] z-50 pointer-events-auto
-           sm:fixed-none sm:absolute sm:inset-x-auto sm:right-0 sm:left-auto sm:top-full sm:mt-3 sm:w-[420px] sm:max-w-[calc(100vw-32px)]
-           rounded-[26px] sm:rounded-[28px] overflow-hidden
+           sm:absolute sm:inset-x-auto sm:right-0 sm:left-auto sm:top-full sm:mt-3 sm:w-[420px] sm:max-w-[calc(100vw-32px)] sm:mx-0
+           rounded-[24px] sm:rounded-[28px] overflow-hidden
            bg-white/95 backdrop-blur-3xl ios26-liquid-panel
            border border-white/90
            shadow-[inset_0_2px_3px_rgba(255,255,255,1),inset_0_-1px_1px_rgba(0,0,0,0.05),0_25px_50px_-12px_rgba(0,0,0,0.22)]"
@@ -77,7 +77,7 @@
     </div>
 
     <!-- Daftar Item Notifikasi -->
-    <div class="relative z-10 p-3.5 flex flex-col gap-2.5 max-h-[calc(100dvh-190px)] sm:max-h-[380px] overflow-y-auto overscroll-contain scrollbar-thin">
+    <div class="notification-items-scroll relative z-10 p-3.5 flex flex-col gap-2.5 max-h-[calc(100dvh-190px)] sm:max-h-[380px] overflow-y-auto overscroll-contain scrollbar-thin">
         
         <!-- Loading State -->
         <template x-if="panelLoading">
@@ -175,3 +175,57 @@
         </a>
     </div>
 </div>
+
+<style>
+/* Glass Notification Mobile & Desktop Resilience Rules */
+@media (max-width: 639.98px) {
+    #glass-notification-panel-wrapper {
+        position: fixed !important;
+        left: 12px !important;
+        right: 12px !important;
+        top: calc(var(--topbar-height, 64px) + 8px) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-width: 480px !important;
+        width: auto !important;
+        z-index: 1060 !important;
+    }
+    #glass-notification-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background-color: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(2px) !important;
+        -webkit-backdrop-filter: blur(2px) !important;
+        z-index: 1055 !important;
+    }
+    #glass-notification-panel-wrapper .notification-items-scroll {
+        max-height: calc(100vh - 190px) !important;
+        max-height: calc(100dvh - 190px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain !important;
+    }
+}
+@media (min-width: 640px) {
+    #glass-notification-panel-wrapper {
+        position: absolute !important;
+        left: auto !important;
+        right: 0 !important;
+        top: 100% !important;
+        margin-top: 12px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 420px !important;
+        max-width: calc(100vw - 32px) !important;
+    }
+    #glass-notification-backdrop {
+        display: none !important;
+    }
+    #glass-notification-panel-wrapper .notification-items-scroll {
+        max-height: 380px !important;
+    }
+}
+</style>
