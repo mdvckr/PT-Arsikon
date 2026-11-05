@@ -24,6 +24,7 @@
 
 - [Tentang Sistem](#-tentang-sistem)
 - [Arsitektur & Fitur Utama](#-arsitektur--fitur-utama)
+- [Notifikasi Realtime, Web Push & PWA](#7-notifikasi-realtime-web-push--progressive-web-app-pwa)
 - [Keamanan Tingkat Enterprise (OWASP Hardening)](#-keamanan-tingkat-enterprise-owasp-hardening)
 - [Desain Antarmuka & User Experience (UX)](#-desain-antarmuka--user-experience-ux)
 - [Tech Stack](#-tech-stack)
@@ -96,6 +97,13 @@ Sistem ini memecahkan kompleksitas operasional kontraktor dengan menerapkan pemi
 - **Pemisahan `qty_received` dan `qty_issued`:** Pencatatan bon pengeluaran material ke pekerja proyek dibatasi ketat hanya pada barang yang telah fisik tiba di lokasi proyek.
 - **Stock Opname Digital:** Rekonsiliasi fisik vs catatan sistem dengan kalkulasi otomatis selisih (*discrepancy*) dan penyesuaian (*adjustment*) stok terotorisasi.
 
+### 7. Notifikasi Realtime, Web Push & Progressive Web App (PWA)
+- **In-App SweetAlert2 Pastel Pill:** Notifikasi interaktif berbentuk kapsul horizontal pastel minimalis (5 varian status: neutral, info/blue, success, warning, error) di posisi tengah atas (*top-center*) lengkap dengan Web Audio API chimes tanpa dependensi file audio eksternal.
+- **Realtime WebSocket (Laravel Reverb):** Mengalirkan event pembaruan status pengadaan, surat jalan, dan penerimaan barang secara seketika tanpa refresh halaman.
+- **Background Web Push Notifications:** Mengirimkan notifikasi sistem operasi desktop/smartphone saat peramban diminimalkan atau ditutup menggunakan standar VAPID key.
+- **Progressive Web App (PWA):** Dukungan pemasangan langsung di layar utama smartphone (*Add to Home Screen*) dan background sync offline via Service Worker.
+- **Penerimaan Barang Mandiri:** Form pembuatan Penerimaan Barang (Goods Receipt) mendukung pengetikan merek dan spesifikasi/ukuran secara independen tanpa mutasi nama barang otomatis.
+
 ---
 
 ## 🛡 Keamanan Tingkat Enterprise (OWASP Hardening)
@@ -137,6 +145,10 @@ Aplikasi dibangun dengan standar kepatuhan **OWASP Top 10** dan **OWASP ASVS Lev
 | Komponen | Teknologi yang Digunakan |
 | :--- | :--- |
 | **Backend Framework** | Laravel 12.x (Laravel 12.70.1) |
+| **Realtime WebSockets** | Laravel Reverb (WebSocket Server Berkecepatan Tinggi) |
+| **Push Notification & PWA** | Web Push (VAPID) + Service Worker (`sw.js`) + Manifest PWA |
+| **Toast Notification Engine** | SweetAlert2 11.x + Pastel Pill Capsule Theme |
+| **Audio Synthesizer** | Web Audio API Native Chime Synthesizer |
 | **Bahasa Pemrograman** | PHP 8.2+ (Typed Properties, Enums, Match Expressions) |
 | **Database Engine** | MySQL 8.0+ / MariaDB 10.6+ (InnoDB, Transactional Locks) |
 | **Otorisasi & Role** | Spatie Laravel-Permission 6.x |
@@ -241,6 +253,12 @@ npm run build
 php artisan serve
 ```
 Akses aplikasi melalui peramban di: **`http://127.0.0.1:8000`**
+
+### 9. Menjalankan Server WebSocket (Laravel Reverb)
+Untuk mendukung transmisi notifikasi realtime seketika ke antarmuka pengguna:
+```bash
+php artisan reverb:start
+```
 
 ---
 
@@ -363,6 +381,10 @@ PT-Arsikon/
 │   ├── PERUBAHAN.md            # Catatan riwayat Sprint & Perubahan Arsitektur (Scrum)
 │   └── master_plan_security... # Cetak biru keamanan OWASP ASVS
 ├── public/                     # Direktori root web publik & manifest Vite
+│   ├── css/                    # Custom themes (sweetalert-pastel-toast.css)
+│   ├── js/                     # SweetAlert engine & WebPush client
+│   ├── manifest.json           # PWA Web App Manifest
+│   └── sw.js                   # PWA & Web Push Service Worker
 ├── resources/
 │   ├── css/app.css             # Entry point CSS & Enterprise Sidebar styling
 │   ├── js/app.js               # Entry point Alpine.js & Notification Center
