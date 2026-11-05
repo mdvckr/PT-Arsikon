@@ -56,12 +56,8 @@ class DailyLogService
             ->whereDate('received_at', $date)
             ->get();
 
-        // Stock Opname approvals hari ini (penyesuaian stok)
-        $opnameAdjustments = StockOpname::with(['items.material.unit', 'items.material.category', 'conductedBy', 'approvedBy'])
-            ->where('warehouse_id', $selectedWarehouse->id)
-            ->where('status', 'approved')
-            ->whereDate('updated_at', $date)
-            ->get();
+        // Stock Opname telah dinonaktifkan dari log harian
+        $opnameAdjustments = collect();
 
         // 2. Outgoing
         $usages = MaterialUsage::with(['issuedBy', 'items.material.unit'])
@@ -100,7 +96,7 @@ class DailyLogService
         $grInAfterDate = GoodsReceipt::with('items')->where('warehouse_id', $selectedWarehouse->id)->whereDate('receipt_date', '>', $date)->get();
         $outgoingAfterDate = Distribution::with('items')->where('from_warehouse_id', $selectedWarehouse->id)->where(function($q) use ($date) { $q->whereDate('shipped_at', '>', $date)->orWhere(fn($q2) => $q2->where('status', 'received')->whereDate('updated_at', '>', $date)); })->get();
         $returnsAfterDate = MaterialReturn::with('items')->where('to_warehouse_id', $selectedWarehouse->id)->where('status', 'received')->whereDate('received_at', '>', $date)->get();
-        $opnameAfterDate = StockOpname::with('items')->where('warehouse_id', $selectedWarehouse->id)->where('status', 'approved')->whereDate('updated_at', '>', $date)->get();
+        $opnameAfterDate = collect();
 
         $inventories = Inventory::with('material.unit', 'material.category')->where('warehouse_id', $selectedWarehouse->id)->get();
 
@@ -185,7 +181,6 @@ class DailyLogService
         $totalItemsIn = 0;
         foreach ($incomingDistributions as $dist) $totalItemsIn += $dist->items->where('type','material')->count();
         foreach ($incomingGoodsReceipts as $gr) $totalItemsIn += $gr->items->count();
-        foreach ($materialReturns as $r) $totalItemsIn += $r->items->count();
         $totalItemsOut = $usages->sum(fn($u) => $u->items->count()) + $outgoingDistributions->sum(fn($d) => $d->items->count());
         $totalToolsActive = $toolAssignments->whereIn('status', ['active', 'overdue'])->count();
         $totalRecipients = $usages->pluck('recipient_name')->unique()->count();

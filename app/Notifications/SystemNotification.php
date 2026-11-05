@@ -6,6 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class SystemNotification extends Notification implements ShouldBroadcastNow
 {
@@ -44,6 +46,11 @@ class SystemNotification extends Notification implements ShouldBroadcastNow
             $channels[] = 'broadcast';
         }
 
+        // Aktifkan Web Push jika user memiliki subscription
+        if (method_exists($notifiable, 'pushSubscriptions') && $notifiable->pushSubscriptions()->exists() && !app()->runningUnitTests()) {
+            $channels[] = WebPushChannel::class;
+        }
+
         return $channels;
     }
 
@@ -76,6 +83,20 @@ class SystemNotification extends Notification implements ShouldBroadcastNow
             'sound_type' => $this->sound_type ?: $this->resolveSoundType(),
             'created_at' => now()->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Payload data untuk Web Push background notification.
+     */
+    public function toWebPush(object $notifiable, mixed $notification = null): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title($this->title)
+            ->body($this->message)
+            ->icon('/assets/Logo-Dashboard.png')
+            ->badge('/assets/Logo-Dashboard.png')
+            ->data(['url' => $this->url ?: '/dashboard'])
+            ->action('Buka Sistem', 'open');
     }
 
     /**

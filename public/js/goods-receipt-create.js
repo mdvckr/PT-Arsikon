@@ -174,73 +174,235 @@ function suggestCustomSku(name, isTool) {
     return prefix + '-' + randNum;
 }
 
-function onItemNameInput(idx, val) {
-    const row = document.getElementById('row-' + idx);
-    if (!row) return;
-    const isTool = row.getAttribute('data-type') === 'tool';
-    const itemsList = isTool ? grTools : grMaterials;
-    const clean = (val || '').trim().toLowerCase();
+function applyUnitToSelect(idx, targetUnit) {
+    if (!targetUnit) return;
+    const unitSelect = document.getElementById('item-unit-' + idx);
+    const unitCustomInput = document.getElementById('item-unit-custom-input-' + idx);
+    const unitSelectWrap = document.getElementById('unit-select-wrap-' + idx);
+    const unitInputWrap = document.getElementById('unit-input-wrap-' + idx);
+    const unitBadge = document.getElementById('unit-' + idx);
 
-    const matIdInput = document.getElementById('material-id-' + idx);
-    const toolIdInput = document.getElementById('tool-id-' + idx);
+    if (unitBadge) {
+        unitBadge.textContent = targetUnit;
+    }
+
+    if (!unitSelect) return;
+
+    const norm = targetUnit.trim().toLowerCase();
+
+    // Kamus sinonim satuan
+    const unitSynonyms = {
+        'zak': 'sak',
+        'bag': 'sak',
+        'sak': 'zak',
+        'batang': 'btg',
+        'lonjor': 'btg',
+        'btg': 'batang',
+        'buah': 'pcs',
+        'biji': 'pcs',
+        'bh': 'pcs',
+        'pieces': 'pcs',
+        'piece': 'pcs',
+        'pcs': 'buah',
+        'kubik': 'm3',
+        'meter kubik': 'm3',
+        'm3': 'kubik',
+        'kilogram': 'kg',
+        'kilo': 'kg',
+        'kg': 'kilogram',
+        'rol': 'roll',
+        'roll': 'rol',
+        'lbr': 'lembar',
+        'lembar': 'lbr',
+        'dus': 'box',
+        'box': 'dus',
+        'unit': 'Unit'
+    };
+
+    const searchCandidates = [norm];
+    if (unitSynonyms[norm] && !searchCandidates.includes(unitSynonyms[norm])) {
+        searchCandidates.push(unitSynonyms[norm]);
+    }
+    for (const [k, v] of Object.entries(unitSynonyms)) {
+        if (v === norm && !searchCandidates.includes(k)) {
+            searchCandidates.push(k);
+        }
+    }
+
+    let matchedOption = null;
+    for (let i = 0; i < unitSelect.options.length; i++) {
+        const opt = unitSelect.options[i];
+        if (opt.value === '__NEW_UNIT__') continue;
+        const optVal = (opt.value || '').trim().toLowerCase();
+        const optText = (opt.text || '').trim().toLowerCase();
+
+        for (let candidate of searchCandidates) {
+            if (optVal === candidate || optText.startsWith(candidate + ' ') || optText.includes('(' + candidate + ')') || optText === candidate) {
+                matchedOption = opt;
+                break;
+            }
+        }
+        if (matchedOption) break;
+    }
+
+    if (matchedOption) {
+        unitSelect.value = matchedOption.value;
+        if (unitSelectWrap) unitSelectWrap.style.display = 'flex';
+        if (unitInputWrap) unitInputWrap.style.display = 'none';
+        unitSelect.setAttribute('name', 'items[' + idx + '][custom_unit]');
+        if (unitCustomInput) unitCustomInput.removeAttribute('name');
+    } else {
+        const cleanVal = targetUnit.trim();
+        let existingOpt = Array.from(unitSelect.options).find(function(o) {
+            return o.value.toLowerCase() === cleanVal.toLowerCase();
+        });
+
+        if (existingOpt) {
+            unitSelect.value = existingOpt.value;
+        } else {
+            const newOpt = document.createElement('option');
+            newOpt.value = cleanVal;
+            newOpt.textContent = cleanVal.toUpperCase() + ' (' + cleanVal + ')';
+            newOpt.selected = true;
+
+            const newUnitOpt = unitSelect.querySelector('option[value="__NEW_UNIT__"]');
+            if (newUnitOpt) {
+                unitSelect.insertBefore(newOpt, newUnitOpt);
+            } else {
+                unitSelect.appendChild(newOpt);
+            }
+            unitSelect.value = cleanVal;
+        }
+
+        if (unitSelectWrap) unitSelectWrap.style.display = 'flex';
+        if (unitInputWrap) unitInputWrap.style.display = 'none';
+        unitSelect.setAttribute('name', 'items[' + idx + '][custom_unit]');
+        if (unitCustomInput) unitCustomInput.removeAttribute('name');
+    }
+}
+
+function autoDetectUnitFromName(idx, rawName) {
+    if (!rawName) return;
+    const name = rawName.trim();
+    if (!name) return;
+
+    const row = document.getElementById('row-' + idx);
+    const isTool = row ? (row.getAttribute('data-type') === 'tool') : false;
+    const unitSelect = document.getElementById('item-unit-' + idx);
     const catSelect = document.getElementById('item-cat-' + idx);
-    const unitInput = document.getElementById('item-unit-' + idx);
     const brandInput = document.getElementById('item-brand-' + idx);
-    const skuInput = document.getElementById('sku-input-' + idx);
+    const sizeInput = document.getElementById('item-size-' + idx);
     const metaContainer = document.getElementById('item-meta-' + idx);
 
-    if (!clean) {
-        if (matIdInput) matIdInput.value = '';
-        if (toolIdInput) toolIdInput.value = '';
-        if (metaContainer) metaContainer.innerHTML = '';
+    // Jangan timpa jika user sudah memilih satuan secara manual
+    if (unitSelect && unitSelect.dataset.manualUnit === 'true') {
         return;
     }
 
-    // Cari item yang cocok di inventori gudang user sendiri
-    const match = itemsList.find(function (item) {
-        return (item.name || '').trim().toLowerCase() === clean;
-    });
+    const itemsList = isTool ? grTools : grMaterials;
+    const cleanLower = name.toLowerCase();
 
-    if (match) {
-        if (isTool) {
-            if (toolIdInput) toolIdInput.value = match.id;
-            if (matIdInput) matIdInput.value = '';
-        } else {
-            if (matIdInput) matIdInput.value = match.id;
-            if (toolIdInput) toolIdInput.value = '';
+    let detectedUnit = '';
+    let foundMaster = null;
+
+    // 1. Cek kecocokan di database master item (grMaterials / grTools)
+    if (Array.isArray(itemsList) && itemsList.length > 0) {
+        foundMaster = itemsList.find(function (item) {
+            return (item.name || '').trim().toLowerCase() === cleanLower;
+        });
+
+        if (!foundMaster && cleanLower.length >= 3) {
+            foundMaster = itemsList.find(function (item) {
+                const iName = (item.name || '').trim().toLowerCase();
+                return iName.length >= 3 && (cleanLower.startsWith(iName) || iName.startsWith(cleanLower));
+            });
         }
 
-        if (catSelect && match.category_id) {
-            catSelect.value = match.category_id;
-        }
-        if (unitInput) {
-            unitInput.value = match.abbr || (isTool ? 'Unit' : 'Unit');
-        }
-        if (brandInput && !brandInput.value && match.brand) {
-            brandInput.value = match.brand;
-        }
-        const sku = match.sku || match.code || '';
-        if (skuInput) {
-            skuInput.value = sku;
-            skuInput.style.backgroundColor = '#f8fafc';
-        }
-        if (metaContainer) {
-            metaContainer.innerHTML = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang</span>';
-        }
-    } else {
-        // Barang belum ada di inventori gudang -> didaftarkan sebagai item baru
-        if (matIdInput) matIdInput.value = '';
-        if (toolIdInput) toolIdInput.value = '';
-        if (skuInput) {
-            if (!skuInput.value || skuInput.value.startsWith('MAT-') || skuInput.value.startsWith('TL-')) {
-                skuInput.value = suggestCustomSku(val, isTool);
+        if (foundMaster) {
+            detectedUnit = foundMaster.abbr || foundMaster.unit || foundMaster.unit_abbr || '';
+            if (catSelect && (!catSelect.value || catSelect.value === '') && foundMaster.category_id) {
+                catSelect.value = foundMaster.category_id;
+                if (typeof onCustomCategoryChange === 'function') {
+                    onCustomCategoryChange(idx, isTool);
+                }
             }
-            skuInput.style.backgroundColor = '#ffffff';
-        }
-        if (metaContainer) {
-            metaContainer.innerHTML = '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-weight:600;font-size:10px;"><i class="fas fa-sparkles me-1 text-warning"></i>Barang Baru (Didaftarkan ke Sistem)</span>';
+            if (brandInput && !brandInput.value && foundMaster.brand) {
+                brandInput.value = foundMaster.brand;
+            }
+            if (sizeInput && !sizeInput.value && foundMaster.size) {
+                sizeInput.value = foundMaster.size;
+            }
+            if (metaContainer) {
+                metaContainer.innerHTML = '<span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-weight:600;font-size:10px;"><i class="fas fa-warehouse me-1 text-primary"></i>Stok Gudang: ' + escHtml(foundMaster.name) + '</span>';
+            }
         }
     }
+
+    // 2. Jika tidak ada di master DB, cek token satuan eksplisit di dalam teks
+    if (!detectedUnit) {
+        if (/\b(sak|zak|bag)\b/i.test(cleanLower)) {
+            detectedUnit = 'sak';
+        } else if (/\b(btg|batang|lonjor)\b/i.test(cleanLower)) {
+            detectedUnit = 'btg';
+        } else if (/\b(m3|kubik)\b/i.test(cleanLower)) {
+            detectedUnit = 'm3';
+        } else if (/\b(m2|persegi)\b/i.test(cleanLower)) {
+            detectedUnit = 'm2';
+        } else if (/\b(rit)\b/i.test(cleanLower)) {
+            detectedUnit = 'rit';
+        } else if (/\b(roll|rol)\b/i.test(cleanLower)) {
+            detectedUnit = 'roll';
+        } else if (/\b(kg|kilo|kilogram)\b/i.test(cleanLower)) {
+            detectedUnit = 'kg';
+        } else if (/\b(pcs|buah|biji|bh|pieces)\b/i.test(cleanLower)) {
+            detectedUnit = 'pcs';
+        } else if (/\b(lbr|lembar)\b/i.test(cleanLower)) {
+            detectedUnit = 'lembar';
+        } else if (/\b(pail)\b/i.test(cleanLower)) {
+            detectedUnit = 'pail';
+        } else if (/\b(kaleng|can)\b/i.test(cleanLower)) {
+            detectedUnit = 'kaleng';
+        } else if (/\b(box|dus)\b/i.test(cleanLower)) {
+            detectedUnit = 'box';
+        } else if (/\b(ltr|liter)\b/i.test(cleanLower)) {
+            detectedUnit = 'liter';
+        } else if (/\b(set)\b/i.test(cleanLower)) {
+            detectedUnit = 'set';
+        } else if (/\b(unit)\b/i.test(cleanLower)) {
+            detectedUnit = 'Unit';
+        }
+    }
+
+    // 3. Deteksi berbasis kata kunci jenis material konstruksi Indonesia
+    if (!detectedUnit) {
+        if (isTool) {
+            detectedUnit = 'Unit';
+        } else if (/\b(semen|mortar|grout|plamir|acian)\b/i.test(cleanLower)) {
+            detectedUnit = 'sak';
+        } else if (/\b(besi|pipa|hollow|hollo|reng|canal|kanal|spandek|bondek|kaso|usuk|balok|pvc|conduit|talang|wiremesh|baja)\b/i.test(cleanLower)) {
+            detectedUnit = 'btg';
+        } else if (/\b(pasir|split|sirtu|tanah|agregat|makadam|batu belah|batu kali)\b/i.test(cleanLower)) {
+            detectedUnit = cleanLower.includes('rit') ? 'rit' : 'm3';
+        } else if (/\b(kawat|bendrat|paku|lem fox|aspal)\b/i.test(cleanLower)) {
+            detectedUnit = 'kg';
+        } else if (/\b(geotextile|selang|kabel|terpal|plastik cor)\b/i.test(cleanLower)) {
+            detectedUnit = 'roll';
+        } else if (/\b(triplek|multiplek|multiplex|gypsum|gipsum|kalsiboard|grc|asbes)\b/i.test(cleanLower)) {
+            detectedUnit = 'lembar';
+        } else if (/\b(bata|hebel|batako|roster|keramik|granit|genteng|fitting|knee|tee|elbow|kran|saklar|lampu|engsel|grendel|kunci|handle)\b/i.test(cleanLower)) {
+            detectedUnit = 'pcs';
+        } else if (/\b(genset|bor|gerinda|pompa|stamper|molen|vibrator|jack hammer|mesin)\b/i.test(cleanLower)) {
+            detectedUnit = 'Unit';
+        }
+    }
+
+    if (!detectedUnit) return;
+
+    applyUnitToSelect(idx, detectedUnit);
+}
+
+function onItemNameInput(idx, val) {
+    onCustomNameInput(idx);
 }
 
 // ============================================================
@@ -315,6 +477,11 @@ function onCustomUnitChange(idx) {
     if (!sel) return;
     const val = sel.value;
 
+    // Tandai bahwa user secara sengaja memilih satuan via dropdown
+    if (val && val !== '') {
+        sel.dataset.manualUnit = 'true';
+    }
+
     const selectWrap = document.getElementById('unit-select-wrap-' + idx);
     const inputWrap = document.getElementById('unit-input-wrap-' + idx);
     const textInput = document.getElementById('item-unit-custom-input-' + idx);
@@ -350,6 +517,7 @@ function revertUnitToDropdown(idx) {
     if (sel) {
         sel.name = 'items[' + idx + '][custom_unit]';
         sel.value = '';
+        sel.dataset.manualUnit = 'false';
     }
     syncAutoItemName(idx);
 }
@@ -429,6 +597,19 @@ function onCustomNameInput(idx) {
     const unitSelect = document.getElementById('item-unit-' + idx);
     const unitCustomInput = document.getElementById('item-unit-custom-input-' + idx);
 
+    let val = nameInput.value;
+
+    if (!val || !val.trim()) {
+        if (unitSelect && unitSelect.dataset.manualUnit !== 'true') {
+            unitSelect.value = '';
+        }
+        nameInput.dataset.baseName = '';
+        return;
+    }
+
+    // Auto-deteksi dan pilih satuan secara otomatis saat mengetik nama barang
+    autoDetectUnitFromName(idx, val);
+
     const size = sizeInput ? sizeInput.value.trim() : '';
     let unit = '';
     if (unitCustomInput && unitCustomInput.value.trim()) {
@@ -436,8 +617,6 @@ function onCustomNameInput(idx) {
     } else if (unitSelect && unitSelect.value && unitSelect.value !== '__NEW_UNIT__') {
         unit = unitSelect.value.trim();
     }
-
-    let val = nameInput.value;
 
     // Lepaskan akhiran unit atau size jika ada untuk mengekstrak baseName murni (brand tidak mempengaruhi nama)
     const suffixes = [
@@ -1430,6 +1609,34 @@ function openQuickNewItemModal(defaultType) {
 
     updateQuickItemModalType(defaultType);
     modal.style.display = 'flex';
+
+    const qName = document.getElementById('quickItemName');
+    if (qName && !qName.dataset.hasListener) {
+        qName.dataset.hasListener = 'true';
+        qName.addEventListener('input', function() {
+            const qUnit = document.getElementById('quickItemUnit');
+            if (!qUnit) return;
+            const val = (qName.value || '').trim().toLowerCase();
+            if (!val) return;
+            let det = '';
+            if (/\b(sak|zak)\b/i.test(val) || /\b(semen|mortar|plamir)\b/i.test(val)) det = 'sak';
+            else if (/\b(btg|batang)\b/i.test(val) || /\b(besi|pipa|hollow|reng|kaso|usuk|balok|pvc)\b/i.test(val)) det = 'btg';
+            else if (/\b(m3|kubik|pasir|split|sirtu)\b/i.test(val)) det = val.includes('rit') ? 'rit' : 'm3';
+            else if (/\b(rit)\b/i.test(val)) det = 'rit';
+            else if (/\b(kg|kawat|paku)\b/i.test(val)) det = 'kg';
+            else if (/\b(triplek|multiplek|gypsum)\b/i.test(val) || /\b(lembar|lbr)\b/i.test(val)) det = 'lembar';
+            else if (/\b(bata|hebel|batako|keramik|granit|genteng)\b/i.test(val) || /\b(pcs|buah)\b/i.test(val)) det = 'pcs';
+            else if (/\b(roll|rol)\b/i.test(val)) det = 'roll';
+            if (det) {
+                for (let i = 0; i < qUnit.options.length; i++) {
+                    if (qUnit.options[i].value.toLowerCase() === det.toLowerCase() || qUnit.options[i].text.toLowerCase().includes(det.toLowerCase())) {
+                        qUnit.value = qUnit.options[i].value;
+                        break;
+                    }
+                }
+            }
+        });
+    }
 }
 
 function closeQuickNewItemModal() {

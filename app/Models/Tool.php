@@ -486,14 +486,32 @@ class Tool extends Model
      */
     public static function autoRegisterCustom(
         string $name,
-        ?int $categoryId = null,
+        int|string|null $categoryId = null,
         ?string $typeName = null,
         ?string $brand = null,
         ?string $size = null,
         ?string $customCode = null
     ): Tool {
         $cleanName = trim($name);
-        $tool = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)])->first();
+        $cleanType = !empty($typeName) ? trim($typeName) : null;
+        $cleanBrand = !empty($brand) ? trim($brand) : null;
+        $cleanSize = !empty($size) ? trim($size) : null;
+
+        $query = static::whereRaw('LOWER(name) = ?', [strtolower($cleanName)]);
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+        if (!empty($cleanType)) {
+            $query->whereRaw('LOWER(type) = ?', [strtolower($cleanType)]);
+        }
+        if (!empty($cleanSize)) {
+            $query->whereRaw('LOWER(size) = ?', [strtolower($cleanSize)]);
+        }
+        if (!empty($cleanBrand)) {
+            $query->whereRaw('LOWER(brand) = ?', [strtolower($cleanBrand)]);
+        }
+
+        $tool = $query->first();
         if ($tool) {
             return $tool;
         }
@@ -501,7 +519,18 @@ class Tool extends Model
         // Resolve category: prioritaskan pilihan user ($categoryId), atau cari kategori Khusus Proyek, jika belum ada buatkan CAT-TOOL-CUST
         $category = null;
         if ($categoryId) {
-            $category = Category::where('type', 'tool')->find($categoryId);
+            $category = is_numeric($categoryId)
+                ? Category::where('type', 'tool')->find($categoryId)
+                : Category::where('type', 'tool')->whereRaw('LOWER(name) = ?', [strtolower(trim($categoryId))])->first();
+
+            if (!$category && !is_numeric($categoryId) && !empty(trim($categoryId))) {
+                $categoryCode = 'CAT-TOOL-' . strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $categoryId), 0, 4)) . '-' . rand(10, 99);
+                $category = Category::create([
+                    'code' => $categoryCode,
+                    'name' => trim($categoryId),
+                    'type' => 'tool',
+                ]);
+            }
         }
 
         if (!$category) {

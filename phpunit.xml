@@ -29,5 +29,14 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="BROADCAST_CONNECTION" value="reverb"/>
+        <env name="REVERB_APP_KEY" value="arsikon-reverb-test-key"/>
+        <env name="REVERB_APP_SECRET" value="arsikon-reverb-test-secret"/>
+        <env name="REVERB_APP_ID" value="12345"/>
+        <env name="REVERB_HOST" value="localhost"/>
+        <env name="REVERB_PORT" value="8080"/>
+        <env name="REVERB_SCHEME" value="http"/>
+        <env name="VAPID_PUBLIC_KEY" value="BDQkiet-JJaxkUPn7eiNxUKCF0VyzVkrBIpiP1esVCe3uHWfUHwZ_0wQT8hal1ygrO9VEMF7RtcTl-pEdJlTJXE"/>
+        <env name="VAPID_PRIVATE_KEY" value="kGR9D993aiX_AMDoohht6FaB0sw_OFc43jEeeHftgBw"/>
     </php>
 </phpunit>

@@ -185,10 +185,46 @@ class GoodsReceiptController extends Controller
         $materialCategories = \App\Models\Category::where('type', 'material')->orderBy('name')->get();
         $toolCategories = \App\Models\Category::where('type', 'tool')->orderBy('name')->get();
 
+        $units = \App\Models\Unit::orderBy('name')->get();
+        $unitsJson = $units->map(fn($u) => ['id' => $u->id, 'code' => $u->code, 'name' => $u->name, 'is_decimal' => (bool)$u->is_decimal]);
+
+        $existingMaterialGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        $allMaterialGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type')
+            ->values();
+
+        $existingToolGroups = \App\Models\Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        $allToolGroups = \App\Models\Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type')
+            ->values();
+
         return view('goods-receipts.create', compact(
             'suppliers', 'warehouses', 'materials', 'materialsJson', 'tools', 'toolsJson',
             'purchaseOrders', 'materialRequests', 'inTransitDistributions', 'selectedMrId', 'selectedPoId',
-            'materialCategories', 'toolCategories'
+            'materialCategories', 'toolCategories', 'units', 'unitsJson', 'existingMaterialGroups', 'existingToolGroups',
+            'allMaterialGroups', 'allToolGroups'
         ));
     }
 
@@ -574,7 +610,7 @@ class GoodsReceiptController extends Controller
                 if (empty($v['material_id']) && empty($v['tool_id'])) {
                     $directName = trim($v['name'] ?? ($v['custom_item_name'] ?? ''));
                     if (!empty($directName)) {
-                        $catId = !empty($v['category_id']) ? (int) $v['category_id'] : null;
+                        $catParam = !empty($v['category_name']) ? trim($v['category_name']) : (!empty($v['category_id']) ? $v['category_id'] : null);
                         $spec  = $v['specification'] ?? ($v['size'] ?? null);
                         $typeName = !empty($v['custom_type']) ? $v['custom_type'] : ($v['type'] ?? null);
                         $customSku = !empty($v['custom_sku']) ? trim($v['custom_sku']) : null;
@@ -582,13 +618,14 @@ class GoodsReceiptController extends Controller
                         if ($isTool) {
                             $tool = \App\Models\Tool::autoRegisterCustom(
                                 $directName,
-                                $catId,
+                                $catParam,
                                 $typeName,
                                 $v['brand'] ?? null,
                                 $spec,
                                 $customSku
                             );
                             $items[$k]['tool_id'] = $tool->id;
+                            $items[$k]['category_id'] = $tool->category_id;
                             $items[$k]['item_type'] = 'tool';
                             if (!empty($v['purchase_order_item_id'])) {
                                 $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
@@ -603,13 +640,14 @@ class GoodsReceiptController extends Controller
                             $mat = Material::autoRegisterCustom(
                                 $directName,
                                 $unit,
-                                $catId,
+                                $catParam,
                                 $typeName,
                                 $v['brand'] ?? null,
                                 $spec,
                                 $customSku
                             );
                             $items[$k]['material_id'] = $mat->id;
+                            $items[$k]['category_id'] = $mat->category_id;
                             $items[$k]['item_type'] = 'material';
                             if (!empty($v['purchase_order_item_id'])) {
                                 $poItem = \App\Models\PurchaseOrderItem::find($v['purchase_order_item_id']);
@@ -668,9 +706,14 @@ class GoodsReceiptController extends Controller
             $request->merge(['items' => $items]);
         }
 
-        // Fallback warehouse_id jika dari PO atau PO Lapangan
+        // Fallback warehouse_id jika dari PO atau PO Lapangan, atau dari gudang yang dapat diakses user
         if (!$request->filled('warehouse_id')) {
-            if ($request->filled('purchase_order_id')) {
+            $accessible = $this->accessibleWarehouses();
+            if ($accessible->count() === 1) {
+                $request->merge(['warehouse_id' => $accessible->first()->id]);
+            } elseif (session()->has('active_warehouse_id') && $accessible->pluck('id')->contains(session('active_warehouse_id'))) {
+                $request->merge(['warehouse_id' => session('active_warehouse_id')]);
+            } elseif ($request->filled('purchase_order_id')) {
                 $po = PurchaseOrder::find($request->purchase_order_id);
                 if ($po?->delivery_warehouse_id) {
                     $request->merge(['warehouse_id' => $po->delivery_warehouse_id]);
@@ -715,12 +758,15 @@ class GoodsReceiptController extends Controller
             'items'                          => 'required|array|min:1',
             'items.*.item_type'              => 'nullable|in:material,tool',
             'items.*.name'                   => 'nullable|string|max:255',
+            'items.*.size'                   => 'nullable|string|max:100',
+            'items.*.type'                   => 'nullable|string|max:100',
             'items.*.custom_unit'            => 'nullable|string|max:50',
             'items.*.brand'                  => 'nullable|string|max:100',
             'items.*.material_id'            => 'nullable|required_without_all:items.*.tool_id,items.*.purchase_order_item_id,items.*.material_request_item_id|exists:materials,id',
             'items.*.tool_id'                => 'nullable|required_without_all:items.*.material_id,items.*.purchase_order_item_id,items.*.material_request_item_id|exists:tools,id',
             'items.*.custom_sku'             => 'nullable|string|max:50',
-            'items.*.category_id'            => 'nullable|exists:categories,id',
+            'items.*.category_id'            => 'nullable',
+            'items.*.category_name'          => 'nullable|string|max:100',
             'items.*.custom_type'            => 'nullable|string|max:100',
             'items.*.stage_reference'        => 'nullable|string|max:100',
             'items.*.condition'              => 'nullable|in:good,damaged,reject',
@@ -943,6 +989,8 @@ class GoodsReceiptController extends Controller
                 'category_id'              => $isTool ? $item->tool?->category_id : $item->material?->category_id,
                 'category_name'            => $isTool ? ($item->tool?->category?->name ?? 'Alat / Mesin') : ($item->material?->category?->name ?? 'Material'),
                 'brand'                    => $isTool ? ($item->tool?->brand ?? '') : ($item->material?->brand ?? ''),
+                'size'                     => $isTool ? ($item->tool?->size ?? '') : ($item->material?->size ?? ''),
+                'type'                     => $isTool ? ($item->tool?->type ?? '') : ($item->material?->type ?? ''),
                 'qty_shipped'              => (float) $item->qty_shipped,
                 'qty_received'             => (float) $item->qty_received,
                 'quantity'                 => (float) $item->qty_received,
@@ -962,10 +1010,46 @@ class GoodsReceiptController extends Controller
         $materialCategories = \App\Models\Category::where('type', 'material')->orderBy('name')->get();
         $toolCategories = \App\Models\Category::where('type', 'tool')->orderBy('name')->get();
 
+        $units = \App\Models\Unit::orderBy('name')->get();
+        $unitsJson = $units->map(fn($u) => ['id' => $u->id, 'code' => $u->code, 'name' => $u->name, 'is_decimal' => (bool)$u->is_decimal]);
+
+        $existingMaterialGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        $allMaterialGroups = Material::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type')
+            ->values();
+
+        $existingToolGroups = \App\Models\Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->select('category_id', 'type')
+            ->distinct()
+            ->orderBy('type')
+            ->get()
+            ->groupBy('category_id')
+            ->map(fn($items) => $items->pluck('type')->values());
+
+        $allToolGroups = \App\Models\Tool::whereNotNull('type')
+            ->where('type', '!=', '')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type')
+            ->values();
+
         return view('goods-receipts.edit', compact(
             'goodsReceipt', 'suppliers', 'warehouses', 'materials', 'materialsJson',
             'tools', 'toolsJson', 'purchaseOrders', 'materialRequests', 'inTransitDistributions',
-            'selectedMrId', 'selectedPoId', 'existingItemsJson', 'materialCategories', 'toolCategories'
+            'selectedMrId', 'selectedPoId', 'existingItemsJson', 'materialCategories', 'toolCategories',
+            'units', 'unitsJson', 'existingMaterialGroups', 'existingToolGroups', 'allMaterialGroups', 'allToolGroups'
         ));
     }
 
@@ -1039,40 +1123,51 @@ class GoodsReceiptController extends Controller
                 if (empty($v['material_id']) && empty($v['tool_id'])) {
                     $directName = trim($v['name'] ?? ($v['custom_item_name'] ?? ''));
                     if (!empty($directName)) {
-                        $catId = !empty($v['category_id']) ? (int) $v['category_id'] : null;
-                        $spec  = $v['specification'] ?? ($v['size'] ?? ($v['brand'] ?? null));
+                        $catParam = !empty($v['category_name']) ? trim($v['category_name']) : (!empty($v['category_id']) ? $v['category_id'] : null);
+                        $spec  = $v['specification'] ?? ($v['size'] ?? null);
                         $typeName = !empty($v['custom_type']) ? $v['custom_type'] : ($v['type'] ?? null);
                         $customSku = !empty($v['custom_sku']) ? trim($v['custom_sku']) : null;
 
                         if ($isTool) {
                             $tool = \App\Models\Tool::autoRegisterCustom(
                                 $directName,
-                                $catId,
+                                $catParam,
                                 $typeName,
                                 $v['brand'] ?? null,
                                 $spec,
                                 $customSku
                             );
                             $items[$k]['tool_id'] = $tool->id;
+                            $items[$k]['category_id'] = $tool->category_id;
                             $items[$k]['item_type'] = 'tool';
                         } else {
                             $unit = $v['custom_unit'] ?? ($v['unit'] ?? 'unit');
                             $mat = Material::autoRegisterCustom(
                                 $directName,
                                 $unit,
-                                $catId,
+                                $catParam,
                                 $typeName,
                                 $v['brand'] ?? null,
                                 $spec,
                                 $customSku
                             );
                             $items[$k]['material_id'] = $mat->id;
+                            $items[$k]['category_id'] = $mat->category_id;
                             $items[$k]['item_type'] = 'material';
                         }
                     }
                 }
             }
             $request->merge(['items' => $items]);
+        }
+
+        if (!$request->filled('warehouse_id')) {
+            $accessible = $this->accessibleWarehouses();
+            if ($accessible->count() === 1) {
+                $request->merge(['warehouse_id' => $accessible->first()->id]);
+            } elseif (session()->has('active_warehouse_id') && $accessible->pluck('id')->contains(session('active_warehouse_id'))) {
+                $request->merge(['warehouse_id' => session('active_warehouse_id')]);
+            }
         }
 
         $validated = $request->validate([
@@ -1088,12 +1183,15 @@ class GoodsReceiptController extends Controller
             'items'                           => 'required|array|min:1',
             'items.*.item_type'               => 'nullable|in:material,tool',
             'items.*.name'                    => 'nullable|string|max:255',
+            'items.*.size'                    => 'nullable|string|max:100',
+            'items.*.type'                    => 'nullable|string|max:100',
             'items.*.custom_unit'             => 'nullable|string|max:50',
             'items.*.brand'                   => 'nullable|string|max:100',
             'items.*.material_id'             => 'nullable|exists:materials,id',
             'items.*.tool_id'                 => 'nullable|exists:tools,id',
             'items.*.custom_sku'              => 'nullable|string|max:50',
-            'items.*.category_id'             => 'nullable|exists:categories,id',
+            'items.*.category_id'             => 'nullable',
+            'items.*.category_name'           => 'nullable|string|max:100',
             'items.*.custom_type'             => 'nullable|string|max:100',
             'items.*.stage_reference'         => 'nullable|string|max:100',
             'items.*.condition'               => 'nullable|in:good,damaged,reject',
@@ -1185,13 +1283,18 @@ class GoodsReceiptController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO', 'Super Admin'])) {
             return Warehouse::where('is_active', true)
                 ->orWhere('is_central', true)
                 ->orderBy('name')
                 ->get();
         }
 
-        return $user->warehouses()->orderBy('name')->get();
+        $userWarehouses = $user->warehouses()->orderBy('name')->get();
+        if ($userWarehouses->isEmpty()) {
+            return Warehouse::where('is_active', true)->orderBy('name')->get();
+        }
+
+        return $userWarehouses;
     }
 }

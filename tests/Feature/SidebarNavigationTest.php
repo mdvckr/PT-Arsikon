@@ -15,6 +15,7 @@ class SidebarNavigationTest extends TestCase
     protected User $owner;
     protected User $adminPO;
     protected User $adminProyek;
+    protected User $adminGudangPusat;
     protected User $karyawan;
 
     protected function setUp(): void
@@ -34,6 +35,10 @@ class SidebarNavigationTest extends TestCase
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->first()
             ?? User::factory()->create(['email' => 'admin.proyek1@arsikon.co.id']);
         $this->adminProyek->syncRoles(['Admin Gudang Proyek']);
+
+        $this->adminGudangPusat = User::where('email', 'gudang.pusat@arsikon.co.id')->first()
+            ?? User::factory()->create(['email' => 'gudang.pusat@arsikon.co.id']);
+        $this->adminGudangPusat->syncRoles(['Admin Gudang Pusat']);
 
         $this->karyawan = User::where('email', 'karyawan@arsikon.co.id')->first()
             ?? User::factory()->create(['email' => 'karyawan@arsikon.co.id']);
@@ -127,21 +132,77 @@ class SidebarNavigationTest extends TestCase
 
         $sidebar = $this->getSidebarContent($response->getContent());
 
-        // Boleh muncul:
+        // Boleh muncul (HANYA Grup Logistik & Item Logistik Fisik):
+        $this->assertStringContainsString('nav-section-label">LOGISTIK', $sidebar);
         $this->assertStringContainsString('Penerimaan Barang', $sidebar);
         $this->assertStringContainsString('Surat Jalan', $sidebar);
         $this->assertStringContainsString('Pemakaian Material', $sidebar);
-        $this->assertStringContainsString('Retur Material', $sidebar);
-        $this->assertStringContainsString('PO Lapangan', $sidebar);
+        $this->assertStringContainsString('Peminjaman Alat', $sidebar);
+        $this->assertStringContainsString('Inventori', $sidebar);
+        $this->assertStringContainsString('Material', $sidebar);
+        $this->assertStringContainsString('Alat', $sidebar);
 
         // Tidak boleh muncul:
-        // Admin Gudang Proyek tidak boleh akses Pengadaan (termasuk Nota Pembelian Harian, Purchase Order, Pembayaran), Admin Sistem, dan sidebar tanpa dropdown chevron
+        // Admin Gudang Proyek TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
+        $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
+        $this->assertStringNotContainsString('PO Lapangan', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
         $this->assertStringNotContainsString('Nota Pembelian Harian', $sidebar);
         $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
         $this->assertStringNotContainsString('Pembayaran', $sidebar);
         $this->assertStringNotContainsString('Admin Sistem', $sidebar);
         $this->assertStringNotContainsString('nav-section-chevron', $sidebar);
+    }
+
+    public function test_admin_gudang_proyek_can_access_create_materials_and_tools(): void
+    {
+        $responseMaterial = $this->actingAs($this->adminProyek)->get(route('materials.create'));
+        $responseMaterial->assertOk();
+        $responseMaterial->assertSee('Tambah Material');
+
+        $responseTool = $this->actingAs($this->adminProyek)->get(route('tools.create'));
+        $responseTool->assertOk();
+        $responseTool->assertSee('Tambah Alat');
+    }
+
+    public function test_admin_gudang_pusat_sidebar_visibility_and_restrictions(): void
+    {
+        $response = $this->actingAs($this->adminGudangPusat)->get(route('dashboard'));
+        $response->assertOk();
+
+        $sidebar = $this->getSidebarContent($response->getContent());
+
+        // Boleh muncul (HANYA Grup Logistik & Item Logistik Fisik):
+        $this->assertStringContainsString('nav-section-label">LOGISTIK', $sidebar);
+        $this->assertStringContainsString('Penerimaan Barang', $sidebar);
+        $this->assertStringContainsString('Surat Jalan', $sidebar);
+        $this->assertStringContainsString('Pemakaian Material', $sidebar);
+        $this->assertStringContainsString('Peminjaman Alat', $sidebar);
+        $this->assertStringContainsString('Inventori', $sidebar);
+        $this->assertStringContainsString('Material', $sidebar);
+        $this->assertStringContainsString('Alat', $sidebar);
+
+        // Tidak boleh muncul:
+        // Admin Gudang Pusat: TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
+        $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
+        $this->assertStringNotContainsString('PO Lapangan', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
+        $this->assertStringNotContainsString('Nota Pembelian Harian', $sidebar);
+        $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
+        $this->assertStringNotContainsString('Pembayaran', $sidebar);
+        $this->assertStringNotContainsString('Admin Sistem', $sidebar);
+        $this->assertStringNotContainsString('nav-section-chevron', $sidebar);
+    }
+
+    public function test_admin_gudang_pusat_can_access_create_materials_and_tools(): void
+    {
+        $responseMaterial = $this->actingAs($this->adminGudangPusat)->get(route('materials.create'));
+        $responseMaterial->assertOk();
+        $responseMaterial->assertSee('Tambah Material');
+
+        $responseTool = $this->actingAs($this->adminGudangPusat)->get(route('tools.create'));
+        $responseTool->assertOk();
+        $responseTool->assertSee('Tambah Alat');
     }
 
     public function test_karyawan_sidebar_visibility_and_restrictions(): void
@@ -181,15 +242,16 @@ class SidebarNavigationTest extends TestCase
         $response = $this->actingAs($restrictedUser)->get(route('dashboard'));
         $response->assertOk();
 
-        // Seluruh 3 grup harus disembunyikan karena tidak ada satupun item yang berhak diakses
-        $response->assertDontSee('Teknis');
-        $response->assertDontSee('Pengadaan');
-        $response->assertDontSee('Logistik');
-        $response->assertDontSee('Laporan & Audit');
-        $response->assertDontSee('Admin Sistem');
+        // Seluruh grup harus disembunyikan di sidebar karena tidak ada satupun item yang berhak diakses
+        $sidebar = $this->getSidebarContent($response->getContent());
+        $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">LAPORAN & AUDIT', $sidebar);
+        $this->assertStringNotContainsString('nav-section-label">ADMIN SISTEM', $sidebar);
 
-        // Hanya Dashboard yang muncul
-        $response->assertSee('Dashboard');
+        // Hanya Dashboard yang muncul di sidebar
+        $this->assertStringContainsString('Dashboard', $sidebar);
     }
 
     public function test_active_route_opens_group_automatically(): void

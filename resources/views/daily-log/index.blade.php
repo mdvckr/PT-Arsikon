@@ -301,7 +301,6 @@
         $prevDate = $carbonDate->copy()->subDay()->toDateString();
         $nextDate = $carbonDate->copy()->addDay()->toDateString();
         $isToday = $date === date('Y-m-d');
-        $opnameCount = isset($opnameAdjustments) ? $opnameAdjustments->count() : 0;
     @endphp
 
     {{-- ==================== Header & Action Bar ==================== --}}
@@ -736,82 +735,11 @@
         </div>
     </div>
 
-    {{-- ==================== SECTION 4: RETUR MATERIAL ==================== --}}
-    <div class="daily-section-card" id="section-retur-material" data-category="material">
-        <div class="daily-section-header">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <span style="width:26px;height:26px;border-radius:8px;background:#fffbeb;color:#b45309;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">4</span>
-                <div>
-                    <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Retur Material dari Lapangan</span>
-                    <div class="text-muted" style="font-size:11px;">Pengembalian sisa material proyek kembali ke gudang</div>
-                </div>
-            </div>
-            <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;">
-                {{ $materialReturns->count() }} Dokumen Retur
-            </span>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table daily-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:150px;">No. Retur</th>
-                        <th style="width:190px;">Sumber Retur</th>
-                        <th style="width:115px;text-align:center;">Tgl Terima</th>
-                        <th>Material & Kuantitas Diterima</th>
-                        <th style="width:140px;text-align:center;">Alasan Retur</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($materialReturns as $ret)
-                    <tr>
-                        <td style="white-space:nowrap;">
-                            <a href="{{ route('returns.show', $ret) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <x-lucide-rotate-ccw class="text-warning" style="font-size:11px;" />
-                                {{ $ret->return_number }}
-                            </a>
-                        </td>
-                        <td>
-                            <div class="fw-700" style="color:#0f172a;font-size:12.5px;">{{ $ret->fromWarehouse?->name ?? 'Lapangan Proyek' }}</div>
-                            <div class="text-muted" style="font-size:11px;">Penerima: {{ $ret->receiver?->name ?? '-' }}</div>
-                        </td>
-                        <td style="text-align:center;font-size:12px;color:#475569;">
-                            {{ $ret->received_at ? \Carbon\Carbon::parse($ret->received_at)->format('d/m/Y') : '—' }}
-                        </td>
-                        <td>
-                            <div style="display:flex;flex-direction:column;gap:4px;">
-                                @foreach($ret->items as $rItem)
-                                <div style="font-size:12px;line-height:1.4;display:flex;align-items:center;gap:6px;">
-                                    <span class="qty-badge-in">+{{ format_quantity($rItem->received_qty) }} {{ $rItem->material?->unit?->abbreviation ?? 'unit' }}</span>
-                                    <span style="color:#1e293b;font-weight:600;">{{ $rItem->material?->name }}</span>
-                                    <span class="text-muted" style="font-size:11px;">({{ ucfirst($rItem->condition ?? 'Baik') }})</span>
-                                </div>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td style="text-align:center;">
-                            <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:12px;">
-                                {{ $ret->reason_label ?? $ret->getReasonLabel() ?? 'Retur Sisa' }}
-                            </span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="daily-empty-box">
-                            <x-lucide-rotate-ccw />
-                            Tidak ada retur material diterima pada tanggal {{ $carbonDate->translatedFormat('d F Y') }}.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- ==================== SECTION 5: PANTAUAN ALAT KERJA ==================== --}}
+    {{-- ==================== SECTION 4: PANTAUAN ALAT KERJA ==================== --}}
     <div class="daily-section-card" id="section-alat-lapangan" data-category="tool">
         <div class="daily-section-header">
             <div style="display:flex;align-items:center;gap:10px;">
-                <span style="width:26px;height:26px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">5</span>
+                <span style="width:26px;height:26px;border-radius:8px;background:#f5f3ff;color:#6d28d9;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">4</span>
                 <div>
                     <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Pantauan Alat Kerja di Lapangan (Active Tools)</span>
                     <div class="text-muted" style="font-size:11px;">Daftar alat operasional yang saat ini sedang dipinjam pekerja di lapangan</div>
@@ -896,12 +824,12 @@
         </div>
     </div>
 
-    {{-- ==================== SECTION 6: NERACA SISA STOK MATERIAL ==================== --}}
+    {{-- ==================== SECTION 5: NERACA SISA STOK MATERIAL ==================== --}}
     <div class="daily-section-card" id="section-neraca-material" data-category="material">
         <div class="daily-section-header">
             <div>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="width:26px;height:26px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">6</span>
+                    <span style="width:26px;height:26px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">5</span>
                     <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Neraca Sisa Stok Material Hari Ini (Stock Balance)</span>
                 </div>
                 <div class="text-muted" style="font-size:11.5px;margin-top:2px;">
@@ -983,12 +911,12 @@
         </div>
     </div>
 
-    {{-- ==================== SECTION 7: KESIAPAN ALAT KERJA ==================== --}}
+    {{-- ==================== SECTION 6: KESIAPAN ALAT KERJA ==================== --}}
     <div class="daily-section-card" id="section-kesiapan-alat" data-category="tool">
         <div class="daily-section-header">
             <div>
                 <div style="display:flex;align-items:center;gap:10px;">
-                    <span style="width:26px;height:26px;border-radius:8px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">7</span>
+                    <span style="width:26px;height:26px;border-radius:8px;background:#ecfdf5;color:#047857;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">6</span>
                     <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Neraca Posisi & Kesiapan Alat Kerja (Tool Availability)</span>
                 </div>
                 <div class="text-muted" style="font-size:11.5px;margin-top:2px;">
@@ -1101,74 +1029,6 @@
             @endif
         </div>
     </div>
-
-    {{-- ==================== SECTION 8: PENYESUAIAN STOCK OPNAME ==================== --}}
-    @if(isset($opnameAdjustments) && $opnameAdjustments->isNotEmpty())
-    <div class="daily-section-card" id="section-opname-penyesuaian" data-category="material">
-        <div class="daily-section-header">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <span style="width:26px;height:26px;border-radius:8px;background:#fef3c7;color:#d97706;font-weight:800;font-size:12px;display:inline-flex;align-items:center;justify-content:center;">8</span>
-                <div>
-                    <span style="font-size:13.5px;font-weight:700;color:#1e293b;">Penyesuaian Fisik Stock Opname Hari Ini</span>
-                    <div class="text-muted" style="font-size:11px;">Hasil opname disetujui yang memengaruhi sisa stok akhir gudang</div>
-                </div>
-            </div>
-            <span class="badge" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 9px;border-radius:12px;font-weight:700;">
-                {{ $opnameAdjustments->count() }} Dokumen Opname Disetujui
-            </span>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table daily-table mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:160px;">No. Opname</th>
-                        <th style="width:190px;">Pemeriksa & Approver</th>
-                        <th>Material & Selisih Penyesuaian</th>
-                        <th style="width:130px;text-align:center;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($opnameAdjustments as $opname)
-                    <tr>
-                        <td style="white-space:nowrap;">
-                            <a href="{{ route('stock-opnames.show', $opname) }}" style="color:#2563eb;font-weight:700;font-size:12.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-                                <x-lucide-clipboard-check class="text-warning" style="font-size:11px;" />
-                                {{ $opname->opname_number }}
-                            </a>
-                        </td>
-                        <td>
-                            <div class="fw-700" style="color:#0f172a;font-size:12px;">Pemeriksa: {{ $opname->conductedBy?->name ?? '-' }}</div>
-                            <div class="text-muted" style="font-size:11px;">Approver: {{ $opname->approvedBy?->name ?? '-' }}</div>
-                        </td>
-                        <td>
-                            <div style="display:flex;flex-direction:column;gap:4px;">
-                                @foreach($opname->items as $oItem)
-                                <div style="font-size:12px;line-height:1.4;display:flex;align-items:center;gap:6px;">
-                                    <strong style="color:#0f172a;">{{ $oItem->material?->name }}</strong>
-                                    <span class="text-muted" style="font-size:11px;">(Sistem {{ format_quantity($oItem->qty_system) }} → Fisik {{ format_quantity($oItem->qty_physical) }})</span>
-                                    @if($oItem->qty_difference > 0)
-                                        <span class="qty-badge-in">+{{ format_quantity($oItem->qty_difference) }} {{ $oItem->material?->unit?->abbreviation ?? 'unit' }}</span>
-                                    @elseif($oItem->qty_difference < 0)
-                                        <span class="qty-badge-out">{{ format_quantity($oItem->qty_difference) }} {{ $oItem->material?->unit?->abbreviation ?? 'unit' }}</span>
-                                    @else
-                                        <span class="badge" style="background:#f1f5f9;color:#64748b;font-size:10.5px;">Sesuai</span>
-                                    @endif
-                                </div>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td style="text-align:center;">
-                            <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;padding:3px 8px;border-radius:12px;font-weight:700;">
-                                <x-lucide-circle-check class="me-1" /> Disetujui
-                            </span>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @endif
 
     @push('scripts')
     <script>

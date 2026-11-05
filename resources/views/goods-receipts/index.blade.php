@@ -173,7 +173,6 @@
                         <th>Gudang Penerima</th>
                         <th style="width:110px;">Tgl. Terima</th>
                         <th>Invoice / Surat Jalan</th>
-                        <th>Purchase Order</th>
                         <th style="width:130px;text-align:center;">Status</th>
                         <th style="width:50px;text-align:center;">Aksi</th>
                     </tr>
@@ -216,23 +215,6 @@
                                 <span class="text-muted" style="font-size:11.5px;">—</span>
                             @endif
                         </td>
-                        <td>
-                            @if($r->purchaseOrder)
-                                <a href="{{ route('purchase-orders.show', $r->purchaseOrder) }}" class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:10.5px;padding:3px 7px;border-radius:4px;text-decoration:none;font-weight:600;">
-                                    <x-lucide-receipt class="me-1" /> #{{ $r->purchaseOrder->po_number }}
-                                </a>
-                            @else
-                                <span class="text-muted" style="font-size:11.5px;">— Non-PO —</span>
-                            @endif
-
-                            @if($r->materialRequest)
-                                <div style="margin-top:4px;">
-                                    <a href="{{ route('material-requests.show', $r->materialRequest) }}" class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:10px;padding:2px 6px;border-radius:4px;text-decoration:none;font-weight:600;" title="PO Lapangan">
-                                        <x-lucide-clipboard-check class="me-1" /> #{{ $r->materialRequest->request_number }}
-                                    </a>
-                                </div>
-                            @endif
-                        </td>
                         <td style="text-align:center;" class="nowrap">
                             @if($r->status === 'confirmed')
                                 <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:2px 8px;border-radius:12px;font-weight:600;">
@@ -254,7 +236,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8">
+                        <td colspan="7">
                             <div class="empty-state" style="padding:36px 16px;text-align:center;">
                                 <x-lucide-package-check style="font-size:32px;color:#cbd5e1;margin-bottom:8px;" />
                                 <h3 style="font-size:14px;color:#475569;margin-bottom:3px;">Belum Ada Data Penerimaan Barang</h3>

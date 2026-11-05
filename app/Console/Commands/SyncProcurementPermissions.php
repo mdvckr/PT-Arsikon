@@ -124,22 +124,19 @@ class SyncProcurementPermissions extends Command
         $this->line('  - Role Admin PO: disinkronkan (' . count($adminPOPermissions) . ' permissions, tanpa approval PO/PR/Payment).');
 
         // D. Admin Gudang Pusat:
-        //    Boleh: create & confirm GR, create transit losses, approve MR untuk gudangnya.
+        //    Boleh: create & confirm GR, create transit losses, operasional logistik sentral.
         $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat', 'guard_name' => 'web']);
         $gudangPusatPermissions = [
-            'view suppliers',
+            'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials', 'create materials', 'edit materials', 'delete materials',
             'view tools', 'create tools', 'edit tools', 'delete tools',
             'view categories', 'create categories', 'edit categories', 'delete categories',
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            'view material requests', 'create material requests', 'approve material requests',
             'view material usages', 'create material usages', 'cancel material usages',
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view tool assignments', 'create tool assignments', 'return tool assignments',
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
-            'view stock opname', 'create stock opname', 'approve stock opname',
             'view inventory',
-            'view returns', 'approve returns', 'receive returns',
             'create transit losses',
             'view reports',
         ];
@@ -151,17 +148,15 @@ class SyncProcurementPermissions extends Command
         $proyekPermissions = [
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
-            'view material requests', 'create material requests',
             'view material usages', 'create material usages', 'cancel material usages',
             'view tool assignments', 'create tool assignments', 'return tool assignments',
-            'approve tool assignments', 'inspect return tool assignments', 'cancel tool assignments',
+            'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
             'view inventory',
             'view reports',
-            'view materials',
-            'view tools',
-            'view categories',
-            'view suppliers',
-            'view returns', 'create returns', 'receive returns',
+            'view materials', 'create materials', 'edit materials',
+            'view tools', 'create tools', 'edit tools',
+            'view categories', 'create categories',
+            'view suppliers', 'create suppliers',
             'create transit losses',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);

@@ -667,10 +667,12 @@
                 display: grid !important;
                 grid-template-columns: 1fr 1fr auto !important;
                 grid-template-areas:
-                    "type    type    action"
+                    "type    sku     action"
+                    "cat     subgroup subgroup"
                     "item    item    item"
-                    "shipped qty     missing"
-                    "unit    notes   notes";
+                    "brand   unit    unit"
+                    "shipped qty     diff"
+                    "notes   notes   notes";
                 gap: 10px 12px !important;
                 padding: 14px !important;
                 background: #ffffff !important;
@@ -696,6 +698,14 @@
                 align-items: center !important;
             }
 
+            .receipt-items-table td.col-sku {
+                grid-area: sku;
+                padding: 0 !important;
+                border: none !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
             .receipt-items-table td.col-action {
                 grid-area: action;
                 padding: 0 !important;
@@ -715,6 +725,20 @@
                 color: #ef4444 !important;
             }
 
+            .receipt-items-table td.col-cat {
+                grid-area: cat;
+                padding: 0 !important;
+                border: none !important;
+                width: 100% !important;
+            }
+
+            .receipt-items-table td.col-subgroup {
+                grid-area: subgroup;
+                padding: 0 !important;
+                border: none !important;
+                width: 100% !important;
+            }
+
             .receipt-items-table td.col-item {
                 grid-area: item;
                 padding: 0 !important;
@@ -729,6 +753,13 @@
                 border-radius: 8px !important;
                 border: 1.5px solid #cbd5e1 !important;
                 background-color: #ffffff !important;
+            }
+
+            .receipt-items-table td.col-brand {
+                grid-area: brand;
+                padding: 0 !important;
+                border: none !important;
+                width: 100% !important;
             }
 
             .receipt-items-table td.col-shipped {
@@ -753,8 +784,8 @@
                 border: 1.5px solid #cbd5e1 !important;
             }
 
-            .receipt-items-table td.col-missing {
-                grid-area: missing;
+            .receipt-items-table td.col-diff {
+                grid-area: diff;
                 padding: 0 !important;
                 border: none !important;
             }
@@ -888,6 +919,23 @@
     </div>
     @endif
 
+    @php
+        $canAccessPo = auth()->user()->hasAnyRole([
+            'Project Manager',
+            'Site Manager',
+            'Site Engineer',
+            'Admin Proyek',
+        ]) && !auth()->user()->hasAnyRole([
+            'Admin Pusat',
+            'Owner',
+            'Super Admin',
+            'Admin Gudang Pusat',
+            'Admin Gudang Proyek',
+            'Admin PO',
+            'Admin PO Proyek'
+        ]);
+    @endphp
+
     @if(isset($inTransitDistributions) && $inTransitDistributions->isNotEmpty())
     <div class="card mb-3" style="border:1.5px solid #bfdbfe;border-radius:12px;background:linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);box-shadow:0 3px 12px rgba(37,99,235,0.08);overflow:hidden;">
         <div class="card-body" style="padding:14px 18px;">
@@ -898,7 +946,11 @@
                     </div>
                     <div>
                         <h4 style="font-size:13.5px;font-weight:700;color:#1e3a8a;margin:0 0 3px 0;">
-                            Barang PO Lapangan Sedang Dikirim dari Gudang Pusat (Surat Jalan Dalam Perjalanan)
+                            @if($canAccessPo)
+                                Barang PO Lapangan Sedang Dikirim dari Gudang Pusat (Surat Jalan Dalam Perjalanan)
+                            @else
+                                Surat Jalan Pengiriman Sedang Dalam Perjalanan dari Gudang Pusat
+                            @endif
                         </h4>
                         <p style="font-size:12px;color:#334155;margin:0;line-height:1.4;">
                             Terdapat <strong>{{ $inTransitDistributions->count() }} Surat Jalan</strong> yang sedang menuju ke gudang proyek Anda. Jika barang fisik telah tiba bersama supir, konfirmasikan penerimaan langsung melalui Surat Jalan terkait:
@@ -914,7 +966,7 @@
                             #{{ $dist->distribution_number }}
                         </span>
                         @if($dist->materialRequest)
-                            <span style="color:#64748b;">• PO Lapangan:</span>
+                            <span style="color:#64748b;">• {{ $canAccessPo ? 'PO Lapangan:' : 'Permintaan Proyek:' }}</span>
                             <strong style="color:#0f172a;">#{{ $dist->materialRequest->request_number }}</strong>
                         @endif
                         <span style="color:#64748b;">• Tujuan: <strong style="color:#0f172a;">{{ $dist->toWarehouse?->name }}</strong></span>
@@ -983,9 +1035,11 @@
                                 <div class="input-icon-wrap">
                                     <x-lucide-warehouse class="input-icon" id="warehouseInputIcon" />
                                     <select name="warehouse_id" id="warehouseSelect" class="form-control @error('warehouse_id') is-invalid @enderror" required onchange="onUserWarehouseChange(this)">
-                                        <option value="">— Pilih Gudang —</option>
+                                        @if($warehouses->count() > 1)
+                                            <option value="">— Pilih Gudang —</option>
+                                        @endif
                                         @foreach($warehouses as $wh)
-                                        <option value="{{ $wh->id }}" {{ (old('warehouse_id') == $wh->id || (empty(old('warehouse_id')) && (session('active_warehouse_id') == $wh->id || $warehouses->count() === 1))) ? 'selected' : '' }}>
+                                        <option value="{{ $wh->id }}" {{ ($warehouses->count() === 1 || old('warehouse_id') == $wh->id || (empty(old('warehouse_id')) && (session('active_warehouse_id') == $wh->id || $loop->first))) ? 'selected' : '' }}>
                                             {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '(Proyek)' }}
                                         </option>
                                         @endforeach
@@ -1034,6 +1088,76 @@
                                 </div>
                                 @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
                             </div>
+
+                            @if($canAccessPo)
+                            {{-- Field Hubungkan PO Lapangan (Hanya untuk PM, Site Manager, Site Engineer, Admin Proyek) --}}
+                            <div class="mb-3">
+                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
+                                    <span>Hubungkan PO Lapangan</span>
+                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Permintaan Proyek)</span>
+                                </label>
+                                <div class="input-icon-wrap">
+                                    <x-lucide-clipboard-check class="input-icon" />
+                                    <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
+                                        <option value="">— Pilih PO Lapangan (Opsional) —</option>
+                                        @foreach($materialRequests as $mr)
+                                        @php
+                                            $projectName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
+                                            $poIds = $mr->purchaseOrders->pluck('id')
+                                                ->merge($mr->items->flatMap->purchaseOrderItems->pluck('purchase_order_id'))
+                                                ->filter()->unique()->implode(',');
+                                            $inTransitCount = $mr->distributions->where('status', 'in_transit')->count();
+                                        @endphp
+                                        <option value="{{ $mr->id }}"
+                                             data-warehouse-id="{{ $mr->to_warehouse_id }}"
+                                             data-project="{{ $projectName }}"
+                                             data-po-ids="{{ $poIds }}"
+                                             data-in-transit="{{ $inTransitCount }}"
+                                             {{ (old('material_request_id', $selectedMrId ?? '') == $mr->id) ? 'selected' : '' }}>
+                                             #{{ $mr->request_number }} • {{ $projectName }} ({{ $mr->requestedBy?->name ?? '-' }})
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div id="mrInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
+                                    <x-lucide-circle-check class="me-1" />
+                                    <span id="mrBannerText"></span>
+                                </div>
+                            </div>
+
+                            {{-- Field Hubungkan Purchase Order (PO) --}}
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Hubungkan Purchase Order (PO)
+                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
+                                </label>
+                                <div class="input-icon-wrap">
+                                    <x-lucide-file-text class="input-icon" />
+                                    <select id="poSelect" name="purchase_order_id" class="form-control" onchange="onPoSelectChange(this.value)">
+                                        <option value="">— Tanpa PO (Pembelian Langsung) —</option>
+                                        @foreach($purchaseOrders as $po)
+                                        @php
+                                            $mrInfo = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
+                                            $mrText = $mrInfo ? ' [PO Lapangan: #' . $mrInfo->request_number . ' - ' . ($mrInfo->toWarehouse?->project?->name ?? $mrInfo->toWarehouse?->name) . ']' : '';
+                                        @endphp
+                                        <option value="{{ $po->id }}"
+                                             data-supplier="{{ $po->supplier_id }}"
+                                             data-supplier-name="{{ $po->supplier?->name }}"
+                                             data-warehouse-id="{{ $po->delivery_warehouse_id }}"
+                                             data-mr-id="{{ $po->material_request_id ?? $mrInfo?->id ?? '' }}"
+                                             {{ (old('purchase_order_id', $selectedPoId ?? '') == $po->id) ? 'selected' : '' }}>
+                                             #{{ $po->po_number }} • {{ $po->supplier?->name }}{{ $mrText }}
+                                             @if($po->status === 'partial_received') (Sebagian Diterima) @endif
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div id="poInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
+                                    <x-lucide-circle-check class="me-1" />
+                                    <span id="poBannerText"></span>
+                                </div>
+                            </div>
+                            @endif
 
                             <div class="mb-0">
                                 <label class="form-label">
@@ -1112,9 +1236,7 @@
 
                         {{-- Filter Tabs (Material sendiri & Alat sendiri) --}}
                         <div class="flex items-center gap-1 receipt-tabs-wrap">
-                            <button type="button" class="btn-tab-filter active" id="tab-btn-all" onclick="filterItemsTab('all')">
-                                <x-lucide-list style="font-size:12px;" /> Semua <span class="count-badge" id="count-all">0</span>
-                            </button>
+                          
                             <button type="button" class="btn-tab-filter" id="tab-btn-material" onclick="filterItemsTab('material')">
                                 <x-lucide-package style="font-size:12px;color:#2563eb;" /> Material <span class="count-badge" id="count-material">0</span>
                             </button>
@@ -1143,15 +1265,17 @@
                         <thead>
                             <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#475569;">
                                 <th style="width:75px;text-align:center;">Tipe</th>
-                                <th style="width:125px;">Kode Material</th>
+                                <th style="width:115px;text-align:center;">Kode Material</th>
+                                <th style="width:130px;">Kategori <span class="text-danger">*</span></th>
+                                <th style="width:130px;">Kelompok <span class="text-danger">*</span></th>
                                 <th style="min-width:210px;">Nama Barang <span class="text-danger">*</span></th>
-                                <th style="width:140px;">Kategori <span class="text-danger">*</span></th>
-                                <th style="width:145px;">Merek</th>
+                                <th style="width:130px;">Ukuran / Spesifikasi</th>
+                                <th style="width:125px;">Merek</th>
                                 <th style="width:85px;text-align:center;">Satuan <span class="text-danger">*</span></th>
                                 <th style="width:95px;text-align:center;" title="Kuantitas yang tertera pada surat jalan / nota vendor">Qty Nota / SJ</th>
                                 <th style="width:105px;text-align:center;" title="Kuantitas fisik diterima baik yang akan menambah stok gudang">Diterima (Stok) <span class="text-danger">*</span></th>
                                 <th style="width:160px;text-align:center;" title="Pilihan status jika kuantitas nota berbeda dengan fisik diterima: Belum Dikirim Semua (Susulan) atau Dinyatakan Hilang">Selisih &amp; Status</th>
-                                <th style="min-width:130px;">Catatan Fisik</th>
+                                <th style="min-width:120px;">Catatan Fisik</th>
                                 <th style="width:40px;text-align:center;"></th>
                             </tr>
                         </thead>
@@ -1165,9 +1289,9 @@
                 <div class="receipt-summary-strip" style="padding:11px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
                     <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;" id="totalItemCount">
                         <span style="font-size:12px;color:#64748b;font-weight:600;">Total:</span>
-                        <span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><span id="count-all">0</span> Item</span>
-                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material">0</span> Material</span>
-                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool">0</span> Alat</span>
+                        <span class="badge" style="background:#0f172a;color:#ffffff;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;"><span id="count-all"> </span> Item</span>
+                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-material"> </span> Material</span>
+                        <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600;"><span id="count-tool"> </span> Alat</span>
                     </div>
                 </div>
             </div>
@@ -1211,10 +1335,10 @@
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-wrap:wrap;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;">
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <button type="button" id="btnSchedAll" class="btn btn-sm btn-primary" onclick="setModalFilter('all')" style="font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 10px;">
-                            <x-lucide-list-checks class="me-1" /> Semua Rencana (<span id="countSchedAll">0</span>)
+                            <x-lucide-list-checks class="me-1" /> Semua Rencana (<span id="countSchedAll"> </span>)
                         </button>
                         <button type="button" id="btnSchedToday" class="btn btn-sm btn-light border" onclick="setModalFilter('today')" style="font-size:11.5px;font-weight:600;border-radius:6px;padding:4px 10px;">
-                            <x-lucide-calendar-days class="me-1" /> Hari Ini (<span id="countSchedToday">0</span>)
+                            <x-lucide-calendar-days class="me-1" /> Hari Ini (<span id="countSchedToday"> </span>)
                         </button>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;">
@@ -1253,6 +1377,16 @@
     var grTools     = @json($toolsJson);
     var grMaterialCategories = @json($materialCategories->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'code' => $c->code]));
     var grToolCategories     = @json($toolCategories->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'code' => $c->code]));
+    window.grUnits = @json($unitsJson);
+    window.grMaterialGroups = @json($existingMaterialGroups);
+    window.grToolGroups = @json($existingToolGroups);
+    window.grAllMaterialGroups = @json($allMaterialGroups);
+    window.grAllToolGroups = @json($allToolGroups);
+    var grUnits = window.grUnits;
+    var grMaterialGroups = window.grMaterialGroups;
+    var grToolGroups = window.grToolGroups;
+    var grAllMaterialGroups = window.grAllMaterialGroups;
+    var grAllToolGroups = window.grAllToolGroups;
     @php
         $suppliersData = $suppliers->map(function($s) {
             return ['id' => $s->id, 'name' => $s->name];

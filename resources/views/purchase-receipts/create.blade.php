@@ -464,16 +464,30 @@
                 onItemInput(item, e) {
                     const val = (e.target.value || '').trim().toLowerCase();
                     if (!val) return;
+                    let matched = false;
                     const list = document.getElementById('material-list');
-                    if (!list || !list.options) return;
-                    for (let i = 0; i < list.options.length; i++) {
-                        const opt = list.options[i];
-                        if ((opt.value || '').trim().toLowerCase() === val) {
-                            if (opt.dataset.unit && !item.unit_name) {
-                                item.unit_name = opt.dataset.unit;
+                    if (list && list.options) {
+                        for (let i = 0; i < list.options.length; i++) {
+                            const opt = list.options[i];
+                            if ((opt.value || '').trim().toLowerCase() === val) {
+                                if (opt.dataset.unit && !item.unit_name) {
+                                    item.unit_name = opt.dataset.unit;
+                                    matched = true;
+                                }
+                                break;
                             }
-                            break;
                         }
+                    }
+                    if (!matched && !item.unit_name) {
+                        if (/\b(semen|mortar|grout|plamir)\b/i.test(val) || /\b(sak|zak)\b/i.test(val)) item.unit_name = 'Sak';
+                        else if (/\b(besi|pipa|hollow|reng|kaso|usuk|balok|pvc)\b/i.test(val) || /\b(btg|batang)\b/i.test(val)) item.unit_name = 'Batang';
+                        else if (/\b(pasir|split|sirtu|tanah)\b/i.test(val) || /\b(m3|kubik)\b/i.test(val)) item.unit_name = val.includes('rit') ? 'Rit' : 'M3';
+                        else if (/\b(rit)\b/i.test(val)) item.unit_name = 'Rit';
+                        else if (/\b(kawat|bendrat|paku)\b/i.test(val) || /\b(kg)\b/i.test(val)) item.unit_name = 'Kg';
+                        else if (/\b(triplek|multiplek|gypsum|grc)\b/i.test(val) || /\b(lembar|lbr)\b/i.test(val)) item.unit_name = 'Lembar';
+                        else if (/\b(bata|hebel|batako|keramik|granit|genteng)\b/i.test(val) || /\b(pcs|buah)\b/i.test(val)) item.unit_name = 'Pcs';
+                        else if (/\b(roll|rol)\b/i.test(val)) item.unit_name = 'Roll';
+                        else if (item.item_type === 'Alat') item.unit_name = 'Unit';
                     }
                 }
             };

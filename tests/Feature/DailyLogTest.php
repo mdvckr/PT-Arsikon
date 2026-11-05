@@ -43,6 +43,8 @@ class DailyLogTest extends TestCase
         $response->assertSeeText('Neraca Sisa Stok Material Hari Ini');
         $response->assertSeeText('Neraca Posisi');
         $response->assertSeeText('Tool Availability');
+        $response->assertDontSeeText('Penyesuaian Fisik Stock Opname');
+        $response->assertDontSeeText('No. Opname');
     }
 
     public function test_admin_proyek_can_print_daily_log(): void
@@ -83,6 +85,8 @@ class DailyLogTest extends TestCase
         $response->assertSeeText('USG-TODAY-01');
         $response->assertSeeText('Neraca Posisi');
         $response->assertSeeText('Tool Availability');
+        $response->assertDontSeeText('Penyesuaian Fisik Stock Opname');
+        $response->assertDontSeeText('No. Opname');
     }
 
     public function test_admin_pusat_can_view_daily_log(): void

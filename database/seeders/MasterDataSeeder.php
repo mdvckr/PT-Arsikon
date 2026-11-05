@@ -47,14 +47,6 @@ class MasterDataSeeder extends Seeder
             ['code' => 'CAT-STR'],
             ['name' => 'STRUKTUR', 'type' => 'material', 'description' => 'Material kategori Struktur']
         );
-        $catAlatBerat = Category::firstOrCreate(
-            ['code' => 'CAT-TOOL-01'],
-            ['name' => 'Alat Berat & Elektrik', 'type' => 'tool', 'description' => 'Genset, molen, bor listrik']
-        );
-        $catAlatTangan = Category::firstOrCreate(
-            ['code' => 'CAT-TOOL-02'],
-            ['name' => 'Alat Tangan', 'type' => 'tool', 'description' => 'Cangkul, sekop, gerobak dorong']
-        );
 
         // 3. Seed Suppliers
         Supplier::firstOrCreate(

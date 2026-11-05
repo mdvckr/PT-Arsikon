@@ -167,19 +167,6 @@ export function notificationCenter() {
                 if (now - t > 10000) this._recentPushes.delete(k);
             }
 
-            // 2. Active banners & queue check: don't duplicate if already displayed or queued
-            if (this.banners.some(b => b.title === title && b.message === message && !b.isClosing)) {
-                return;
-            }
-            if (this.queue.some(b => b.title === title && b.message === message)) {
-                return;
-            }
-
-            const soundType = item.sound_type || item.type || 'info';
-            if (typeof window.playNotificationChime === 'function') {
-                window.playNotificationChime(soundType);
-            }
-
             // Haptic feedback (10ms subtle tick)
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate(10); } catch (e) {}
@@ -195,35 +182,19 @@ export function notificationCenter() {
                 tint = 'danger';
             }
 
+            const soundType = item.sound_type || item.type || 'info';
             const duration = (item.url ? 8000 : 5500);
 
-            const banner = {
-                id: item.id || 'banner-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-                title: title,
-                message: message,
-                type: tint,
-                url: item.url || item.link || null,
-                time: item.created_at_human || 'Baru saja',
-                expanded: false,
-                isClosing: false,
-                touchStartX: 0,
-                touchStartY: 0,
-                currentDeltaY: 0,
-                currentDeltaX: 0,
-                timer: null,
-                paused: false,
-                duration: duration,
-                hasActions: Boolean(item.url)
-            };
-
-            banner.timer = setTimeout(() => {
-                this.dismissBanner(banner.id);
-            }, duration);
-
-            if (this.banners.length >= 3) {
-                this.queue.push(banner);
-            } else {
-                this.banners.unshift(banner);
+            // Trigger SweetAlert2 Pastel Toast Engine (sound chime is played inside window.notify)
+            if (typeof window.notify === 'function') {
+                window.notify({
+                    title: title,
+                    message: message,
+                    type: tint === 'danger' ? 'error' : (tint === 'warning' ? 'warning' : (tint === 'success' ? 'success' : 'blue')),
+                    url: item.url || item.link || null,
+                    sound_type: soundType,
+                    duration: duration
+                });
             }
         },
 

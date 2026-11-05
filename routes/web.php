@@ -28,6 +28,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\PrintTemplateController;
 use App\Http\Controllers\TransitLossController;
 use App\Http\Controllers\SecureAttachmentController;
@@ -61,6 +62,10 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    // Web Push Subscriptions
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     // Master Data
     Route::post('/materials/delete-group', [MaterialController::class, 'deleteGroup'])->name('materials.delete-group');
@@ -231,6 +236,19 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/secure-attachments/{path}', [SecureAttachmentController::class, 'show'])
         ->where('path', '.*')
         ->name('secure.attachments.show');
+});
+
+// PWA & Service Worker Endpoints
+Route::get('/manifest.json', function () {
+    return response(file_get_contents(public_path('manifest.json')), 200, [
+        'Content-Type' => 'application/json',
+    ]);
+});
+
+Route::get('/sw.js', function () {
+    return response(file_get_contents(public_path('sw.js')), 200, [
+        'Content-Type' => 'application/javascript',
+    ]);
 });
 
 require __DIR__.'/auth.php';

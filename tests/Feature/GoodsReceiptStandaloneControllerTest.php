@@ -487,6 +487,51 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertSee('name="material_request_id"', false);
     }
 
+    public function test_goods_receipt_create_and_edit_view_does_not_show_po_select_for_admin_pusat(): void
+    {
+        $adminPusat = User::factory()->create(['email_verified_at' => now()]);
+        $adminPusat->assignRole('Admin Pusat');
+        $adminPusat->warehouses()->attach($this->warehouse->id);
+
+        $responseCreate = $this->actingAs($adminPusat)->get(route('goods-receipts.create'));
+        $responseCreate->assertOk();
+        $responseCreate->assertDontSee('Hubungkan PO Lapangan');
+        $responseCreate->assertDontSee('Hubungkan Purchase Order (PO)');
+
+        $gr = GoodsReceipt::create([
+            'receipt_number' => 'GR-PUSAT-001',
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'receipt_date' => now()->toDateString(),
+            'status' => 'draft',
+            'received_by_user_id' => $adminPusat->id,
+        ]);
+
+        $responseEdit = $this->actingAs($adminPusat)->get(route('goods-receipts.edit', $gr));
+        $responseEdit->assertOk();
+        $responseEdit->assertDontSee('Hubungkan PO Lapangan');
+        $responseEdit->assertDontSee('Hubungkan Purchase Order (PO)');
+    }
+
+    public function test_goods_receipt_index_view_does_not_render_po_column(): void
+    {
+        $gr = GoodsReceipt::create([
+            'receipt_number' => 'GR-IDX-001',
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+            'receipt_date' => now()->toDateString(),
+            'status' => 'draft',
+            'received_by_user_id' => $this->gudangUser->id,
+        ]);
+
+        $response = $this->actingAs($this->gudangUser)->get(route('goods-receipts.index'));
+        $response->assertOk();
+        $response->assertDontSee('<th>Purchase Order</th>', false);
+        $response->assertDontSee('— Non-PO —');
+        $response->assertSee('No. Tanda Terima');
+        $response->assertSee('Invoice / Surat Jalan');
+    }
+
     public function test_admin_gudang_proyek_stores_goods_receipt_with_auto_selected_warehouse(): void
     {
         // Admin gudang proyek with assigned warehouse
@@ -620,6 +665,14 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
             'goods_receipt_id' => $gr->id,
             'material_id'      => $material->id,
         ]);
+    }
+
+    public function test_goods_receipt_javascript_contains_auto_unit_detection_on_item_name_input(): void
+    {
+        $js = file_get_contents(public_path('js/goods-receipt-create.js'));
+        $this->assertStringContainsString('autoDetectUnitFromName', $js);
+        $this->assertStringContainsString('applyUnitToSelect', $js);
+        $this->assertStringContainsString('autoDetectUnitFromName(idx, val)', $js);
     }
 }
 

@@ -4,8 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
     <link rel="icon" type="image/png" href="{{ asset('assets/Logo-Dashboard.png') }}">
     <title>{{ $title ?? config('app.name', 'CWMS') }} — Arsikon Warehouse</title>
+
+    <!-- PWA Manifest & Mobile Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ea580c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Arsikon">
+    <link rel="apple-touch-icon" href="{{ asset('assets/Logo-Dashboard.png') }}">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +22,10 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SweetAlert2 & Custom Pastel Toast Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="{{ asset('css/sweetalert-pastel-toast.css') }}">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -1880,9 +1893,11 @@
                 $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
                 $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
                 $isRoleAdminPOProyek = auth()->user()->hasRole('Admin PO Proyek');
+                $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
+                $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
                 $isRoleTeknis = auth()->user()->hasAnyRole(['Admin Proyek', 'Site Manager', 'Site Engineer', 'Project Manager']);
-                $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && auth()->user()->can('view material requests');
-                $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && request()->routeIs(['material-requests.*', 'daily-log.*']);
+                $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && auth()->user()->can('view material requests');
+                $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && request()->routeIs(['material-requests.*', 'daily-log.*']);
             @endphp
             @if($canTeknis)
             <div class="nav-section" @if(!$isRoleTeknis) x-data="{ open: {{ $isTeknisActive ? 'true' : 'false' }} }" @endif>
@@ -2012,6 +2027,8 @@
             <!-- 3. GRUP LOGISTIK -->
             @php
                 $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
+                $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
+                $isLogistikPure = $isRoleGudangProyek || $isRoleGudangPusat;
                 $canLogistik = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     auth()->user()->can('view distributions')
                     || auth()->user()->can('view goods receipts')
@@ -2020,15 +2037,15 @@
                     || auth()->user()->can('view materials')
                     || auth()->user()->can('view tools')
                     || auth()->user()->can('view tool assignments')
-                    || ($canDailyLog && !$isRoleGudangProyek && !$isRoleTeknis)
+                    || ($canDailyLog && !$isLogistikPure && !$isRoleTeknis)
                 );
                 $isLogistikActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     request()->routeIs(['distributions.*', 'goods-receipts.*', 'material-usages.*', 'inventory.*', 'materials.*', 'tools.*', 'tool-assignments.*']) || request()->routeIs('reports.mutation')
                 );
             @endphp
             @if($canLogistik)
-            <div class="nav-section" @if(!$isRoleGudangProyek) x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }" @endif>
-                @if($isRoleGudangProyek)
+            <div class="nav-section" @if(!$isLogistikPure) x-data="{ open: {{ $isLogistikActive ? 'true' : 'false' }} }" @endif>
+                @if($isLogistikPure)
                 <div style="padding: 8px 12px 4px 12px;">
                     <span class="nav-section-label">LOGISTIK</span>
                 </div>
@@ -2038,7 +2055,7 @@
                     <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                 </div>
                 @endif
-                <div @if(!$isRoleGudangProyek) x-show="open" @endif class="nav-section-body">
+                <div @if(!$isLogistikPure) x-show="open" @endif class="nav-section-body">
                     @can('view distributions')
                     <a href="{{ route('distributions.index') }}" class="nav-item {{ request()->routeIs('distributions.*') ? 'active' : '' }}">
                         <x-lucide-truck class="nav-icon" aria-hidden="true" /> Surat Jalan
@@ -2091,7 +2108,7 @@
             @endif
 
             <!-- 4. GRUP LAPORAN & AUDIT -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']) && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
+            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']) && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
             @php
                 $isLaporanActive = request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools', 'audit-logs.*']);
             @endphp
@@ -2249,8 +2266,6 @@
             });
         });
     </script>
-    
-    <x-notification.glass-stack />
 
     <script>
         // Web Audio Chime Sound (Two-tone harmony)
@@ -2388,19 +2403,13 @@
 
         // Global notification bridge for external callers (e.g. AJAX)
         function showNotificationToast(data) {
-            if (window.showGlassNotification) {
-                window.showGlassNotification(data);
-                return;
-            }
-            if (window.notificationCenter && typeof window.notificationCenter.pushBanner === 'function') {
-                window.notificationCenter.pushBanner(data);
+            if (typeof window.notify === 'function') {
+                window.notify(data);
                 return;
             }
             setTimeout(() => {
-                if (window.showGlassNotification) {
-                    window.showGlassNotification(data);
-                } else if (window.notificationCenter && typeof window.notificationCenter.pushBanner === 'function') {
-                    window.notificationCenter.pushBanner(data);
+                if (typeof window.notify === 'function') {
+                    window.notify(data);
                 }
             }, 300);
         }
@@ -2444,6 +2453,42 @@
                 });
             });
         })();
+    </script>
+    <!-- SweetAlert2 & Custom Pastel Toast Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/sweetalert-notifications.js') }}"></script>
+    <script src="{{ asset('js/webpush-client.js') }}"></script>
+    @php
+        $serverFlashNotifs = [];
+        if (session('success')) {
+            $serverFlashNotifs[] = ['type' => 'success', 'title' => 'Berhasil Disimpan', 'message' => session('success'), 'sound_type' => 'success'];
+        }
+        if (session('error')) {
+            $serverFlashNotifs[] = ['type' => 'error', 'title' => 'Terjadi Kesalahan', 'message' => session('error'), 'sound_type' => 'error'];
+        }
+        if (session('warning')) {
+            $serverFlashNotifs[] = ['type' => 'warning', 'title' => 'Peringatan Operasional', 'message' => session('warning'), 'sound_type' => 'warning'];
+        }
+        if (session('info')) {
+            $serverFlashNotifs[] = ['type' => 'info', 'title' => 'Informasi Baru', 'message' => session('info'), 'sound_type' => 'info'];
+        }
+    @endphp
+    @if(count($serverFlashNotifs) > 0)
+    <script>
+        window.serverFlashNotifications = @json($serverFlashNotifs);
+    </script>
+    @endif
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    // Service worker registered
+                }).catch(function(err) {
+                    console.warn('PWA ServiceWorker registration failed:', err);
+                });
+            });
+        }
     </script>
     @stack('scripts')
 </body>
