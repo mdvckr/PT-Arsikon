@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
+use App\Services\SecurityLogger;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +36,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
+     * Custom validation messages for field-level errors (L2).
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Kata sandi wajib diisi.',
+        ];
+    }
+
+    /**
      * Attempt to authenticate the request's credentials.
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -41,19 +56,32 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $credentials = $this->only('email', 'password');
-        $credentials['is_active'] = true;
+        $email = Str::lower((string) $this->input('email'));
+        $user = User::where('email', $email)->first();
 
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey(), 60);
+        $lockoutSeconds = (int) config('security.rate_limits.lockout_minutes', 15) * 60;
 
-            // Generic error message to prevent user enumeration
+        if (! $user || ! Hash::check((string) $this->input('password'), $user->password)) {
+            RateLimiter::hit($this->throttleKey(), $lockoutSeconds);
+            SecurityLogger::logLoginFailed($email, $this, 'Invalid credentials');
+
             throw ValidationException::withMessages([
-                'email' => 'Kredensial yang Anda masukkan tidak sesuai.',
+                'email' => 'Email atau kata sandi salah.',
             ]);
         }
 
+        if (! $user->is_active) {
+            RateLimiter::hit($this->throttleKey(), $lockoutSeconds);
+            SecurityLogger::logLoginFailed($email, $this, 'Account inactive');
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun ini tidak aktif. Hubungi admin pusat.',
+            ]);
+        }
+
+        Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
+        SecurityLogger::logLoginSuccess($user, $this);
     }
 
     /**
