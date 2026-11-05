@@ -4,12 +4,12 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_login_screen_can_be_rendered(): void
     {
@@ -143,5 +143,31 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('security_logs', [
             'event' => 'auth.lockout',
         ]);
+    }
+
+    public function test_session_id_regenerates_upon_successful_login(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password123'),
+            'is_active' => true,
+        ]);
+
+        $this->get('/login');
+        $originalSessionId = session()->getId();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotEquals($originalSessionId, session()->getId());
+    }
+
+    public function test_unauthenticated_protected_route_access_redirects_with_expired_indicator(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertRedirect(route('login', ['session_expired' => 1]));
     }
 }
