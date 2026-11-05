@@ -14,7 +14,6 @@
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
 
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,13 +43,32 @@
     }
 
     @keyframes shakeHorizontal {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-6px); }
-        40%, 80% { transform: translateX(6px); }
+        0%, 100% {
+            transform: translate3d(0, 0, 0);
+        }
+        15% {
+            transform: translate3d(-14px, 0, 0);
+        }
+        30% {
+            transform: translate3d(12px, 0, 0);
+        }
+        45% {
+            transform: translate3d(-10px, 0, 0);
+        }
+        60% {
+            transform: translate3d(8px, 0, 0);
+        }
+        75% {
+            transform: translate3d(-4px, 0, 0);
+        }
+        90% {
+            transform: translate3d(2px, 0, 0);
+        }
     }
 
     .shake-error {
-        animation: shakeHorizontal 0.45s ease-in-out;
+        animation: shakeHorizontal 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+        will-change: transform;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -297,6 +315,7 @@
         letter-spacing: 0.02em;
     }
 </style>
+</head>
 
 <body>
     <div class="login-card {{ ($errors->any() && !request()->has('session_expired')) ? 'shake-error' : '' }}">
