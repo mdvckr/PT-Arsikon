@@ -1,18 +1,37 @@
 {{-- Liquid Glass (iOS 26 Style) Dropdown Notification Panel Component (Black Text, Ultra High Contrast) --}}
+
+<!-- Mobile Dimmed Backdrop Overlay (Closes panel on tap, hidden on desktop) -->
+<div 
+    id="glass-notification-backdrop"
+    x-show="panelOpen"
+    x-transition:enter="transition-opacity ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    @click="panelOpen = false"
+    class="fixed inset-0 bg-slate-950/45 backdrop-blur-xs z-40 sm:hidden"
+    style="display: none;"
+    aria-hidden="true"
+></div>
+
 <div 
     id="glass-notification-panel-wrapper"
     x-show="panelOpen"
     x-transition:enter="transition cubic-bezier(0.16, 1, 0.3, 1) duration-300"
-    x-transition:enter-start="opacity-0 scale-95 -translate-y-3"
+    x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
     x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
     x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
     @click.away="panelOpen = false"
-    class="absolute right-0 top-full mt-3 w-[420px] max-w-[calc(100vw-32px)] rounded-[28px] overflow-hidden z-50 pointer-events-auto
-      bg-white/95 backdrop-blur-3xl ios26-liquid-panel
-      border border-white/90
-      shadow-[inset_0_2px_3px_rgba(255,255,255,1),inset_0_-1px_1px_rgba(0,0,0,0.05),0_25px_50px_-12px_rgba(0,0,0,0.22)]"
+    class="fixed inset-x-3 top-[calc(var(--topbar-height,64px)+8px)] mx-auto max-w-[480px] z-50 pointer-events-auto
+           sm:fixed-none sm:absolute sm:inset-x-auto sm:right-0 sm:left-auto sm:top-full sm:mt-3 sm:w-[420px] sm:max-w-[calc(100vw-32px)]
+           rounded-[26px] sm:rounded-[28px] overflow-hidden
+           bg-white/95 backdrop-blur-3xl ios26-liquid-panel
+           border border-white/90
+           shadow-[inset_0_2px_3px_rgba(255,255,255,1),inset_0_-1px_1px_rgba(0,0,0,0.05),0_25px_50px_-12px_rgba(0,0,0,0.22)]"
     style="display: none;"
 >
     <!-- Kilau Permukaan Kaca Atas -->
