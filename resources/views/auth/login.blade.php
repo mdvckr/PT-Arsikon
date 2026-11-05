@@ -96,42 +96,21 @@
         }
 
         /* ===== HIGH VISIBILITY SHAKE ANIMATION ===== */
-        @keyframes shakeHorizontal {
+        @keyframes shakeX {
             0%, 100% {
                 transform: translate3d(0, 0, 0);
             }
-            15% {
-                transform: translate3d(-14px, 0, 0);
+            10%, 30%, 50%, 70%, 90% {
+                transform: translate3d(-18px, 0, 0);
             }
-            30% {
-                transform: translate3d(12px, 0, 0);
-            }
-            45% {
-                transform: translate3d(-10px, 0, 0);
-            }
-            60% {
-                transform: translate3d(8px, 0, 0);
-            }
-            75% {
-                transform: translate3d(-4px, 0, 0);
-            }
-            90% {
-                transform: translate3d(2px, 0, 0);
+            20%, 40%, 60%, 80% {
+                transform: translate3d(18px, 0, 0);
             }
         }
 
         .shake-error {
-            animation: shakeHorizontal 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+            animation: shakeX 0.7s ease-in-out both !important;
             will-change: transform;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .shake-error {
-                animation: none !important;
-            }
-            .btn-login-interactive {
-                transition: none !important;
-            }
         }
     </style>
 
@@ -250,10 +229,17 @@
 
         function triggerCardShake() {
             const card = document.querySelector('.login-card');
-            if (!card) return;
-            card.classList.remove('shake-error');
-            void card.offsetWidth; // Force browser reflow to restart keyframe
-            card.classList.add('shake-error');
+            const alertBox = document.getElementById('loginGlobalAlert');
+            const emailWrap = document.getElementById('emailWrap');
+            const passWrap = document.getElementById('passwordWrap');
+
+            const targets = [card, alertBox, emailWrap, passWrap].filter(Boolean);
+
+            targets.forEach(function (el) {
+                el.classList.remove('shake-error');
+                void el.offsetWidth; // Force synchronous browser DOM reflow
+                el.classList.add('shake-error');
+            });
         }
 
         // Accessibility & Autofocus Management
@@ -262,20 +248,20 @@
             const passwordInput = document.getElementById('password');
             const emailErrorMsg = @json($errors->first('email') ?? '');
             const isRateLimited = emailErrorMsg.includes('Terlalu banyak percobaan');
-            const card = document.querySelector('.login-card');
 
-            if (card) {
-                card.addEventListener('animationend', function () {
-                    card.classList.remove('shake-error');
-                });
-            }
+            // Remove shake-error after animation finishes so it can re-trigger on subsequent clicks
+            document.addEventListener('animationend', function (e) {
+                if (e.target && e.target.classList && e.target.classList.contains('shake-error')) {
+                    e.target.classList.remove('shake-error');
+                }
+            });
 
             // Trigger noticeable shake after initial paint
             const hasServerError = {{ ($errors->any() && !request()->has('session_expired')) ? 'true' : 'false' }};
             if (hasServerError) {
                 setTimeout(function () {
                     triggerCardShake();
-                }, 100);
+                }, 120);
             }
 
             if (isRateLimited) {

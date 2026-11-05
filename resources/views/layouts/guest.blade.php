@@ -42,39 +42,21 @@
         z-index: 10;
     }
 
-    @keyframes shakeHorizontal {
+    @keyframes shakeX {
         0%, 100% {
             transform: translate3d(0, 0, 0);
         }
-        15% {
-            transform: translate3d(-14px, 0, 0);
+        10%, 30%, 50%, 70%, 90% {
+            transform: translate3d(-18px, 0, 0);
         }
-        30% {
-            transform: translate3d(12px, 0, 0);
-        }
-        45% {
-            transform: translate3d(-10px, 0, 0);
-        }
-        60% {
-            transform: translate3d(8px, 0, 0);
-        }
-        75% {
-            transform: translate3d(-4px, 0, 0);
-        }
-        90% {
-            transform: translate3d(2px, 0, 0);
+        20%, 40%, 60%, 80% {
+            transform: translate3d(18px, 0, 0);
         }
     }
 
     .shake-error {
-        animation: shakeHorizontal 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+        animation: shakeX 0.7s ease-in-out both !important;
         will-change: transform;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .shake-error {
-            animation: none !important;
-        }
     }
 
     .login-card .brand {
