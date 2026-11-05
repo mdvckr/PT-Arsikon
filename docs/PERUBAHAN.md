@@ -1584,3 +1584,57 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
        - Penyimpanan item custom bertipe alat dan verifikasi badge di halaman show.
        - Penolakan kuantitas desimal untuk item alat custom.
        - Siklus end-to-end: pengajuan alat custom -> penerbitan PO -> penerimaan Goods Receipt -> auto-register ke master tool dan mutasi stok alat di gudang proyek.
+
+
+---
+
+### T30. Arsitektur Notifikasi Realtime: SweetAlert2 Pastel Pill Toasts, Laravel Reverb, Web Push & PWA Offline Sync
+- **Tujuan**:
+  - Menggantikan sistem notifikasi legacy dengan arsitektur notifikasi multi-tier yang modern, responsif, dan terintegrasi:
+    1. **In-App Realtime Toast (SweetAlert2)**: Notifikasi kapsul pastel minimalis 5 status semantik (`neutral`, `blue`/`info`, `success`, `warning`, `error`) saat tab aktif, dilengkapi audio synthesizer chimes (Web Audio API) tanpa dependensi file MP3/WAV eksternal.
+    2. **Realtime WebSocket (Laravel Reverb)**: Mengalirkan event instan tanpa polling ke browser klien.
+    3. **Background Web Push (VAPID & Service Worker)**: Mengirimkan notifikasi sistem operasi desktop/mobile saat tab atau browser sedang ditutup.
+    4. **Progressive Web App (PWA)**: Pemasangan di layar utama ponsel via Web App Manifest (`manifest.json`) dan background sync via Service Worker (`sw.js`).
+  - Mengeliminasi duplikasi banner di dashboard dengan mendekomisi stack glass legacy (`<x-notification.glass-stack />`) dan mengarahkan seluruh helper JavaScript (`window.notify`, `window.showGlassNotification`, `window.showNotificationToast`) ke mesin SweetAlert2 pastel.
+- **Rincian Perubahan File**:
+  1. **Styling & Engine Notifikasi (`public/css/sweetalert-pastel-toast.css` & `public/js/sweetalert-notifications.js`)**:
+     - Mengimplementasikan 5 palet warna pastel minimalis sesuai desain mockup referensi.
+     - Menyediakan SVG icon outline tajam untuk setiap varian semantik notifikasi.
+     - Mengintegrasikan fallback helper session flash Laravel (`session('success')`, `session('error')`, dsb).
+  2. **PWA & Web Push (`public/manifest.json`, `public/sw.js`, & `public/js/webpush-client.js`)**:
+     - Menyiapkan manifest PWA lengkap dengan tema warna dan icons.
+     - Service worker untuk penanganan event `push` dan `notificationclick`.
+     - Script registrasi PushSubscription berbasis VAPID key.
+  3. **Backend Controller & Migrasi (`PushSubscriptionController.php` & `routes/web.php`)**:
+     - Rute endpoint REST `/api/push-subscriptions` untuk pendaftaran dan pembatalan token push notifikasi.
+     - Migrasi penyimpanan kredensial subscription Web Push.
+  4. **Layout Dashboard (`resources/views/layouts/app.blade.php` & `notification-center.js`)**:
+     - Memuat stylesheet dan script SweetAlert2 pastel pill.
+     - Menyematkan Web Audio chime synthesizer dengan penanganan gesture unlock.
+     - Menghapus komponen legacy `<x-notification.glass-stack />` dan merutekan event realtime ke `window.notify`.
+  5. **Pengujian Otomatis (`tests/Feature/NotificationDeduplicationTest.php` & `NotificationSweetAlertViewTest.php`)**:
+     - Memverifikasi layout bersih tanpa banner ganda dan fungsi delegasi berjalan akurat.
+
+---
+
+### T31. Penyesuaian SweetAlert2 Toast Top-Center & Decoupling Kolom Merek Penerimaan Barang
+- **Tujuan**:
+  1. **Top-Center Pill Toast Alignment**:
+     - Memindahkan posisi notifikasi SweetAlert2 dari sudut samping kanan (`top-end`) ke bagian tengah atas layar (`top`).
+     - Menyusun tata letak horizontal kapsul Flexbox secara presisi: `[Ikon]` di kiri $\rightarrow$ `[Judul & Pesan]` di tengah $\rightarrow$ `[Tombol ×]` di ujung kanan, mencegah tombol `×` berada di kiri atau ikon bertumpuk vertikal di atas teks.
+  2. **Decoupling Kolom Merek (Tabel Penerimaan Barang)**:
+     - Memperbaiki form penerimaan barang (`goods-receipts/create.blade.php`) agar pengetikan pada kolom **Merek** murni mengisi field merek dan tidak lagi otomatis merubah atau merusak nama barang di kolom **Nama Barang**.
+- **Rincian Perubahan File**:
+  1. **Script Engine Notifikasi (`public/js/sweetalert-notifications.js`)**:
+     - Mengubah opsi `position: 'top-end'` menjadi `position: 'top'` pada konfigurasi `Swal.fire`.
+  2. **Stylesheet Kapsul Toast (`public/css/sweetalert-pastel-toast.css`)**:
+     - Menambahkan aturan styling `.swal2-container.swal2-top` dengan `top: 20px; left: 50%; transform: translateX(-50%)` untuk memusatkan container notifikasi di tengah atas layar.
+     - Mengatur container teks `.swal2-popup.swal2-pastel-toast .swal2-html-container` dengan `order: 1 !important` serta flexbox horizontal row (`align-items: center; gap: 14px`).
+     - Mengatur tombol close `.swal2-popup.swal2-pastel-toast .swal2-close` dengan `order: 2 !important; position: static; margin-left: 14px` agar tombol silang selalu rapi di sudut kanan.
+  3. **Script Tabel Penerimaan Barang (`public/js/goods-receipt-create.js`)**:
+     - Menghapus atribut `oninput="syncAutoItemName(idx)"` dari input `#item-brand-{idx}` pada fungsi `renderCustomItemInputs` (~baris 970) dan `addRow` (~baris 1217).
+     - Menghapus logika penggabungan string `brand` ke dalam `nameInput.value` pada fungsi `syncAutoItemName(idx)`.
+     - Menghapus `brand` dari array suffix stripping pada `onCustomNameInput(idx)`.
+  4. **Pengujian Otomatis (`tests/Feature/NotificationSweetAlertViewTest.php` & `GoodsReceiptStandaloneControllerTest.php`)**:
+     - `NotificationSweetAlertViewTest`: Memverifikasi script memuat `position: 'top'` dan CSS mendefinisikan container top-center serta flex ordering `order: 1` & `order: 2`.
+     - `GoodsReceiptStandaloneControllerTest`: Menambahkan test `test_goods_receipt_brand_is_decoupled_from_item_name` untuk memverifikasi pengetikan merek tidak merubah nama barang dan data merek tersimpan dengan benar ke database.

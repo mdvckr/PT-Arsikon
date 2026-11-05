@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\GoodsReceipt;
+use App\Models\Material;
 use App\Models\Supplier;
+use App\Models\Tool;
 use App\Models\User;
 use App\Models\Warehouse;
 use Database\Seeders\RoleAndPermissionSeeder;
@@ -67,6 +69,8 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertOk();
         $response->assertSee('Penerimaan Barang');
         $response->assertSee('Tambah Baris Barang');
+        $response->assertSee('Gudang Tujuan');
+        $response->assertSee('name="warehouse_id"', false);
         $response->assertDontSee('Pilih Purchase Order (Wajib)');
         $response->assertDontSee('Hubungkan PO Lapangan');
         $response->assertDontSee('Hubungkan Purchase Order (PO)');
@@ -284,6 +288,338 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $this->assertEquals('partial', $stage['status']);
         $this->assertStringContainsString('Belum Dikirim Semua', $stage['status_label']);
         $this->assertStringContainsString('Sisa 30', $stage['status_label']);
+    }
+
+    public function test_same_item_name_with_different_size_or_subgroup_creates_separate_inventory_items(): void
+    {
+        // 1. Simpan item pertama: ARSITEK -> BATA -> Bata Merah (ukuran 10m)
+        $response1 = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), [
+            'warehouse_id'    => $this->warehouse->id,
+            'supplier_id'     => $this->supplier->id,
+            'received_at'     => now()->toDateString(),
+            'invoice_number'  => 'DO-BATA-10M',
+            'items' => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'BATA MERAH',
+                    'category_id'   => $this->category->id,
+                    'type'          => 'BATA',
+                    'brand'         => 'Custom / Proyek',
+                    'size'          => '10m',
+                    'custom_unit'   => 'pcs',
+                    'qty_received'  => 1000,
+                    'condition'     => 'good',
+                ]
+            ]
+        ]);
+        $response1->assertSessionHasNoErrors();
+
+        // 2. Simpan item kedua dengan nama SAMA tetapi ukuran BEDA (ukuran 20m)
+        $response2 = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), [
+            'warehouse_id'    => $this->warehouse->id,
+            'supplier_id'     => $this->supplier->id,
+            'received_at'     => now()->toDateString(),
+            'invoice_number'  => 'DO-BATA-20M',
+            'items' => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'BATA MERAH',
+                    'category_id'   => $this->category->id,
+                    'type'          => 'BATA',
+                    'brand'         => 'Custom / Proyek',
+                    'size'          => '20m',
+                    'custom_unit'   => 'pcs',
+                    'qty_received'  => 500,
+                    'condition'     => 'good',
+                ]
+            ]
+        ]);
+        $response2->assertSessionHasNoErrors();
+
+        // Verifikasi ada 2 material terpisah di database
+        $materials = \App\Models\Material::where('name', 'BATA MERAH')->get();
+        $this->assertCount(2, $materials);
+
+        $mat10 = $materials->where('size', '10m')->first();
+        $mat20 = $materials->where('size', '20m')->first();
+
+        $this->assertNotNull($mat10);
+        $this->assertNotNull($mat20);
+        $this->assertNotEquals($mat10->id, $mat20->id);
+        $this->assertNotEquals($mat10->sku, $mat20->sku);
+        $this->assertEquals('BATA', $mat10->type);
+        $this->assertEquals('BATA', $mat20->type);
+    }
+
+    public function test_create_and_edit_views_provide_real_database_groups_and_units(): void
+    {
+        $this->actingAs($this->gudangUser);
+
+        $response = $this->get(route('goods-receipts.create'));
+        $response->assertStatus(200);
+        $response->assertViewHas('units');
+        $response->assertViewHas('existingMaterialGroups');
+        $response->assertViewHas('existingToolGroups');
+        $response->assertViewHas('allMaterialGroups');
+        $response->assertViewHas('allToolGroups');
+        $response->assertSee('window.grUnits', false);
+        $response->assertSee('window.grMaterialGroups', false);
+        $response->assertSee('window.grToolGroups', false);
+    }
+
+    public function test_custom_item_with_database_unit_registers_correctly_to_inventory(): void
+    {
+        $this->actingAs($this->gudangUser);
+        $warehouse = $this->warehouse;
+        $category = Category::firstOrCreate(['name' => 'ARSITEK', 'type' => 'material'], ['code' => 'CAT-TEST-ARS']);
+        $unit = \App\Models\Unit::firstOrCreate(['code' => 'pcs'], ['name' => 'Pieces / Buah', 'is_decimal' => false]);
+
+        $postData = [
+            'received_at'    => now()->toDateString(),
+            'warehouse_id'   => $warehouse->id,
+            'supplier_id'    => $this->supplier->id,
+            'invoice_number' => 'DO-REAL-DB-001',
+            'notes'          => 'Test unit riil DB',
+            'items'          => [
+                [
+                    'item_type'     => 'material',
+                    'category_id'   => $category->id,
+                    'type'          => 'Eksterior',
+                    'name'          => 'Bata Merah Uji DB',
+                    'brand'         => 'Pabrik Uji',
+                    'custom_unit'   => $unit->code,
+                    'quantity'      => 500,
+                    'qty_received'  => 500,
+                    'condition'     => 'good',
+                ]
+            ]
+        ];
+
+        $response = $this->post(route('goods-receipts.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        // Verify material was registered with exact DB unit and type
+        $this->assertDatabaseHas('materials', [
+            'name'        => 'Bata Merah Uji DB',
+            'category_id' => $category->id,
+            'type'        => 'Eksterior',
+            'unit_id'     => $unit->id,
+        ]);
+
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $this->post(route('goods-receipts.confirm', $gr));
+
+        // Verify inventory was created in the warehouse
+        $this->assertDatabaseHas('inventories', [
+            'warehouse_id' => $warehouse->id,
+            'quantity'     => 500,
+        ]);
+    }
+
+    public function test_custom_item_with_newly_typed_category_and_subgroup_registers_and_creates_inventory(): void
+    {
+        $this->actingAs($this->gudangUser);
+
+        $warehouse = $this->warehouse;
+        $supplier = $this->supplier;
+
+        $postData = [
+            'supplier_id'      => $supplier->id,
+            'warehouse_id'     => $warehouse->id,
+            'received_at'      => now()->format('Y-m-d'),
+            'received_by_name' => 'Petugas Lapangan',
+            'items'            => [
+                [
+                    'item_type'     => 'material',
+                    'category_name' => 'Struktur Atas Khusus',
+                    'type'          => 'Bata Khusus',
+                    'name'          => 'Bata Merah Pres Super M3',
+                    'brand'         => 'Merah Pres Super',
+                    'custom_unit'   => 'M3',
+                    'quantity'      => 150,
+                    'qty_received'  => 150,
+                    'condition'     => 'good',
+                ]
+            ]
+        ];
+
+        $response = $this->post(route('goods-receipts.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        // Verify category was automatically created in database
+        $this->assertDatabaseHas('categories', [
+            'name' => 'Struktur Atas Khusus',
+            'type' => 'material',
+        ]);
+        $createdCat = Category::where('name', 'Struktur Atas Khusus')->first();
+
+        // Verify material was registered with that category and custom type
+        $this->assertDatabaseHas('materials', [
+            'name'        => 'Bata Merah Pres Super M3',
+            'category_id' => $createdCat->id,
+            'type'        => 'Bata Khusus',
+            'brand'       => 'Merah Pres Super',
+        ]);
+
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $this->post(route('goods-receipts.confirm', $gr));
+
+        // Verify inventory was created in the warehouse
+        $this->assertDatabaseHas('inventories', [
+            'warehouse_id' => $warehouse->id,
+            'quantity'     => 150,
+        ]);
+    }
+
+    public function test_goods_receipt_create_view_shows_po_select_for_project_manager_and_site_manager(): void
+    {
+        $pmUser = User::factory()->create(['email_verified_at' => now()]);
+        $pmUser->assignRole('Project Manager');
+        $pmUser->warehouses()->attach($this->warehouse->id);
+
+        $response = $this->actingAs($pmUser)->get(route('goods-receipts.create'));
+        $response->assertOk();
+        $response->assertSee('Hubungkan PO Lapangan');
+        $response->assertSee('Hubungkan Purchase Order (PO)');
+        $response->assertSee('name="purchase_order_id"', false);
+        $response->assertSee('name="material_request_id"', false);
+    }
+
+    public function test_admin_gudang_proyek_stores_goods_receipt_with_auto_selected_warehouse(): void
+    {
+        // Admin gudang proyek with assigned warehouse
+        $postData = [
+            'supplier_id'      => $this->supplier->id,
+            'received_at'      => now()->format('Y-m-d'),
+            'received_by_name' => 'Logistik Lapangan',
+            'items'            => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Batu Split 2/3 Logistik',
+                    'category_id'   => $this->category->id,
+                    'type'          => 'Batu',
+                    'custom_unit'   => 'm3',
+                    'quantity'      => 20,
+                    'qty_received'  => 20,
+                    'condition'     => 'good',
+                ]
+            ]
+        ];
+
+        // Notice warehouse_id is not passed explicitly in payload; backend falls back to assigned single warehouse
+        $response = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $this->assertEquals($this->warehouse->id, $gr->warehouse_id);
+    }
+
+    public function test_custom_item_with_size_or_specification_persists_size_and_renders_column(): void
+    {
+        // 1. Verify create view renders the header column
+        $createRes = $this->actingAs($this->gudangUser)->get(route('goods-receipts.create'));
+        $createRes->assertStatus(200);
+        $createRes->assertSee('Ukuran / Spesifikasi');
+
+        // 2. Submit goods receipt with custom item having size
+        $postData = [
+            'warehouse_id'     => $this->warehouse->id,
+            'supplier_id'      => $this->supplier->id,
+            'received_at'      => now()->format('Y-m-d'),
+            'received_by_name' => 'Logistik Lapangan',
+            'items'            => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Besi Beton Polos 10mm Sni Kg',
+                    'size'          => '10mm',
+                    'brand'         => 'Sni',
+                    'type'          => 'Besi',
+                    'custom_unit'   => 'kg',
+                    'quantity'      => 100,
+                    'qty_shipped'   => 100,
+                    'condition'     => 'good',
+                ],
+                [
+                    'item_type'     => 'tool',
+                    'name'          => 'Genset Silent 5000W Honda Unit',
+                    'size'          => '5000W',
+                    'brand'         => 'Honda',
+                    'type'          => 'Genset',
+                    'custom_unit'   => 'unit',
+                    'quantity'      => 1,
+                    'qty_shipped'   => 1,
+                    'condition'     => 'good',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        // Check registered Material has size
+        $material = Material::where('name', 'Besi Beton Polos 10mm Sni Kg')->first();
+        $this->assertNotNull($material);
+        $this->assertEquals('10mm', $material->size);
+
+        // Check registered Tool has size
+        $tool = \App\Models\Tool::where('name', 'Genset Silent 5000W Honda Unit')->first();
+        $this->assertNotNull($tool);
+        $this->assertEquals('5000W', $tool->size);
+
+        // Check edit view renders the column
+        $gr = GoodsReceipt::latest('id')->first();
+        $editRes = $this->actingAs($this->gudangUser)->get(route('goods-receipts.edit', $gr));
+        $editRes->assertStatus(200);
+        $editRes->assertSee('Ukuran / Spesifikasi');
+    }
+
+    public function test_goods_receipt_brand_is_decoupled_from_item_name(): void
+    {
+        // 1. Check frontend script has decoupled brand input from syncAutoItemName
+        $js = file_get_contents(public_path('js/goods-receipt-create.js'));
+        $this->assertStringNotContainsString("id=\"item-brand-' + idx + '\" class=\"form-control\" oninput=\"syncAutoItemName", $js);
+        $this->assertStringNotContainsString("id=\"item-brand-' + idx + '\" class=\"form-control\" placeholder=\"Merek...\" value=\"' + escHtml(initBrand) + '\" oninput=\"syncAutoItemName", $js);
+
+        // 2. Submit goods receipt with custom item having distinct name and brand
+        $postData = [
+            'warehouse_id'     => $this->warehouse->id,
+            'received_at'      => now()->format('Y-m-d'),
+            'received_by_name' => 'Petugas Gudang',
+            'supplier_id'      => $this->supplier->id,
+            'items'            => [
+                [
+                    'item_type'     => 'material',
+                    'name'          => 'Cat Dinding Interior Premium',
+                    'size'          => '5kg',
+                    'brand'         => 'Dulux Weathershield',
+                    'type'          => 'Cat',
+                    'custom_unit'   => 'pail',
+                    'quantity'      => 10,
+                    'qty_shipped'   => 10,
+                    'condition'     => 'good',
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->gudangUser)->post(route('goods-receipts.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        // 3. Verify material registered has name without brand contamination
+        $material = Material::where('name', 'Cat Dinding Interior Premium')->first();
+        $this->assertNotNull($material, 'Material should be saved with exact name');
+        $this->assertEquals('Dulux Weathershield', $material->brand);
+        $this->assertEquals('5kg', $material->size);
+
+        // 4. Verify goods receipt item references the material
+        $gr = GoodsReceipt::latest('id')->first();
+        $this->assertNotNull($gr);
+        $this->assertDatabaseHas('goods_receipt_items', [
+            'goods_receipt_id' => $gr->id,
+            'material_id'      => $material->id,
+        ]);
     }
 }
 

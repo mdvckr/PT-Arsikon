@@ -1,0 +1,266 @@
+/* ==========================================================================
+   SweetAlert2 Pastel Pill Toast Notification Theme
+   Matches User Design Mockup with 5 Semantic Pastel States
+   ========================================================================== */
+
+/* Toast Container Base - Centered Top */
+.swal2-container.swal2-top {
+    top: 20px !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    padding: 0 !important;
+    z-index: 100000 !important;
+    display: flex !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+}
+
+.swal2-container.swal2-top .swal2-popup {
+    pointer-events: auto !important;
+}
+
+.swal2-container.swal2-top-end {
+    padding: 16px 20px !important;
+    z-index: 100000 !important;
+}
+
+.swal2-popup.swal2-pastel-toast {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: auto !important;
+    max-width: 540px !important;
+    min-width: 360px !important;
+    padding: 12px 18px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.10), 0 3px 8px -1px rgba(15, 23, 42, 0.05) !important;
+    border: 1px solid transparent !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+.swal2-popup.swal2-pastel-toast:hover {
+    box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -1px rgba(15, 23, 42, 0.07) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Hide Default SweetAlert2 Icon Container (we use custom stroke SVGs) */
+.swal2-popup.swal2-pastel-toast .swal2-icon {
+    display: none !important;
+}
+
+/* Horizontal Flex Row Inside SweetAlert2 HTML Container */
+.swal2-popup.swal2-pastel-toast .swal2-html-container {
+    order: 1 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 1 1 auto !important;
+    text-align: left !important;
+    background: transparent !important;
+    overflow: visible !important;
+}
+
+/* Custom Icon Wrapper */
+.swal2-pastel-icon {
+    flex: 0 0 auto !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.swal2-pastel-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    fill: none !important;
+}
+
+/* Toast Content Block */
+.swal2-pastel-content {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    text-align: left !important;
+    overflow: hidden !important;
+}
+
+.swal2-pastel-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 !important;
+    line-height: 1.3 !important;
+}
+
+.swal2-pastel-message {
+    font-size: 12.5px !important;
+    font-weight: 400 !important;
+    margin: 0 !important;
+    line-height: 1.35 !important;
+    word-break: break-word !important;
+}
+
+/* Custom Soft Close Button on the Far Right */
+.swal2-popup.swal2-pastel-toast .swal2-close {
+    order: 2 !important;
+    position: static !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    margin-left: 14px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: transparent !important;
+    border: none !important;
+    flex: 0 0 auto !important;
+}
+
+/* ==========================================================================
+   5 Semantic Pastel Color Variants (Reference Image Exact Match)
+   ========================================================================== */
+
+/* 1. Neutral Toast (Default State) */
+.swal2-pastel-toast.toast-neutral {
+    background-color: #f4f4f5 !important;
+    border-color: #e4e4e7 !important;
+    color: #27272a !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-pastel-icon svg {
+    stroke: #52525b !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-pastel-title {
+    color: #18181b !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-pastel-message {
+    color: #52525b !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-close {
+    color: #52525b !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-close:hover {
+    background-color: #e4e4e7 !important;
+    color: #18181b !important;
+}
+
+/* 2. Neutral Blue Toast (Info / Secondary State) */
+.swal2-pastel-toast.toast-blue {
+    background-color: #eff6ff !important;
+    border-color: #dbeafe !important;
+    color: #1e40af !important;
+}
+.swal2-pastel-toast.toast-blue .swal2-pastel-icon svg {
+    stroke: #2563eb !important;
+}
+.swal2-pastel-toast.toast-blue .swal2-pastel-title {
+    color: #1e3a8a !important;
+}
+.swal2-pastel-toast.toast-blue .swal2-pastel-message {
+    color: #3b82f6 !important;
+}
+.swal2-pastel-toast.toast-blue .swal2-close {
+    color: #2563eb !important;
+}
+.swal2-pastel-toast.toast-blue .swal2-close:hover {
+    background-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+
+/* 3. Successful Toast (Green State) */
+.swal2-pastel-toast.toast-success {
+    background-color: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+    color: #065f46 !important;
+}
+.swal2-pastel-toast.toast-success .swal2-pastel-icon svg {
+    stroke: #059669 !important;
+}
+.swal2-pastel-toast.toast-success .swal2-pastel-title {
+    color: #064e3b !important;
+}
+.swal2-pastel-toast.toast-success .swal2-pastel-message {
+    color: #047857 !important;
+}
+.swal2-pastel-toast.toast-success .swal2-close {
+    color: #059669 !important;
+}
+.swal2-pastel-toast.toast-success .swal2-close:hover {
+    background-color: #a7f3d0 !important;
+    color: #064e3b !important;
+}
+
+/* 4. Warning Toast (Orange State) */
+.swal2-pastel-toast.toast-warning {
+    background-color: #fff7ed !important;
+    border-color: #fed7aa !important;
+    color: #9a3412 !important;
+}
+.swal2-pastel-toast.toast-warning .swal2-pastel-icon svg {
+    stroke: #ea580c !important;
+}
+.swal2-pastel-toast.toast-warning .swal2-pastel-title {
+    color: #7c2d12 !important;
+}
+.swal2-pastel-toast.toast-warning .swal2-pastel-message {
+    color: #c2410c !important;
+}
+.swal2-pastel-toast.toast-warning .swal2-close {
+    color: #ea580c !important;
+}
+.swal2-pastel-toast.toast-warning .swal2-close:hover {
+    background-color: #fed7aa !important;
+    color: #7c2d12 !important;
+}
+
+/* 5. Error Toast (Red State) */
+.swal2-pastel-toast.toast-error {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #991b1b !important;
+}
+.swal2-pastel-toast.toast-error .swal2-pastel-icon svg {
+    stroke: #dc2626 !important;
+}
+.swal2-pastel-toast.toast-error .swal2-pastel-title {
+    color: #7f1d1d !important;
+}
+.swal2-pastel-toast.toast-error .swal2-pastel-message {
+    color: #b91c1c !important;
+}
+.swal2-pastel-toast.toast-error .swal2-close {
+    color: #dc2626 !important;
+}
+.swal2-pastel-toast.toast-error .swal2-close:hover {
+    background-color: #fecaca !important;
+    color: #7f1d1d !important;
+}
+
