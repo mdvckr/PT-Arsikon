@@ -53,38 +53,44 @@ class AppServiceProvider extends ServiceProvider
                 // Batas percobaan login per kombinasi akun & IP: 5 percobaan per 15 menit
                 Limit::perMinutes($lockoutMinutes, $accountAttempts)
                     ->by('email:' . $email . '|' . $ip)
-                    ->response(function (Request $request, array $headers) use ($lockoutMinutes) {
+                    ->response(function (Request $request, array $headers) use ($email, $lockoutMinutes) {
                         $seconds = (int) ($headers['Retry-After'] ?? ($lockoutMinutes * 60));
-                        $minutes = ceil($seconds / 60);
+                        $minutes = (int) ceil($seconds / 60);
+                        $timeMessage = $seconds >= 60 ? "{$minutes} menit." : "{$seconds} detik.";
+                        \App\Services\SecurityLogger::logLockout($email ?: null, $request);
+
                         if ($request->expectsJson()) {
                             return response()->json([
                                 'status' => 429,
                                 'error' => 'Too Many Requests',
-                                'message' => "Terlalu banyak percobaan masuk untuk akun ini. Akun dikunci sementara. Silakan coba lagi dalam {$minutes} menit.",
+                                'message' => "Terlalu banyak percobaan. Coba lagi dalam {$timeMessage}",
                                 'retry_after_seconds' => $seconds,
                             ], 429, $headers);
                         }
                         return back()->withInput($request->only('email', 'remember'))->withErrors([
-                            'email' => "Terlalu banyak percobaan masuk untuk akun ini. Akun dikunci sementara demi keamanan. Coba lagi dalam {$minutes} menit.",
+                            'email' => "Terlalu banyak percobaan. Coba lagi dalam {$timeMessage}",
                         ]);
                     }),
 
                 // Batas total percobaan login dari IP yang sama: 15 percobaan per 15 menit (mencegah credential stuffing masif)
                 Limit::perMinutes($lockoutMinutes, $ipAttempts)
                     ->by('ip:' . $ip)
-                    ->response(function (Request $request, array $headers) use ($lockoutMinutes) {
+                    ->response(function (Request $request, array $headers) use ($email, $lockoutMinutes) {
                         $seconds = (int) ($headers['Retry-After'] ?? ($lockoutMinutes * 60));
-                        $minutes = ceil($seconds / 60);
+                        $minutes = (int) ceil($seconds / 60);
+                        $timeMessage = $seconds >= 60 ? "{$minutes} menit." : "{$seconds} detik.";
+                        \App\Services\SecurityLogger::logLockout($email ?: null, $request);
+
                         if ($request->expectsJson()) {
                             return response()->json([
                                 'status' => 429,
                                 'error' => 'Too Many Requests',
-                                'message' => "Terlalu banyak permintaan login dari koneksi IP Anda. Silakan coba lagi dalam {$minutes} menit.",
+                                'message' => "Terlalu banyak percobaan. Coba lagi dalam {$timeMessage}",
                                 'retry_after_seconds' => $seconds,
                             ], 429, $headers);
                         }
                         return back()->withInput($request->only('email', 'remember'))->withErrors([
-                            'email' => "Terlalu banyak permintaan login dari alamat IP Anda. Silakan coba lagi dalam {$minutes} menit.",
+                            'email' => "Terlalu banyak percobaan. Coba lagi dalam {$timeMessage}",
                         ]);
                     }),
             ];

@@ -119,4 +119,29 @@ class AuthenticationTest extends TestCase
         ]);
         $this->assertGuest();
     }
+
+    public function test_login_throttling_triggers_l3_message_after_max_attempts(): void
+    {
+        $maxAttempts = (int) config('security.rate_limits.login_max_attempts', 5);
+
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $this->post('/login', [
+                'email' => 'brute@example.com',
+                'password' => 'wrong',
+            ]);
+        }
+
+        // Attempt #6 should be blocked
+        $response = $this->post('/login', [
+            'email' => 'brute@example.com',
+            'password' => 'wrong',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $errorMessage = session('errors')->first('email');
+        $this->assertStringStartsWith('Terlalu banyak percobaan. Coba lagi dalam', $errorMessage);
+        $this->assertDatabaseHas('security_logs', [
+            'event' => 'auth.lockout',
+        ]);
+    }
 }

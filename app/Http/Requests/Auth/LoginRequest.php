@@ -91,19 +91,22 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        // Maximum 5 failed attempts per minute
-        $maxAttempts = 5;
+        $maxAttempts = (int) config('security.rate_limits.login_max_attempts', 5);
 
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
             return;
         }
 
         event(new Lockout($this));
+        SecurityLogger::logLockout($this->input('email'), $this);
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+        $minutes = (int) ceil($seconds / 60);
+
+        $timeMessage = $seconds >= 60 ? "{$minutes} menit." : "{$seconds} detik.";
 
         throw ValidationException::withMessages([
-            'email' => "Kredensial yang Anda masukkan tidak sesuai. Terlalu banyak percobaan gagal, silakan coba lagi dalam {$seconds} detik.",
+            'email' => "Terlalu banyak percobaan. Coba lagi dalam {$timeMessage}",
         ]);
     }
 
