@@ -195,4 +195,26 @@ class AuthenticationTest extends TestCase
         $response->assertSee('Sesi Anda sudah berakhir. Silakan masuk kembali.');
         $response->assertDontSee('login-card shake-error', false);
     }
+
+    public function test_failed_login_creates_security_log_and_audit_trail_without_password(): void
+    {
+        $this->post('/login', [
+            'email' => 'audit-victim@example.com',
+            'password' => 'secret-super-password',
+        ]);
+
+        $this->assertDatabaseHas('security_logs', [
+            'event' => 'auth.login_failed',
+        ]);
+
+        $log = \App\Models\SecurityLog::where('event', 'auth.login_failed')->latest('id')->first();
+        $this->assertEquals('audit-victim@example.com', $log->details['attempted_email']);
+        $this->assertArrayNotHasKey('password', $log->details);
+        $this->assertArrayNotHasKey('secret-super-password', (array) $log->details);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'auditable_type' => 'Security',
+            'auditable_id' => $log->id,
+        ]);
+    }
 }
