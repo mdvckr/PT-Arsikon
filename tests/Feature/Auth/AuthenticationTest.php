@@ -170,4 +170,29 @@ class AuthenticationTest extends TestCase
 
         $response->assertRedirect(route('login', ['session_expired' => 1]));
     }
+
+    public function test_login_screen_renders_aria_attributes_and_error_alert_when_errors_exist(): void
+    {
+        $response = $this->from('/login')->post('/login', [
+            'email' => 'wrong@example.com',
+            'password' => 'invalid',
+        ]);
+
+        $followUp = $this->get('/login');
+        $followUp->assertStatus(200);
+        $followUp->assertSee('role="alert"', false);
+        $followUp->assertSee('aria-invalid="true"', false);
+        $followUp->assertSee('aria-describedby="email-error"', false);
+        $followUp->assertSee('login-card shake-error', false);
+        $followUp->assertSee('Email atau kata sandi salah.');
+    }
+
+    public function test_expired_session_renders_l5_message_without_error_shake(): void
+    {
+        $response = $this->get('/login?session_expired=1');
+
+        $response->assertStatus(200);
+        $response->assertSee('Sesi Anda sudah berakhir. Silakan masuk kembali.');
+        $response->assertDontSee('login-card shake-error', false);
+    }
 }

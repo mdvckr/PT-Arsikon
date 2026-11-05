@@ -1,184 +1,32 @@
 <x-guest-layout>
     <style>
-        /* ===== CLEAN ERROR MODAL ===== */
-        .login-modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.45);
-            -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px 20px;
-            animation: fadeInOverlay 0.2s ease-out;
-        }
-
-        .login-modal-box {
-            position: relative;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 24px;
-            padding: 32px 28px 26px;
-            text-align: center;
-            background: #ffffff;
-            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-            animation: popInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
-        }
-
-        .login-modal-close {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            border: none;
-            color: #64748b;
-            font-size: 13px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-        .login-modal-close:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        .login-modal-icon-wrap {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 18px;
-        }
-
-        .login-modal-icon-circle {
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            background: #fee2e2;
-            border: 2px solid #fecaca;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #dc2626;
-            font-size: 26px;
-        }
-
-        .login-modal-icon-circle svg {
-            width: 32px !important;
-            height: 32px !important;
-        }
-
-        .login-modal-close svg {
-            width: 14px !important;
-            height: 14px !important;
-        }
-
-        @keyframes fadeInOverlay {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes popInModal {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .login-modal-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0 0 8px 0;
-            letter-spacing: -0.01em;
-        }
-
-        .login-modal-desc {
-            font-size: 13.5px;
-            color: #64748b;
-            line-height: 1.55;
-            margin: 0 0 20px 0;
-            padding: 0 4px;
-        }
-
-        .login-modal-tips {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 22px;
-            text-align: left;
-            font-size: 12.5px;
-            color: #475569;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .login-modal-tip-item {
+        /* ===== ACCESSIBLE ALERT BANNERS ===== */
+        .alert-error-banner {
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            color: #991b1b;
+            padding: 13px 16px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.08);
             line-height: 1.45;
         }
 
-        .tip-icon-pill {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
+        .alert-info-banner {
+            background: #eff6ff;
+            border: 1.5px solid #bfdbfe;
+            color: #1e40af;
+            padding: 13px 16px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            flex-shrink: 0;
-        }
-        .tip-icon-warning {
-            background: #fef3c7;
-            border: 1px solid #fde68a;
-            color: #d97706;
-        }
-        .tip-icon-success {
-            background: #d1fae5;
-            border: 1px solid #a7f3d0;
-            color: #059669;
-        }
-
-        .tip-icon-pill svg {
-            width: 13px !important;
-            height: 13px !important;
-        }
-
-        .btn-try-again {
-            width: 100%;
-            height: 46px;
-            padding: 0 20px;
-            border-radius: 12px;
-            background: #bd3a13;
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(189, 58, 19, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-try-again svg {
-            width: 16px !important;
-            height: 16px !important;
-        }
-
-        .btn-try-again:hover {
-            background: #a8320e;
+            gap: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+            line-height: 1.45;
         }
 
         /* ===== 3-STATE INTERACTIVE LOGIN BUTTON ===== */
@@ -213,6 +61,13 @@
             transform: translateY(0);
         }
 
+        .btn-login-interactive:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+            box-shadow: none;
+            transform: none;
+        }
+
         .btn-login-icon {
             display: inline-flex;
             align-items: center;
@@ -230,7 +85,7 @@
             box-shadow: 0 4px 14px rgba(189, 58, 19, 0.25);
         }
 
-        /* State 3: Setelah berhasil (Login Berhasil) - Hijau Emerald Sesuai Konsep */
+        /* State 3: Setelah berhasil (Login Berhasil) - Hijau Emerald */
         .btn-login-interactive.is-success {
             background: #196c4e !important;
             color: #ffffff !important;
@@ -239,43 +94,88 @@
             box-shadow: 0 6px 20px rgba(25, 108, 78, 0.42) !important;
             transform: scale(1.008);
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            .btn-login-interactive {
+                transition: none !important;
+            }
+        }
     </style>
 
-    @if (session('status'))
+    {{-- L5: Sesi Berakhir Notifikasi --}}
+    @if (request()->has('session_expired'))
+    <div role="status" class="alert-info-banner">
+        <x-lucide-info class="w-5 h-5 flex-shrink-0 text-blue-600" />
+        <span style="font-size:13.5px; font-weight:500;">Sesi Anda sudah berakhir. Silakan masuk kembali.</span>
+    </div>
+    @elseif (session('status'))
     <div class="alert alert-success">
         <x-lucide-circle-check />
         <div>{{ session('status') }}</div>
     </div>
     @endif
 
-    <form id="loginForm" method="POST" action="{{ route('login') }}">
+    {{-- L1, L3, L4 Global Server Error Alert --}}
+    @if ($errors->has('email') && !request()->has('session_expired'))
+    <div id="loginGlobalAlert" role="alert" class="alert-error-banner">
+        <x-lucide-circle-alert class="w-5 h-5 flex-shrink-0 text-red-600" />
+        <span id="loginGlobalAlertText" style="font-size:13.5px; font-weight:500;">{{ $errors->first('email') }}</span>
+    </div>
+    @else
+    <div id="loginGlobalAlert" role="alert" class="alert-error-banner" style="display: none;">
+        <x-lucide-circle-alert class="w-5 h-5 flex-shrink-0 text-red-600" />
+        <span id="loginGlobalAlertText" style="font-size:13.5px; font-weight:500;"></span>
+    </div>
+    @endif
+
+    <form id="loginForm" method="POST" action="{{ route('login') }}" novalidate>
         @csrf
 
         <!-- Email Address -->
         <div class="field">
             <label class="form-label" for="email">Email</label>
-            <div class="input-wrap @error('email') has-error @enderror">
+            <div id="emailWrap" class="input-wrap @error('email') has-error @enderror">
                 <x-lucide-mail />
-                <input id="email" class="form-control @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username">
+                <input id="email" 
+                       class="form-control @error('email') is-invalid @enderror" 
+                       type="email" 
+                       name="email" 
+                       value="{{ old('email') }}" 
+                       required 
+                       autocomplete="username"
+                       aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                       aria-describedby="email-error">
             </div>
             @error('email')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div id="email-error" role="alert" class="invalid-feedback">{{ $message }}</div>
+            @else
+                <div id="email-error" role="alert" class="invalid-feedback" style="display: none;"></div>
             @enderror
         </div>
 
         <!-- Password -->
         <div class="field">
             <label class="form-label" for="password">Password</label>
-            <div class="input-wrap @error('password') has-error @enderror">
+            <div id="passwordWrap" class="input-wrap @if($errors->has('password') || $errors->has('email')) has-error @endif">
                 <x-lucide-lock />
-                <input id="password" class="form-control @error('password') is-invalid @enderror" type="password" name="password" required autocomplete="current-password" style="padding-right:44px;">
+                <input id="password" 
+                       class="form-control @if($errors->has('password') || $errors->has('email')) is-invalid @endif" 
+                       type="password" 
+                       name="password" 
+                       required 
+                       autocomplete="current-password" 
+                       style="padding-right:44px;"
+                       aria-invalid="{{ ($errors->has('password') || $errors->has('email')) ? 'true' : 'false' }}"
+                       aria-describedby="password-error">
                 <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1" aria-label="Tampilkan password">
                     <span id="iconEye"><x-lucide-eye class="w-4 h-4" /></span>
                     <span id="iconEyeOff" style="display:none;"><x-lucide-eye-off class="w-4 h-4" /></span>
                 </button>
             </div>
             @error('password')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div id="password-error" role="alert" class="invalid-feedback">{{ $message }}</div>
+            @else
+                <div id="password-error" role="alert" class="invalid-feedback" style="display: none;"></div>
             @enderror
         </div>
 
@@ -291,7 +191,7 @@
             @endif
         </div>
 
-        <!-- Tombol Login Rekomendasi 3-State (Tanpa Ikon di Kondisi Normal) -->
+        <!-- Tombol Login Rekomendasi 3-State -->
         <button type="submit" id="btnLogin" class="btn-primary btn-login-interactive">
             <span id="btnLoginIcon" class="btn-login-icon" style="display: none;"></span>
             <span id="btnLoginText">Masuk</span>
@@ -301,51 +201,6 @@
     <div class="form-meta">
         &copy; {{ date('Y') }} PT ARSIKON CIPTA KARYA
     </div>
-
-    {{-- Error Modal Popup saat Login Gagal / Kata Sandi Salah --}}
-    @push('modals')
-    <div id="loginErrorModal" class="login-modal-overlay" style="display: {{ ($errors->any() || request()->has('preview_error')) ? 'flex' : 'none' }};" onclick="if(event.target === this) closeLoginErrorModal()">
-        <div class="login-modal-box">
-            <button type="button" class="login-modal-close" onclick="closeLoginErrorModal()" aria-label="Tutup">
-                <x-lucide-x />
-            </button>
-            
-            <div class="login-modal-icon-wrap">
-                <div class="login-modal-icon-circle">
-                    <x-lucide-triangle-alert />
-                </div>
-            </div>
-
-            <h3 class="login-modal-title">Gagal masuk</h3>
-            
-            <p class="login-modal-desc">
-                {{ $errors->first('email') ?: 'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.' }}
-            </p>
-
-            <div class="login-modal-tips">
-                <div class="login-modal-tip-item">
-                    <div class="tip-icon-pill tip-icon-warning">
-                        <x-lucide-keyboard />
-                    </div>
-                    <span>Periksa tombol <strong style="color:#0f172a;font-weight:700;">Caps Lock</strong> pada keyboard Anda.</span>
-                </div>
-                <div class="login-modal-tip-item">
-                    <div class="tip-icon-pill tip-icon-success">
-                        <x-lucide-check />
-                    </div>
-                    <span>Pastikan alamat email dan kata sandi yang Anda ketik sudah tepat.</span>
-                </div>
-            </div>
-
-            <div class="login-modal-actions">
-                <button type="button" class="btn-try-again" onclick="closeLoginErrorModal()">
-                    <x-lucide-rotate-cw />
-                    <span>Coba masuk kembali</span>
-                </button>
-            </div>
-        </div>
-    </div>
-    @endpush
 
     <script>
         function togglePassword() {
@@ -360,42 +215,33 @@
             }
         }
 
-        function openLoginErrorModal(message) {
-            var modal = document.getElementById('loginErrorModal');
-            if (modal) {
-                if (message) {
-                    var desc = modal.querySelector('.login-modal-desc');
-                    if (desc) desc.textContent = message;
-                }
-                modal.style.display = 'flex';
-                var passInput = document.getElementById('password');
-                if (passInput) {
-                    passInput.focus();
-                    passInput.select();
-                }
-            }
-        }
+        // Accessibility & Autofocus Management
+        document.addEventListener('DOMContentLoaded', function () {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const emailErrorMsg = @json($errors->first('email') ?? '');
+            const isRateLimited = emailErrorMsg.includes('Terlalu banyak percobaan');
 
-        function closeLoginErrorModal() {
-            var modal = document.getElementById('loginErrorModal');
-            if (modal) {
-                modal.style.display = 'none';
-                var passInput = document.getElementById('password');
-                if (passInput) {
-                    passInput.focus();
-                    passInput.select();
+            if (isRateLimited) {
+                const submitBtn = document.getElementById('btnLogin');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.style.cursor = 'not-allowed';
                 }
-            }
-        }
-
-        // Close popup with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeLoginErrorModal();
+            } else if ({{ $errors->any() ? 'true' : 'false' }}) {
+                if (emailInput && emailInput.value.trim() !== '') {
+                    passwordInput.focus();
+                    passwordInput.select();
+                } else if (emailInput) {
+                    emailInput.focus();
+                }
+            } else if (emailInput) {
+                emailInput.focus();
             }
         });
 
-        // 3-State Button Transition Management (Normal -> Memverifikasi -> Login Berhasil)
+        // 3-State Button & AJAX Transition Management
         (function() {
             const loginForm = document.getElementById('loginForm');
             const btnLogin = document.getElementById('btnLogin');
@@ -420,18 +266,31 @@
                     btnLoginIcon.innerHTML = `<x-lucide-circle-check />`;
                     btnLoginText.textContent = 'Login Berhasil';
                 } else {
-                    // Normal state - Tanpa icon di kondisi normal
                     btnLogin.disabled = false;
                     btnLogin.classList.remove('is-loading', 'is-success');
                     btnLoginIcon.style.display = 'none';
                     btnLoginIcon.innerHTML = '';
-                    btnLoginText.textContent = 'Masuk ke Dashboard';
+                    btnLoginText.textContent = 'Masuk';
                 }
             }
 
             if (loginForm) {
                 loginForm.addEventListener('submit', async function(e) {
-                    if (!loginForm.checkValidity()) {
+                    const emailInput = document.getElementById('email');
+                    const passwordInput = document.getElementById('password');
+
+                    // Client validation for empty fields (L2)
+                    if (!emailInput.value.trim()) {
+                        e.preventDefault();
+                        showInlineError('Email wajib diisi.', 'email');
+                        emailInput.focus();
+                        return;
+                    }
+
+                    if (!passwordInput.value) {
+                        e.preventDefault();
+                        showInlineError('Kata sandi wajib diisi.', 'password');
+                        passwordInput.focus();
                         return;
                     }
 
@@ -452,10 +311,7 @@
 
                         if (response.ok) {
                             const data = await response.json().catch(() => ({}));
-                            
-                            // State 3: Login Berhasil (Hijau)
                             setButtonState('success');
-
                             setTimeout(function() {
                                 window.location.href = data.redirect || "{{ route('dashboard') }}";
                             }, 550);
@@ -467,16 +323,69 @@
                         setButtonState('normal');
 
                         const errorMsg = (data.errors && data.errors.email ? data.errors.email[0] : null) ||
+                            (data.errors && data.errors.password ? data.errors.password[0] : null) ||
                             data.message ||
-                            'Kombinasi email atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.';
+                            'Email atau kata sandi salah.';
 
-                        openLoginErrorModal(errorMsg);
+                        showInlineError(errorMsg, (data.errors && data.errors.password) ? 'password' : 'email');
+
+                        if (response.status === 429 || errorMsg.includes('Terlalu banyak percobaan')) {
+                            if (btnLogin) {
+                                btnLogin.disabled = true;
+                                btnLogin.style.opacity = '0.6';
+                                btnLogin.style.cursor = 'not-allowed';
+                            }
+                        } else {
+                            if (emailInput && emailInput.value.trim() !== '') {
+                                passwordInput.focus();
+                                passwordInput.select();
+                            } else if (emailInput) {
+                                emailInput.focus();
+                            }
+                        }
                     } catch (err) {
-                        // Fallback submit standar
                         setButtonState('loading');
                         loginForm.submit();
                     }
                 });
+            }
+
+            function showInlineError(msg, targetField) {
+                const alertBox = document.getElementById('loginGlobalAlert');
+                const alertText = document.getElementById('loginGlobalAlertText');
+                if (alertBox && alertText) {
+                    alertText.textContent = msg;
+                    alertBox.style.display = 'flex';
+                }
+
+                const emailWrap = document.getElementById('emailWrap');
+                const emailInput = document.getElementById('email');
+                const passWrap = document.getElementById('passwordWrap');
+                const passInput = document.getElementById('password');
+
+                if (targetField === 'email' || targetField === 'both') {
+                    if (emailWrap) emailWrap.classList.add('has-error');
+                    if (emailInput) {
+                        emailInput.classList.add('is-invalid');
+                        emailInput.setAttribute('aria-invalid', 'true');
+                    }
+                }
+
+                if (targetField === 'password' || targetField === 'both' || targetField === 'email') {
+                    if (passWrap) passWrap.classList.add('has-error');
+                    if (passInput) {
+                        passInput.classList.add('is-invalid');
+                        passInput.setAttribute('aria-invalid', 'true');
+                    }
+                }
+
+                // Trigger single shake animation
+                const card = document.querySelector('.login-card');
+                if (card) {
+                    card.classList.remove('shake-error');
+                    void card.offsetWidth; // force reflow
+                    card.classList.add('shake-error');
+                }
             }
         })();
     </script>

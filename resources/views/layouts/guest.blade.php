@@ -43,6 +43,22 @@
         z-index: 10;
     }
 
+    @keyframes shakeHorizontal {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
+
+    .shake-error {
+        animation: shakeHorizontal 0.45s ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .shake-error {
+            animation: none !important;
+        }
+    }
+
     .login-card .brand {
         display: flex;
         flex-direction: column;
@@ -283,7 +299,7 @@
 </style>
 
 <body>
-    <div class="login-card">
+    <div class="login-card {{ ($errors->any() && !request()->has('session_expired')) ? 'shake-error' : '' }}">
         <div class="brand">
             <img src="{{ asset('assets/Logo-Login-web.png') }}" alt="PT ARSIKON CIPTA KARYA">
         </div>
