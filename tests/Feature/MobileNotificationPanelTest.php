@@ -42,4 +42,21 @@ class MobileNotificationPanelTest extends TestCase
         $response->assertSee('id="glass-notification-backdrop"', false);
         $response->assertSee('sm:hidden', false);
     }
+
+    public function test_glass_panel_header_includes_mobile_close_button(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('id="btn-close-notification-panel"', false);
+        $response->assertSee('@click="panelOpen = false"', false);
+    }
+
+    public function test_glass_panel_uses_viewport_clamped_scroll_height(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSee('max-h-[calc(100dvh-190px)]', false);
+    }
 }

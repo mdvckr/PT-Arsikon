@@ -49,22 +49,35 @@
                 ></span>
             </template>
         </div>
-        <template x-if="unreadCount > 0">
-            <button 
+        <div class="flex items-center gap-2">
+            <template x-if="unreadCount > 0">
+                <button 
+                    type="button"
+                    @click="markAllAsRead()"
+                    class="text-xs font-black text-indigo-700 hover:text-indigo-950 transition flex items-center gap-1 cursor-pointer"
+                >
+                    <span>Tandai Semua</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </template>
+            <button
                 type="button"
-                @click="markAllAsRead()"
-                class="text-xs font-black text-indigo-700 hover:text-indigo-950 transition flex items-center gap-1 cursor-pointer"
+                id="btn-close-notification-panel"
+                @click="panelOpen = false"
+                class="sm:hidden p-1.5 -mr-1.5 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100/80 transition cursor-pointer"
+                aria-label="Tutup notifikasi"
             >
-                <span>Tandai Semua</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-        </template>
+        </div>
     </div>
 
     <!-- Daftar Item Notifikasi -->
-    <div class="relative z-10 p-3.5 flex flex-col gap-2.5 max-h-[380px] overflow-y-auto scrollbar-thin">
+    <div class="relative z-10 p-3.5 flex flex-col gap-2.5 max-h-[calc(100dvh-190px)] sm:max-h-[380px] overflow-y-auto overscroll-contain scrollbar-thin">
         
         <!-- Loading State -->
         <template x-if="panelLoading">
@@ -153,8 +166,8 @@
     </div>
 
     <!-- Footer Dropdown -->
-    <div class="relative z-10 px-5 py-3.5 border-t border-slate-200/80 text-center bg-slate-50/80">
-        <a href="{{ route('notifications.index') }}" class="text-xs font-black text-black hover:text-indigo-700 transition flex items-center justify-center gap-1.5">
+    <div class="relative z-10 px-5 py-3 sm:py-3.5 border-t border-slate-200/80 text-center bg-slate-50/80">
+        <a href="{{ route('notifications.index') }}" class="min-h-[36px] text-xs font-black text-black hover:text-indigo-700 transition flex items-center justify-center gap-1.5 py-1">
             <span>Buka Semua Riwayat Notifikasi</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
