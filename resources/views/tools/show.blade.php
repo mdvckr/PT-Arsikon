@@ -339,6 +339,7 @@
                             ['Spesifikasi / Ukuran', $tool->size ?: '-', $tool->size ? 'size_badge' : null, null],
                             ['Kategori', $tool->category?->name ?? '-', null, null],
                             ['Merk / Brand', $tool->brand ?: '-', null, null],
+                            ['Supplier / Pemasok', $tool->display_supplier_name, null, null],
                             ['Kepemilikan', $tool->isOwnedByCentral() ? 'Milik Pusat' : ($tool->ownerWarehouse?->name ?? '-'), $tool->isOwnedByCentral() ? 'central_badge' : null, null],
                             ['Gudang Utama', $tool->currentWarehouse?->name ?? 'Gudang Pusat / Default', null, null],
                             ['Status', $statusBadge, 'raw', null],

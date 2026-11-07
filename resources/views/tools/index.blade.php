@@ -102,7 +102,7 @@
                     <div style="position:relative;">
                         <x-lucide-search style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#94a3b8;pointer-events:none;" />
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control"
-                            placeholder="Nama, kode alat, merk, kelompok, atau ukuran..."
+                            placeholder="Nama, kode alat, merk, supplier, kelompok, atau ukuran..."
                             style="padding-left:34px;height:38px;border-radius:6px;font-size:13px;border:1px solid #cbd5e1;">
                     </div>
                 </div>
@@ -157,6 +157,7 @@
                         <th style="width:130px;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Kode Alat</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Nama Alat & Model</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Merk</th>
+                        <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Supplier</th>
                         <th style="padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tahapan Masuk</th>
                         <th style="white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Tgl Input</th>
                         <th style="text-align:center;white-space:nowrap;padding:11px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#64748b;">Total Stock</th>
@@ -186,7 +187,7 @@
                     @endphp
                     {{-- Level 1: Category Header --}}
                     <tr class="group-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="group-cat-{{ $category->id }}" style="background:#f8fafc !important;cursor:pointer;user-select:none;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-                        <td colspan="10" style="padding:8px 14px !important;">
+                        <td colspan="11" style="padding:8px 14px !important;">
                             <div class="flex items-center justify-between" style="gap:12px;flex-wrap:nowrap;">
                                 <div class="flex items-center" style="gap:8px;min-width:0;">
                                     <x-lucide-chevron-down class="group-chev" style="font-size:9.5px;color:#64748b;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true" />
@@ -205,7 +206,7 @@
                     @php $subKey = 'sub-' . $category->id . '-' . Str::slug($toolTypeName); @endphp
                     {{-- Level 2: Sub-Group Header (Kelompok Alat / Type) --}}
                     <tr class="group-rows group-cat-{{ $category->id }} subgroup-toggle {{ !request('search') ? 'collapsed' : '' }}" data-group="{{ $subKey }}" style="background:#fafbfc !important;cursor:pointer;user-select:none;border-bottom:1px solid #f1f5f9;border-left:3px solid #cbd5e1;{{ !request('search') ? 'display:none;' : '' }}">
-                        <td colspan="10" style="padding:6px 14px 6px 28px !important;">
+                        <td colspan="11" style="padding:6px 14px 6px 28px !important;">
                             <div class="flex items-center justify-between" style="gap:8px;">
                                 <div class="flex items-center" style="gap:7px;">
                                     <x-lucide-chevron-down class="subgroup-chev" style="font-size:8.5px;color:#94a3b8;transition:transform .2s;{{ !request('search') ? 'transform:rotate(-90deg);' : '' }}" aria-hidden="true" />
@@ -251,6 +252,9 @@
                             @else
                                 <span class="text-muted">-</span>
                             @endif
+                        </td>
+                        <td style="padding:9px 14px;font-size:12.5px;color:#334155;vertical-align:middle;">
+                            {{ $tool->display_supplier_name }}
                         </td>
 
                         <td style="padding:9px 14px;white-space:nowrap;vertical-align:middle;">
@@ -432,7 +436,7 @@
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10" style="padding:48px 20px;text-align:center;">
+                        <td colspan="11" style="padding:48px 20px;text-align:center;">
                             <div class="empty-custom-box" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;max-width:360px;margin:0 auto;">
                                 <div style="width:56px;height:56px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;color:#94a3b8;">
                                     <x-lucide-wrench style="font-size:22px !important;color:#94a3b8 !important;" />

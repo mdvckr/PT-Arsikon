@@ -276,11 +276,22 @@
                                 @error('warehouse_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
-                            {{-- Catatan / Keterangan (Full-width md:col-span-2) --}}
+                            {{-- Supplier / Pemasok (Full-width md:col-span-2) --}}
                             <div class="md:col-span-2">
-                                <label class="form-label" for="notes_input" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">CATATAN / KETERANGAN TAMBAHAN <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
-                                <textarea name="notes" id="notes_input" rows="2" class="form-control @error('notes') is-invalid @enderror" placeholder="Keterangan kelengkapan aksesoris, spesifikasi teknis tambahan, atau nomor seri pabrikan..." style="border-radius:6px;font-size:13px;">{{ old('notes', $tool->notes) }}</textarea>
-                                @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <label class="form-label" for="supplier_input" style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;display:block;">SUPPLIER / PEMASOK <span style="font-weight:400;color:#94a3b8;font-size:11px;">(Opsional)</span></label>
+                                <input type="text" name="supplier" id="supplier_input" list="supplier_list"
+                                    value="{{ old('supplier', $tool->supplier?->name ?? $tool->supplier_name) }}"
+                                    class="form-control @error('supplier') is-invalid @enderror"
+                                    placeholder="Ketik nama supplier atau pilih dari daftar..."
+                                    oninput="syncSummaryPreview()"
+                                    style="height:38px;border-radius:6px;font-size:13px;width:100%;">
+                                <datalist id="supplier_list">
+                                    @foreach($suppliers as $sup)
+                                    <option value="{{ $sup->name }}">
+                                    @endforeach
+                                </datalist>
+                                @error('supplier')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="text-muted" style="font-size:11px;margin-top:4px;">Supplier baru akan otomatis terdaftar bila belum ada di master data.</div>
                             </div>
                         </div>
                     </div>
@@ -375,6 +386,10 @@
                             <div class="flex justify-between items-center">
                                 <span class="text-slate-500">Merek / Brand:</span>
                                 <span id="preview_brand" class="text-slate-800 font-semibold truncate max-w-[180px]">{{ $tool->brand ?: '-' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">Supplier:</span>
+                                <span id="preview_supplier" class="text-slate-800 font-semibold truncate max-w-[180px]" title="{{ $tool->supplier?->name ?? $tool->supplier_name ?: '-' }}">{{ $tool->supplier?->name ?? $tool->supplier_name ?: '-' }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-slate-500">Gudang Penyimpanan:</span>
@@ -610,6 +625,7 @@
             var codeVal = document.getElementById('code_input')?.value || '—';
             var nameVal = document.getElementById('name_input')?.value || 'Nama Alat';
             var brandVal = document.getElementById('brand_input')?.value || '-';
+            var supplierVal = document.getElementById('supplier_input')?.value || '-';
 
             var catSelect = document.getElementById('category_select');
             var catVal = 'Kategori';
@@ -635,6 +651,7 @@
             var elCat = document.getElementById('preview_category');
             var elType = document.getElementById('preview_type');
             var elBrand = document.getElementById('preview_brand');
+            var elSup = document.getElementById('preview_supplier');
             var elWh = document.getElementById('preview_warehouse');
             var elStock = document.getElementById('preview_stock');
             var elAvail = document.getElementById('preview_avail');
@@ -646,6 +663,10 @@
             if (elBrand) {
                 elBrand.textContent = brandVal.trim() ? brandVal : '-';
                 elBrand.title = brandVal;
+            }
+            if (elSup) {
+                elSup.textContent = supplierVal.trim() ? supplierVal : '-';
+                elSup.title = supplierVal;
             }
             if (elWh) {
                 elWh.textContent = whVal;

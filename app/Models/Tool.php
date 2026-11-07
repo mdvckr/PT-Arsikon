@@ -16,6 +16,8 @@ class Tool extends Model
         'category_id',
         'current_warehouse_id',
         'owner_warehouse_id',
+        'supplier_id',
+        'supplier_name',
         'code',
         'name',
         'type',
@@ -29,6 +31,7 @@ class Tool extends Model
         'is_active',
         'notes',
         'incoming_stages',
+        'supplier',
     ];
 
     protected $casts = [
@@ -41,6 +44,16 @@ class Tool extends Model
         'stock_damaged'      => 'integer',
         'incoming_stages'    => 'array',
     ];
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function getDisplaySupplierNameAttribute(): string
+    {
+        return $this->supplier?->name ?? $this->supplier_name ?? '-';
+    }
 
     public function category(): BelongsTo
     {

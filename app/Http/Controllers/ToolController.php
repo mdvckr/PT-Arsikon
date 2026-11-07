@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tool;
 use App\Models\Category;
+use App\Models\Supplier;
 use App\Models\ToolAssignment;
 use App\Models\ToolInventory;
 use App\Models\Warehouse;
@@ -77,6 +78,7 @@ class ToolController extends Controller
             ->with(['tools' => function ($q) use ($request, $filterWarehouseIds, $selectedWarehouseId) {
                 $q->with([
                     'currentWarehouse',
+                    'supplier',
                     'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse')
                 ]);
 
@@ -89,7 +91,9 @@ class ToolController extends Controller
                            ->orWhere('code', 'like', "%{$request->search}%")
                            ->orWhere('brand', 'like', "%{$request->search}%")
                            ->orWhere('type', 'like', "%{$request->search}%")
-                           ->orWhere('size', 'like', "%{$request->search}%");
+                           ->orWhere('size', 'like', "%{$request->search}%")
+                           ->orWhere('supplier_name', 'like', "%{$request->search}%")
+                           ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$request->search}%"));
                     });
                 }
                 $q->orderBy('type')->orderBy('name');
@@ -107,7 +111,9 @@ class ToolController extends Controller
                       ->orWhere('code', 'like', "%{$request->search}%")
                       ->orWhere('brand', 'like', "%{$request->search}%")
                       ->orWhere('type', 'like', "%{$request->search}%")
-                      ->orWhere('size', 'like', "%{$request->search}%");
+                      ->orWhere('size', 'like', "%{$request->search}%")
+                      ->orWhere('supplier_name', 'like', "%{$request->search}%")
+                      ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$request->search}%"));
                 });
             });
         }
@@ -154,9 +160,10 @@ class ToolController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $singleWarehouse = $warehouses->count() === 1 ? $warehouses->first() : null;
 
-        return view('tools.create', compact('categories', 'selectedCategoryId', 'existingGroups', 'warehouses', 'singleWarehouse'));
+        return view('tools.create', compact('categories', 'selectedCategoryId', 'existingGroups', 'warehouses', 'singleWarehouse', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -194,6 +201,8 @@ class ToolController extends Controller
             'type'            => 'nullable|string|max:255',
             'size'            => 'nullable|string|max:255',
             'brand'           => 'nullable|string|max:100',
+            'supplier'        => 'nullable|string|max:255',
+            'supplier_id'     => 'nullable|exists:suppliers,id',
             'category_id'     => 'required_without:new_category|nullable|integer|exists:categories,id',
             'new_category'    => 'required_without:category_id|nullable|string|max:255',
             'warehouse_id'    => 'required|integer|exists:warehouses,id',
@@ -218,6 +227,10 @@ class ToolController extends Controller
         $category = $this->resolveCategory($request);
         $incomingStages = $this->parseIncomingStages($request);
 
+        $supplier = $this->resolveSupplier($request->supplier ?? null);
+        $supplierId = $supplier?->id;
+        $supplierName = !empty($request->supplier) ? trim($request->supplier) : null;
+
         $stockTotal = isset($validated['stock_total']) ? (int) $validated['stock_total'] : 0;
 
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
@@ -236,6 +249,8 @@ class ToolController extends Controller
             'type'                 => $typeVal,
             'size'                 => $validated['size'] ?? null,
             'brand'                => $validated['brand'] ?? null,
+            'supplier_id'          => $supplierId,
+            'supplier_name'        => $supplierName,
             'category_id'          => $category?->id,
             'current_warehouse_id' => $validated['warehouse_id'],
             'owner_warehouse_id'   => $validated['warehouse_id'],
@@ -283,9 +298,12 @@ class ToolController extends Controller
                     'type'              => $typeVal,
                     'size'              => $validated['size'] ?? null,
                     'brand'             => $validated['brand'] ?? null,
+                    'supplier_id'       => $supplierId,
+                    'supplier_name'     => $supplierName,
                     'category_id'       => $category?->id,
                     'current_warehouse_id' => $manualItem['warehouse_id'],
                     'owner_warehouse_id'   => $manualItem['warehouse_id'],
+                    'notes'             => $validated['notes'] ?? null,
                     'stock_total'       => (int) ($manualItem['stock_total'] ?? 0),
                     'stock_available'   => (int) ($manualItem['stock_total'] ?? 0),
                     'stock_borrowed'    => 0,
@@ -394,7 +412,9 @@ class ToolController extends Controller
             ->groupBy('category_id')
             ->map(fn($items) => $items->pluck('type')->values());
 
-        return view('tools.edit', compact('tool', 'categories', 'warehouses', 'existingGroups'));
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+
+        return view('tools.edit', compact('tool', 'categories', 'warehouses', 'existingGroups', 'suppliers'));
     }
 
     public function update(Request $request, Tool $tool)
@@ -415,6 +435,8 @@ class ToolController extends Controller
             'type'              => 'nullable|string|max:255',
             'size'              => 'nullable|string|max:255',
             'brand'             => 'nullable|string|max:100',
+            'supplier'          => 'nullable|string|max:255',
+            'supplier_id'       => 'nullable|exists:suppliers,id',
             'category_id'       => 'nullable|integer|exists:categories,id',
             'new_category'      => 'nullable|string|max:255',
             'warehouse_id'      => 'nullable|integer|exists:warehouses,id',
@@ -428,6 +450,10 @@ class ToolController extends Controller
 
         $category = $this->resolveCategory($request);
         $incomingStages = $this->parseIncomingStages($request);
+
+        $supplier = $this->resolveSupplier($request->supplier ?? null);
+        $supplierId = $supplier?->id;
+        $supplierName = !empty($request->supplier) ? trim($request->supplier) : null;
 
         // Pertahankan kelompok alat (type) jika tidak sengaja terkirim kosong saat edit
         $typeVal = !empty($validated['type']) ? trim($validated['type']) : null;
@@ -449,6 +475,8 @@ class ToolController extends Controller
             'type'                 => $typeVal,
             'size'                 => $validated['size'] ?? null,
             'brand'                => $validated['brand'] ?? null,
+            'supplier_id'          => $supplierId,
+            'supplier_name'        => $supplierName,
             'category_id'          => $category?->id ?? $tool->category_id,
             'current_warehouse_id' => $validated['warehouse_id'] ?? $tool->current_warehouse_id,
             'notes'                => $validated['notes'] ?? null,
@@ -666,5 +694,36 @@ class ToolController extends Controller
         }
 
         return back();
+    }
+
+    /**
+     * Selesaikan supplier terpilih dari input teks user.
+     * Jika supplier belum terdaftar, otomatis daftarkan supplier baru ke master data.
+     */
+    protected function resolveSupplier(?string $supplierName): ?Supplier
+    {
+        if (empty($supplierName)) {
+            return null;
+        }
+
+        $name = trim($supplierName);
+        $supplier = Supplier::where('name', $name)->first();
+
+        if (! $supplier) {
+            $code = 'SUP-' . strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $name), 0, 6));
+            $base = $code;
+            $i = 1;
+            while (Supplier::where('code', $code)->exists()) {
+                $code = $base . '-' . $i++;
+            }
+
+            $supplier = Supplier::create([
+                'code' => $code,
+                'name' => $name,
+                'is_active' => true,
+            ]);
+        }
+
+        return $supplier;
     }
 }
