@@ -754,6 +754,7 @@ class GoodsReceiptController extends Controller
             'received_at'                    => 'required|date',
             'received_by_name'               => 'nullable|string|max:150',
             'invoice_number'                 => 'nullable|string|max:100',
+            'attachment'                     => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:10240',
             'notes'                          => 'nullable|string|max:2000',
             'items'                          => 'required|array|min:1',
             'items.*.item_type'              => 'nullable|in:material,tool',
@@ -816,6 +817,10 @@ class GoodsReceiptController extends Controller
         // Simpan nama supplier dan penerima ke validated
         $validated['supplier_name'] = $cleanedSupplierName ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
         $validated['received_by_name'] = trim($request->input('received_by_name', '')) ?: null;
+
+        if ($request->hasFile('attachment')) {
+            $validated['attachment_path'] = $request->file('attachment')->store('goods-receipts', 'public');
+        }
 
         $receipt = $this->service->create($validated, auth()->id());
 
@@ -1179,6 +1184,7 @@ class GoodsReceiptController extends Controller
             'received_at'                     => 'required|date',
             'received_by_name'                => 'nullable|string|max:150',
             'invoice_number'                  => 'nullable|string|max:100',
+            'attachment'                      => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:10240',
             'notes'                           => 'nullable|string|max:2000',
             'items'                           => 'required|array|min:1',
             'items.*.item_type'               => 'nullable|in:material,tool',
@@ -1214,6 +1220,10 @@ class GoodsReceiptController extends Controller
 
         $validated['supplier_name']    = $cleanedSupplierName ?: (\App\Models\Supplier::find($validated['supplier_id'])?->name);
         $validated['received_by_name'] = trim($request->input('received_by_name', '')) ?: null;
+
+        if ($request->hasFile('attachment')) {
+            $validated['attachment_path'] = $request->file('attachment')->store('goods-receipts', 'public');
+        }
 
         try {
             $this->service->update($goodsReceipt, $validated, auth()->id());

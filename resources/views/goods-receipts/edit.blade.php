@@ -886,7 +886,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('goods-receipts.update', $goodsReceipt) }}" id="receiptForm">
+    <form method="POST" action="{{ route('goods-receipts.update', $goodsReceipt) }}" id="receiptForm" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <div class="receipt-create-layout">
@@ -953,72 +953,29 @@
                             </div>
                         </div>
 
-                        {{-- ─── Kolom 2: Pemasok & Dokumen Pengiriman / Nota ─── --}}
+                        {{-- ─── Kolom 2: Dokumen Acuan (PO Lapangan & PO Vendor) & Bukti Fisik ─── --}}
                         <div class="session-field-group">
                             <div class="group-label" style="color:#059669;">
                                 <span style="width:26px;height:26px;border-radius:6px;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;">
-                                    <x-lucide-building-2 style="font-size:11px;color:#059669;" />
+                                    <x-lucide-clipboard-check style="font-size:11px;color:#059669;" />
                                 </span>
-                                Pemasok / Vendor &amp; Nota
+                                Dokumen Acuan Pesanan &amp; Vendor
                             </div>
 
                             @php
-                                $canAccessPo = auth()->user()->hasAnyRole([
-                                    'Project Manager',
-                                    'Site Manager',
-                                    'Site Engineer',
-                                ]) && !auth()->user()->hasAnyRole([
-                                    'Admin Pusat',
-                                    'Owner',
-                                    'Super Admin',
-                                    'Admin Gudang Pusat',
-                                    'Admin Gudang Proyek',
-                                    'Admin PO',
-                                    'Admin PO Proyek'
-                                ]);
+                                $canAccessPo = true;
                             @endphp
 
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    Nama Pemasok / Supplier <span class="text-danger">*</span>
-                                </label>
-                                <input type="hidden" name="supplier_id" id="supplierIdHidden" value="{{ old('supplier_id', $goodsReceipt->supplier_id) }}">
-                                <div class="input-icon-wrap">
-                                    <x-lucide-store class="input-icon" />
-                                    <input type="text"
-                                        id="supplierNameInput"
-                                        name="supplier_name"
-                                        class="form-control @error('supplier_id') is-invalid @enderror"
-                                        value="{{ old('supplier_name', $goodsReceipt->supplier?->name ?? $goodsReceipt->supplier_name) }}"
-                                        placeholder="Cari atau ketik nama supplier..."
-                                        list="supplierDatalist"
-                                        autocomplete="off"
-                                        oninput="onSupplierInput(this)"
-                                        required>
-                                </div>
-                                <datalist id="supplierDatalist">
-                                    @foreach($suppliers as $sup)
-                                    <option value="{{ $sup->name }}" data-id="{{ $sup->id }}">{{ $sup->name }}</option>
-                                    @endforeach
-                                </datalist>
-                                <div id="supplierHint" style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
-                                    <x-lucide-info style="color:#94a3b8;" />
-                                    Pilih dari daftar atau ketik supplier baru — akan otomatis terdaftar
-                                </div>
-                                @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
-                            </div>
-
-                            @if($canAccessPo)
-                            {{-- Field Hubungkan PO Lapangan (Hanya untuk PM, Site Manager, Site Engineer) --}}
+                            {{-- Field Hubungkan PO Lapangan (Permintaan Proyek) --}}
                             <div class="mb-3">
                                 <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
-                                    <span>Hubungkan PO Lapangan</span>
-                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;">(Permintaan Proyek)</span>
+                                    <span style="font-weight:700;color:#0f172a;">1. Hubungkan PO Lapangan</span>
+                                    <span style="font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:1px 6px;border-radius:4px;">Disarankan</span>
                                 </label>
                                 <div class="input-icon-wrap">
                                     <x-lucide-clipboard-check class="input-icon" />
                                     <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
-                                        <option value="">— Pilih PO Lapangan (Opsional) —</option>
+                                        <option value="">— Pilih PO Lapangan (Memuat Barang Otomatis) —</option>
                                         @foreach($materialRequests as $mr)
                                         @php
                                             $projectName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
@@ -1044,10 +1001,10 @@
                                 </div>
                             </div>
 
-                            {{-- Field Hubungkan Purchase Order (PO) --}}
+                            {{-- Field Hubungkan Purchase Order (PO Vendor) --}}
                             <div class="mb-3">
                                 <label class="form-label">
-                                    Hubungkan Purchase Order (PO)
+                                    <span style="font-weight:700;color:#0f172a;">2. Hubungkan Purchase Order (PO)</span>
                                     <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
                                 </label>
                                 <div class="input-icon-wrap">
@@ -1076,16 +1033,39 @@
                                     <span id="poBannerText"></span>
                                 </div>
                             </div>
-                            @else
-                                @if($goodsReceipt->purchase_order_id)
-                                    <input type="hidden" name="purchase_order_id" value="{{ $goodsReceipt->purchase_order_id }}">
-                                @endif
-                                @if($goodsReceipt->material_request_id)
-                                    <input type="hidden" name="material_request_id" value="{{ $goodsReceipt->material_request_id }}">
-                                @endif
-                            @endif
 
-                            <div class="mb-0">
+                            {{-- Nama Pemasok / Supplier --}}
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Nama Pemasok / Supplier <span class="text-danger">*</span>
+                                </label>
+                                <input type="hidden" name="supplier_id" id="supplierIdHidden" value="{{ old('supplier_id', $goodsReceipt->supplier_id) }}">
+                                <div class="input-icon-wrap">
+                                    <x-lucide-store class="input-icon" />
+                                    <input type="text"
+                                        id="supplierNameInput"
+                                        name="supplier_name"
+                                        class="form-control @error('supplier_id') is-invalid @enderror"
+                                        value="{{ old('supplier_name', $goodsReceipt->supplier?->name ?? $goodsReceipt->supplier_name) }}"
+                                        placeholder="Cari atau ketik nama supplier..."
+                                        list="supplierDatalist"
+                                        autocomplete="off"
+                                        oninput="onSupplierInput(this)"
+                                        required>
+                                </div>
+                                <datalist id="supplierDatalist">
+                                    @foreach($suppliers as $sup)
+                                    <option value="{{ $sup->name }}" data-id="{{ $sup->id }}">{{ $sup->name }}</option>
+                                    @endforeach
+                                </datalist>
+                                <div id="supplierHint" style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
+                                    <x-lucide-info style="color:#94a3b8;" />
+                                    Terisi otomatis dari PO atau pilih/ketik nama toko vendor
+                                </div>
+                                @error('supplier_id')<div class="invalid-feedback d-block" style="font-size:11px;">{{ $message }}</div>@enderror
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label">
                                     No. Surat Jalan / Nota Fisik Vendor
                                 </label>
@@ -1097,6 +1077,25 @@
                                 <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
                                     <x-lucide-info style="color:#94a3b8;" />
                                     Nomor nota / surat jalan fisik yang diperiksa oleh petugas gudang
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="form-label">
+                                    Foto / Scan Surat Jalan Vendor (Bukti Fisik)
+                                </label>
+                                @if($goodsReceipt->attachment_path)
+                                <div class="mb-2" style="font-size:11.5px;background:#f0fdf4;padding:6px 10px;border-radius:6px;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:space-between;">
+                                    <span style="color:#166534;font-weight:600;"><x-lucide-file-check class="me-1" /> Bukti Terlampir</span>
+                                    <a href="{{ $goodsReceipt->attachment_url }}" target="_blank" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:2px 7px;">Lihat File</a>
+                                </div>
+                                @endif
+                                <div class="input-icon-wrap">
+                                    <input type="file" name="attachment" accept="image/*,application/pdf" class="form-control" style="padding:6px 10px;">
+                                </div>
+                                <div style="font-size:10.5px;margin-top:4px;color:#64748b;display:flex;align-items:center;gap:4px;">
+                                    <x-lucide-camera style="color:#94a3b8;" />
+                                    {{ $goodsReceipt->attachment_path ? 'Pilih file baru jika ingin mengganti lampiran' : 'Unggah foto surat jalan ber-ttd supir (JPG, PNG, PDF maks 10MB)' }}
                                 </div>
                             </div>
                         </div>

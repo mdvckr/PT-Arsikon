@@ -324,6 +324,19 @@
                     </div>
 
                     <div class="info-row">
+                        <span class="info-label">Bukti Surat Jalan</span>
+                        <span class="info-val">
+                            @if($goodsReceipt->attachment_path)
+                                <a href="{{ $goodsReceipt->attachment_url }}" target="_blank" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;">
+                                    <x-lucide-file-image class="text-blue-600" style="font-size:12px;" /> Lihat Foto / Scan SJ
+                                </a>
+                            @else
+                                <span class="text-muted" style="font-size:11.5px;">Tanpa Lampiran</span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="info-row">
                         <span class="info-label">Purchase Order</span>
                         <span class="info-val">
                             @if($goodsReceipt->purchaseOrder)

@@ -42,7 +42,8 @@ class PurchaseOrderController extends Controller
             'procurementRequest',
             'items.material.unit',
             'items.materialRequestItem.materialRequest',
-            'receipts'
+            'receipts',
+            'goodsReceipts'
         ]);
 
         if ($request->status) {
@@ -519,13 +520,29 @@ class PurchaseOrderController extends Controller
             'supplier',
             'creator',
             'approver',
+            'deliveryWarehouse.project',
+            'materialRequest.toWarehouse.project',
             'items.material.unit',
+            'items.tool',
             'items.deliverySchedules',
             'items.materialRequestItem.materialRequest.fromWarehouse',
             'payments.creator',
             'procurementRequest',
-            'receipts.creator'
+            'receipts.creator',
+            'goodsReceipts.creator',
+            'goodsReceipts.confirmedBy',
+            'goodsReceipts.warehouse',
+            'goodsReceipts.items.material.unit',
+            'goodsReceipts.items.tool',
         ]);
+
+        // Kumpulkan seluruh Goods Receipts (baik terhubung via header PO maupun per-item PO)
+        $directGrs = $purchaseOrder->goodsReceipts;
+        $poItemIds = $purchaseOrder->items->pluck('id')->filter()->all();
+        $itemGrIds = !empty($poItemIds) ? \App\Models\GoodsReceiptItem::whereIn('purchase_order_item_id', $poItemIds)->pluck('goods_receipt_id')->unique()->all() : [];
+        $itemGrs = !empty($itemGrIds) ? \App\Models\GoodsReceipt::whereIn('id', $itemGrIds)->with(['creator', 'confirmedBy', 'warehouse', 'items.material.unit', 'items.tool'])->get() : collect();
+        $allGoodsReceipts = $directGrs->merge($itemGrs)->unique('id')->sortByDesc('receipt_date')->values();
+
         $printTemplate = \App\Models\PrintTemplate::activeForPO();
         $allTemplates  = \App\Models\PrintTemplate::latest()->get();
         $userCanViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
@@ -571,7 +588,7 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice'));
+        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice', 'allGoodsReceipts'));
     }
 
     public function edit(PurchaseOrder $purchaseOrder)

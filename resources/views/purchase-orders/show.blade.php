@@ -391,7 +391,7 @@
                         <th>Material</th>
                         <th class="text-center">Jumlah Dipesan</th>
                         @if($purchaseOrder->status !== 'draft')
-                            <th class="text-center">Diterima / Ditutup</th>
+                            <th class="text-center">Kesesuaian Fisik (Diterima)</th>
                         @endif
                         <th class="text-end">Harga Satuan</th>
                         <th class="text-end">Subtotal</th>
@@ -457,13 +457,41 @@
                             {{ format_quantity($item->quantity) }} {{ $item->displayUnit() }}
                         </td>
                         @if($purchaseOrder->status !== 'draft')
+                            @php
+                                $orderedQty = (float) $item->quantity;
+                                $receivedQty = (float) $item->received_qty;
+                                $lostQty = (float) ($item->lost_qty ?? 0);
+                                $closedQty = (float) ($item->short_closed_qty ?? 0);
+                                $remainingQty = max(0, $orderedQty - $receivedQty - $lostQty - $closedQty);
+                            @endphp
                             <td class="text-center">
-                                <span class="text-success font-semibold">{{ format_quantity($item->received_qty) }} diterima</span>
-                                @if((float)$item->short_closed_qty > 0)
-                                    <span class="badge ms-1" style="background:#fef3c7;color:#92400e;font-size:10.5px;">
-                                        Ditutup: {{ format_quantity($item->short_closed_qty) }}
-                                    </span>
-                                @endif
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                                    @if($receivedQty >= $orderedQty && $orderedQty > 0)
+                                        <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:11px;font-weight:700;">
+                                            <x-lucide-check class="me-1" /> Sesuai Penuh ({{ format_quantity($receivedQty) }})
+                                        </span>
+                                    @elseif($receivedQty > 0)
+                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:700;">
+                                            Sebagian ({{ format_quantity($receivedQty) }}/{{ format_quantity($orderedQty) }})
+                                        </span>
+                                        <span class="text-muted" style="font-size:10.5px;">Sisa: {{ format_quantity($remainingQty) }} {{ $item->displayUnit() }}</span>
+                                    @else
+                                        <span class="badge" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-size:10.5px;font-weight:600;">
+                                            Belum Diterima
+                                        </span>
+                                    @endif
+
+                                    @if($lostQty > 0)
+                                        <span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;font-size:10px;">
+                                            Selisih Rusak/Hilang: {{ format_quantity($lostQty) }}
+                                        </span>
+                                    @endif
+                                    @if($closedQty > 0)
+                                        <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10px;">
+                                            Ditutup: {{ format_quantity($closedQty) }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                         @endif
                         <td class="text-end">
@@ -482,6 +510,111 @@
                         </td>
                     </tr>
                     @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION BARU: Verifikasi Penerimaan Barang Fisik Lapangan (Goods Receipts / GR) -->
+    <div class="card mb-6" style="padding:20px;border:2px solid #bfdbfe;background:#ffffff;">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h3 style="font-size:17px;font-weight:700;color:#1e3a8a;" class="flex items-center gap-2">
+                    <x-lucide-package-check class="text-blue-600" /> Verifikasi Penerimaan Barang Fisik Lapangan (Goods Receipts / GR)
+                </h3>
+                <p class="text-muted" style="font-size:13px;">Dokumen Berita Acara Penerimaan Barang yang dicatat dan diverifikasi oleh tim gudang proyek.</p>
+            </div>
+            @if(isset($allGoodsReceipts) && $allGoodsReceipts->isNotEmpty())
+                <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1px solid #bfdbfe;">
+                    Total {{ $allGoodsReceipts->count() }} Dokumen Penerimaan
+                </span>
+            @endif
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table" style="background:#fff;">
+                <thead>
+                    <tr>
+                        <th style="width: 14%;">No. GR</th>
+                        <th style="width: 11%;">Tgl Terima</th>
+                        <th style="width: 14%;">Gudang Tujuan</th>
+                        <th style="width: 15%;">No. Surat Jalan Vendor</th>
+                        <th style="width: 13%; text-align:center;">Bukti Fisik / SJ</th>
+                        <th style="width: 13%;">Penerima Fisik</th>
+                        <th style="width: 10%; text-align:center;">Status GR</th>
+                        <th style="width: 10%; text-align:center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($allGoodsReceipts ?? [] as $gr)
+                    <tr>
+                        <td>
+                            <a href="{{ route('goods-receipts.show', $gr) }}" style="font-weight:700;color:#2563eb;text-decoration:none;">
+                                <code>{{ $gr->receipt_number }}</code>
+                            </a>
+                        </td>
+                        <td><strong>{{ $gr->receipt_date ? \Carbon\Carbon::parse($gr->receipt_date)->format('d M Y') : '-' }}</strong></td>
+                        <td>
+                            <span style="font-weight:600;color:#0f172a;">{{ $gr->warehouse?->name ?? '-' }}</span>
+                            @if($gr->warehouse?->is_central)
+                                <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:9.5px;padding:1px 5px;">Pusat</span>
+                            @else
+                                <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:9.5px;padding:1px 5px;">Proyek</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($gr->invoice_number)
+                                <code style="font-size:11.5px;background:#f8fafc;color:#334155;padding:2px 6px;border-radius:4px;border:1px solid #e2e8f0;">
+                                    {{ $gr->invoice_number }}
+                                </code>
+                            @else
+                                <span class="text-muted" style="font-size:12px;">—</span>
+                            @endif
+                        </td>
+                        <td style="text-align:center;">
+                            @if($gr->attachment_path)
+                                <a href="{{ $gr->attachment_url }}" target="_blank" class="btn btn-xs btn-outline-info" style="font-size:11px;padding:3px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;">
+                                    <x-lucide-file-image class="text-blue-600" style="font-size:12px;" /> Lihat Foto
+                                </a>
+                            @else
+                                <span class="text-muted" style="font-size:11.5px;">Tanpa Foto</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div style="font-size:12px;font-weight:600;color:#0f172a;">
+                                {{ $gr->received_by_name ?? $gr->receivedBy?->name ?? '-' }}
+                            </div>
+                            <div style="font-size:10.5px;color:#64748b;">
+                                Input: {{ $gr->creator?->name ?? '-' }}
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            @if($gr->isConfirmed())
+                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10.5px;padding:3px 8px;border-radius:10px;">
+                                    <x-lucide-check class="me-1" /> Terkonfirmasi
+                                </span>
+                            @else
+                                <span class="badge" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:10.5px;padding:3px 8px;border-radius:10px;">
+                                    <x-lucide-clock class="me-1" /> Draft
+                                </span>
+                            @endif
+                        </td>
+                        <td style="text-align:center;">
+                            <a href="{{ route('goods-receipts.show', $gr) }}" class="btn btn-sm btn-secondary btn-icon" title="Buka Detail Penerimaan">
+                                <x-lucide-eye />
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                                <x-lucide-package-open style="font-size:24px;color:#94a3b8;" />
+                                <span>Belum ada fisik barang yang diterima di gudang/proyek untuk PO ini.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

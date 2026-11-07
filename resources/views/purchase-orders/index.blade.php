@@ -232,6 +232,30 @@
                                     </td>
                                     <td style="text-align:center;">
                                         <span class="badge badge-{{ $po->status_color }}">{{ $po->status_label }}</span>
+                                        @php
+                                            $totalOrdered = (float) $po->items->sum('quantity');
+                                            $totalRecv = (float) $po->items->sum('received_qty');
+                                            $hasConfirmedGr = $po->goodsReceipts ? $po->goodsReceipts->where('status', 'confirmed')->isNotEmpty() : false;
+                                        @endphp
+                                        @if($totalRecv >= $totalOrdered && $totalOrdered > 0)
+                                            <div class="mt-1">
+                                                <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:9.5px;padding:1px 5px;" title="Barang fisik telah lengkap diterima di proyek">
+                                                    <x-lucide-package-check style="font-size:9px;" class="me-1" /> Fisik Lengkap
+                                                </span>
+                                            </div>
+                                        @elseif($totalRecv > 0)
+                                            <div class="mt-1">
+                                                <span class="badge" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9.5px;padding:1px 5px;" title="Sebagian fisik barang telah diterima di proyek">
+                                                    <x-lucide-package-plus style="font-size:9px;" class="me-1" /> Fisik Sebagian
+                                                </span>
+                                            </div>
+                                        @elseif($hasConfirmedGr)
+                                            <div class="mt-1">
+                                                <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:9.5px;padding:1px 5px;">
+                                                    Ada GR
+                                                </span>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td style="text-align:center;">
                                         <div class="flex justify-center gap-1">

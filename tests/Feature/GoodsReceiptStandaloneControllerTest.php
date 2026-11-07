@@ -72,10 +72,10 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertSee('Gudang Tujuan');
         $response->assertSee('name="warehouse_id"', false);
         $response->assertDontSee('Pilih Purchase Order (Wajib)');
-        $response->assertDontSee('Hubungkan PO Lapangan');
-        $response->assertDontSee('Hubungkan Purchase Order (PO)');
-        $response->assertDontSee('name="purchase_order_id"', false);
-        $response->assertDontSee('name="material_request_id"', false);
+        $response->assertSee('Hubungkan PO Lapangan');
+        $response->assertSee('Hubungkan Purchase Order (PO)');
+        $response->assertSee('name="purchase_order_id"', false);
+        $response->assertSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
         $response->assertSee('Qty Nota / SJ');
         $response->assertSee('Selisih &amp; Status', false);
@@ -134,10 +134,10 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response = $this->actingAs($this->gudangUser)->get(route('goods-receipts.edit', $gr));
         $response->assertOk();
         $response->assertSee('Tambah Baris Barang');
-        $response->assertDontSee('Hubungkan PO Lapangan');
-        $response->assertDontSee('Hubungkan Purchase Order (PO)');
-        $response->assertDontSee('name="purchase_order_id"', false);
-        $response->assertDontSee('name="material_request_id"', false);
+        $response->assertSee('Hubungkan PO Lapangan');
+        $response->assertSee('Hubungkan Purchase Order (PO)');
+        $response->assertSee('name="purchase_order_id"', false);
+        $response->assertSee('name="material_request_id"', false);
         $response->assertDontSee('Qty Target (PO)');
         $response->assertSee('Qty Nota / SJ');
         $response->assertSee('Selisih &amp; Status', false);
@@ -487,7 +487,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $response->assertSee('name="material_request_id"', false);
     }
 
-    public function test_goods_receipt_create_and_edit_view_does_not_show_po_select_for_admin_pusat(): void
+    public function test_goods_receipt_create_and_edit_view_shows_po_select_for_admin_pusat(): void
     {
         $adminPusat = User::factory()->create(['email_verified_at' => now()]);
         $adminPusat->assignRole('Admin Pusat');
@@ -495,8 +495,8 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
 
         $responseCreate = $this->actingAs($adminPusat)->get(route('goods-receipts.create'));
         $responseCreate->assertOk();
-        $responseCreate->assertDontSee('Hubungkan PO Lapangan');
-        $responseCreate->assertDontSee('Hubungkan Purchase Order (PO)');
+        $responseCreate->assertSee('Hubungkan PO Lapangan');
+        $responseCreate->assertSee('Hubungkan Purchase Order (PO)');
 
         $gr = GoodsReceipt::create([
             'receipt_number' => 'GR-PUSAT-001',
@@ -509,8 +509,8 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
 
         $responseEdit = $this->actingAs($adminPusat)->get(route('goods-receipts.edit', $gr));
         $responseEdit->assertOk();
-        $responseEdit->assertDontSee('Hubungkan PO Lapangan');
-        $responseEdit->assertDontSee('Hubungkan Purchase Order (PO)');
+        $responseEdit->assertSee('Hubungkan PO Lapangan');
+        $responseEdit->assertSee('Hubungkan Purchase Order (PO)');
     }
 
     public function test_goods_receipt_index_view_does_not_render_po_column(): void

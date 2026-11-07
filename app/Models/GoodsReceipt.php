@@ -23,6 +23,7 @@ class GoodsReceipt extends Model
         'created_by',
         'status',
         'invoice_number',
+        'attachment_path',
         'receipt_date',
         'notes',
         'confirmed_by',
@@ -83,6 +84,11 @@ class GoodsReceipt extends Model
     public function isConfirmed(): bool
     {
         return $this->status === 'confirmed';
+    }
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment_path ? asset('storage/' . $this->attachment_path) : null;
     }
 
     public static function generateReceiptNumber(): string

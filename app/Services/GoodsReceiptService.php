@@ -104,6 +104,7 @@ class GoodsReceiptService
                 'created_by'          => $userId,
                 'status'              => 'draft',
                 'invoice_number'      => $validated['invoice_number'] ?? null,
+                'attachment_path'     => $validated['attachment_path'] ?? null,
                 'receipt_date'        => $validated['received_at'],
                 'notes'               => $validated['notes'] ?? null,
             ]);
@@ -239,7 +240,7 @@ class GoodsReceiptService
             }
 
             // Update header GR
-            $receipt->update([
+            $updateData = [
                 'purchase_order_id'   => $validated['purchase_order_id'] ?? null,
                 'material_request_id' => $mrId,
                 'supplier_id'         => $validated['supplier_id'],
@@ -249,7 +250,11 @@ class GoodsReceiptService
                 'invoice_number'      => $validated['invoice_number'] ?? null,
                 'receipt_date'        => $validated['received_at'],
                 'notes'               => $validated['notes'] ?? null,
-            ]);
+            ];
+            if (array_key_exists('attachment_path', $validated)) {
+                $updateData['attachment_path'] = $validated['attachment_path'];
+            }
+            $receipt->update($updateData);
 
             // Hapus semua item lama
             $receipt->items()->delete();
@@ -771,10 +776,17 @@ class GoodsReceiptService
             foreach ($affectedPoIds as $poId) {
                 $po = PurchaseOrder::find($poId);
                 if ($po) {
+                    $discrepancies = $receipt->items->where('purchase_order_item_id', '!=', null)
+                        ->filter(fn($i) => (float)$i->qty_damaged > 0 || (float)$i->qty_missing > 0);
+                    $hasDiscrepancy = $discrepancies->isNotEmpty();
+                    $noteMsg = $hasDiscrepancy
+                        ? "Penerimaan memiliki catatan selisih/rusak. Status PO: {$po->status_label}."
+                        : "Seluruh barang dalam sesi ini diterima baik. Status PO: {$po->status_label}.";
+
                     NotificationHelper::notifyPurchasingAdmins(
                         "Barang PO Diterima: #{$po->po_number}",
-                        "Barang untuk PO #{$po->po_number} telah diterima di {$warehouse->name}. Status PO: {$po->status_label}.",
-                        'success',
+                        "Barang untuk PO #{$po->po_number} telah diterima di {$warehouse->name}. {$noteMsg}",
+                        $hasDiscrepancy ? 'warning' : 'success',
                         route('purchase-orders.show', $po)
                     );
                 }

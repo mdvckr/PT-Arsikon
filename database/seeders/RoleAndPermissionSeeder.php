@@ -98,6 +98,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         // --- Admin Gudang Pusat: Khusus Operasional Logistik Pergudangan Sentral ---
         $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat']);
+        $adminLogistikPusatRole = Role::firstOrCreate(['name' => 'Admin Logistik Pusat']);
         $gudangPusatPermissions = [
             'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials', 'create materials', 'edit materials', 'delete materials',
@@ -112,9 +113,11 @@ class RoleAndPermissionSeeder extends Seeder
             'create transit losses',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
+        $adminLogistikPusatRole->syncPermissions($gudangPusatPermissions);
 
         // --- Admin Gudang Proyek (Gudang Proyek): Akses HANYA Seluruh Operasional Logistik Fisik ---
         $adminGudangProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek']);
+        $adminLogistikProyekRole = Role::firstOrCreate(['name' => 'Admin Logistik Proyek']);
         $gudangProyekPermissions = [
             // Surat Jalan & Distribusi Logistik
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
@@ -136,6 +139,7 @@ class RoleAndPermissionSeeder extends Seeder
             'create transit losses',
         ];
         $adminGudangProyekRole->syncPermissions($gudangProyekPermissions);
+        $adminLogistikProyekRole->syncPermissions($gudangProyekPermissions);
 
         // --- Peran Teknis Lapangan: Site Engineer, Site Manager, Project Manager ---
         // 1. Staf Teknis Lapangan (Site Engineer): Buat & Lihat PO Lapangan, Inventory, Log Harian, Fitur Teknis
@@ -183,8 +187,9 @@ class RoleAndPermissionSeeder extends Seeder
         ]);
 
         // --- Admin PO (Pusat): fokus pengadaan pusat, PO resmi & pembayaran vendor ---
-        $adminPORole = Role::firstOrCreate(['name' => 'Admin PO']);
-        $adminPORole->syncPermissions([
+        $adminPORole = Role::firstOrCreate(['name' => 'Admin Pengadaan']);
+        $adminPORoleLegacy = Role::firstOrCreate(['name' => 'Admin PO']);
+        $adminPOPermissions = [
             'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials',
             'view tools',
@@ -196,11 +201,15 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase orders', 'create purchase orders', 'edit purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
-        ]);
+        ];
+        $adminPORole->syncPermissions($adminPOPermissions);
+        $adminPORoleLegacy->syncPermissions($adminPOPermissions);
 
         // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & payment proyek ---
-        $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
-        $adminPOProyekRole->syncPermissions([
+        $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek']);
+        $adminPOProyekRoleLegacy = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
+        $adminPoNotaRoleLegacy = Role::firstOrCreate(['name' => 'admin-po-nota']);
+        $adminPOProyekPermissions = [
             'view material requests',
             'view purchase receipts',
             'create purchase receipts',
@@ -209,7 +218,10 @@ class RoleAndPermissionSeeder extends Seeder
             'view suppliers',
             'view payments',
             'create payments',
-        ]);
+        ];
+        $adminPOProyekRole->syncPermissions($adminPOProyekPermissions);
+        $adminPOProyekRoleLegacy->syncPermissions($adminPOProyekPermissions);
+        $adminPoNotaRoleLegacy->syncPermissions($adminPOProyekPermissions);
 
         // ==========================================================
         // 3. Create Default Central Warehouse & Sample Projects
@@ -323,6 +335,16 @@ class RoleAndPermissionSeeder extends Seeder
         $adminGudangPrjUser->syncRoles([$adminGudangProyekRole]);
         $adminGudangPrjUser->warehouses()->sync([$projectWarehouseA->id]);
 
+        $adminProyek1User = User::updateOrCreate(
+            ['email' => 'admin.proyek1@arsikon.co.id'],
+            [
+                'name'     => 'Admin Gudang Proyek 1 (Legacy)',
+                'password' => $defaultPassword,
+            ]
+        );
+        $adminProyek1User->syncRoles([$adminGudangProyekRole]);
+        $adminProyek1User->warehouses()->sync([$projectWarehouseA->id]);
+
         // 5. Admin Pengadaan Pusat
         $adminPOUser = User::updateOrCreate(
             ['email' => 'admin.po@arsikon.co.id'],
@@ -382,7 +404,6 @@ class RoleAndPermissionSeeder extends Seeder
         // 5. Pembersihan Akun Testing Lama & Pengalihan Relasi Data
         // ==========================================================
         $legacyAccountMap = [
-            'admin.proyek1@arsikon.co.id'     => $adminGudangPrjUser->id,
             'admin.gudang.1@arsikon.co.id'    => $adminGudangPrjUser->id,
             'admin.gudang.prj2@arsikon.co.id' => $adminGudangPrjUser->id,
             'user.proyek@arsikon.co.id'       => $siteEngineerUser->id,
