@@ -207,7 +207,7 @@
                     <label for="warehouse_id">
                         Nama Proyek / Gudang Pemohon <span class="text-danger">*</span>
                     </label>
-                    <select name="warehouse_id" id="warehouse_id" class="form-control" required onchange="syncWarehouseOptions()">
+                    <select name="warehouse_id" id="warehouse_id" class="form-control" required onchange="if(this.value) { window.location.href = '{{ route('material-requests.create') }}?warehouse_id=' + this.value; } else { syncWarehouseOptions(); }">
                         <option value="">Pilih Proyek Pemohon</option>
                         @foreach($warehouses as $wh)
                         <option value="{{ $wh->id }}" {{ old('warehouse_id', $warehouseId) == $wh->id ? 'selected' : '' }}>
@@ -220,48 +220,30 @@
                     @enderror
                 </div>
 
-                {{-- Sumber Material --}}
+                {{-- Kepada (Tujuan Permintaan: Khusus Pengadaan) --}}
                 <div class="mr-doc-field">
                     <label for="source_warehouse_id">
-                        Kepada <span class="text-muted" style="font-weight:400;">(Sumber Material)</span>
+                        Kepada
                     </label>
-                    <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" onchange="onSourceWarehouseChange(this.value, this.options[this.selectedIndex].text); syncWarehouseOptions();">
-                        <option value="" {{ (string)old('source_warehouse_id', $defaultSourceWarehouseId) === '' ? 'selected' : '' }}>— Pengadaan —</option>
-                        @php $isCentralGroupStarted = false; $isProjectGroupStarted = false; @endphp
-                        @foreach($sourceWarehouses as $swh)
-                            @if($swh->is_central && !$isCentralGroupStarted)
-                                <optgroup label="── Gudang Pusat ──">
-                                @php $isCentralGroupStarted = true; @endphp
-                            @elseif(!$swh->is_central && !$isProjectGroupStarted)
-                                @if($isCentralGroupStarted) </optgroup> @endif
-                                <optgroup label="── Gudang Proyek ──">
-                                @php $isProjectGroupStarted = true; @endphp
-                            @endif
-                            <option value="{{ $swh->id }}" {{ (string)old('source_warehouse_id', $defaultSourceWarehouseId) === (string)$swh->id ? 'selected' : '' }}>
-                                {{ $swh->name }}{{ $swh->is_central ? ' (Pusat)' : '' }}
-                            </option>
-                        @endforeach
-                        @if($isProjectGroupStarted) </optgroup> @elseif($isCentralGroupStarted) </optgroup> @endif
+                    <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" style="background-color:#f8fafc;cursor:not-allowed;" readonly>
+                        <option value="" selected>Pengadaan</option>
                     </select>
-                    <div id="warehouse-conflict-warning" style="display:none;font-size:11px;color:#dc2626;margin-top:3px;font-weight:600;">
-                        <x-lucide-triangle-alert /> Sumber material tidak boleh sama dengan proyek pemohon!
-                    </div>
                     @error('source_warehouse_id')
                     <div class="text-danger" style="font-size:11px;margin-top:2px;">{{ $message }}</div>
                     @enderror
                 </div>
 
 
-                {{-- Diajukan Sebagai --}}
+                {{-- Dipesan Oleh --}}
                 <div class="mr-doc-field">
                     <label for="requested_as">
-                        Diajukan Sebagai
+                        Dipesan Oleh
                     </label>
                     <select name="requested_as" id="requested_as" class="form-control">
                         <option value="Admin Proyek" {{ old('requested_as', 'Admin Proyek') === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
                         <option value="Site Manager" {{ old('requested_as') === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
                         <option value="Site Engineering" {{ old('requested_as') === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
-                        <option value="Karyawan" {{ old('requested_as') === 'Karyawan' ? 'selected' : '' }}>Karyawan</option>
+                        <option value="Project Manager" {{ old('requested_as') === 'Project Manager' ? 'selected' : '' }}>Project Manager</option>
                     </select>
                 </div>
             </div>
@@ -277,11 +259,7 @@
                     <div style="display:flex;align-items:center;gap:8px;">
                         <x-lucide-warehouse class="text-primary" />
                         <span id="source-wh-text">
-                            @if(empty($defaultSourceWarehouseId))
-                                Ditujukan ke: <strong>Pengadaan / Beli ke Vendor</strong>. Kolom stok menampilkan referensi stok <strong>{{ $centralWarehouse?->name ?? 'Gudang Pusat' }}</strong>.
-                            @else
-                                Stok dari <strong>{{ $sourceWarehouses->firstWhere('id', $defaultSourceWarehouseId)?->name ?? 'Gudang Pusat' }}</strong>. Permintaan dikirim ke Proyek pemohon.
-                            @endif
+                            Ditujukan ke: <strong>Pengadaan</strong>. Kolom stok menampilkan referensi stok <strong>gudang proyek Anda</strong>.
                         </span>
                     </div>
                     <div id="source-wh-loading" style="display:none;font-size:11.5px;color:#2563eb;font-weight:600;">
@@ -388,7 +366,7 @@
                     <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
                         <x-lucide-boxes />
                     </div>
-                    <span>3. Daftar Material Tersedia (Katalog Master)</span>
+                    <span>3. Daftar Material Tersedia (Gudang Terpilih)</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span id="totalItemBadge" class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;padding:5px 12px;border-radius:14px;border:1px solid #bfdbfe;">
@@ -420,7 +398,7 @@
                         <tr>
                             <th style="min-width:220px;">Nama Material &amp; SKU</th>
                             <th style="text-align:center;width:80px;">Ukuran</th>
-                            <th style="text-align:center;width:95px;" id="stock-col-header">Stok Sumber</th>
+                            <th style="text-align:center;width:95px;" id="stock-col-header">Stok Saat Ini</th>
                             <th style="text-align:center;width:100px;">Jml Diminta</th>
                             <th style="width:130px;">Spesifikasi</th>
                             <th style="text-align:center;width:115px;">Tgl Pakai</th>
@@ -588,6 +566,18 @@
                             </td>
                         </tr>
                         @endforeach
+                        @endif
+
+                        @if($materialCategories->isEmpty() && $uncategorizedMaterials->isEmpty())
+                        <tr>
+                            <td colspan="8" class="text-center text-muted" style="padding:36px 16px;">
+                                <div style="display:inline-flex;padding:12px;border-radius:50%;background:#f1f5f9;margin-bottom:8px;">
+                                    <x-lucide-package-open style="font-size:24px;color:#94a3b8;" />
+                                </div>
+                                <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada material terdaftar pada inventaris gudang yang ditugaskan.</div>
+                                <div style="font-size:11.5px;color:#94a3b8;margin-top:4px;">Gunakan formulir <strong>"2. Barang Khusus / Input Manual Proyek"</strong> di atas untuk mengajukan permintaan material ke Pengadaan.</div>
+                            </td>
+                        </tr>
                         @endif
                     </tbody>
                 </table>

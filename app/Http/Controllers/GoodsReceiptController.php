@@ -179,7 +179,7 @@ class GoodsReceiptController extends Controller
         $materialRequests = $mrQuery->latest()->get();
         $inTransitDistributions = collect();
 
-        $selectedMrId = $request->query('material_request_id');
+        $selectedMrId = $request->query('material_request_id') ?? $request->query('from_mr_id');
         $selectedPoId = $request->query('purchase_order_id');
 
         $materialCategories = \App\Models\Category::where('type', 'material')->orderBy('name')->get();

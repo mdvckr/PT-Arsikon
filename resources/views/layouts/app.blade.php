@@ -2108,7 +2108,7 @@
             @endif
 
             <!-- 4. GRUP LAPORAN & AUDIT -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']) && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
+            @if(auth()->user()->hasRole('Owner') && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
             @php
                 $isLaporanActive = request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools', 'audit-logs.*']);
             @endphp

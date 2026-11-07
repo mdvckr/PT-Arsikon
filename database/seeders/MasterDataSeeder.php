@@ -181,6 +181,8 @@ class MasterDataSeeder extends Seeder
             ],
         ];
 
+        $projectWhA = Warehouse::where('code', 'W-PRJ-001')->first();
+
         foreach ($materialsData as $mData) {
             $initialStock = $mData['stock'];
             unset($mData['stock']);
@@ -194,6 +196,27 @@ class MasterDataSeeder extends Seeder
                     ],
                     [
                         'quantity'      => $initialStock,
+                        'qty_allocated' => 0,
+                    ]
+                );
+            }
+
+            // Seed inventory untuk Gudang Proyek FK Teknik (W-PRJ-001) agar memiliki material proyek sendiri
+            if ($projectWhA && in_array($material->sku, ['MAT-SEM-001', 'MAT-PAS-001', 'MAT-SPI-001', 'MAT-BSI-010'])) {
+                $projectStock = match($material->sku) {
+                    'MAT-SEM-001' => 25,
+                    'MAT-PAS-001' => 10,
+                    'MAT-SPI-001' => 8,
+                    'MAT-BSI-010' => 50,
+                    default => 0,
+                };
+                Inventory::firstOrCreate(
+                    [
+                        'warehouse_id' => $projectWhA->id,
+                        'material_id'  => $material->id,
+                    ],
+                    [
+                        'quantity'      => $projectStock,
                         'qty_allocated' => 0,
                     ]
                 );

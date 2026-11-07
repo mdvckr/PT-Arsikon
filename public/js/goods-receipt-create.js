@@ -1503,6 +1503,9 @@ function addRow(type, opts) {
         + '<input type="hidden" name="items[' + idx + '][condition]" value="good">'
         + '<input type="hidden" name="items[' + idx + '][unit_price]" value="' + (opts.unit_price || 0) + '">'
         + '<input type="hidden" name="items[' + idx + '][stage_reference]" id="stage-input-' + idx + '" value="' + escHtml(stageRef) + '">'
+        + (opts.purchase_order_item_id ? '<input type="hidden" name="items[' + idx + '][purchase_order_item_id]" value="' + opts.purchase_order_item_id + '">' : '')
+        + (opts.material_request_item_id ? '<input type="hidden" name="items[' + idx + '][material_request_item_id]" value="' + opts.material_request_item_id + '">' : '')
+        + (opts.po_delivery_schedule_id ? '<input type="hidden" name="items[' + idx + '][po_delivery_schedule_id]" value="' + opts.po_delivery_schedule_id + '">' : '')
         + '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;">'
         + typeBadgeHtml + refText
         + '</div>'

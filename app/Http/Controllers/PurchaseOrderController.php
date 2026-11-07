@@ -551,6 +551,26 @@ class PurchaseOrderController extends Controller
             }
         }
 
+        // Self-healing: Sinkronisasi status PO ke 'received' jika seluruh item telah diterima
+        if (in_array($purchaseOrder->status, ['approved', 'sent', 'partial_received'])) {
+            $totalOutstanding = (float) $purchaseOrder->items->sum(fn($i) => $i->outstanding);
+            $totalReceived    = (float) $purchaseOrder->items->sum('received_qty');
+            if ($totalReceived > 0 && $totalOutstanding <= 0) {
+                $purchaseOrder->update(['status' => 'received']);
+                if ($purchaseOrder->material_request_id) {
+                    $mr = \App\Models\MaterialRequest::with(['items', 'purchaseOrders'])->find($purchaseOrder->material_request_id);
+                    if ($mr && !in_array($mr->status, ['fulfilled', 'cancelled', 'rejected'])) {
+                        $allPosReceived = $mr->purchaseOrders->every(fn($p) => in_array($p->status, ['received', 'closed']));
+                        if ($allPosReceived) {
+                            $mr->update(['status' => 'fulfilled']);
+                        }
+                    }
+                }
+            } elseif ($totalReceived > 0 && $purchaseOrder->status !== 'partial_received') {
+                $purchaseOrder->update(['status' => 'partial_received']);
+            }
+        }
+
         return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice'));
     }
 

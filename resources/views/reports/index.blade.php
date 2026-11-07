@@ -403,7 +403,7 @@
                                         </button>
                                     @endif
 
-                                    @if($latestPlan && $latestPlan->verification_status === 'Pending' && auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin']))
+                                    @if($latestPlan && $latestPlan->verification_status === 'Pending' && auth()->user()->hasAnyRole(['Owner', 'Admin']))
                                         <button type="button"
                                             class="btn btn-xs btn-outline-success"
                                             @click="openVerifyModal({{ $latestPlan->id }}, '{{ addslashes($latestPlan->corrective_action) }}')">

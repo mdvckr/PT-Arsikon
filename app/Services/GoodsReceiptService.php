@@ -89,7 +89,7 @@ class GoodsReceiptService
             $mrId = $validated['material_request_id'] ?? null;
             if (!$mrId && !empty($validated['purchase_order_id'])) {
                 $po = PurchaseOrder::with('items.materialRequestItem')->find($validated['purchase_order_id']);
-                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first();
+                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first() ?? $po?->material_request_id;
             }
 
             $receipt = GoodsReceipt::create([
@@ -235,7 +235,7 @@ class GoodsReceiptService
             $mrId = $validated['material_request_id'] ?? null;
             if (!$mrId && !empty($validated['purchase_order_id'])) {
                 $po = PurchaseOrder::with('items.materialRequestItem')->find($validated['purchase_order_id']);
-                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first();
+                $mrId = $po?->items->pluck('materialRequestItem.material_request_id')->filter()->first() ?? $po?->material_request_id;
             }
 
             // Update header GR
@@ -654,6 +654,25 @@ class GoodsReceiptService
 
                 // T11: Hubungkan ke MR item (qty_received MR item += qty_received GR item)
                 $mrItemId = $poItem?->material_request_item_id ?? $item->material_request_item_id;
+                if (!$mrItemId && ($receipt->material_request_id || $poItem?->purchaseOrder?->material_request_id)) {
+                    $targetMrId = $receipt->material_request_id ?: $poItem?->purchaseOrder?->material_request_id;
+                    $matchedMrItem = MaterialRequestItem::where('material_request_id', $targetMrId)
+                        ->where(function ($q) use ($item, $poItem) {
+                            $mId = $item->material_id ?? $poItem?->material_id;
+                            $tId = $item->tool_id ?? $poItem?->tool_id;
+                            if ($mId) {
+                                $q->where('material_id', $mId);
+                            } elseif ($tId) {
+                                $q->where('tool_id', $tId);
+                            }
+                        })
+                        ->first();
+                    if ($matchedMrItem) {
+                        $mrItemId = $matchedMrItem->id;
+                        $item->update(['material_request_item_id' => $mrItemId]);
+                    }
+                }
+
                 if ($mrItemId && (float) $item->qty_received > 0) {
                     $mrItem = MaterialRequestItem::where('id', $mrItemId)->lockForUpdate()->first();
                     if ($mrItem) {
@@ -668,10 +687,13 @@ class GoodsReceiptService
             if ($receipt->material_request_id) {
                 $mrToRecalculate->push($receipt->material_request_id);
             }
+            if ($receipt->purchaseOrder?->material_request_id) {
+                $mrToRecalculate->push($receipt->purchaseOrder->material_request_id);
+            }
 
             // Hitung ulang status MR dan kirim notifikasi
             foreach ($mrToRecalculate->unique() as $mrId) {
-                $mr = MaterialRequest::with('items')->find($mrId);
+                $mr = MaterialRequest::with(['items', 'purchaseOrders'])->find($mrId);
                 if ($mr) {
                     $allReceived = true;
                     $anyReceived = false;
@@ -684,6 +706,14 @@ class GoodsReceiptService
                             if ((float)$mri->qty_received > 0) {
                                 $anyReceived = true;
                             }
+                        }
+                    }
+
+                    // Jika seluruh PO yang terhubung ke MR ini sudah selesai/received, MR juga dianggap fulfilled
+                    if (!$allReceived && $mr->purchaseOrders->isNotEmpty()) {
+                        $allPosReceived = $mr->purchaseOrders->every(fn($p) => in_array($p->status, ['received', 'closed']));
+                        if ($allPosReceived) {
+                            $allReceived = true;
                         }
                     }
 
@@ -776,6 +806,18 @@ class GoodsReceiptService
 
         if (!in_array($po->status, ['received', 'cancelled', 'closed'])) {
             $po->update(['status' => $newStatus]);
+        }
+
+        // Jika status PO berubah menjadi 'received' dan terkait dengan PO Lapangan,
+        // periksa & sinkronkan juga status PO Lapangan tersebut ke 'fulfilled'
+        if ($newStatus === 'received' && $po->material_request_id) {
+            $mr = MaterialRequest::with(['items', 'purchaseOrders'])->find($po->material_request_id);
+            if ($mr && !in_array($mr->status, ['fulfilled', 'cancelled', 'rejected'])) {
+                $allPosReceived = $mr->purchaseOrders->every(fn($p) => in_array($p->status, ['received', 'closed']));
+                if ($allPosReceived) {
+                    $mr->update(['status' => 'fulfilled']);
+                }
+            }
         }
     }
 }

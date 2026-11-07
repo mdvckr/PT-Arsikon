@@ -216,33 +216,28 @@
                     </select>
                 </div>
 
-                {{-- Sumber Material --}}
+                {{-- Kepada (Tujuan Permintaan: Khusus Pengadaan) --}}
                 <div class="mr-doc-field">
                     <label for="source_warehouse_id">
-                        Kepada <span class="text-muted" style="font-weight:400;">(Sumber Material)</span>
+                        Kepada
                     </label>
-                    <select name="source_warehouse_id" id="source_warehouse_id" class="form-control">
-                        <option value="" {{ (string)old('source_warehouse_id', $sourceWarehouseId) === '' ? 'selected' : '' }}>&mdash; Pengadaan / Beli ke Vendor &mdash;</option>
-                        @foreach($sourceWarehouses as $swh)
-                            <option value="{{ $swh->id }}" {{ (string)old('source_warehouse_id', $sourceWarehouseId) === (string)$swh->id ? 'selected' : '' }}>
-                                {{ $swh->name }}{{ $swh->is_central ? ' (Pusat)' : '' }}
-                            </option>
-                        @endforeach
+                    <select name="source_warehouse_id" id="source_warehouse_id" class="form-control" style="background-color:#f8fafc;cursor:not-allowed;" readonly>
+                        <option value="" selected>Pengadaan</option>
                     </select>
                 </div>
 
 
-                {{-- Diajukan Sebagai --}}
+                {{-- Dipesan Oleh --}}
                 <div class="mr-doc-field">
                     <label for="requested_as">
-                        Diajukan Sebagai
+                        Dipesan Oleh
                     </label>
                     <select name="requested_as" id="requested_as" class="form-control">
                         @php $currRole = old('requested_as', $materialRequest->requested_as ?: 'Admin Proyek'); @endphp
                         <option value="Admin Proyek" {{ $currRole === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
                         <option value="Site Manager" {{ $currRole === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
                         <option value="Site Engineering" {{ $currRole === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
-                        <option value="Karyawan" {{ $currRole === 'Karyawan' ? 'selected' : '' }}>Karyawan</option>
+                        <option value="Project Manager" {{ $currRole === 'Project Manager' ? 'selected' : '' }}>Project Manager</option>
                     </select>
                 </div>
             </div>
@@ -352,7 +347,7 @@
                     <div style="width:28px;height:28px;border-radius:6px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:13px;">
                         <x-lucide-boxes />
                     </div>
-                    <span>3. Rincian Material Katalog Master</span>
+                    <span>3. Rincian Material Tersedia (Gudang Terpilih)</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span id="totalItemBadge" class="badge" style="background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;padding:5px 12px;border-radius:14px;border:1px solid #bfdbfe;">
@@ -374,7 +369,7 @@
                         <tr>
                             <th style="min-width:220px;">Material &amp; SKU</th>
                             <th style="text-align:center;width:80px;">Ukuran</th>
-                            <th style="text-align:center;width:90px;">Stok</th>
+                            <th style="text-align:center;width:90px;">Stok Saat Ini</th>
                             <th style="text-align:center;width:100px;">Jml Order</th>
                             <th style="width:130px;">Spesifikasi</th>
                             <th style="text-align:center;width:115px;">Tgl Pakai</th>
@@ -451,7 +446,17 @@
                             </td>
                         </tr>
                         @endforeach
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center text-muted" style="padding:36px 16px;">
+                                <div style="display:inline-flex;padding:12px;border-radius:50%;background:#f1f5f9;margin-bottom:8px;">
+                                    <x-lucide-package-open style="font-size:24px;color:#94a3b8;" />
+                                </div>
+                                <div style="font-size:13px;font-weight:600;color:#64748b;">Belum ada material terdaftar pada inventaris gudang yang ditugaskan.</div>
+                                <div style="font-size:11.5px;color:#94a3b8;margin-top:4px;">Gunakan formulir <strong>"2. Barang Khusus / Input Manual Proyek"</strong> di atas untuk memesan barang ke Pengadaan.</div>
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

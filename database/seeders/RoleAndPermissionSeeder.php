@@ -94,9 +94,11 @@ class RoleAndPermissionSeeder extends Seeder
             Permission::where('name', 'like', 'view %')->get()
         );
 
-        // --- Admin Pusat: Full Akses Seluruh Sistem, Manajemen Pengguna, Gudang, Jabatan, PO, Logistik ---
+        // --- Admin Pusat: Full Akses Seluruh Sistem (Kecuali Laporan & Audit Log), Manajemen Pengguna, Gudang, Jabatan, PO, Logistik ---
         $adminPusatRole = Role::firstOrCreate(['name' => 'Admin Pusat']);
-        $adminPusatRole->syncPermissions(Permission::all());
+        $adminPusatRole->syncPermissions(
+            Permission::whereNotIn('name', ['view reports', 'view audit logs'])->get()
+        );
 
         // --- Admin Gudang Pusat: Khusus Operasional Logistik Pergudangan Sentral ---
         $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat']);

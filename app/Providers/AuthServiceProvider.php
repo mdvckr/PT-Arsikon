@@ -42,6 +42,11 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::before(function (User $user, string $ability) {
+            // Admin Pusat tidak memiliki akses ke Laporan dan Audit Log
+            if ($user->hasRole('Admin Pusat') && in_array($ability, ['view reports', 'view audit logs'])) {
+                return false;
+            }
+
             // 1. Admin Pusat: Full Access ke seluruh modul, approval, dan aksi sistem
             if ($user->hasRole('Admin Pusat')) {
                 return true;

@@ -63,18 +63,44 @@ class MaterialRequestController extends Controller
     {
         $this->authorize('create material requests');
 
-        $warehouseId = session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
+        // Validasi warehouse user lebih awal agar dapat dipakai sebagai referensi stok
+        $warehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? auth()->user()->activeWarehouse()?->id;
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();
+
+        // Gudang tujuan (gudang pemohon = gudang proyek yang boleh diakses pengguna)
+        $accessibleWhIds = auth()->user()->accessibleWarehouseIds();
+        $warehouses = Warehouse::where('is_central', false)
+            ->whereIn('id', $accessibleWhIds)
+            ->orderBy('name')
+            ->get();
+
+        // Validasi dan finalisasi warehouseId user sebelum dipakai sebagai referensi stok
+        if ($warehouseId) {
+            $selectedWh = Warehouse::find($warehouseId);
+            if ($selectedWh && ($selectedWh->is_central || !in_array($selectedWh->id, $accessibleWhIds))) {
+                $warehouseId = $warehouses->first()?->id;
+            }
+        } else {
+            $warehouseId = $warehouses->first()?->id;
+        }
 
         // Default sumber: Pengadaan / Beli ke Vendor
         $defaultSourceWarehouseId = old('source_warehouse_id', '');
 
-        // Stok material dari gudang sumber (jika Pengadaan, gunakan Gudang Pusat sebagai referensi stok)
-        $sourceWarehouseId = $defaultSourceWarehouseId ?: $centralWarehouse?->id;
+        // Stok material ditampilkan berdasarkan gudang proyek user yang ditugaskan,
+        // bukan Gudang Pusat — agar tidak tercampur dengan data gudang lain.
+        // Fallback ke Gudang Pusat jika user belum punya gudang proyek yang tervalidasi.
+        $sourceWarehouseId = $defaultSourceWarehouseId ?: $warehouseId ?: $centralWarehouse?->id;
+
         $materialCategories = Category::where('type', 'material')
             ->with(['materials' => function ($q) use ($sourceWarehouseId) {
                 $q->where('is_active', true)
+                  ->when($sourceWarehouseId, function ($mq) use ($sourceWarehouseId) {
+                      $mq->whereHas('inventories', function ($iq) use ($sourceWarehouseId) {
+                          $iq->where('warehouse_id', $sourceWarehouseId);
+                      });
+                  })
                   ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
                       if ($sourceWarehouseId) {
                           $iq->where('warehouse_id', $sourceWarehouseId);
@@ -90,6 +116,11 @@ class MaterialRequestController extends Controller
         // Material tanpa kategori
         $uncategorizedMaterials = Material::where('is_active', true)
             ->whereNull('category_id')
+            ->when($sourceWarehouseId, function ($q) use ($sourceWarehouseId) {
+                $q->whereHas('inventories', function ($iq) use ($sourceWarehouseId) {
+                    $iq->where('warehouse_id', $sourceWarehouseId);
+                });
+            })
             ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
                 if ($sourceWarehouseId) {
                     $iq->where('warehouse_id', $sourceWarehouseId);
@@ -97,22 +128,6 @@ class MaterialRequestController extends Controller
             }])
             ->orderBy('name')
             ->get();
-
-        // Gudang tujuan (gudang pemohon = gudang proyek yang boleh diakses pengguna)
-        $accessibleWhIds = auth()->user()->accessibleWarehouseIds();
-        $warehouses = Warehouse::where('is_central', false)
-            ->whereIn('id', $accessibleWhIds)
-            ->orderBy('name')
-            ->get();
-
-        if ($warehouseId) {
-            $selectedWh = Warehouse::find($warehouseId);
-            if ($selectedWh && ($selectedWh->is_central || !in_array($selectedWh->id, $accessibleWhIds))) {
-                $warehouseId = $warehouses->first()?->id;
-            }
-        } else {
-            $warehouseId = $warehouses->first()?->id;
-        }
 
         // Semua gudang aktif sebagai pilihan sumber (Gudang Pusat tampil pertama)
         $sourceWarehouses = Warehouse::where('is_active', true)
@@ -175,13 +190,9 @@ class MaterialRequestController extends Controller
             'custom_items.*.date'        => 'nullable|date',
         ]);
 
-        // Validasi: gudang sumber tidak boleh sama dengan gudang tujuan (pemohon)
-        if (!empty($validated['source_warehouse_id']) && (int) $validated['warehouse_id'] === (int) $validated['source_warehouse_id']) {
-            return back()->withInput()->withErrors([
-                'source_warehouse_id' => 'Sumber material tidak boleh sama dengan gudang pemohon.',
-                'warehouse_id'        => 'Gudang pemohon tidak boleh sama dengan sumber material.',
-            ]);
-        }
+        // Seluruh PO Lapangan selalu ditujukan ke Pengadaan (source_warehouse_id = null)
+        $validated['source_warehouse_id'] = null;
+        $sourceWarehouse = null;
 
         // Validasi server: cek hak akses pemohon ke gudang tujuan
         $toWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
@@ -192,10 +203,6 @@ class MaterialRequestController extends Controller
         if ($toWarehouse->is_central) {
             return back()->withInput()->withErrors(['warehouse_id' => 'PO Lapangan hanya dapat ditujukan ke Gudang Proyek.']);
         }
-
-        $sourceWarehouse = !empty($validated['source_warehouse_id'])
-            ? Warehouse::findOrFail($validated['source_warehouse_id'])
-            : null;
 
         // Build items dari quantities[material_id] => qty (master) + custom_items manual
         $itemsData = [];
@@ -329,6 +336,36 @@ class MaterialRequestController extends Controller
             return view('material-requests.print', compact('materialRequest'));
         }
 
+        // Self-healing: Sinkronisasi otomatis status Selesai jika seluruh barang telah diterima
+        if (in_array($materialRequest->status, ['approved', 'partially_fulfilled'])) {
+            $allReceived = true;
+            $anyReceived = false;
+            foreach ($materialRequest->items as $mri) {
+                $targetQty = (float)$mri->qty_approved > 0 ? (float)$mri->qty_approved : (float)$mri->qty_requested;
+                if ((float)$mri->qty_received >= $targetQty && $targetQty > 0) {
+                    $anyReceived = true;
+                } else {
+                    $allReceived = false;
+                    if ((float)$mri->qty_received > 0) {
+                        $anyReceived = true;
+                    }
+                }
+            }
+
+            $relatedPos = $materialRequest->purchaseOrders;
+            if (!$allReceived && $relatedPos->isNotEmpty()) {
+                if ($relatedPos->every(fn($p) => in_array($p->status, ['received', 'closed']))) {
+                    $allReceived = true;
+                }
+            }
+
+            if ($allReceived && $materialRequest->items->isNotEmpty()) {
+                $materialRequest->update(['status' => 'fulfilled']);
+            } elseif ($anyReceived && $materialRequest->status !== 'partially_fulfilled') {
+                $materialRequest->update(['status' => 'partially_fulfilled']);
+            }
+        }
+
         return view('material-requests.show', compact('materialRequest', 'sourceInventories'));
     }
 
@@ -373,12 +410,27 @@ class MaterialRequestController extends Controller
 
         $centralWarehouse = Warehouse::where('is_central', true)->first();
         $sourceWarehouseId = old('source_warehouse_id', $materialRequest->from_warehouse_id ?? '');
-        $stockWarehouseId = $sourceWarehouseId ?: $centralWarehouse?->id;
         $warehouseId = old('warehouse_id', $materialRequest->to_warehouse_id);
 
+        // Stok material ditampilkan berdasarkan gudang proyek (to_warehouse_id dari PO ini),
+        // bukan Gudang Pusat — agar tidak tercampur dengan data gudang lain.
+        // Fallback ke Gudang Pusat jika gudang proyek tidak ditemukan.
+        $stockWarehouseId = $sourceWarehouseId ?: $warehouseId ?: $centralWarehouse?->id;
+        $existingMaterialIds = $materialRequest->items->pluck('material_id')->filter()->toArray();
+
         $materialCategories = Category::where('type', 'material')
-            ->with(['materials' => function ($q) use ($stockWarehouseId) {
+            ->with(['materials' => function ($q) use ($stockWarehouseId, $existingMaterialIds) {
                 $q->where('is_active', true)
+                  ->when($stockWarehouseId, function ($mq) use ($stockWarehouseId, $existingMaterialIds) {
+                      $mq->where(function ($sub) use ($stockWarehouseId, $existingMaterialIds) {
+                          $sub->whereHas('inventories', function ($iq) use ($stockWarehouseId) {
+                              $iq->where('warehouse_id', $stockWarehouseId);
+                          });
+                          if (!empty($existingMaterialIds)) {
+                              $sub->orWhereIn('id', $existingMaterialIds);
+                          }
+                      });
+                  })
                   ->with(['unit', 'inventories' => function ($iq) use ($stockWarehouseId) {
                       if ($stockWarehouseId) {
                           $iq->where('warehouse_id', $stockWarehouseId);
@@ -393,9 +445,19 @@ class MaterialRequestController extends Controller
 
         $uncategorizedMaterials = Material::where('is_active', true)
             ->whereNull('category_id')
-            ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
-                if ($sourceWarehouseId) {
-                    $iq->where('warehouse_id', $sourceWarehouseId);
+            ->when($stockWarehouseId, function ($q) use ($stockWarehouseId, $existingMaterialIds) {
+                $q->where(function ($sub) use ($stockWarehouseId, $existingMaterialIds) {
+                    $sub->whereHas('inventories', function ($iq) use ($stockWarehouseId) {
+                        $iq->where('warehouse_id', $stockWarehouseId);
+                    });
+                    if (!empty($existingMaterialIds)) {
+                        $sub->orWhereIn('id', $existingMaterialIds);
+                    }
+                });
+            })
+            ->with(['unit', 'inventories' => function ($iq) use ($stockWarehouseId) {
+                if ($stockWarehouseId) {
+                    $iq->where('warehouse_id', $stockWarehouseId);
                 }
             }])
             ->orderBy('name')
@@ -485,12 +547,9 @@ class MaterialRequestController extends Controller
             'custom_items.*.date'        => 'nullable|date',
         ]);
 
-        if (!empty($validated['source_warehouse_id']) && (int) $validated['warehouse_id'] === (int) $validated['source_warehouse_id']) {
-            return back()->withInput()->withErrors([
-                'source_warehouse_id' => 'Sumber material tidak boleh sama dengan gudang pemohon.',
-                'warehouse_id'        => 'Gudang pemohon tidak boleh sama dengan sumber material.',
-            ]);
-        }
+        // Seluruh PO Lapangan selalu ditujukan ke Pengadaan (source_warehouse_id = null)
+        $validated['source_warehouse_id'] = null;
+        $sourceWarehouse = null;
 
         $toWarehouse = Warehouse::findOrFail($validated['warehouse_id']);
         if (!$user->hasAccessToWarehouse($toWarehouse)) {
@@ -500,10 +559,6 @@ class MaterialRequestController extends Controller
         if ($toWarehouse->is_central) {
             return back()->withInput()->withErrors(['warehouse_id' => 'PO Lapangan hanya dapat ditujukan ke Gudang Proyek.']);
         }
-
-        $sourceWarehouse = !empty($validated['source_warehouse_id'])
-            ? Warehouse::findOrFail($validated['source_warehouse_id'])
-            : null;
 
         $itemsData = [];
         if (!empty($validated['quantities'])) {

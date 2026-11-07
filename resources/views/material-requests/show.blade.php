@@ -839,7 +839,7 @@
                     <div class="dossier-meta-list">
                         <div class="dossier-meta-row">
                             <span class="dossier-meta-label">
-                                <x-lucide-user class="text-slate-400" /> Pemohon
+                                <x-lucide-user class="text-slate-400" /> Dipesan Oleh
                             </span>
                             <span class="dossier-meta-value">
                                 {{ $materialRequest->requestedBy?->name ?? '-' }}
