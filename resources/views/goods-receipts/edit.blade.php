@@ -967,7 +967,6 @@
                                     'Project Manager',
                                     'Site Manager',
                                     'Site Engineer',
-                                    'Admin Proyek',
                                 ]) && !auth()->user()->hasAnyRole([
                                     'Admin Pusat',
                                     'Owner',
@@ -1010,7 +1009,7 @@
                             </div>
 
                             @if($canAccessPo)
-                            {{-- Field Hubungkan PO Lapangan (Hanya untuk PM, Site Manager, Site Engineer, Admin Proyek) --}}
+                            {{-- Field Hubungkan PO Lapangan (Hanya untuk PM, Site Manager, Site Engineer) --}}
                             <div class="mb-3">
                                 <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
                                     <span>Hubungkan PO Lapangan</span>

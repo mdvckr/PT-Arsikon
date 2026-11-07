@@ -1895,7 +1895,7 @@
                 $isRoleAdminPOProyek = auth()->user()->hasRole('Admin PO Proyek');
                 $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
                 $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
-                $isRoleTeknis = auth()->user()->hasAnyRole(['Admin Proyek', 'Site Manager', 'Site Engineer', 'Project Manager']);
+                $isRoleTeknis = auth()->user()->hasAnyRole(['Site Manager', 'Site Engineer', 'Project Manager']);
                 $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && auth()->user()->can('view material requests');
                 $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && request()->routeIs(['material-requests.*', 'daily-log.*']);
             @endphp
@@ -2040,7 +2040,7 @@
                     || ($canDailyLog && !$isLogistikPure && !$isRoleTeknis)
                 );
                 $isLogistikActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
-                    request()->routeIs(['distributions.*', 'goods-receipts.*', 'material-usages.*', 'inventory.*', 'materials.*', 'tools.*', 'tool-assignments.*']) || request()->routeIs('reports.mutation')
+                    request()->routeIs(['distributions.*', 'goods-receipts.*', 'material-usages.*', 'inventory.*', 'materials.*', 'tools.*', 'tool-assignments.*'])
                 );
             @endphp
             @if($canLogistik)
@@ -2107,32 +2107,7 @@
             </div>
             @endif
 
-            <!-- 4. GRUP LAPORAN & AUDIT -->
-            @if(auth()->user()->hasRole('Owner') && (auth()->user()->can('view reports') || auth()->user()->can('view audit logs')))
-            @php
-                $isLaporanActive = request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools', 'audit-logs.*']);
-            @endphp
-            <div class="nav-section" x-data="{ open: {{ $isLaporanActive ? 'true' : 'false' }} }">
-                <div class="nav-section-header" @click="open = !open">
-                    <span class="nav-section-label">LAPORAN & AUDIT</span>
-                    <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
-                </div>
-                <div x-show="open" class="nav-section-body">
-                    @can('view reports')
-                    <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs(['reports.index', 'reports.stock', 'reports.discrepancy', 'reports.tools']) ? 'active' : '' }}">
-                        <x-lucide-chart-column class="nav-icon" aria-hidden="true" /> Laporan
-                    </a>
-                    @endcan
-                    @can('view audit logs')
-                    <a href="{{ route('audit-logs.index') }}" class="nav-item {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
-                        <x-lucide-scroll-text class="nav-icon" aria-hidden="true" /> Audit Log
-                    </a>
-                    @endcan
-                </div>
-            </div>
-            @endif
-
-            <!-- 5. GRUP ADMIN SISTEM -->
+            <!-- 4. GRUP ADMIN SISTEM -->
             @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
             @php
                 $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*']);

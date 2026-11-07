@@ -1156,19 +1156,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Stock Opname Alert Banner --}}
-                @if($openOpname > 0)
-                <div style="margin-top:10px;">
-                    <div class="alert-feed-item warning">
-                        <x-lucide-clipboard-check />
-                        <div style="flex:1;">
-                            <strong>{{ $openOpname }} Stock Opname</strong> sedang berjalan.
-                        </div>
-                        <a href="{{ route('stock-opnames.index') }}" class="text-warning fw-700" style="text-decoration:none;">Periksa &rarr;</a>
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
     </div>

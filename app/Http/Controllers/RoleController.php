@@ -18,7 +18,6 @@ class RoleController extends Controller
         'Admin Pusat',
         'Admin Gudang Pusat',
         'Admin Gudang Proyek',
-        'Admin Proyek',
         'Site Engineer',
         'Site Manager',
         'Project Manager',
@@ -34,6 +33,8 @@ class RoleController extends Controller
     public const RESERVED_ROLE_NAMES = [
         'admin',
         'user',
+        'admin proyek',
+        'admin_proyek',
         'super admin',
         'superadmin',
         'administrator',
@@ -74,13 +75,6 @@ class RoleController extends Controller
             'badge_bg'    => '#ffedd5',
             'icon'        => 'hard-hat',
             'description' => 'Operasional logistik fisik gudang proyek: penerimaan barang, surat jalan, dan stok.',
-        ],
-        'Admin Proyek' => [
-            'category'    => 'Site Proyek - Teknis',
-            'badge_color' => '#0369a1',
-            'badge_bg'    => '#e0f2fe',
-            'icon'        => 'clipboard-list',
-            'description' => 'Administrasi teknis lapangan, pengajuan PO Lapangan, log harian, dan pantau stok proyek.',
         ],
         'Site Engineer' => [
             'category'    => 'Site Proyek - Teknis',

@@ -43,7 +43,7 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        $finalRequestedAs = trim($requestedAs ?? '') ?: 'Admin Proyek';
+        $finalRequestedAs = trim($requestedAs ?? '') ?: 'Site Engineer';
 
         return DB::transaction(function () use ($toWarehouse, $sourceWarehouse, $requestedBy, $itemsData, $submitImmediately, $notes, $neededAt, $finalRequestedAs) {
             $request = MaterialRequest::create([
@@ -230,7 +230,7 @@ class MaterialRequestService
             throw new Exception("Daftar material yang diminta tidak boleh kosong.");
         }
 
-        $finalRequestedAs = trim($requestedAs ?? '') ?: ($request->requested_as ?: 'Admin Proyek');
+        $finalRequestedAs = trim($requestedAs ?? '') ?: ($request->requested_as ?: 'Site Engineer');
 
         return DB::transaction(function () use ($request, $toWarehouse, $sourceWarehouse, $itemsData, $notes, $neededAt, $finalRequestedAs) {
             $request->update([
@@ -522,7 +522,7 @@ class MaterialRequestService
             return $query;
         }
 
-        // Gudang Proyek / Karyawan / Admin Proyek: hanya melihat data gudang proyek mereka
+        // Gudang Proyek / Karyawan / Tim Teknis Proyek (Site Engineer, Site Manager, PM): hanya melihat data gudang proyek mereka
         $userWarehouseIds = $user->warehouses->pluck('id')->toArray();
         if ($activeWarehouseId && in_array($activeWarehouseId, $userWarehouseIds)) {
             $query->where(function ($q) use ($activeWarehouseId) {

@@ -10,7 +10,6 @@ use App\Models\StockMutation;
 use App\Models\Tool;
 use App\Models\ToolAssignment;
 use App\Models\Distribution;
-use App\Models\StockOpname;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -89,11 +88,6 @@ class DashboardController extends Controller
             'maintenance' => $toolsMaintenance,
         ];
 
-        // Stock Opname status — filtered by active warehouse
-        $openOpname = StockOpname::where('status', 'open')
-            ->where('warehouse_id', $warehouseId)
-            ->count();
-
         // Inventory value by category — filtered by active warehouse
         $inventoryByCategory = Inventory::with(['material.category'])
             ->where('warehouse_id', $warehouseId)
@@ -131,7 +125,7 @@ class DashboardController extends Controller
             'totalMaterials', 'totalTools', 'pendingRequests', 'lowStockItems',
             'recentRequests', 'recentDistributions', 'mutations', 'toolStats',
             'toolsReady', 'toolsInUse', 'toolsMaintenance',
-            'openOpname', 'inventoryByCategory',
+            'inventoryByCategory',
             'incomingTodayCount', 'incomingLateCount'
         ));
     }

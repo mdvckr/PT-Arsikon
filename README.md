@@ -163,17 +163,22 @@ Aplikasi dibangun dengan standar kepatuhan **OWASP Top 10** dan **OWASP ASVS Lev
 
 ## 👥 Daftar Akun Bawaan (Role-Based Access Control)
 
-Setelah proses *seeding* dijalankan, sistem menyediakan akun default untuk setiap peran dengan kata sandi bawaan: **`password`** (atau nilai dari variabel `SEED_DEFAULT_PASSWORD`):
+Setelah proses *seeding* dijalankan, sistem menyediakan 9 akun default testing untuk setiap peran dengan kata sandi bawaan: **`password123`** (dapat dikonfigurasi melalui variabel `SEED_DEFAULT_PASSWORD` pada `.env`):
 
-| Peran (Role) | Alamat Email | Kata Sandi | Deskripsi & Batas Wewenang |
-| :--- | :--- | :--- | :--- |
-| **Owner** | `owner@arsikon.co.id` | `password` | **Monitoring Eksekutif:** Akses baca penuh ke laporan, metrik bisnis, mutasi kas, dan audit trail. Tidak dapat mengubah/membuat transaksi fisik secara langsung. |
-| **Admin Pusat** | `admin.pusat@arsikon.co.id` | `password` | **Super Administrator:** Mengelola seluruh data master, pengguna, gudang, proyek, persetujuan PO, dan pengaturan sistem global. |
-| **Admin Gudang Pusat** | `gudang.pusat@arsikon.co.id` | `password` | **Logistik Pusat:** Mengelola stok Gudang Pusat, penerimaan barang dari supplier, pengiriman Surat Jalan antar-gudang, dan stock opname pusat. |
-| **Admin PO (Pusat)** | `admin.po@arsikon.co.id` | `password` | **Pengadaan Pusat:** Membuat & mengelola Purchase Order (PO) resmi ke supplier, Procurement Request, dan verifikasi faktur pembayaran vendor. |
-| **Admin Gudang Proyek** | `admin.proyek1@arsikon.co.id` | `password` | **Logistik Lapangan:** Mengelola gudang proyek site, konfirmasi penerimaan surat jalan, pencatatan pemakaian material proyek, dan retur sisa material. |
-| **Admin PO Proyek** *(admin-po-nota)* | `po.proyek@arsikon.co.id` | `password` | **Nota Harian Proyek:** Akses penuh pencatatan nota pembelian harian di sekitar lokasi proyek, kuitansi belanja tunai, dan read-only PO Lapangan. |
-| **Karyawan** | `karyawan@arsikon.co.id` | `password` | **Pekerja Lapangan:** Mengajukan permintaan kebutuhan material lapangan (PO Lapangan), peminjaman alat kerja proyek, dan melihat stok tersedia. |
+| No. | Nama Pengguna | Alamat Email | Peran (Role) | Kata Sandi | Deskripsi & Batas Wewenang |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Owner Perusahaan** | `owner@arsikon.co.id` | `Owner` | `password123` | **Monitoring Eksekutif:** Akses baca penuh ke laporan, metrik bisnis, mutasi kas, dan audit trail. Tidak dapat mengubah/membuat transaksi fisik secara langsung. |
+| 2 | **Admin Pusat** | `admin.pusat@arsikon.co.id` | `Admin Pusat` | `password123` | **Super Administrator:** Mengelola seluruh data master, pengguna, gudang, proyek, persetujuan PO, dan pengaturan sistem global. |
+| 3 | **Admin Gudang Pusat** | `gudang.pusat@arsikon.co.id` | `Admin Gudang Pusat` | `password123` | **Logistik Pusat:** Mengelola stok Gudang Pusat, penerimaan barang dari supplier, pengiriman Surat Jalan antar-gudang, dan stock opname pusat. |
+| 4 | **Admin Gudang Proyek FK Teknik** | `admin.gudang.prj1@arsikon.co.id` | `Admin Gudang Proyek` | `password123` | **Logistik Lapangan:** Mengelola gudang proyek site, konfirmasi penerimaan surat jalan, pemakaian material, peminjaman alat, dan retur sisa material. |
+| 5 | **Admin Pengadaan Pusat** | `admin.po@arsikon.co.id` | `Admin PO` | `password123` | **Pengadaan Pusat:** Membuat & mengelola Purchase Order (PO) resmi ke supplier, Procurement Request, dan verifikasi faktur pembayaran vendor. |
+| 6 | **Admin Pembelian Proyek FK Teknik** | `po.proyek@arsikon.co.id` | `Admin PO Proyek` | `password123` | **Nota Harian Proyek:** Akses penuh pencatatan nota pembelian harian belanja di sekitar lokasi proyek, kuitansi belanja tunai, dan pembayaran proyek. |
+| 7 | **Site Engineer FK Teknik** | `engineer.prj1@arsikon.co.id` | `Site Engineer` | `password123` | **Staf Teknis Lapangan:** Perencanaan teknis, monitoring stok material/alat proyek, dan pembuatan pengajuan kebutuhan material lapangan. |
+| 8 | **Site Manager FK Teknik** | `manager.prj1@arsikon.co.id` | `Site Manager` | `password123` | **Manajemen Teknis Lapangan:** Persetujuan kebutuhan material lapangan, pengawasan penerimaan barang, evaluasi pemakaian, dan log teknis. |
+| 9 | **Project Manager FK Teknik** | `pm.prj1@arsikon.co.id` | `Project Manager` | `password123` | **Pimpinan Proyek Lapangan:** Otorisasi approval pengajuan lapangan, pengawasan menyeluruh aktivitas teknis dan logistik proyek. |
+
+> [!NOTE]
+> Role **Karyawan** tetap tersedia di sistem untuk kebutuhan operasional pekerja lapangan, meskipun akun testing bawaannya ditiadakan. Role generic **Admin Proyek** telah didekomisi dan akun testing legacy lama (`admin.proyek@arsikon.co.id`, `karyawan@arsikon.co.id`, `admin.proyek1@arsikon.co.id`, `admin.gudang.1@arsikon.co.id`, `admin.gudang.prj2@arsikon.co.id`, `user.proyek@arsikon.co.id`) telah dibersihkan dan dialihkan ke akun testing utama.
 
 ---
 

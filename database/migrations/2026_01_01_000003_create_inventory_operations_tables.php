@@ -68,7 +68,7 @@ return new class extends Migration
             $table->foreignId('to_warehouse_id')->constrained('warehouses');
             $table->date('needed_at')->nullable();
             $table->foreignId('requested_by_user_id')->constrained('users');
-            $table->string('requested_as', 50)->nullable()->default('Admin Proyek');
+            $table->string('requested_as', 50)->nullable()->default('Site Engineer');
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->enum('status', [

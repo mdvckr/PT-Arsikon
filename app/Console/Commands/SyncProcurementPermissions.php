@@ -162,7 +162,7 @@ class SyncProcurementPermissions extends Command
         $adminProyekRole->syncPermissions($proyekPermissions);
         $this->line('  - Role Admin Gudang Proyek: disinkronkan (' . count($proyekPermissions) . ' permissions).');
 
-        // F. Peran Teknis Lapangan: Admin Proyek, Site Engineer, Site Manager, Project Manager
+        // F. Peran Teknis Lapangan: Site Engineer, Site Manager, Project Manager
         $teknisStaffPermissions = [
             'view material requests', 'create material requests',
             'view inventory',
@@ -182,9 +182,6 @@ class SyncProcurementPermissions extends Command
             'projects.manage',
         ];
 
-        $adminProyekRoleModel = Role::firstOrCreate(['name' => 'Admin Proyek', 'guard_name' => 'web']);
-        $adminProyekRoleModel->syncPermissions($teknisStaffPermissions);
-
         $siteEngineerRole = Role::firstOrCreate(['name' => 'Site Engineer', 'guard_name' => 'web']);
         $siteEngineerRole->syncPermissions($teknisStaffPermissions);
 
@@ -193,18 +190,29 @@ class SyncProcurementPermissions extends Command
 
         $projectManagerRole = Role::firstOrCreate(['name' => 'Project Manager', 'guard_name' => 'web']);
         $projectManagerRole->syncPermissions($teknisManagerPermissions);
-        $this->line('  - Role Teknis Lapangan (Admin Proyek, Site Engineer, Site Manager, Project Manager): disinkronkan.');
+        $this->line('  - Role Teknis Lapangan (Site Engineer, Site Manager, Project Manager): disinkronkan.');
 
-        // G. Decommission Role Karyawan
+        // G. Decommission Role Admin Proyek & Karyawan
+        $adminProyekRole = Role::where('name', 'Admin Proyek')->first();
+        if ($adminProyekRole) {
+            foreach ($adminProyekRole->users as $user) {
+                $user->assignRole($siteEngineerRole);
+                $user->removeRole($adminProyekRole);
+            }
+            $adminProyekRole->permissions()->detach();
+            $adminProyekRole->delete();
+            $this->line('  - Role Admin Proyek: berhasil didekomisi dan user dialihkan ke Site Engineer.');
+        }
+
         $karyawanRole = Role::where('name', 'Karyawan')->first();
         if ($karyawanRole) {
             foreach ($karyawanRole->users as $user) {
-                $user->assignRole($adminProyekRoleModel);
+                $user->assignRole($siteEngineerRole);
                 $user->removeRole($karyawanRole);
             }
             $karyawanRole->permissions()->detach();
             $karyawanRole->delete();
-            $this->line('  - Role Karyawan: berhasil didekomisi dan user dialihkan ke Admin Proyek.');
+            $this->line('  - Role Karyawan: berhasil didekomisi dan user dialihkan ke Site Engineer.');
         }
 
         // Reset cache kembali

@@ -81,14 +81,6 @@ class TransitLossService
                 'recorded_by'            => $userId,
             ]);
 
-            AuditLogService::log(
-                'transit_loss_recorded',
-                $transitLoss,
-                null,
-                $transitLoss->toArray(),
-                $user
-            );
-
             NotificationHelper::notifyAdminPusat(
                 "Laporan Kehilangan Barang Masuk: #{$gr->receipt_number}",
                 "Laporan kehilangan barang sebanyak {$grItem->qty_missing} {$grItem->item_unit} diajukan oleh {$user->name} dan memerlukan persetujuan.",
@@ -158,14 +150,6 @@ class TransitLossService
                 }
             }
 
-            AuditLogService::log(
-                'transit_loss_approved',
-                $lockedLoss,
-                ['status' => $oldStatus],
-                ['status' => 'claim_filed', 'approved_by' => $approverId],
-                $approver
-            );
-
             // Cek ambang batas kehilangan per vendor
             if ($lockedLoss->purchase_order_id && $lockedLoss->purchaseOrder?->supplier_id) {
                 $this->checkVendorLossAlert($lockedLoss->purchaseOrder->supplier_id);
@@ -196,14 +180,6 @@ class TransitLossService
             }
 
             $locked->update($updateData);
-
-            AuditLogService::log(
-                'transit_loss_claim_status_updated',
-                $locked,
-                ['status' => $oldStatus],
-                ['status' => $status],
-                $user
-            );
 
             return $locked;
         });

@@ -187,7 +187,6 @@ class UserController extends Controller
             'Admin Pusat',
             'Admin Gudang Pusat',
             'Admin Gudang Proyek',
-            'Admin Proyek',
             'Site Engineer',
             'Site Manager',
             'Project Manager',

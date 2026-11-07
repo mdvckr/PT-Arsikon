@@ -260,24 +260,16 @@ class SecurityHardeningV2Test extends TestCase
     }
 
     /**
-     * Test 11: Layer 7.1 - Security events are bridged to audit_logs (Cara B Dual-Write)
+     * Test 11: Layer 7.1 - Security events are logged to security_logs
      */
-    public function test_layer_7_security_events_are_bridged_to_audit_logs(): void
+    public function test_layer_7_security_events_are_logged_to_security_logs(): void
     {
         // 1. Trigger lockout security log
         SecurityLogger::logLockout('locked.account@arsikon.com');
 
-        $auditLog = \App\Models\AuditLog::where('event', 'SECURITY_LOCKOUT')->first();
-        $this->assertNotNull($auditLog);
-        $this->assertEquals('Security', $auditLog->auditable_type);
-        $this->assertEquals('critical', $auditLog->new_values['severity'] ?? null);
-        $this->assertStringContainsString('Peringatan Keamanan', $auditLog->new_values['summary'] ?? '');
-
-        // 2. Memastikan halaman audit log merender event keamanan dengan benar
-        $response = $this->actingAs($this->adminUser)->get(route('audit-logs.index'));
-        $response->assertStatus(200);
-        $response->assertSee('SECURITY_LOCKOUT');
-        $response->assertSee('CRITICAL');
-        $response->assertSee('Peringatan Keamanan');
+        $secLog = \App\Models\SecurityLog::where('event', 'auth.lockout')->first();
+        $this->assertNotNull($secLog);
+        $this->assertEquals('critical', $secLog->severity);
+        $this->assertEquals('locked.account@arsikon.com', $secLog->details['attempted_email'] ?? null);
     }
 }

@@ -242,15 +242,6 @@ class CentralToolInProjectTest extends TestCase
         $this->assertEquals(3, $item->quantity);
         $this->assertEquals($this->projectWarehouse->name, $item->warehouse_name);
         $this->assertEquals($receiptDate, $item->received_date);
-
-        // Uji HTTP response halaman laporan
-        $response = $this->actingAs($this->adminPusat)
-            ->get(route('reports.tools'));
-
-        $response->assertOk();
-        $response->assertViewHas('centralToolsInProjects');
-        $response->assertSee($this->tool->name);
-        $response->assertSee('Milik Pusat');
     }
 
     /**

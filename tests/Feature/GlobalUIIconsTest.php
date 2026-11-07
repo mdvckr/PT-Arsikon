@@ -47,8 +47,6 @@ class GlobalUIIconsTest extends TestCase
             '/material-requests',
             '/material-usages',
             '/distributions',
-            '/stock-opnames',
-            '/reports',
             '/profile',
         ];
 

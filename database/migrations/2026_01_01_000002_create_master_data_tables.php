@@ -109,6 +109,8 @@ return new class extends Migration
         Schema::create('tools', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->constrained('categories');
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
+            $table->string('supplier_name')->nullable();
             $table->foreignId('current_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->foreignId('owner_warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
             $table->string('code')->unique();

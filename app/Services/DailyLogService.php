@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Models\Distribution;
 use App\Models\GoodsReceipt;
 use App\Models\Inventory;
-use App\Models\MaterialReturn;
 use App\Models\MaterialUsage;
 use App\Models\StockMutation;
-use App\Models\StockOpname;
 use App\Models\Tool;
 use App\Models\ToolAssignment;
 use App\Models\ToolInventory;
@@ -22,7 +20,7 @@ use Illuminate\Http\Request;
  * KONTRAK INTEGRASI (point 10):
  * - Semua fitur yang mengubah stok WAJIB lewat StockService (addStock/deductStock) atau ToolInventoryService (borrow/returnStock).
  *   StockService otomatis menulis StockMutation dengan reference_type & qty_balance_after.
- * - DailyLog mengagregasi dari model transaksi (Distribution, GoodsReceipt, MaterialUsage, MaterialReturn, StockOpname) + StockMutation.
+ * - DailyLog mengagregasi dari model transaksi (Distribution, GoodsReceipt, MaterialUsage) + StockMutation.
  *   Custom items (DistributionItem/MaterialUsageItem tanpa material_id) sengaja TIDAK menambah stok — skip agar tidak bingung.
  * - Gudang Pusat & Proyek terpisah: agregasi selalu filter by warehouse_id, tidak ada sum lintas gudang.
  * - Neraca menampilkan hanya material yang dipakai (qty_in>0 || qty_out>0) dan alat yang dipinjam (has_activity), grouped by kategori.
@@ -49,15 +47,6 @@ class DailyLogService
             ->where('warehouse_id', $selectedWarehouse->id)
             ->whereDate('receipt_date', $date)
             ->get();
-
-        $materialReturns = MaterialReturn::with(['fromWarehouse', 'items.material.unit'])
-            ->where('to_warehouse_id', $selectedWarehouse->id)
-            ->where('status', 'received')
-            ->whereDate('received_at', $date)
-            ->get();
-
-        // Stock Opname telah dinonaktifkan dari log harian
-        $opnameAdjustments = collect();
 
         // 2. Outgoing
         $usages = MaterialUsage::with(['issuedBy', 'items.material.unit'])
@@ -90,42 +79,33 @@ class DailyLogService
                   });
             })->latest('assigned_at')->get();
 
-        // 4. Rekonstruksi Neraca (include opname)
+        // 4. Rekonstruksi Neraca
         $usagesAfterDate = MaterialUsage::with('items')->where('warehouse_id', $selectedWarehouse->id)->whereDate('usage_date', '>', $date)->where('status', '!=', 'cancelled')->get();
         $distInAfterDate = Distribution::with('items')->where('to_warehouse_id', $selectedWarehouse->id)->where(function($q) use ($date) { $q->whereDate('received_at', '>', $date)->orWhere(fn($q2) => $q2->where('status', 'received')->whereDate('updated_at', '>', $date)); })->get();
         $grInAfterDate = GoodsReceipt::with('items')->where('warehouse_id', $selectedWarehouse->id)->whereDate('receipt_date', '>', $date)->get();
         $outgoingAfterDate = Distribution::with('items')->where('from_warehouse_id', $selectedWarehouse->id)->where(function($q) use ($date) { $q->whereDate('shipped_at', '>', $date)->orWhere(fn($q2) => $q2->where('status', 'received')->whereDate('updated_at', '>', $date)); })->get();
-        $returnsAfterDate = MaterialReturn::with('items')->where('to_warehouse_id', $selectedWarehouse->id)->where('status', 'received')->whereDate('received_at', '>', $date)->get();
-        $opnameAfterDate = collect();
 
         $inventories = Inventory::with('material.unit', 'material.category')->where('warehouse_id', $selectedWarehouse->id)->get();
 
         $sumQtyByMaterial = function ($transactions, string $valueKey) {
             return collect($transactions)->flatMap(fn($t) => $t->items ?? collect())->filter(fn($i) => isset($i->material_id) && $i->material_id !== null)->groupBy('material_id')->map(fn($group) => (float) $group->sum($valueKey));
         };
-        // Opname qty_difference positif = masuk, negatif = keluar — pisahkan
-        $sumOpnameIn = collect($opnameAdjustments)->flatMap(fn($o) => $o->items ?? collect())->filter(fn($i) => $i->qty_difference > 0)->groupBy('material_id')->map(fn($g) => (float) $g->sum('qty_difference'));
-        $sumOpnameOut = collect($opnameAdjustments)->flatMap(fn($o) => $o->items ?? collect())->filter(fn($i) => $i->qty_difference < 0)->groupBy('material_id')->map(fn($g) => (float) abs($g->sum('qty_difference')));
-        $sumOpnameInAfter = collect($opnameAfterDate)->flatMap(fn($o) => $o->items ?? collect())->filter(fn($i) => $i->qty_difference > 0)->groupBy('material_id')->map(fn($g) => (float) $g->sum('qty_difference'));
-        $sumOpnameOutAfter = collect($opnameAfterDate)->flatMap(fn($o) => $o->items ?? collect())->filter(fn($i) => $i->qty_difference < 0)->groupBy('material_id')->map(fn($g) => (float) abs($g->sum('qty_difference')));
 
         $qtyOutMat = $sumQtyByMaterial($usages, 'quantity');
         $qtyOutDistMat = $sumQtyByMaterial($outgoingDistributions, 'qty_shipped');
         $qtyInDistMat = $sumQtyByMaterial($incomingDistributions, 'qty_received');
         $qtyInGrMat = $sumQtyByMaterial($incomingGoodsReceipts, 'quantity_received');
-        $qtyInReturnMat = $sumQtyByMaterial($materialReturns, 'received_qty');
         $qtyOutAfterMat = $sumQtyByMaterial($usagesAfterDate, 'quantity');
         $qtyOutDistAfterMat = $sumQtyByMaterial($outgoingAfterDate, 'qty_shipped');
         $qtyInDistAfterMat = $sumQtyByMaterial($distInAfterDate, 'qty_received');
         $qtyInGrAfterMat = $sumQtyByMaterial($grInAfterDate, 'quantity_received');
-        $qtyInReturnAfterMat = $sumQtyByMaterial($returnsAfterDate, 'received_qty');
 
-        $stockBalance = $inventories->map(function ($inv) use ($qtyOutMat,$qtyOutDistMat,$qtyInDistMat,$qtyInGrMat,$qtyInReturnMat,$qtyOutAfterMat,$qtyOutDistAfterMat,$qtyInDistAfterMat,$qtyInGrAfterMat,$qtyInReturnAfterMat,$sumOpnameIn,$sumOpnameOut,$sumOpnameInAfter,$sumOpnameOutAfter) {
+        $stockBalance = $inventories->map(function ($inv) use ($qtyOutMat,$qtyOutDistMat,$qtyInDistMat,$qtyInGrMat,$qtyOutAfterMat,$qtyOutDistAfterMat,$qtyInDistAfterMat,$qtyInGrAfterMat) {
             $matId = $inv->material_id;
-            $qtyOut = ($qtyOutMat[$matId] ?? 0) + ($qtyOutDistMat[$matId] ?? 0) + ($sumOpnameOut[$matId] ?? 0);
-            $qtyIn  = ($qtyInDistMat[$matId] ?? 0) + ($qtyInGrMat[$matId] ?? 0) + ($qtyInReturnMat[$matId] ?? 0) + ($sumOpnameIn[$matId] ?? 0);
-            $qtyOutAfter = ($qtyOutAfterMat[$matId] ?? 0) + ($qtyOutDistAfterMat[$matId] ?? 0) + ($sumOpnameOutAfter[$matId] ?? 0);
-            $qtyInAfter  = ($qtyInDistAfterMat[$matId] ?? 0) + ($qtyInGrAfterMat[$matId] ?? 0) + ($qtyInReturnAfterMat[$matId] ?? 0) + ($sumOpnameInAfter[$matId] ?? 0);
+            $qtyOut = ($qtyOutMat[$matId] ?? 0) + ($qtyOutDistMat[$matId] ?? 0);
+            $qtyIn  = ($qtyInDistMat[$matId] ?? 0) + ($qtyInGrMat[$matId] ?? 0);
+            $qtyOutAfter = ($qtyOutAfterMat[$matId] ?? 0) + ($qtyOutDistAfterMat[$matId] ?? 0);
+            $qtyInAfter  = ($qtyInDistAfterMat[$matId] ?? 0) + ($qtyInGrAfterMat[$matId] ?? 0);
             $currentStock = (float) $inv->quantity;
             $closingStock = $currentStock + $qtyOutAfter - $qtyInAfter;
             $openingStock = $closingStock - $qtyIn + $qtyOut;
@@ -188,6 +168,6 @@ class DailyLogService
         $totalToolsInUse = $toolBalance->sum('stock_borrowed');
         $totalToolsDamaged = $toolBalance->sum('stock_maintenance');
 
-        return compact('incomingDistributions','incomingGoodsReceipts','materialReturns','opnameAdjustments','outgoingDistributions','usages','toolAssignments','stockBalance','stockBalanceGrouped','toolBalance','toolBalanceGrouped','totalItemsIn','totalItemsOut','totalToolsActive','totalRecipients','totalToolsReady','totalToolsInUse','totalToolsDamaged');
+        return compact('incomingDistributions','incomingGoodsReceipts','outgoingDistributions','usages','toolAssignments','stockBalance','stockBalanceGrouped','toolBalance','toolBalanceGrouped','totalItemsIn','totalItemsOut','totalToolsActive','totalRecipients','totalToolsReady','totalToolsInUse','totalToolsDamaged');
     }
 }

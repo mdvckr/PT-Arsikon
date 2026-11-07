@@ -132,41 +132,6 @@
                 <a href="{{ route('distributions.print', $distribution) }}" target="_blank" class="btn btn-sm btn-light border" style="font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;color:#475569;">
                     <x-lucide-printer /> Cetak / PDF
                 </a>
-                @php
-                    $statusText = match($distribution->status) {
-                        'draft' => 'Draft (Menunggu Pengiriman)',
-                        'in_transit' => 'Dalam Pengiriman (In Transit)',
-                        'completed' => 'Selesai (Sudah Diterima)',
-                        default => strtoupper($distribution->status)
-                    };
-                    $waText = "*LAPORAN SURAT JALAN PENGIRIMAN*\n"
-                            . "----------------------------------------\n"
-                            . "📋 *No. Surat Jalan*: {$distribution->distribution_number}\n"
-                            . "🏢 *Gudang Asal*: " . ($distribution->fromWarehouse?->name ?? '-') . "\n"
-                            . "🏗️ *Gudang Tujuan*: " . ($distribution->toWarehouse?->name ?? '-') . "\n"
-                            . "📅 *Tanggal Kirim*: " . ($distribution->delivery_date ? \Carbon\Carbon::parse($distribution->delivery_date)->format('d/m/Y') : '-') . "\n"
-                            . "🚚 *Kurir/Supir*: " . ($distribution->driver_name ?? '-') . "\n"
-                            . "🚗 *No. Polisi*: " . ($distribution->vehicle_number ?? '-') . "\n"
-                            . "📌 *Status*: {$statusText}\n"
-                            . "----------------------------------------\n"
-                            . "*RINCIAN ITEM (MATERIAL & ALAT)*:\n";
-                    foreach($distribution->items as $idx => $it) {
-                        $name = $it->name();
-                        $qty = number_format((float)$it->qty_shipped, 0, ',', '.') . ' ' . $it->unitAbbr();
-                        $waText .= ($idx+1) . ". *{$name}* — {$qty}\n";
-                    }
-                    if($distribution->notes) {
-                        $waText .= "----------------------------------------\n"
-                                . "💬 *Catatan*: " . $distribution->notes . "\n";
-                    }
-                    $waText .= "----------------------------------------\n"
-                            . "🌐 *Link Surat Jalan*: " . route('distributions.show', $distribution) . "\n"
-                            . "_PT ARSIKON CIPTA KARYA - WMS_";
-                    $waUrl = "https://wa.me/?text=" . urlencode($waText);
-                @endphp
-                <a href="{{ $waUrl }}" target="_blank" class="btn btn-sm" style="background:#25d366;border-color:#25d366;color:#fff;font-size:11.5px;padding:5px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
-                    <x-lucide-phone /> WhatsApp
-                </a>
             @endif
         </div>
     </div>

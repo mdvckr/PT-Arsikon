@@ -240,9 +240,8 @@
                         Dipesan Oleh
                     </label>
                     <select name="requested_as" id="requested_as" class="form-control">
-                        <option value="Admin Proyek" {{ old('requested_as', 'Admin Proyek') === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
+                        <option value="Site Engineer" {{ old('requested_as', 'Site Engineer') === 'Site Engineer' ? 'selected' : '' }}>Site Engineer</option>
                         <option value="Site Manager" {{ old('requested_as') === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
-                        <option value="Site Engineering" {{ old('requested_as') === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
                         <option value="Project Manager" {{ old('requested_as') === 'Project Manager' ? 'selected' : '' }}>Project Manager</option>
                     </select>
                 </div>

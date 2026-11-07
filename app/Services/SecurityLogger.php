@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\AuditLog;
 use App\Models\SecurityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -54,9 +53,6 @@ class SecurityLogger
                 'method'     => $req ? substr((string) $req->method(), 0, 10) : null,
                 'details'    => $sanitizedDetails,
             ]);
-
-            // Cara B: Gaungkan insiden keamanan ke audit_logs (Dual-Write / Audit Bridge)
-            static::bridgeToAuditLog($securityLog, $req);
 
             return $securityLog;
         } catch (\Throwable $e) {
@@ -199,53 +195,5 @@ class SecurityLogger
         }
 
         return $sanitized;
-    }
-
-    /**
-     * Menggaungkan / mem-bridge log keamanan ke tabel audit_logs utama (Cara B).
-     * Seluruh event keamanan direfleksikan ke audit_logs agar langsung terbaca di Audit Trail sistem.
-     */
-    protected static function bridgeToAuditLog(SecurityLog $secLog, ?Request $req): void
-    {
-        try {
-            $auditEvent = match ($secLog->event) {
-                'auth.login_success' => 'LOGIN',
-                'auth.logout'        => 'LOGOUT',
-                'auth.login_failed'  => 'AUTH_FAILED',
-                'auth.lockout'       => 'SECURITY_LOCKOUT',
-                'access.forbidden'   => 'ACCESS_FORBIDDEN',
-                'admin.role_change'  => 'ROLE_CHANGE',
-                default              => strtoupper('SECURITY_' . str_replace(['.', '-'], '_', $secLog->event)),
-            };
-
-            $summary = match ($secLog->event) {
-                'auth.login_success' => 'Pengguna berhasil masuk ke sistem.',
-                'auth.logout'        => 'Pengguna keluar dari sistem.',
-                'auth.login_failed'  => 'Percobaan login gagal untuk akun: ' . ($secLog->details['attempted_email'] ?? 'Unknown'),
-                'auth.lockout'       => 'Peringatan Keamanan: Percobaan login gagal berulang kali. Akun/IP dikunci selama 15 menit.',
-                'access.forbidden'   => 'Percobaan akses tidak diizinkan (403 Forbidden) pada rute: ' . ($secLog->details['route'] ?? $secLog->url ?? '-'),
-                'admin.role_change'  => 'Perubahan hak akses / peran untuk pengguna ID #' . ($secLog->details['target_user_id'] ?? '-'),
-                default              => 'Aktivitas keamanan terdeteksi [' . strtoupper($secLog->severity) . ']: ' . $secLog->event,
-            };
-
-            AuditLog::create([
-                'user_id'        => $secLog->user_id,
-                'event'          => $auditEvent,
-                'auditable_type' => 'Security',
-                'auditable_id'   => $secLog->id,
-                'old_values'     => null,
-                'new_values'     => [
-                    'severity'   => $secLog->severity,
-                    'event'      => $secLog->event,
-                    'summary'    => $summary,
-                    'details'    => $secLog->details,
-                ],
-                'ip_address'     => $secLog->ip_address,
-                'user_agent'     => $secLog->user_agent,
-            ]);
-        } catch (\Throwable $e) {
-            // Kegagalan bridging log tidak boleh menggagalkan proses utama
-            Log::warning('Failed bridging security log to audit log: ' . $e->getMessage());
-        }
     }
 }

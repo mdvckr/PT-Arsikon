@@ -10,7 +10,7 @@ return new class extends Migration
      * Run the migrations.
      * Procurement & Purchasing Suite:
      * Procurement Requests (PR), Purchase Orders (PO), Goods Receipts (GR),
-     * Field Purchase Receipts, Payments & Termins, and Material Returns.
+     * Field Purchase Receipts, Payments & Termins.
      */
     public function up(): void
     {
@@ -251,38 +251,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 11. Material Returns
-        Schema::create('returns', function (Blueprint $table) {
-            $table->id();
-            $table->string('return_number')->unique();
-            $table->foreignId('from_warehouse_id')->constrained('warehouses')->onDelete('cascade');
-            $table->foreignId('to_warehouse_id')->constrained('warehouses')->onDelete('cascade');
-            $table->foreignId('requested_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('status', ['draft', 'pending', 'approved', 'received', 'rejected'])->default('draft');
-            $table->enum('reason', ['excess', 'damaged', 'wrong_item', 'project_complete', 'other'])->default('excess');
-            $table->date('return_date');
-            $table->text('notes')->nullable();
-            $table->text('rejection_reason')->nullable();
-            $table->timestamp('approved_at')->nullable();
-            $table->timestamp('received_at')->nullable();
-            $table->foreignId('received_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamps();
-        });
-
-        // 12. Return Items
-        Schema::create('return_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('return_id')->constrained('returns')->onDelete('cascade');
-            $table->foreignId('material_id')->constrained('materials')->onDelete('cascade');
-            $table->decimal('quantity', 12, 2);
-            $table->decimal('received_qty', 12, 2)->default(0.00);
-            $table->enum('condition', ['good', 'damaged', 'unusable'])->default('good');
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
-
-        // 13. Project Balance Logs (Mutasi / Top-up Saldo Kas Operasional Proyek)
+        // 11. Project Balance Logs (Mutasi / Top-up Saldo Kas Operasional Proyek)
         Schema::create('project_balance_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
@@ -297,7 +266,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 14. Project Balance Requests (Pengajuan Kas Lapangan)
+        // 12. Project Balance Requests (Pengajuan Kas Lapangan)
         Schema::create('project_balance_requests', function (Blueprint $table) {
             $table->id();
             $table->string('request_number', 50)->nullable()->unique();
@@ -318,7 +287,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 15. Project Balance Request Items
+        // 13. Project Balance Request Items
         Schema::create('project_balance_request_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_balance_request_id')->constrained('project_balance_requests')->cascadeOnDelete();
@@ -340,8 +309,6 @@ return new class extends Migration
         Schema::dropIfExists('project_balance_request_items');
         Schema::dropIfExists('project_balance_requests');
         Schema::dropIfExists('project_balance_logs');
-        Schema::dropIfExists('return_items');
-        Schema::dropIfExists('returns');
         Schema::dropIfExists('payment_items');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('purchase_receipt_items');

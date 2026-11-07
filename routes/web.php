@@ -10,11 +10,7 @@ use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Controllers\MaterialRequestController;
 use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\ToolAssignmentController;
-use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ReportAndAuditController;
-use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\WarehouseController;
@@ -25,7 +21,6 @@ use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseReceiptController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -128,43 +123,11 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/tool-assignments/{toolLoan}/return', [ToolAssignmentController::class, 'return'])->name('tool-assignments.return');
     Route::post('/tool-assignments/{toolLoan}/cancel', [ToolAssignmentController::class, 'cancel'])->name('tool-assignments.cancel');
 
-    // Stock Opname
-    Route::resource('stock-opnames', StockOpnameController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('/stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve'])->name('stock-opnames.approve');
-    Route::post('/stock-opnames/{stockOpname}/reject', [StockOpnameController::class, 'reject'])->name('stock-opnames.reject');
-
     // Inventory
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::get('/inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
     Route::get('/inventory/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
     Route::delete('/inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
-
-    // Reports & Audit Terpadu
-    Route::get('/reports', [ReportAndAuditController::class, 'index'])->name('reports.index');
-    Route::get('/reports/stock', [ReportAndAuditController::class, 'materialStock'])->name('reports.stock');
-    Route::get('/reports/mutation', [ReportAndAuditController::class, 'stockMutation'])->name('reports.mutation');
-    Route::get('/reports/discrepancy', [ReportAndAuditController::class, 'opnameDiscrepancy'])->name('reports.discrepancy');
-    Route::get('/reports/tools', [ReportAndAuditController::class, 'toolStatus'])->name('reports.tools');
-    Route::get('/reports/procurement-audit', [ReportAndAuditController::class, 'procurementAudit'])->name('reports.procurement-audit');
-    Route::post('/reports/findings/{finding}/action-plan', [ReportAndAuditController::class, 'submitActionPlan'])->name('reports.submit-action');
-    Route::patch('/reports/findings/{finding}/status', [ReportAndAuditController::class, 'updateFindingStatus'])->name('reports.findings.update-status');
-    Route::post('/reports/action-plans/{actionPlan}/verify', [ReportAndAuditController::class, 'verifyActionPlan'])->name('reports.verify-action');
-
-    // Alias routes per spesifikasi /laporan-audit
-    Route::prefix('laporan-audit')->group(function () {
-        Route::get('/', [ReportAndAuditController::class, 'index']);
-        Route::get('/stok-material', [ReportAndAuditController::class, 'materialStock'])->name('reports.material-stock');
-        Route::get('/mutasi-stok', [ReportAndAuditController::class, 'stockMutation'])->name('reports.stock-mutation');
-        Route::get('/diskrepansi-opname', [ReportAndAuditController::class, 'opnameDiscrepancy'])->name('reports.opname-discrepancy');
-        Route::get('/status-alat', [ReportAndAuditController::class, 'equipmentStatus'])->name('reports.equipment-status');
-        Route::get('/audit-pengadaan-po', [ReportAndAuditController::class, 'procurementAudit'])->name('reports.procurement-audit-alias');
-        Route::post('/temuan/{finding}/tindak-lanjut', [ReportAndAuditController::class, 'submitActionPlan']);
-        Route::patch('/findings/{finding}/status', [ReportAndAuditController::class, 'updateFindingStatus'])->name('findings.update-status');
-        Route::post('/tindak-lanjut/{actionPlan}/verifikasi', [ReportAndAuditController::class, 'verifyActionPlan']);
-    });
-
-    // Audit Logs
-    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
     // Procurement Requests
     Route::resource('procurement', ProcurementController::class)->only(['index','create','store','show']);
@@ -205,12 +168,6 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/payments/balance-requests/{balanceRequest}/reject', [PaymentController::class, 'rejectBalanceRequest'])->name('payments.rejectBalanceRequest');
     Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
     Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
-
-    // Returns
-    Route::resource('returns', ReturnController::class)->only(['index','create','store','show']);
-    Route::post('/returns/{return}/approve', [ReturnController::class, 'approve'])->name('returns.approve');
-    Route::post('/returns/{return}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
-    Route::post('/returns/{return}/reject',  [ReturnController::class, 'reject'])->name('returns.reject');
 
     // Admin: Users, Roles, Warehouses, Projects
     Route::resource('users', UserController::class);

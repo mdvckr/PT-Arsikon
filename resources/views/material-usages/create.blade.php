@@ -997,35 +997,6 @@
                 });
             }
 
-            // Opsi untuk jadikan input manual custom
-            if (q) {
-                const safeQ = escapeHtml(query.trim());
-                currentSuggestions.push({
-                    type: 'custom',
-                    name: query.trim()
-                });
-
-                html += `<div class="material-sugg-item suggestion-custom-opt" data-index="${itemIdx}" 
-                              onclick="selectAsCustomMaterial('${rowId}', '${query.trim().replace(/'/g, "\\'")}')" 
-                              style="padding:9px 12px;background:#fffbeb;border-top:1.5px dashed #fde68a;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:#92400e;transition:background .15s;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <x-lucide-square-pen class="text-warning" style="font-size:12.5px;" />
-                        <span style="font-size:12px;">Gunakan "<strong>${safeQ}</strong>" sebagai Material Custom</span>
-                    </div>
-                    <span class="badge" style="background:#fef3c7;color:#92400e;font-size:10px;padding:2px 6px;">Non-Master</span>
-                </div>`;
-            } else if (matched.length === 0) {
-                html = `<div style="padding:14px;text-align:center;color:#94a3b8;font-size:12px;">
-                    <x-lucide-keyboard style="font-size:20px;color:#cbd5e1;display:block;margin-bottom:6px;" />
-                    Ketik nama material untuk mencari di inventori
-                </div>`;
-            }
-
-            box.innerHTML = html;
-            positionSuggestionsBox(input);
-            box.style.display = 'block';
-        }
-
         function hideMaterialSuggestions() {
             const box = document.getElementById('material-suggestions-box');
             if (box) box.style.display = 'none';

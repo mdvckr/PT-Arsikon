@@ -343,7 +343,7 @@ class DistributionController extends Controller
     {
         $this->authorize('view distributions');
         $distribution->load([
-            'fromWarehouse', 'toWarehouse', 'materialRequest', 'creator',
+            'fromWarehouse', 'toWarehouse', 'materialRequest.purchaseOrders', 'creator',
             'shippedBy', 'receivedBy',
             'items.material.unit', 'items.tool', 'items.toolAssignment'
         ]);

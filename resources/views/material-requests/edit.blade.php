@@ -233,10 +233,9 @@
                         Dipesan Oleh
                     </label>
                     <select name="requested_as" id="requested_as" class="form-control">
-                        @php $currRole = old('requested_as', $materialRequest->requested_as ?: 'Admin Proyek'); @endphp
-                        <option value="Admin Proyek" {{ $currRole === 'Admin Proyek' ? 'selected' : '' }}>Admin Proyek</option>
+                        @php $currRole = old('requested_as', $materialRequest->requested_as ?: 'Site Engineer'); @endphp
+                        <option value="Site Engineer" {{ $currRole === 'Site Engineer' ? 'selected' : '' }}>Site Engineer</option>
                         <option value="Site Manager" {{ $currRole === 'Site Manager' ? 'selected' : '' }}>Site Manager</option>
-                        <option value="Site Engineering" {{ $currRole === 'Site Engineering' ? 'selected' : '' }}>Site Engineering</option>
                         <option value="Project Manager" {{ $currRole === 'Project Manager' ? 'selected' : '' }}>Project Manager</option>
                     </select>
                 </div>

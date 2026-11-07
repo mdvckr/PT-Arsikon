@@ -6,7 +6,9 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -26,8 +28,8 @@ class RoleAndPermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Bersihkan role non-kanonikal lama (Admin, User) jika masih tersisa
-        Role::whereIn('name', ['Admin', 'User'])->each(function ($legacyRole) {
+        // Bersihkan role non-kanonikal lama jika masih tersisa
+        Role::whereIn('name', ['Admin', 'User', 'Admin Proyek', 'Admin Logistik Proyek', 'Admin Pengadaan', 'Admin Pengadaan Proyek'])->each(function ($legacyRole) {
             $legacyRole->users()->detach();
             $legacyRole->permissions()->detach();
             $legacyRole->delete();
@@ -60,8 +62,6 @@ class RoleAndPermissionSeeder extends Seeder
             // Tool Assignments
             'view tool assignments', 'create tool assignments', 'return tool assignments',
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
-            // Stock Opname
-            'view stock opname', 'create stock opname', 'approve stock opname',
             // Inventory
             'view inventory', 'delete inventory',
             // Procurement
@@ -72,12 +72,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             // Payments
             'view payments', 'create payments', 'verify payments',
-            // Returns
-            'view returns', 'create returns', 'approve returns', 'receive returns',
             // Transit Losses
             'create transit losses', 'approve transit losses',
-            // Reports & Audit
-            'view reports', 'view audit logs',
         ];
 
         foreach ($permissions as $permission) {
@@ -94,10 +90,10 @@ class RoleAndPermissionSeeder extends Seeder
             Permission::where('name', 'like', 'view %')->get()
         );
 
-        // --- Admin Pusat: Full Akses Seluruh Sistem (Kecuali Laporan & Audit Log), Manajemen Pengguna, Gudang, Jabatan, PO, Logistik ---
+        // --- Admin Pusat: Full Akses Seluruh Sistem, Manajemen Pengguna, Gudang, Jabatan, PO, Logistik ---
         $adminPusatRole = Role::firstOrCreate(['name' => 'Admin Pusat']);
         $adminPusatRole->syncPermissions(
-            Permission::whereNotIn('name', ['view reports', 'view audit logs'])->get()
+            Permission::all()
         );
 
         // --- Admin Gudang Pusat: Khusus Operasional Logistik Pergudangan Sentral ---
@@ -114,7 +110,6 @@ class RoleAndPermissionSeeder extends Seeder
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
             'view inventory',
             'create transit losses',
-            'view reports',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
 
@@ -132,7 +127,6 @@ class RoleAndPermissionSeeder extends Seeder
             'approve tool assignments', 'cancel tool assignments', 'inspect return tool assignments',
             // Inventori & Riwayat Transaksi Logistik
             'view inventory',
-            'view reports',
             // Master Data Barang (Kelola & Tambah Material/Alat)
             'view materials', 'create materials', 'edit materials',
             'view tools', 'create tools', 'edit tools',
@@ -143,12 +137,11 @@ class RoleAndPermissionSeeder extends Seeder
         ];
         $adminGudangProyekRole->syncPermissions($gudangProyekPermissions);
 
-        // --- Peran Teknis Lapangan: Admin Proyek, Site Engineer, Site Manager, Project Manager ---
-        // 1. Staf Teknis Lapangan (Admin Proyek & Site Engineer): Buat & Lihat PO Lapangan, Inventory, Log Harian, Fitur Teknis
+        // --- Peran Teknis Lapangan: Site Engineer, Site Manager, Project Manager ---
+        // 1. Staf Teknis Lapangan (Site Engineer): Buat & Lihat PO Lapangan, Inventory, Log Harian, Fitur Teknis
         $teknisStaffPermissions = [
             'view material requests', 'create material requests',
             'view inventory',
-            'view reports',
             'view materials',
             'view tools',
             'view categories',
@@ -160,15 +153,11 @@ class RoleAndPermissionSeeder extends Seeder
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
             'view material requests', 'create material requests', 'approve material requests',
             'view inventory',
-            'view reports',
             'view materials',
             'view tools',
             'view categories',
             'projects.manage',
         ];
-
-        $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Proyek']);
-        $adminProyekRole->syncPermissions($teknisStaffPermissions);
 
         $siteEngineerRole = Role::firstOrCreate(['name' => 'Site Engineer']);
         $siteEngineerRole->syncPermissions($teknisStaffPermissions);
@@ -201,15 +190,12 @@ class RoleAndPermissionSeeder extends Seeder
             'view tools',
             'view inventory',
             'view tool assignments',
-            'view stock opname',
             'view material requests', 'approve material requests',
             'view material usages',
             'view procurement', 'create procurement',
             'view purchase orders', 'create purchase orders', 'edit purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
-            'view reports',
-            'view audit logs',
         ]);
 
         // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & payment proyek ---
@@ -281,129 +267,178 @@ class RoleAndPermissionSeeder extends Seeder
         );
 
         // ==========================================================
-        // 4. Create Default System Users
+        // 4. Buat / Perbarui 9 Akun Testing Resmi PT Arsikon
         // ==========================================================
+        $defaultPassword = Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123'));
 
-        // 1. Owner (Super Admin / Monitoring)
-        $ownerUser = User::firstOrCreate(
+        // 1. Owner Perusahaan
+        $ownerUser = User::updateOrCreate(
             ['email' => 'owner@arsikon.co.id'],
             [
-                'name'     => 'Bapak Owner',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
+                'name'     => 'Owner Perusahaan',
+                'password' => $defaultPassword,
             ]
         );
         $ownerUser->syncRoles([$ownerRole]);
-        $ownerUser->warehouses()->syncWithoutDetaching([
+        $ownerUser->warehouses()->sync([
             $centralWarehouse->id,
             $projectWarehouseA->id,
             $projectWarehouseB->id,
         ]);
 
-        // 2. Admin Pusat (Full Akses & Kelola Akun/Gudang/Jabatan)
-        $adminPusatUser = User::firstOrCreate(
+        // 2. Admin Pusat
+        $adminPusatUser = User::updateOrCreate(
             ['email' => 'admin.pusat@arsikon.co.id'],
             [
                 'name'     => 'Admin Pusat',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
+                'password' => $defaultPassword,
             ]
         );
-        $adminPusatUser->update(['name' => 'Admin Pusat']);
         $adminPusatUser->syncRoles([$adminPusatRole]);
-        $adminPusatUser->warehouses()->syncWithoutDetaching([
+        $adminPusatUser->warehouses()->sync([
             $centralWarehouse->id,
             $projectWarehouseA->id,
             $projectWarehouseB->id,
         ]);
 
-        // 3. Admin Gudang Pusat (Hanya Akses Logistik)
-        $adminGudangPusatUser = User::firstOrCreate(
+        // 3. Admin Gudang Pusat
+        $adminGudangPusatUser = User::updateOrCreate(
             ['email' => 'gudang.pusat@arsikon.co.id'],
             [
                 'name'     => 'Admin Gudang Pusat',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
+                'password' => $defaultPassword,
             ]
         );
-        $adminGudangPusatUser->update(['name' => 'Admin Gudang Pusat']);
         $adminGudangPusatUser->syncRoles([$adminGudangPusatRole]);
-        $adminGudangPusatUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
+        $adminGudangPusatUser->warehouses()->sync([$centralWarehouse->id]);
 
-        // 4. Admin Gudang Proyek (Proyek A)
-        $adminProyek1 = User::firstOrCreate(
-            ['email' => 'admin.proyek1@arsikon.co.id'],
+        // 4. Admin Gudang Proyek FK Teknik
+        $adminGudangPrjUser = User::updateOrCreate(
+            ['email' => 'admin.gudang.prj1@arsikon.co.id'],
             [
-                'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
+                'name'     => 'Admin Gudang Proyek FK Teknik',
+                'password' => $defaultPassword,
             ]
         );
-        $adminProyek1->update(['password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password'))]);
-        $adminProyek1->syncRoles([$adminGudangProyekRole]);
-        $adminProyek1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
+        $adminGudangPrjUser->syncRoles([$adminGudangProyekRole]);
+        $adminGudangPrjUser->warehouses()->sync([$projectWarehouseA->id]);
 
-        $adminGudang1 = User::firstOrCreate(
-            ['email' => 'admin.gudang.1@arsikon.co.id'],
-            [
-                'name'     => 'Admin Gudang Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
-            ]
-        );
-        $adminGudang1->update(['password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password'))]);
-        $adminGudang1->syncRoles([$adminGudangProyekRole]);
-        $adminGudang1->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 4b. user.proyek@arsikon.co.id (Akun aktif di screenshot user dengan role Admin Gudang Proyek)
-        $userProyekLokal = User::firstOrCreate(
-            ['email' => 'user.proyek@arsikon.co.id'],
-            [
-                'name'     => 'User Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password')),
-            ]
-        );
-        $userProyekLokal->update(['password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password'))]);
-        $userProyekLokal->syncRoles([$adminGudangProyekRole]);
-        $userProyekLokal->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 5. User Proyek / Admin Proyek (Proyek A)
-        $userProyek = User::firstOrCreate(
-            ['email' => 'admin.proyek@arsikon.co.id'],
-            [
-                'name'     => 'User Proyek FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $userProyek->syncRoles([$adminProyekRole]);
-        $userProyek->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 6. Admin PO (Pengadaan)
-        $adminPOUser = User::firstOrCreate(
+        // 5. Admin Pengadaan Pusat
+        $adminPOUser = User::updateOrCreate(
             ['email' => 'admin.po@arsikon.co.id'],
             [
-                'name'     => 'Admin Pengadaan (PO)',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
+                'name'     => 'Admin Pengadaan Pusat',
+                'password' => $defaultPassword,
             ]
         );
         $adminPOUser->syncRoles([$adminPORole]);
-        $adminPOUser->warehouses()->syncWithoutDetaching([$centralWarehouse->id]);
+        $adminPOUser->warehouses()->sync([$centralWarehouse->id]);
 
-        // 7. Karyawan Pekerja Lapangan Proyek A
-        $karyawanUser = User::firstOrCreate(
-            ['email' => 'karyawan@arsikon.co.id'],
-            [
-                'name'     => 'Pekerja Lapangan FAKULTAS Teknik UGM',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
-            ]
-        );
-        $karyawanUser->syncRoles([$karyawanRole]);
-        $karyawanUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
-
-        // 8. Admin PO Proyek (Khusus Nota Harian di Proyek FK Teknik)
-        $adminPOProyekUser = User::firstOrCreate(
+        // 6. Admin Pembelian Proyek FK Teknik
+        $adminPOProyekUser = User::updateOrCreate(
             ['email' => 'po.proyek@arsikon.co.id'],
             [
-                'name'     => 'Admin PO Proyek (Nota Harian)',
-                'password' => Hash::make(env('SEED_DEFAULT_PASSWORD', 'password123')),
+                'name'     => 'Admin Pembelian Proyek FK Teknik',
+                'password' => $defaultPassword,
             ]
         );
         $adminPOProyekUser->syncRoles([$adminPOProyekRole]);
-        $adminPOProyekUser->warehouses()->syncWithoutDetaching([$projectWarehouseA->id]);
+        $adminPOProyekUser->warehouses()->sync([$projectWarehouseA->id]);
+
+        // 7. Site Engineer FK Teknik
+        $siteEngineerUser = User::updateOrCreate(
+            ['email' => 'engineer.prj1@arsikon.co.id'],
+            [
+                'name'     => 'Site Engineer FK Teknik',
+                'password' => $defaultPassword,
+            ]
+        );
+        $siteEngineerUser->syncRoles([$siteEngineerRole]);
+        $siteEngineerUser->warehouses()->sync([$projectWarehouseA->id]);
+
+        // 8. Site Manager FK Teknik
+        $siteManagerUser = User::updateOrCreate(
+            ['email' => 'manager.prj1@arsikon.co.id'],
+            [
+                'name'     => 'Site Manager FK Teknik',
+                'password' => $defaultPassword,
+            ]
+        );
+        $siteManagerUser->syncRoles([$siteManagerRole]);
+        $siteManagerUser->warehouses()->sync([$projectWarehouseA->id]);
+
+        // 9. Project Manager FK Teknik
+        $projectManagerUser = User::updateOrCreate(
+            ['email' => 'pm.prj1@arsikon.co.id'],
+            [
+                'name'     => 'Project Manager FK Teknik',
+                'password' => $defaultPassword,
+            ]
+        );
+        $projectManagerUser->syncRoles([$projectManagerRole]);
+        $projectManagerUser->warehouses()->sync([$projectWarehouseA->id]);
+
+        // ==========================================================
+        // 5. Pembersihan Akun Testing Lama & Pengalihan Relasi Data
+        // ==========================================================
+        $legacyAccountMap = [
+            'admin.proyek1@arsikon.co.id'     => $adminGudangPrjUser->id,
+            'admin.gudang.1@arsikon.co.id'    => $adminGudangPrjUser->id,
+            'admin.gudang.prj2@arsikon.co.id' => $adminGudangPrjUser->id,
+            'user.proyek@arsikon.co.id'       => $siteEngineerUser->id,
+            'karyawan@arsikon.co.id'          => $siteEngineerUser->id,
+            'admin.proyek@arsikon.co.id'      => $siteEngineerUser->id,
+        ];
+
+        $fkColumns = [
+            'distributions'             => ['created_by_user_id', 'received_by_user_id', 'shipped_by_user_id'],
+            'goods_receipts'            => ['confirmed_by', 'created_by', 'received_by_user_id'],
+            'maintenances'              => ['reported_by_user_id'],
+            'material_requests'         => ['approved_by_user_id', 'requested_by_user_id'],
+            'material_usages'           => ['cancelled_by_user_id', 'issued_by_user_id'],
+            'payments'                  => ['created_by', 'verified_by'],
+            'print_templates'           => ['created_by'],
+            'procurement_requests'      => ['approved_by', 'requested_by'],
+            'project_balance_logs'      => ['user_id'],
+            'project_balance_requests'  => ['approved_by', 'requested_by'],
+            'purchase_orders'           => ['approved_by', 'created_by'],
+            'purchase_receipts'         => ['created_by'],
+            'security_logs'             => ['user_id'],
+            'stock_mutations'           => ['created_by_user_id'],
+            'tool_assignments'          => ['approved_by_user_id', 'assigned_by_user_id', 'assigned_to_user_id', 'borrower_user_id', 'cancelled_by_user_id'],
+            'tool_inspections'          => ['inspected_by_user_id'],
+            'tool_loans'                => ['approved_by_user_id', 'assigned_by_user_id', 'borrower_user_id', 'cancelled_by_user_id'],
+            'transit_losses'            => ['approved_by', 'recorded_by'],
+        ];
+
+        foreach ($legacyAccountMap as $legacyEmail => $replacementUserId) {
+            $legacyUser = User::where('email', $legacyEmail)->first();
+            if ($legacyUser) {
+                // Alihkan relasi data transaksi ke akun testing yang baru agar tidak melanggar foreign key
+                foreach ($fkColumns as $table => $columns) {
+                    try {
+                        if (Schema::hasTable($table)) {
+                            foreach ($columns as $column) {
+                                if (Schema::hasColumn($table, $column)) {
+                                    DB::table($table)
+                                        ->where($column, $legacyUser->id)
+                                        ->update([$column => $replacementUserId]);
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Abaikan jika query per tabel mengalami pengecualian
+                    }
+                }
+
+                $legacyUser->roles()->detach();
+                $legacyUser->warehouses()->detach();
+                try {
+                    $legacyUser->delete();
+                } catch (\Throwable $e) {
+                    // Abaikan jika masih tertahan constraint khusus
+                }
+            }
+        }
     }
 }
