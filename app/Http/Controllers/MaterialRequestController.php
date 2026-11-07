@@ -21,7 +21,7 @@ class MaterialRequestController extends Controller
         $query = MaterialRequest::with(['requestedBy', 'fromWarehouse', 'toWarehouse.project', 'approvedBy', 'items.category', 'purchaseOrders']);
 
         $authUser = auth()->user();
-        if (!$authUser->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$authUser->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO', 'Admin Pengadaan'])) {
             $userWhIds = $authUser->accessibleWarehouseIds();
             $query->where(function ($q) use ($userWhIds, $authUser) {
                 $q->whereIn('from_warehouse_id', $userWhIds)

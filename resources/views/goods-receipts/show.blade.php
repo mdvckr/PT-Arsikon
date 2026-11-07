@@ -128,6 +128,7 @@
                 @endcan
             @endif
 
+            @if((auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) || auth()->user()->can('view daily logs')) && !auth()->user()->hasAnyRole(['Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek']))
             <a href="{{ route('daily-log.index', [
                     'warehouse_id' => $goodsReceipt->warehouse_id,
                     'date' => $goodsReceipt->receipt_date?->format('Y-m-d') ?? date('Y-m-d'),
@@ -137,6 +138,7 @@
                 title="Buka Daily Log">
                 <x-lucide-calendar-check class="me-1" /> Daily Log
             </a>
+            @endif
         </div>
     </div>
 

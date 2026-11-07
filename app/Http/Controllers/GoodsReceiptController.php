@@ -179,6 +179,94 @@ class GoodsReceiptController extends Controller
         $materialRequests = $mrQuery->latest()->get();
         $inTransitDistributions = collect();
 
+        // Bangun daftar kiriman vendor (1-Click Vendor Delivery) untuk memudahkan penerimaan barang
+        $incomingVendorDeliveries = collect();
+
+        foreach ($purchaseOrders as $po) {
+            $mr = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
+            $wh = $po->deliveryWarehouse ?? $mr?->toWarehouse;
+            $projectName = $wh?->project?->name ?? $wh?->name ?? 'Gudang';
+
+            // Item yang masih outstanding (sisa > 0)
+            $unreceivedItems = $po->items->filter(function ($item) {
+                return max(0, (float) $item->quantity - (float) $item->received_qty - (float) $item->lost_qty - (float) $item->short_closed_qty) > 0;
+            });
+
+            if ($unreceivedItems->isEmpty()) {
+                continue; // Sudah selesai diterima penuh, otomatis hilang dari daftar penerimaan!
+            }
+
+            $itemsSummary = $unreceivedItems->map(function ($it) {
+                $rem = max(0, (float) $it->quantity - (float) $it->received_qty - (float) $it->lost_qty - (float) $it->short_closed_qty);
+                return $it->displayName() . ' (Sisa ' . format_quantity($rem) . ' ' . $it->displayUnit() . ')';
+            })->take(3)->implode(', ');
+
+            if ($unreceivedItems->count() > 3) {
+                $itemsSummary .= ' +' . ($unreceivedItems->count() - 3) . ' item lainnya';
+            }
+
+            $supplierName = $po->supplier?->name ?? $po->supplier_name ?? 'Vendor';
+            $mrText = $mr ? "PO Lapangan #{$mr->request_number}" : "PO #{$po->po_number}";
+
+            $incomingVendorDeliveries->push([
+                'id'                 => 'po_' . $po->id,
+                'po_id'              => $po->id,
+                'po_number'          => $po->po_number,
+                'mr_id'              => $mr?->id,
+                'mr_number'          => $mr?->request_number,
+                'supplier_id'        => $po->supplier_id,
+                'supplier_name'      => $supplierName,
+                'warehouse_id'       => $wh?->id,
+                'warehouse_name'     => $wh?->name,
+                'project_name'       => $projectName,
+                'is_central'         => (bool) ($wh?->is_central ?? false),
+                'items_count'        => $unreceivedItems->count(),
+                'items_summary'      => $itemsSummary,
+                'label'              => "🚚 {$supplierName} — {$mrText} • {$projectName} [{$itemsSummary}]",
+            ]);
+        }
+
+        // Tambahkan juga PO Lapangan aktif yang belum memiliki PO Vendor
+        foreach ($materialRequests as $mr) {
+            $hasLinkedPoInList = $incomingVendorDeliveries->where('mr_id', $mr->id)->isNotEmpty();
+            if (!$hasLinkedPoInList) {
+                $wh = $mr->toWarehouse;
+                $projectName = $wh?->project?->name ?? $wh?->name ?? '-';
+
+                $unreceivedItems = $mr->items->filter(function ($item) {
+                    $approved = (float) ($item->qty_approved > 0 ? $item->qty_approved : $item->qty_requested);
+                    return ($approved - (float)$item->qty_received) > 0;
+                });
+
+                if ($unreceivedItems->isEmpty()) {
+                    continue; // Selesai diterima penuh, otomatis hilang dari daftar!
+                }
+
+                $itemsSummary = $unreceivedItems->map(function ($it) {
+                    $approved = (float) ($it->qty_approved > 0 ? $it->qty_approved : $it->qty_requested);
+                    $rem = max(0, $approved - (float)$it->qty_received);
+                    return ($it->material?->name ?? $it->tool?->name ?? $it->custom_item_name ?? 'Item') . ' (Sisa ' . format_quantity($rem) . ')';
+                })->take(3)->implode(', ');
+
+                $incomingVendorDeliveries->push([
+                    'id'                 => 'mr_' . $mr->id,
+                    'po_id'              => null,
+                    'po_number'          => null,
+                    'mr_id'              => $mr->id,
+                    'mr_number'          => $mr->request_number,
+                    'supplier_id'        => null,
+                    'supplier_name'      => 'Pengadaan Langsung Lapangan',
+                    'warehouse_id'       => $wh?->id,
+                    'warehouse_name'     => $wh?->name,
+                    'project_name'       => $projectName,
+                    'is_central'         => (bool) ($wh?->is_central ?? false),
+                    'items_count'        => $unreceivedItems->count(),
+                    'items_summary'      => $itemsSummary,
+                    'label'              => "📋 Pengadaan Lapangan — PO Lapangan #{$mr->request_number} • {$projectName} [{$itemsSummary}]",
+                ]);
+            }
+        }
+
         $selectedMrId = $request->query('material_request_id') ?? $request->query('from_mr_id');
         $selectedPoId = $request->query('purchase_order_id');
 
@@ -224,7 +312,7 @@ class GoodsReceiptController extends Controller
             'suppliers', 'warehouses', 'materials', 'materialsJson', 'tools', 'toolsJson',
             'purchaseOrders', 'materialRequests', 'inTransitDistributions', 'selectedMrId', 'selectedPoId',
             'materialCategories', 'toolCategories', 'units', 'unitsJson', 'existingMaterialGroups', 'existingToolGroups',
-            'allMaterialGroups', 'allToolGroups'
+            'allMaterialGroups', 'allToolGroups', 'incomingVendorDeliveries'
         ));
     }
 
@@ -726,6 +814,22 @@ class GoodsReceiptController extends Controller
             }
         }
 
+        // Auto-fill purchase_order_id jika material_request_id ada tetapi purchase_order_id belum terisi
+        if (!$request->filled('purchase_order_id') && $request->filled('material_request_id')) {
+            $linkedMr = \App\Models\MaterialRequest::with('purchaseOrders')->find($request->material_request_id);
+            if ($linkedMr && $linkedMr->purchaseOrders->isNotEmpty()) {
+                $request->merge(['purchase_order_id' => $linkedMr->purchaseOrders->first()->id]);
+            }
+        }
+
+        // Auto-fill purchase_order_id jika material_request_id ada tetapi purchase_order_id belum terisi
+        if (!$request->filled('purchase_order_id') && $request->filled('material_request_id')) {
+            $linkedMr = \App\Models\MaterialRequest::with('purchaseOrders')->find($request->material_request_id);
+            if ($linkedMr && $linkedMr->purchaseOrders->isNotEmpty()) {
+                $request->merge(['purchase_order_id' => $linkedMr->purchaseOrders->first()->id]);
+            }
+        }
+
         // Tentukan apakah supplier dari list atau ketik bebas
         $supplierIdRaw = $request->input('supplier_id');
         $cleanedSupplierName = preg_replace('/\s+/', ' ', trim($request->input('supplier_name', '')));
@@ -978,6 +1082,62 @@ class GoodsReceiptController extends Controller
 
         $materialRequests = $mrQuery->latest()->get();
 
+        // Bangun daftar kiriman vendor (1-Click Vendor Delivery) untuk edit
+        $incomingVendorDeliveries = collect();
+
+        foreach ($purchaseOrders as $po) {
+            $mr = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
+            $wh = $po->deliveryWarehouse ?? $mr?->toWarehouse;
+            $projectName = $wh?->project?->name ?? $wh?->name ?? 'Gudang';
+
+            $itemsSummary = $po->items->map(fn($it) => $it->displayName())->take(3)->implode(', ');
+            $supplierName = $po->supplier?->name ?? $po->supplier_name ?? 'Vendor';
+            $mrText = $mr ? "PO Lapangan #{$mr->request_number}" : "PO #{$po->po_number}";
+
+            $incomingVendorDeliveries->push([
+                'id'                 => 'po_' . $po->id,
+                'po_id'              => $po->id,
+                'po_number'          => $po->po_number,
+                'mr_id'              => $mr?->id,
+                'mr_number'          => $mr?->request_number,
+                'supplier_id'        => $po->supplier_id,
+                'supplier_name'      => $supplierName,
+                'warehouse_id'       => $wh?->id,
+                'warehouse_name'     => $wh?->name,
+                'project_name'       => $projectName,
+                'is_central'         => (bool) ($wh?->is_central ?? false),
+                'items_count'        => $po->items->count(),
+                'items_summary'      => $itemsSummary,
+                'label'              => "🚚 {$supplierName} — {$mrText} • {$projectName} [{$itemsSummary}]",
+            ]);
+        }
+
+        foreach ($materialRequests as $mr) {
+            $hasLinkedPoInList = $incomingVendorDeliveries->where('mr_id', $mr->id)->isNotEmpty();
+            if (!$hasLinkedPoInList) {
+                $wh = $mr->toWarehouse;
+                $projectName = $wh?->project?->name ?? $wh?->name ?? '-';
+                $itemsSummary = $mr->items->map(fn($it) => $it->displayName())->take(3)->implode(', ');
+
+                $incomingVendorDeliveries->push([
+                    'id'                 => 'mr_' . $mr->id,
+                    'po_id'              => null,
+                    'po_number'          => null,
+                    'mr_id'              => $mr->id,
+                    'mr_number'          => $mr->request_number,
+                    'supplier_id'        => null,
+                    'supplier_name'      => 'Pengadaan Langsung Lapangan',
+                    'warehouse_id'       => $wh?->id,
+                    'warehouse_name'     => $wh?->name,
+                    'project_name'       => $projectName,
+                    'is_central'         => (bool) ($wh?->is_central ?? false),
+                    'items_count'        => $mr->items->count(),
+                    'items_summary'      => $itemsSummary,
+                    'label'              => "📋 Pengadaan Lapangan — PO Lapangan #{$mr->request_number} • {$projectName} [{$itemsSummary}]",
+                ]);
+            }
+        }
+
         $existingItemsJson = $goodsReceipt->items->map(function ($item) {
             $isTool = $item->isTool();
             return [
@@ -1054,7 +1214,8 @@ class GoodsReceiptController extends Controller
             'goodsReceipt', 'suppliers', 'warehouses', 'materials', 'materialsJson',
             'tools', 'toolsJson', 'purchaseOrders', 'materialRequests', 'inTransitDistributions',
             'selectedMrId', 'selectedPoId', 'existingItemsJson', 'materialCategories', 'toolCategories',
-            'units', 'unitsJson', 'existingMaterialGroups', 'existingToolGroups', 'allMaterialGroups', 'allToolGroups'
+            'units', 'unitsJson', 'existingMaterialGroups', 'existingToolGroups', 'allMaterialGroups', 'allToolGroups',
+            'incomingVendorDeliveries'
         ));
     }
 
@@ -1097,6 +1258,14 @@ class GoodsReceiptController extends Controller
                 if ($mr?->to_warehouse_id) {
                     $request->merge(['warehouse_id' => $mr->to_warehouse_id]);
                 }
+            }
+        }
+
+        // Auto-fill purchase_order_id jika material_request_id ada tetapi purchase_order_id belum terisi
+        if (!$request->filled('purchase_order_id') && $request->filled('material_request_id')) {
+            $linkedMr = \App\Models\MaterialRequest::with('purchaseOrders')->find($request->material_request_id);
+            if ($linkedMr && $linkedMr->purchaseOrders->isNotEmpty()) {
+                $request->merge(['purchase_order_id' => $linkedMr->purchaseOrders->first()->id]);
             }
         }
 

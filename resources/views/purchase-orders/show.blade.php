@@ -47,7 +47,7 @@
             @endcan
 
             @if($purchaseOrder->status === 'draft')
-                @if((auth()->user()->can('approve purchase orders') || auth()->user()->hasRole(['Admin Pusat', 'Admin'])) && $purchaseOrder->created_by !== auth()->id())
+                @if(auth()->user()->can('approve purchase orders') || auth()->user()->hasAnyRole(['Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']))
                     <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-success" onclick="return confirm('Setujui PO ini?')">

@@ -1859,13 +1859,13 @@
                 $roleIcon = 'hard-hat';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'PO Lapangan & alat proyek';
-            } elseif ($authUser->hasRole('Admin PO Proyek')) {
+            } elseif ($authUser->hasAnyRole(['Admin PO Proyek', 'Admin Pengadaan Proyek', 'admin-po-nota', 'po_nota_harian'])) {
                 $roleLabel = 'Admin PO Proyek';
                 $roleBadge = 'PO Proyek';
                 $roleIcon = 'receipt';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'Pencatatan nota pembelian harian';
-            } elseif ($authUser->hasRole('Admin PO')) {
+            } elseif ($authUser->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'admin_po'])) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
                 $roleIcon = 'truck';
@@ -1890,9 +1890,9 @@
 
             <!-- 1. GRUP TEKNIS -->
             @php
-                $canDailyLog = auth()->user()->can('view reports') && !auth()->user()->hasRole('Karyawan');
-                $isRoleAdminPO = auth()->user()->hasRole('Admin PO');
-                $isRoleAdminPOProyek = auth()->user()->hasRole('Admin PO Proyek');
+                $canDailyLog = (auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) || auth()->user()->can('view daily logs')) && !auth()->user()->hasAnyRole(['Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek']);
+                $isRoleAdminPO = auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin PO', 'admin_po']);
+                $isRoleAdminPOProyek = auth()->user()->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']);
                 $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
                 $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
                 $isRoleTeknis = auth()->user()->hasAnyRole(['Site Manager', 'Site Engineer', 'Project Manager']);
@@ -1930,7 +1930,7 @@
             <!-- 2. GRUP PENGADAAN -->
             @php
                 $canPengadaan = !$isRoleTeknis && !$isRoleAdminPOProyek && (
-                    (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']))
+                    (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
                     || ($isRoleAdminPO && auth()->user()->can('view material requests'))
@@ -1939,10 +1939,10 @@
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*']));
             @endphp
             @if($isRoleAdminPOProyek)
-                {{-- Khusus Admin PO Proyek: Nota Harian & Kas Pembayaran Proyek --}}
+                {{-- Khusus Admin PO Proyek: Hanya Pencatatan Nota Harian --}}
                 <div class="nav-section">
                     <div style="padding: 8px 12px 4px 12px;">
-                        <span class="nav-section-label">NOTA & KAS PROYEK</span>
+                        <span class="nav-section-label">PENCATATAN NOTA HARIAN</span>
                     </div>
                     <div class="nav-section-body">
                         <a href="{{ route('purchase-receipts.create') }}" class="nav-item {{ request()->routeIs('purchase-receipts.create') ? 'active' : '' }}">
@@ -1950,9 +1950,6 @@
                         </a>
                         <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.index') || request()->routeIs('purchase-receipts.show') ? 'active' : '' }}">
                             <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Daftar Nota Harian
-                        </a>
-                        <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
-                            <x-lucide-wallet class="nav-icon" aria-hidden="true" /> Kas & Saldo Proyek
                         </a>
                     </div>
                 </div>
@@ -1964,15 +1961,15 @@
                         <span class="nav-section-label">PENGADAAN</span>
                     </div>
                     <div class="nav-section-body">
-                        @can('view material requests')
-                        <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
-                            <x-lucide-file-plus class="nav-icon" aria-hidden="true" /> PO Lapangan
-                        </a>
-                        @endcan
-
                         @can('view purchase orders')
                         <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
                             <x-lucide-file-text class="nav-icon" aria-hidden="true" /> Purchase Order (PO)
+                        </a>
+                        @endcan
+
+                        @can('view material requests')
+                        <a href="{{ route('material-requests.index') }}" class="nav-item {{ request()->routeIs('material-requests.*') ? 'active' : '' }}">
+                            <x-lucide-file-plus class="nav-icon" aria-hidden="true" /> PO Lapangan
                         </a>
                         @endcan
 
@@ -1996,7 +1993,7 @@
                         <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                     </div>
                     <div x-show="open" class="nav-section-body">
-                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO']) && auth()->user()->can('view purchase orders'))
+                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']) && auth()->user()->can('view purchase orders'))
                         <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
                             <x-lucide-file-text class="nav-icon" aria-hidden="true" /> Purchase Order (PO)
                         </a>
@@ -2062,11 +2059,13 @@
                     </a>
                     @endcan
 
+                    @if(!$isRoleTeknis)
                     @can('view goods receipts')
                     <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
                         <x-lucide-package-check class="nav-icon" aria-hidden="true" /> Penerimaan Barang
                     </a>
                     @endcan
+                    @endif
 
                     @can('view inventory')
                     <a href="{{ route('inventory.index') }}" class="nav-item {{ request()->routeIs('inventory.*') ? 'active' : '' }}">

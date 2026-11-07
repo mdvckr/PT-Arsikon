@@ -12,9 +12,13 @@ class PurchaseOrderPolicy
      */
     public function viewAny(User $user): bool
     {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian'])) {
+            return false;
+        }
+
         return $user->hasAnyRole([
-            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO',
-            'admin_pusat', 'admin', 'po_lapangan', 'po_nota_harian', 'admin-po-nota', 'Admin Gudang Pusat'
+            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan',
+            'admin_pusat', 'admin', 'po_lapangan', 'Admin Gudang Pusat'
         ]) || $user->can('view purchase orders');
     }
 
@@ -23,24 +27,27 @@ class PurchaseOrderPolicy
      */
     public function view(User $user, PurchaseOrder $purchaseOrder): bool
     {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian'])) {
+            return false;
+        }
+
         return $user->hasAnyRole([
-            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO',
-            'admin_pusat', 'admin', 'po_lapangan', 'po_nota_harian', 'admin-po-nota', 'Admin Gudang Pusat'
+            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan',
+            'admin_pusat', 'admin', 'po_lapangan', 'Admin Gudang Pusat'
         ]) || $user->can('view purchase orders');
     }
 
     /**
      * Determine whether the user can create models.
-     * po_nota_harian is strictly READ-ONLY on PO Lapangan (returns false => 403 Forbidden).
      */
     public function create(User $user): bool
     {
-        if ($user->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'po_nota_harian', 'admin-po-nota'])) {
             return false;
         }
 
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'admin_pusat', 'admin', 'po_lapangan'
+            'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'admin_pusat', 'admin', 'po_lapangan'
         ]) || $user->can('create purchase orders');
     }
 
@@ -49,12 +56,12 @@ class PurchaseOrderPolicy
      */
     public function update(User $user, PurchaseOrder $purchaseOrder): bool
     {
-        if ($user->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'po_nota_harian', 'admin-po-nota'])) {
             return false;
         }
 
         return $user->hasAnyRole([
-            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'admin_pusat', 'admin', 'po_lapangan'
+            'Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'admin_pusat', 'admin', 'po_lapangan'
         ]) || $user->can('edit purchase orders');
     }
 
@@ -63,7 +70,7 @@ class PurchaseOrderPolicy
      */
     public function delete(User $user, PurchaseOrder $purchaseOrder): bool
     {
-        if ($user->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'po_nota_harian', 'admin-po-nota'])) {
             return false;
         }
 
@@ -77,11 +84,11 @@ class PurchaseOrderPolicy
      */
     public function approve(User $user, PurchaseOrder $purchaseOrder): bool
     {
-        if ($user->hasAnyRole(['po_nota_harian', 'admin-po-nota'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'po_nota_harian', 'admin-po-nota'])) {
             return false;
         }
 
-        return $user->hasAnyRole(['Admin Pusat', 'Admin', 'admin_pusat'])
+        return $user->hasAnyRole(['Admin Pusat', 'Admin', 'admin_pusat', 'Admin PO', 'Admin Pengadaan'])
             || $user->can('approve purchase orders');
     }
 }

@@ -2131,6 +2131,76 @@ function loadPoItems(poId) {
 }
 
 // ============================================================
+// 1-CLICK VENDOR DELIVERY SELECTOR (HUBUNGKAN PO LAPANGAN & VENDOR)
+// ============================================================
+
+function onVendorDeliverySelect(selectEl) {
+    if (!selectEl) return;
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+
+    const mrSelect = document.getElementById('mrSelect');
+    const poSelect = document.getElementById('poSelect');
+    const banner = document.getElementById('vendorDeliveryBanner');
+    const bannerText = document.getElementById('vendorDeliveryBannerText');
+
+    if (!selectedOption || !selectedOption.value) {
+        if (mrSelect) mrSelect.value = '';
+        if (poSelect) poSelect.value = '';
+        setSupplierByName('', '');
+        if (banner) banner.style.display = 'none';
+        document.getElementById('itemsBody').innerHTML = '';
+        rowCount = 0;
+        checkEmptyState();
+        checkAndUpdateWarehouseLock();
+        return;
+    }
+
+    const poId = selectedOption.getAttribute('data-po-id') || '';
+    const poNumber = selectedOption.getAttribute('data-po-number') || '';
+    const mrId = selectedOption.getAttribute('data-mr-id') || '';
+    const mrNumber = selectedOption.getAttribute('data-mr-number') || '';
+    const supplierId = selectedOption.getAttribute('data-supplier-id') || '';
+    const supplierName = selectedOption.getAttribute('data-supplier-name') || '';
+    const warehouseId = selectedOption.getAttribute('data-warehouse-id') || '';
+    const projectName = selectedOption.getAttribute('data-project') || '';
+
+    // Set hidden fields
+    if (mrSelect) mrSelect.value = mrId;
+    if (poSelect) poSelect.value = poId;
+
+    // Set Supplier
+    if (supplierName) {
+        setSupplierByName(supplierName, supplierId);
+    }
+
+    // Set Warehouse
+    const whSelect = document.getElementById('warehouseSelect');
+    if (warehouseId && whSelect) {
+        whSelect.value = warehouseId;
+        onUserWarehouseChange(whSelect);
+    }
+
+    // Show Confirmation Banner
+    if (banner && bannerText) {
+        banner.style.display = 'block';
+        let html = '<div style="font-weight:700;color:#166534;font-size:12px;">' + escHtml(supplierName) + '</div>';
+        html += '<div style="font-size:11px;color:#15803d;margin-top:2px;">';
+        if (mrNumber) html += 'Terkoneksi ke PO Lapangan <strong>#' + escHtml(mrNumber) + '</strong>';
+        if (poNumber) html += ' • PO Vendor <strong>#' + escHtml(poNumber) + '</strong>';
+        if (projectName) html += ' (' + escHtml(projectName) + ')';
+        html += '</div>';
+        bannerText.innerHTML = html;
+    }
+
+    // Load items for this specific delivery
+    if (mrId) {
+        loadMrItems(mrId, poId ? poId : null);
+    } else if (poId) {
+        loadPoItems(poId);
+    }
+}
+
+// ============================================================
 // PO LAPANGAN (MATERIAL REQUEST) & PO VENDOR HANDLERS
 // ============================================================
 
@@ -2958,7 +3028,10 @@ document.addEventListener('DOMContentLoaded', function () {
         ? grConfig.selectedPoId
         : (poSelect ? poSelect.value : '');
 
-    if (initialMrId && initialPoId && typeof loadMrItems === 'function') {
+    const vdSelect = document.getElementById('vendorDeliverySelect');
+    if (vdSelect && vdSelect.value) {
+        onVendorDeliverySelect(vdSelect);
+    } else if (initialMrId && initialPoId && typeof loadMrItems === 'function') {
         if (mrSelect) mrSelect.value = initialMrId;
         if (poSelect) poSelect.value = initialPoId;
         loadMrItems(initialMrId, initialPoId);

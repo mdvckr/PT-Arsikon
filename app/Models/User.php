@@ -90,7 +90,7 @@ class User extends Authenticatable
         }
 
         // Default fallback for Owner/Admin Pusat vs User
-        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO', 'Admin Pengadaan'])) {
             return Warehouse::where('is_central', true)->first() ?? $this->warehouses()->first();
         }
 
@@ -132,7 +132,7 @@ class User extends Authenticatable
             return $this->warehouses()->pluck('warehouses.id')->toArray();
         }
 
-        if ($this->hasRole('Admin PO')) {
+        if ($this->hasAnyRole(['Admin PO', 'Admin Pengadaan'])) {
             return Warehouse::where('is_central', true)->pluck('id')->toArray();
         }
 
@@ -149,6 +149,7 @@ class User extends Authenticatable
         return $this->hasAnyRole([
             'Admin Pusat',
             'Admin PO',
+            'Admin Pengadaan',
             'Owner',
             'Super Admin',
             'admin_pusat',

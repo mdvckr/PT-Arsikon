@@ -17,7 +17,7 @@ class PaymentController extends Controller
         $this->authorize('view payments');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $query = Payment::with(['purchaseOrder.supplier', 'purchaseOrder.deliveryWarehouse.project', 'project', 'creator']);
@@ -196,7 +196,7 @@ class PaymentController extends Controller
         $this->authorize('create payments');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
@@ -277,7 +277,7 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds)) {
@@ -401,7 +401,7 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             return back()->with('error', 'Admin PO Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Admin PO Pusat.');
         }
@@ -455,7 +455,7 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projectId = $validated['project_id'] ?? null;
@@ -539,7 +539,7 @@ class PaymentController extends Controller
         $this->authorize('view payments');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
@@ -555,7 +555,7 @@ class PaymentController extends Controller
     public function approveBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin PO', 'Super Admin'])) {
+        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin'])) {
             abort(403, 'Wewenang persetujuan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
@@ -607,7 +607,7 @@ class PaymentController extends Controller
     public function rejectBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin PO', 'Super Admin'])) {
+        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin'])) {
             abort(403, 'Wewenang penolakan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
@@ -634,7 +634,7 @@ class PaymentController extends Controller
         $this->authorize('view payments');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasRole('Admin PO Proyek') && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds) && !in_array($payment->project_id, $userProjectIds) && $payment->created_by !== $user->id) {

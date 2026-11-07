@@ -74,6 +74,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view payments', 'create payments', 'verify payments',
             // Transit Losses
             'create transit losses', 'approve transit losses',
+            // Daily Logs
+            'view daily logs',
         ];
 
         foreach ($permissions as $permission) {
@@ -144,6 +146,7 @@ class RoleAndPermissionSeeder extends Seeder
         // --- Peran Teknis Lapangan: Site Engineer, Site Manager, Project Manager ---
         // 1. Staf Teknis Lapangan (Site Engineer): Buat & Lihat PO Lapangan, Inventory, Log Harian, Fitur Teknis
         $teknisStaffPermissions = [
+            'view daily logs',
             'view material requests', 'create material requests',
             'view inventory',
             'view materials',
@@ -154,7 +157,8 @@ class RoleAndPermissionSeeder extends Seeder
 
         // 2. Manajemen Teknis Lapangan (Site Manager & Project Manager): Pengawasan, Evaluasi Log Harian, Approval PO Lapangan, Penerimaan Barang
         $teknisManagerPermissions = [
-            'view goods receipts', 'create goods receipts', 'confirm goods receipts',
+            'view daily logs',
+            'view goods receipts', 'create goods receipts',
             'view material requests', 'create material requests', 'approve material requests',
             'view inventory',
             'view materials',
@@ -194,30 +198,25 @@ class RoleAndPermissionSeeder extends Seeder
             'view materials',
             'view tools',
             'view inventory',
-            'view tool assignments',
             'view material requests', 'approve material requests',
-            'view material usages',
             'view procurement', 'create procurement',
-            'view purchase orders', 'create purchase orders', 'edit purchase orders', 'send purchase orders', 'cancel purchase orders',
+            'view purchase orders', 'create purchase orders', 'edit purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
         ];
         $adminPORole->syncPermissions($adminPOPermissions);
         $adminPORoleLegacy->syncPermissions($adminPOPermissions);
 
-        // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & payment proyek ---
+        // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek ---
         $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek']);
         $adminPOProyekRoleLegacy = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
         $adminPoNotaRoleLegacy = Role::firstOrCreate(['name' => 'admin-po-nota']);
         $adminPOProyekPermissions = [
-            'view material requests',
             'view purchase receipts',
             'create purchase receipts',
             'delete purchase receipts',
             'view materials',
             'view suppliers',
-            'view payments',
-            'create payments',
         ];
         $adminPOProyekRole->syncPermissions($adminPOProyekPermissions);
         $adminPOProyekRoleLegacy->syncPermissions($adminPOProyekPermissions);

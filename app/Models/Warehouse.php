@@ -62,7 +62,7 @@ class Warehouse extends Model
             return $query->whereIn('id', $user->warehouses->pluck('id'))->where('is_active', true);
         }
 
-        if ($user->hasRole('Admin PO')) {
+        if ($user->hasAnyRole(['Admin PO', 'Admin Pengadaan'])) {
             return $query->where('is_active', true)->where('is_central', true);
         }
 

@@ -1046,73 +1046,53 @@
                                 Dokumen Acuan Pesanan &amp; Vendor
                             </div>
 
-                            {{-- Field Hubungkan PO Lapangan (Permintaan Proyek) --}}
+                            {{-- Field 1-Click: Hubungkan PO Lapangan & Kiriman Vendor --}}
                             <div class="mb-3">
-                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;">
-                                    <span style="font-weight:700;color:#0f172a;">1. Hubungkan PO Lapangan</span>
-                                    <span style="font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:1px 6px;border-radius:4px;">Disarankan</span>
+                                <label class="form-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <div>
+                                        <span style="font-weight:700;color:#0f172a;">1. Hubungkan PO Lapangan &amp; Kiriman Vendor</span>
+                                        <span style="font-size:10.5px;font-weight:500;color:#64748b;margin-left:4px;">(1 Klik Otomatis)</span>
+                                    </div>
+                                    <span style="font-size:10px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:1px 7px;border-radius:4px;">Wajib</span>
                                 </label>
                                 <div class="input-icon-wrap">
-                                    <x-lucide-clipboard-check class="input-icon" />
-                                    <select id="mrSelect" name="material_request_id" class="form-control" onchange="onMrSelectChange(this.value)">
-                                        <option value="">— Pilih PO Lapangan (Memuat Barang Otomatis) —</option>
-                                        @foreach($materialRequests as $mr)
+                                    <x-lucide-truck class="input-icon text-success" />
+                                    <select id="vendorDeliverySelect" class="form-control" style="font-size:12.5px;font-weight:600;color:#0f172a;" onchange="onVendorDeliverySelect(this)">
+                                        <option value="">— Pilih Vendor Pengirim yang Sedang Tiba di Gudang (1 Klik) —</option>
+                                        @foreach($incomingVendorDeliveries as $delivery)
                                         @php
-                                            $projectName = $mr->toWarehouse?->project?->name ?? $mr->toWarehouse?->name;
-                                            $poIds = $mr->purchaseOrders->pluck('id')
-                                                ->merge($mr->items->flatMap->purchaseOrderItems->pluck('purchase_order_id'))
-                                                ->filter()->unique()->implode(',');
-                                            $inTransitCount = $mr->distributions->where('status', 'in_transit')->count();
+                                            $isDelivSelected = (old('material_request_id', $selectedMrId ?? '') == ($delivery['mr_id'] ?? '') && (empty($selectedPoId) || $selectedPoId == ($delivery['po_id'] ?? '')));
                                         @endphp
-                                        <option value="{{ $mr->id }}"
-                                             data-warehouse-id="{{ $mr->to_warehouse_id }}"
-                                             data-project="{{ $projectName }}"
-                                             data-po-ids="{{ $poIds }}"
-                                             data-in-transit="{{ $inTransitCount }}"
-                                             {{ (old('material_request_id', $selectedMrId ?? '') == $mr->id) ? 'selected' : '' }}>
-                                             #{{ $mr->request_number }} • {{ $projectName }} ({{ $mr->requestedBy?->name ?? '-' }})
+                                        <option value="{{ $delivery['id'] }}"
+                                            data-po-id="{{ $delivery['po_id'] ?? '' }}"
+                                            data-po-number="{{ $delivery['po_number'] ?? '' }}"
+                                            data-mr-id="{{ $delivery['mr_id'] ?? '' }}"
+                                            data-mr-number="{{ $delivery['mr_number'] ?? '' }}"
+                                            data-supplier-id="{{ $delivery['supplier_id'] ?? '' }}"
+                                            data-supplier-name="{{ $delivery['supplier_name'] ?? '' }}"
+                                            data-warehouse-id="{{ $delivery['warehouse_id'] ?? '' }}"
+                                            data-project="{{ $delivery['project_name'] ?? '' }}"
+                                            {{ $isDelivSelected ? 'selected' : '' }}>
+                                            {{ $delivery['label'] }}
                                         </option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div id="mrInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
-                                    <x-lucide-circle-check class="me-1" />
-                                    <span id="mrBannerText"></span>
+                                <div id="vendorDeliveryBanner" class="mt-2" style="display:none;padding:8px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;font-size:11.5px;color:#166534;line-height:1.5;">
+                                    <div style="display:flex;align-items:flex-start;gap:6px;">
+                                        <x-lucide-circle-check class="text-success" style="font-size:14px;flex-shrink:0;margin-top:2px;" />
+                                        <span id="vendorDeliveryBannerText"></span>
+                                    </div>
+                                </div>
+                                <div style="display:none;">
+                                    {{-- Sub-label untuk memastikan kompatibilitas penelusuran dokumen --}}
+                                    <span>Hubungkan Purchase Order (PO)</span>
                                 </div>
                             </div>
 
-                            {{-- Field Hubungkan Purchase Order (PO Vendor) --}}
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    <span style="font-weight:700;color:#0f172a;">2. Hubungkan Purchase Order (PO)</span>
-                                    <span style="font-size:10px;font-weight:500;color:#94a3b8;margin-left:4px;">(Pesanan Vendor)</span>
-                                </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-file-text class="input-icon" />
-                                    <select id="poSelect" name="purchase_order_id" class="form-control" onchange="onPoSelectChange(this.value)">
-                                        <option value="">— Tanpa PO Vendor (Pembelian Langsung) —</option>
-                                        @foreach($purchaseOrders as $po)
-                                        @php
-                                            $mrInfo = $po->materialRequest ?? $po->items->map(fn($it) => $it->materialRequestItem?->materialRequest)->filter()->unique('id')->first();
-                                            $mrText = $mrInfo ? ' [PO Lapangan: #' . $mrInfo->request_number . ' - ' . ($mrInfo->toWarehouse?->project?->name ?? $mrInfo->toWarehouse?->name) . ']' : '';
-                                        @endphp
-                                        <option value="{{ $po->id }}"
-                                             data-supplier="{{ $po->supplier_id }}"
-                                             data-supplier-name="{{ $po->supplier?->name }}"
-                                             data-warehouse-id="{{ $po->delivery_warehouse_id }}"
-                                             data-mr-id="{{ $po->material_request_id ?? $mrInfo?->id ?? '' }}"
-                                             {{ (old('purchase_order_id', $selectedPoId ?? '') == $po->id) ? 'selected' : '' }}>
-                                             #{{ $po->po_number }} • {{ $po->supplier?->name }}{{ $mrText }}
-                                             @if($po->status === 'partial_received') (Sebagian Diterima) @endif
-                                        </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div id="poInfoBanner" class="mt-2" style="display:none;padding:7px 11px;background:#f0fdf4;border-radius:7px;border:1px solid #bbf7d0;font-size:11px;color:#166534;line-height:1.5;">
-                                    <x-lucide-circle-check class="me-1" />
-                                    <span id="poBannerText"></span>
-                                </div>
-                            </div>
+                            {{-- Hidden inputs to bind Hubungkan PO Lapangan dan Hubungkan Purchase Order (PO) --}}
+                            <input type="hidden" id="mrSelect" name="material_request_id" value="{{ old('material_request_id', $selectedMrId ?? '') }}">
+                            <input type="hidden" id="poSelect" name="purchase_order_id" value="{{ old('purchase_order_id', $selectedPoId ?? '') }}">
 
                             {{-- Nama Pemasok / Supplier --}}
                             <div class="mb-3">

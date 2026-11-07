@@ -30,7 +30,7 @@ class PurchaseReceiptPolicy
     public function create(User $user): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'Admin PO Proyek',
+            'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'Admin PO Proyek', 'Admin Pengadaan Proyek',
             'admin_pusat', 'po_lapangan', 'po_nota_harian', 'admin-po-nota', 'Admin Gudang Proyek'
         ]) || $user->can('create purchase receipts');
     }
@@ -41,7 +41,7 @@ class PurchaseReceiptPolicy
     public function update(User $user, PurchaseReceipt $purchaseReceipt): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'Admin PO Proyek',
+            'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'Admin PO Proyek', 'Admin Pengadaan Proyek',
             'admin_pusat', 'po_lapangan', 'po_nota_harian', 'admin-po-nota'
         ]) || $user->can('edit purchase receipts');
     }
@@ -52,7 +52,7 @@ class PurchaseReceiptPolicy
     public function delete(User $user, PurchaseReceipt $purchaseReceipt): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'admin_pusat', 'po_nota_harian', 'admin-po-nota'
+            'Admin Pusat', 'Admin', 'admin_pusat', 'po_nota_harian', 'admin-po-nota', 'Admin PO Proyek', 'Admin Pengadaan Proyek'
         ]) || $user->can('delete purchase receipts');
     }
 }

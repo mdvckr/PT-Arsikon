@@ -134,8 +134,8 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/procurement/{procurement}/approve', [ProcurementController::class, 'approve'])->name('procurement.approve');
     Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
 
-    // Purchase Orders (Hanya Admin Pusat, Admin PO, Owner, po_lapangan, dan po_nota_harian / admin-po-nota untuk read-only)
-    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|po_lapangan|po_nota_harian|admin-po-nota|admin_pusat']], function () {
+    // Purchase Orders (Hanya Admin Pusat, Admin PO, Admin Pengadaan, Owner, Super Admin, po_lapangan, admin_pusat)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|Admin Pengadaan|po_lapangan|admin_pusat']], function () {
         Route::get('/purchase-orders/report/weekly',            [PurchaseOrderController::class, 'weeklyReport'])->name('purchase-orders.weekly-report');
         Route::get('/purchase-orders/template-items-excel',     [PurchaseOrderController::class, 'downloadItemsTemplate'])->name('purchase-orders.template-items-excel');
         Route::post('/purchase-orders/import-items-excel',       [PurchaseOrderController::class, 'importItemsExcel'])->name('purchase-orders.import-items-excel');

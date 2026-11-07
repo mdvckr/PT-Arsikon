@@ -16,7 +16,7 @@ class DailyLogController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('view reports');
+        $this->authorizeDailyLog();
 
         $data = $this->compileDailyData($request);
 
@@ -28,11 +28,22 @@ class DailyLogController extends Controller
      */
     public function print(Request $request)
     {
-        $this->authorize('view reports');
+        $this->authorizeDailyLog();
 
         $data = $this->compileDailyData($request);
 
         return view('daily-log.print', $data);
+    }
+
+    /**
+     * Otorisasi akses Log Harian Proyek untuk Manajemen, Gudang Pusat, dan Tim Teknis Lapangan.
+     */
+    protected function authorizeDailyLog(): void
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) && !$user->can('view daily logs')) || $user->hasAnyRole(['Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk melihat Log Harian Proyek.');
+        }
     }
 
     /**
@@ -46,7 +57,7 @@ class DailyLogController extends Controller
         $dateStr = $request->input('date', date('Y-m-d'));
         $date = Carbon::parse($dateStr)->toDateString();
 
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat'])
             ? Warehouse::orderBy('name')->get()
             : $user->warehouses;
 
