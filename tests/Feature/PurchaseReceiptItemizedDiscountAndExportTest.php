@@ -10,6 +10,8 @@ use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -76,6 +78,7 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
         // Additional Fee (Kuli) = Rp 75.000
         // Expected Grand Total = (800.000 - 50.000) + 100.000 + 75.000 = Rp 925.000
 
+        Storage::fake('private');
         $postData = [
             'project_id'            => $this->project->id,
             'project_name'          => $this->project->name,
@@ -85,6 +88,7 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             'payment_source'        => 'personal_advance',
             'paid_by_name'          => 'Mandor Joko',
             'notes'                 => 'Belanja material darurat tahap 1',
+            'image'                 => UploadedFile::fake()->image('nota1.jpg'),
             'global_discount'       => 50000,
             'shipping_fee'          => 100000,
             'additional_fee'        => 75000,
@@ -155,6 +159,7 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             'supplier_name'         => 'TB Sinar Abadi',
             'receipt_number'        => 'BON-OVER',
             'receipt_date'          => '2026-10-28',
+            'image'                 => UploadedFile::fake()->image('nota_over.jpg'),
             'global_discount'       => 0,
             'shipping_fee'          => 0,
             'additional_fee'        => 0,

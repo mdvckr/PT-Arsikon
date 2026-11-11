@@ -176,7 +176,7 @@ class PurchaseReceiptController extends Controller
             'supplier_name'         => 'nullable|string|max:255',
             'receipt_number'        => 'nullable|string|max:100',
             'receipt_date'          => 'required|date',
-            'image'                 => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'mimetypes:image/jpeg,image/png,application/pdf', 'max:2048', new \App\Rules\NoExecutableCode()],
+            'image'                 => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'mimetypes:image/jpeg,image/png,image/webp,application/pdf', 'max:10240', new \App\Rules\NoExecutableCode()],
             'notes'                 => 'nullable|string',
             'payment_source'        => 'nullable|string|in:project_cash,personal_advance',
             'paid_by_name'          => 'nullable|string|max:150',

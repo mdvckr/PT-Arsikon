@@ -101,9 +101,12 @@
 
                     {{-- Upload Foto Nota --}}
                     <div>
-                        <label class="form-label font-semibold">Upload Foto / Scan Nota Fisik</label>
-                        <input type="file" name="image" accept="image/*,application/pdf" class="form-control" style="padding:6px;">
-                        <small class="text-muted block mt-1" style="font-size:11px;">Format: JPG, PNG, WEBP, PDF (Max: 10MB).</small>
+                        <label class="form-label font-semibold">Upload Foto / Scan Nota Fisik <span class="text-danger">*</span></label>
+                        <input type="file" name="image" accept="image/*,application/pdf" class="form-control @error('image') is-invalid border-danger @enderror" style="padding:6px;" required>
+                        <small class="text-muted block mt-1" style="font-size:11px;">Format: JPG, PNG, WEBP, PDF (Wajib diunggah, Maks: 10MB).</small>
+                        @error('image')
+                            <div class="text-danger mt-1" style="font-size:11.5px; font-weight:600;">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     {{-- Catatan --}}
