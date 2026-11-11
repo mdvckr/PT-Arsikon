@@ -681,4 +681,70 @@ class MaterialController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\MonthlyStockGroupExport($month, $year, $warehouse), $filename);
     }
+
+    /**
+     * Cetak dokumen rekapitulasi data material per Kelompok Barang (type).
+     */
+    public function printGroup(Request $request)
+    {
+        $this->authorize('view materials');
+
+        $user = Auth::user();
+        $categoryId  = $request->input('category_id');
+        $typeName    = $request->input('type');
+        $warehouseId = $request->input('warehouse_id');
+
+        $warehouse = null;
+        if (!empty($warehouseId) && $warehouseId !== 'all') {
+            $warehouse = Warehouse::find($warehouseId);
+            if ($warehouse && !$user->hasAccessToWarehouse($warehouse)) {
+                abort(403, 'Anda tidak memiliki hak akses ke gudang yang dipilih.');
+            }
+        }
+
+        $accessibleWarehouses = Warehouse::forUser($user)->orderBy('name')->get();
+        $accessibleIds = $accessibleWarehouses->pluck('id')->toArray();
+        if ($warehouse) {
+            $filterWarehouseIds = [$warehouse->id];
+        } else {
+            $filterWarehouseIds = $accessibleIds;
+        }
+
+        $category = null;
+        if ($categoryId) {
+            $category = Category::find($categoryId);
+        }
+
+        $query = Material::query()->with([
+            'unit',
+            'supplier',
+            'category',
+            'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse'),
+            'stockMutations' => fn($smq) => $smq->whereIn('warehouse_id', $filterWarehouseIds)->latest(),
+        ]);
+
+        if ($category) {
+            $query->where('category_id', $category->id);
+        }
+
+        if (!empty($typeName)) {
+            if ($typeName === 'Umum / Lainnya') {
+                $query->where(function ($q) {
+                    $q->whereNull('type')->orWhere('type', '')->orWhere('type', 'Umum / Lainnya');
+                });
+            } else {
+                $query->where('type', $typeName);
+            }
+        }
+
+        $materials = $query->orderBy('name')->get();
+
+        return view('materials.print-group', compact(
+            'category',
+            'typeName',
+            'materials',
+            'warehouse',
+            'filterWarehouseIds'
+        ));
+    }
 }

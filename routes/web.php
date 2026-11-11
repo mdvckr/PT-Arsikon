@@ -64,6 +64,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     // Master Data
+    Route::get('/materials/print-group', [MaterialController::class, 'printGroup'])->name('materials.print-group');
     Route::get('/materials/export-monthly', [MaterialController::class, 'exportMonthly'])->name('materials.export-monthly');
     Route::post('/materials/delete-group', [MaterialController::class, 'deleteGroup'])->name('materials.delete-group');
     Route::resource('materials', MaterialController::class);
