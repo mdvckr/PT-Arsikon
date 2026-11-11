@@ -100,6 +100,18 @@
             <td style="border: 1px solid #000000; text-align: right; font-weight: bold; background-color: #FEF3C7;">{{ $grandTotal }}</td>
             <td style="border: 1px solid #000000;"></td>
         </tr>
+        @if(isset($periodStartBalance) && isset($periodEndBalance))
+        <tr style="background-color: #F8FAFC; font-weight: bold;">
+            <td colspan="11" style="border: 1px solid #000000; text-align: right; font-weight: bold;">SALDO AWAL KAS OPERASIONAL PROYEK:</td>
+            <td style="border: 1px solid #000000; text-align: right; font-weight: bold; color: #1E40AF;">Rp {{ number_format($periodStartBalance, 0, ',', '.') }}</td>
+            <td style="border: 1px solid #000000;"></td>
+        </tr>
+        <tr style="background-color: #DCFCE7; font-weight: bold;">
+            <td colspan="11" style="border: 1px solid #000000; text-align: right; font-weight: bold;">SISA SALDO KAS OPERASIONAL PROYEK:</td>
+            <td style="border: 1px solid #000000; text-align: right; font-weight: bold; color: #15803D;">Rp {{ number_format($periodEndBalance, 0, ',', '.') }}</td>
+            <td style="border: 1px solid #000000;"></td>
+        </tr>
+        @endif
         <tr><td colspan="13"></td></tr>
         <tr>
             <td colspan="3" style="text-align: center; font-weight: bold;">Dibuat Oleh,</td>

@@ -213,7 +213,18 @@
             </div>
         @elseif(!$po && $purchaseReceipt->project)
             <div style="background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:13px;border-radius:8px;padding:12px 16px;">
-                <x-lucide-zap class="me-1 text-warning" /> Pembayaran nota harian ini dilakukan secara <strong>instan</strong> menggunakan <strong>Saldo Kas Operasional Proyek ({{ $purchaseReceipt->project->name }})</strong>. Total belanja sebesar <strong>Rp {{ number_format($receiptTotal, 0, ',', '.') }}</strong> telah otomatis dipotong dari saldo kas proyek saat nota dicatat.
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                        <x-lucide-zap class="me-1 text-warning" /> Pembayaran nota harian ini dilakukan secara <strong>instan</strong> menggunakan <strong>Saldo Kas Operasional Proyek ({{ $purchaseReceipt->project->name }})</strong>. Total belanja sebesar <strong>Rp {{ number_format($receiptTotal, 0, ',', '.') }}</strong> telah otomatis dipotong dari saldo kas proyek saat nota dicatat.
+                    </div>
+                    @if(isset($saldoAwal) && isset($saldoSisa))
+                    <div class="flex items-center gap-3 text-xs font-semibold bg-white px-3 py-1.5 rounded border border-green-300 shadow-xs">
+                        <span>Saldo Awal: <strong class="text-blue-700">Rp {{ number_format($saldoAwal, 0, ',', '.') }}</strong></span>
+                        <span class="text-slate-400">→</span>
+                        <span>Sisa Saldo: <strong class="text-green-700">Rp {{ number_format($saldoSisa, 0, ',', '.') }}</strong></span>
+                    </div>
+                    @endif
+                </div>
             </div>
         @endif
 

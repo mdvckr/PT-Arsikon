@@ -316,22 +316,26 @@ body {
             @endforeach
         </tbody>
         <tfoot>
-            {{-- Total Pemasukan --}}
-            <tr class="foot-pemasukan">
-                <td colspan="11" class="tl bold" style="padding-left:8px;">Total Pemasukan</td>
-                <td class="tr nw bold">Rp&nbsp;{{ number_format($total, 0, ',', '.') }}</td>
+            @php
+                $sAwal = isset($saldoAwal) ? (float)$saldoAwal : (float)$total;
+                $sSisa = isset($saldoSisa) ? (float)$saldoSisa : ($sAwal - (float)$total);
+            @endphp
+            {{-- Saldo Awal Kas Operasional --}}
+            <tr class="foot-pemasukan" style="background:#f8fafc;">
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Saldo Awal Kas Operasional Proyek</td>
+                <td class="tr nw bold" style="color:#1e40af;">Rp&nbsp;{{ number_format($sAwal, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
             {{-- Total Pengeluaran --}}
             <tr class="foot-pengeluaran">
-                <td colspan="11" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
-                <td class="tr nw bold">Rp&nbsp;{{ number_format($total, 0, ',', '.') }}</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Total Pengeluaran Nota Ini</td>
+                <td class="tr nw bold" style="color:#b91c1c;">Rp&nbsp;{{ number_format($total, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
-            {{-- Kekurangan / Kelebihan --}}
-            <tr class="foot-kekurangan">
-                <td colspan="11" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
-                <td class="tr nw bold">Rp&nbsp;0</td>
+            {{-- Sisa Saldo Kas Operasional --}}
+            <tr class="foot-kekurangan" style="background:#f0fdf4;">
+                <td colspan="11" class="tl bold" style="padding-left:8px; font-weight:800;">Sisa Saldo Kas Operasional Proyek</td>
+                <td class="tr nw bold" style="color:#15803d; font-weight:800;">Rp&nbsp;{{ number_format($sSisa, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
         </tfoot>

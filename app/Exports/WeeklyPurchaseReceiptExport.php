@@ -22,14 +22,24 @@ class WeeklyPurchaseReceiptExport implements FromCollection, WithHeadings, WithM
     protected ?Project $project;
     protected Carbon $startDate;
     protected Carbon $endDate;
+    protected ?float $periodStartBalance;
+    protected ?float $periodEndBalance;
     protected ?Collection $cachedRows = null;
 
-    public function __construct(Collection $receipts, ?Project $project = null, ?Carbon $startDate = null, ?Carbon $endDate = null)
-    {
-        $this->receipts  = $receipts;
-        $this->project   = $project;
-        $this->startDate = $startDate ?? now()->startOfWeek(Carbon::MONDAY);
-        $this->endDate   = $endDate ?? now()->endOfWeek(Carbon::SUNDAY);
+    public function __construct(
+        Collection $receipts,
+        ?Project $project = null,
+        ?Carbon $startDate = null,
+        ?Carbon $endDate = null,
+        ?float $periodStartBalance = null,
+        ?float $periodEndBalance = null
+    ) {
+        $this->receipts           = $receipts;
+        $this->project            = $project;
+        $this->startDate          = $startDate ?? now()->startOfWeek(Carbon::MONDAY);
+        $this->endDate            = $endDate ?? now()->endOfWeek(Carbon::SUNDAY);
+        $this->periodStartBalance = $periodStartBalance;
+        $this->periodEndBalance   = $periodEndBalance;
     }
 
     public function collection(): Collection
@@ -246,9 +256,32 @@ class WeeklyPurchaseReceiptExport implements FromCollection, WithHeadings, WithM
             $sheet->getStyle("J{$summaryRow}:M{$summaryRow}")->getNumberFormat()->setFormatCode('#,##0');
             $sheet->getStyle("M{$summaryRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FEF3C7');
 
+            $signStartRow = $summaryRow;
+            if ($this->periodStartBalance !== null && $this->periodEndBalance !== null) {
+                $bStartRow = $summaryRow + 1;
+                $sheet->mergeCells("A{$bStartRow}:L{$bStartRow}");
+                $sheet->setCellValue("A{$bStartRow}", "SALDO AWAL KAS OPERASIONAL PROYEK:");
+                $sheet->setCellValue("M{$bStartRow}", $this->periodStartBalance);
+                $sheet->getStyle("A{$bStartRow}:N{$bStartRow}")->getFont()->setBold(true);
+                $sheet->getStyle("A{$bStartRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("M{$bStartRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle("A{$bStartRow}:N{$bStartRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFCBD5E1'));
+
+                $bEndRow = $summaryRow + 2;
+                $sheet->mergeCells("A{$bEndRow}:L{$bEndRow}");
+                $sheet->setCellValue("A{$bEndRow}", "SISA SALDO KAS OPERASIONAL PROYEK:");
+                $sheet->setCellValue("M{$bEndRow}", $this->periodEndBalance);
+                $sheet->getStyle("A{$bEndRow}:N{$bEndRow}")->getFont()->setBold(true);
+                $sheet->getStyle("A{$bEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("M{$bEndRow}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheet->getStyle("A{$bEndRow}:N{$bEndRow}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('DCFCE7');
+                $sheet->getStyle("A{$bEndRow}:N{$bEndRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF000000'));
+                $signStartRow = $bEndRow;
+            }
+
             // 4. Signature Block (3 Tanda Tangan: Pembuat, Meng-crosscheck, Mengetahui)
-            $signDateRow  = $summaryRow + 2;
-            $signTitleRow = $summaryRow + 4;
+            $signDateRow  = $signStartRow + 2;
+            $signTitleRow = $signStartRow + 4;
             $signNameRow  = $signTitleRow + 4;
             $signRoleRow  = $signNameRow + 1;
 

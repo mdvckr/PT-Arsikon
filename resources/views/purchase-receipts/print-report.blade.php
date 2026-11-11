@@ -332,24 +332,28 @@ body {
         </tbody>
 
         <tfoot>
-            {{-- Total Pemasukan --}}
-            <tr class="foot-pemasukan">
+            @php
+                $startBal = isset($periodStartBalance) ? (float)$periodStartBalance : (float)$grandTotal;
+                $endBal   = isset($periodEndBalance) ? (float)$periodEndBalance : ($startBal - (float)$grandTotal);
+            @endphp
+            {{-- Saldo Awal Kas Proyek --}}
+            <tr class="foot-pemasukan" style="background:#f8fafc;">
                 <td colspan="11" class="tl bold" style="padding-left:8px;">
-                    Total Pemasukan &nbsp;({{ $receipts->count() }} Nota)
+                    Saldo Awal Kas Proyek Periode Ini
                 </td>
-                <td class="tr nw bold">Rp&nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                <td class="tr nw bold" style="color:#1e40af;">Rp&nbsp;{{ number_format($startBal, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
             {{-- Total Pengeluaran --}}
             <tr class="foot-pengeluaran">
-                <td colspan="11" class="tl bold" style="padding-left:8px;">Total pengeluaran</td>
-                <td class="tr nw bold">Rp&nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
+                <td colspan="11" class="tl bold" style="padding-left:8px;">Total Pengeluaran Kas (Nota: {{ $receipts->count() }})</td>
+                <td class="tr nw bold" style="color:#b91c1c;">Rp&nbsp;{{ number_format($grandTotal, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
-            {{-- Kekurangan/Kelebihan --}}
-            <tr class="foot-kekurangan">
-                <td colspan="11" class="tl bold" style="padding-left:8px;">Kekurangan / Kelebihan</td>
-                <td class="tr nw bold">Rp&nbsp;0</td>
+            {{-- Sisa Saldo Kas Proyek --}}
+            <tr class="foot-kekurangan" style="background:#f0fdf4;">
+                <td colspan="11" class="tl bold" style="padding-left:8px; font-weight:800;">Sisa Saldo Kas Proyek</td>
+                <td class="tr nw bold" style="color:#15803d; font-weight:800;">Rp&nbsp;{{ number_format($endBal, 0, ',', '.') }}</td>
                 <td colspan="2"></td>
             </tr>
         </tfoot>

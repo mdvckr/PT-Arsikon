@@ -396,7 +396,12 @@ class PurchaseReceiptController extends Controller
         $this->authorize('view purchase receipts');
 
         $purchaseReceipt->load(['purchaseOrder.payments', 'project', 'supplier', 'creator', 'items.material.unit']);
-        return view('purchase-receipts.show', compact('purchaseReceipt'));
+
+        $singleBalances = $this->calculateSingleReceiptBalances($purchaseReceipt);
+        $saldoAwal = $singleBalances['saldoAwal'];
+        $saldoSisa = $singleBalances['saldoSisa'];
+
+        return view('purchase-receipts.show', compact('purchaseReceipt', 'saldoAwal', 'saldoSisa'));
     }
 
     public function print(PurchaseReceipt $purchaseReceipt)
@@ -404,7 +409,12 @@ class PurchaseReceiptController extends Controller
         $this->authorize('view purchase receipts');
 
         $purchaseReceipt->load(['purchaseOrder', 'project', 'supplier', 'creator', 'items.material.unit']);
-        return view('purchase-receipts.print', compact('purchaseReceipt'));
+
+        $singleBalances = $this->calculateSingleReceiptBalances($purchaseReceipt);
+        $saldoAwal = $singleBalances['saldoAwal'];
+        $saldoSisa = $singleBalances['saldoSisa'];
+
+        return view('purchase-receipts.print', compact('purchaseReceipt', 'saldoAwal', 'saldoSisa'));
     }
 
     public function printWeekly(PurchaseReceipt $purchaseReceipt)
@@ -437,13 +447,17 @@ class PurchaseReceiptController extends Controller
         $reportType   = 'weekly';
         $periodYear   = $date->year;
 
+        $balances = $this->calculatePeriodBalances($project, $startOfWeek, $endOfWeek, (float)$receipts->sum('total_amount'));
+        $periodStartBalance = $balances['periodStartBalance'];
+        $periodEndBalance   = $balances['periodEndBalance'];
+
         $backUrl     = route('purchase-receipts.show', $purchaseReceipt);
         $weeklyUrl   = route('purchase-receipts.print-weekly', $purchaseReceipt);
         $monthlyUrl  = route('purchase-receipts.print-monthly', $purchaseReceipt);
 
         return view('purchase-receipts.print-report', compact(
             'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
-            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+            'periodYear', 'periodStartBalance', 'periodEndBalance', 'backUrl', 'weeklyUrl', 'monthlyUrl'
         ));
     }
 
@@ -454,6 +468,9 @@ class PurchaseReceiptController extends Controller
         $date  = $purchaseReceipt->receipt_date ?? now();
         $month = $date->month;
         $year  = $date->year;
+
+        $startOfMonth = $date->copy()->startOfMonth();
+        $endOfMonth   = $date->copy()->endOfMonth();
 
         $project = $purchaseReceipt->project;
 
@@ -476,13 +493,17 @@ class PurchaseReceiptController extends Controller
         $reportType  = 'monthly';
         $periodYear  = $year;
 
+        $balances = $this->calculatePeriodBalances($project, $startOfMonth, $endOfMonth, (float)$receipts->sum('total_amount'));
+        $periodStartBalance = $balances['periodStartBalance'];
+        $periodEndBalance   = $balances['periodEndBalance'];
+
         $backUrl    = route('purchase-receipts.show', $purchaseReceipt);
         $weeklyUrl  = route('purchase-receipts.print-weekly', $purchaseReceipt);
         $monthlyUrl = route('purchase-receipts.print-monthly', $purchaseReceipt);
 
         return view('purchase-receipts.print-report', compact(
             'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
-            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+            'periodYear', 'periodStartBalance', 'periodEndBalance', 'backUrl', 'weeklyUrl', 'monthlyUrl'
         ));
     }
 
@@ -542,13 +563,17 @@ class PurchaseReceiptController extends Controller
         $reportType   = 'weekly';
         $periodYear   = $date->year;
 
+        $balances = $this->calculatePeriodBalances($project, $startOfWeek, $endOfWeek, (float)$receipts->sum('total_amount'));
+        $periodStartBalance = $balances['periodStartBalance'];
+        $periodEndBalance   = $balances['periodEndBalance'];
+
         $backUrl     = route('purchase-receipts.index', array_filter(['project_id' => $project?->id]));
         $weeklyUrl   = route('purchase-receipts.weekly-report', array_filter(['project_id' => $project?->id, 'year' => $startOfWeek->year, 'week' => $weekNumber]));
         $monthlyUrl  = route('purchase-receipts.monthly-report', array_filter(['project_id' => $project?->id, 'year' => $startOfWeek->year, 'month' => $startOfWeek->month]));
 
         return view('purchase-receipts.print-report', compact(
             'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
-            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+            'periodYear', 'periodStartBalance', 'periodEndBalance', 'backUrl', 'weeklyUrl', 'monthlyUrl'
         ));
     }
 
@@ -575,6 +600,9 @@ class PurchaseReceiptController extends Controller
         $year  = (int) ($request->year ?? now()->year);
         $month = (int) ($request->month ?? ($request->filled('date') ? \Carbon\Carbon::parse($request->date)->month : now()->month));
 
+        $startOfMonth = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endOfMonth   = $startOfMonth->copy()->endOfMonth();
+
         $query = PurchaseReceipt::with(['project', 'supplier', 'creator', 'items.material.unit'])
             ->whereYear('receipt_date', $year)
             ->whereMonth('receipt_date', $month);
@@ -599,13 +627,17 @@ class PurchaseReceiptController extends Controller
         $reportType     = 'monthly';
         $periodYear     = $year;
 
+        $balances = $this->calculatePeriodBalances($project, $startOfMonth, $endOfMonth, (float)$receipts->sum('total_amount'));
+        $periodStartBalance = $balances['periodStartBalance'];
+        $periodEndBalance   = $balances['periodEndBalance'];
+
         $backUrl    = route('purchase-receipts.index', array_filter(['project_id' => $project?->id]));
         $weeklyUrl  = route('purchase-receipts.weekly-report', array_filter(['project_id' => $project?->id, 'year' => $year, 'week' => now()->isoWeek()]));
         $monthlyUrl = route('purchase-receipts.monthly-report', array_filter(['project_id' => $project?->id, 'year' => $year, 'month' => $month]));
 
         return view('purchase-receipts.print-report', compact(
             'receipts', 'project', 'periodLabel', 'reportTitle', 'reportType',
-            'periodYear', 'backUrl', 'weeklyUrl', 'monthlyUrl'
+            'periodYear', 'periodStartBalance', 'periodEndBalance', 'backUrl', 'weeklyUrl', 'monthlyUrl'
         ));
     }
 
@@ -654,10 +686,87 @@ class PurchaseReceiptController extends Controller
 
         $receipts = $query->orderBy('receipt_date')->orderBy('id')->get();
 
+        $balances = $this->calculatePeriodBalances($project, $startDate, $endDate, (float)$receipts->sum('total_amount'));
+        $periodStartBalance = $balances['periodStartBalance'];
+        $periodEndBalance   = $balances['periodEndBalance'];
+
         $projectNameSlug = $project ? Str::slug($project->name) : 'semua-proyek';
         $filename = "Rekap-Nota-{$projectNameSlug}-{$startDate->format('Ymd')}-sd-{$endDate->format('Ymd')}.xlsx";
 
-        return Excel::download(new WeeklyPurchaseReceiptExport($receipts, $project, $startDate, $endDate), $filename);
+        return Excel::download(new WeeklyPurchaseReceiptExport($receipts, $project, $startDate, $endDate, $periodStartBalance, $periodEndBalance), $filename);
+    }
+
+    /**
+     * Helper menghitung saldo awal dan saldo sisa untuk nota tunggal.
+     */
+    protected function calculateSingleReceiptBalances(PurchaseReceipt $purchaseReceipt): array
+    {
+        $refNumber = $purchaseReceipt->receipt_number ?: "NOTA-{$purchaseReceipt->id}";
+        $balanceLog = ProjectBalanceLog::where('project_id', $purchaseReceipt->project_id)
+            ->where(function($q) use ($refNumber, $purchaseReceipt) {
+                $q->where('reference_number', $refNumber)
+                  ->orWhere('reference_number', "NOTA-{$purchaseReceipt->id}")
+                  ->orWhere('notes', 'like', "%#{$refNumber}%")
+                  ->orWhere('notes', 'like', "%#{$purchaseReceipt->id}%");
+            })
+            ->latest('id')
+            ->first();
+
+        $saldoAwal = $balanceLog ? (float)$balanceLog->balance_before : (
+            $purchaseReceipt->project
+                ? (float)$purchaseReceipt->project->operational_balance + (float)$purchaseReceipt->total_amount
+                : (float)$purchaseReceipt->total_amount
+        );
+        $saldoSisa = $balanceLog ? (float)$balanceLog->balance_after : ($saldoAwal - (float)$purchaseReceipt->total_amount);
+
+        return [
+            'saldoAwal' => $saldoAwal,
+            'saldoSisa' => $saldoSisa,
+        ];
+    }
+
+    /**
+     * Helper menghitung saldo awal dan saldo akhir periode kas proyek.
+     */
+    protected function calculatePeriodBalances(?Project $project, $startDate, $endDate, float $grandTotal): array
+    {
+        if (!$project) {
+            return ['periodStartBalance' => 0.0, 'periodEndBalance' => 0.0];
+        }
+
+        $startStr = $startDate->copy()->startOfDay();
+        $endStr   = $endDate->copy()->endOfDay();
+
+        $firstLog = ProjectBalanceLog::where('project_id', $project->id)
+            ->whereBetween('created_at', [$startStr, $endStr])
+            ->oldest('id')
+            ->first();
+
+        $lastLog = ProjectBalanceLog::where('project_id', $project->id)
+            ->whereBetween('created_at', [$startStr, $endStr])
+            ->latest('id')
+            ->first();
+
+        if ($firstLog) {
+            $startBal = (float) $firstLog->balance_before;
+        } else {
+            $priorLog = ProjectBalanceLog::where('project_id', $project->id)
+                ->where('created_at', '<', $startStr)
+                ->latest('id')
+                ->first();
+            $startBal = $priorLog ? (float) $priorLog->balance_after : ((float) $project->operational_balance + $grandTotal);
+        }
+
+        if ($lastLog) {
+            $endBal = (float) $lastLog->balance_after;
+        } else {
+            $endBal = $startBal - $grandTotal;
+        }
+
+        return [
+            'periodStartBalance' => $startBal,
+            'periodEndBalance'   => $endBal,
+        ];
     }
 
     public function updateStatus(Request $request, PurchaseReceipt $purchaseReceipt)
