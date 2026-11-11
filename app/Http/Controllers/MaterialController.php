@@ -655,4 +655,30 @@ class MaterialController extends Controller
 
         return back();
     }
+
+    /**
+     * Export rekapitulasi stok bulanan material & alat berdasarkan pengelompokan.
+     */
+    public function exportMonthly(Request $request)
+    {
+        $this->authorize('view materials');
+
+        $user = Auth::user();
+        $month = (int) ($request->input('month') ?? now()->month);
+        $year  = (int) ($request->input('year') ?? now()->year);
+
+        $warehouseId = $request->input('warehouse_id');
+        $warehouse = null;
+        if (!empty($warehouseId) && $warehouseId !== 'all') {
+            $warehouse = Warehouse::find($warehouseId);
+            if ($warehouse && !$user->hasAccessToWarehouse($warehouse)) {
+                abort(403, 'Anda tidak memiliki hak akses ke gudang yang dipilih.');
+            }
+        }
+
+        $whSlug = $warehouse ? \Illuminate\Support\Str::slug($warehouse->name) : 'semua-gudang';
+        $filename = "Rekap-Stok-Material-dan-Alat-Bulan-{$month}-{$year}-{$whSlug}.xlsx";
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\MonthlyStockGroupExport($month, $year, $warehouse), $filename);
+    }
 }

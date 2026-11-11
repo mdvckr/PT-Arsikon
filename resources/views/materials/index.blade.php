@@ -85,13 +85,16 @@
             </div>
             <p class="text-muted" style="font-size:12.5px;margin:3px 0 0 0;">Daftar seluruh master material konstruksi, spesifikasi, dan stok</p>
         </div>
-        @can('create materials')
-        <div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="openMonthlyStockModal()" class="btn btn-sm" style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;border:1px solid #10b981;color:#065f46;background:#ecfdf5;cursor:pointer;" title="Export Rekapitulasi Stok Material & Alat Bulanan">
+                <x-lucide-file-spreadsheet style="width:15px;height:15px;color:#059669;" /> Export Excel Bulanan
+            </button>
+            @can('create materials')
             <a href="{{ route('materials.create') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:7px;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;box-shadow:0 1px 3px rgba(37,99,235,0.2);">
                 <x-lucide-plus /> Tambah Material
             </a>
+            @endcan
         </div>
-        @endcan
     </div>
 
     {{-- Search & Filter Bar --}}
@@ -628,8 +631,90 @@
         </div>
     </div>
 
+    {{-- Modal Export Rekapitulasi Stok Bulanan (Material & Alat) --}}
+    <div id="modalMonthlyStock" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#fff;border-radius:12px;width:100%;max-width:480px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1);overflow:hidden;">
+            <form method="GET" action="{{ route('materials.export-monthly') }}">
+                {{-- Modal Header --}}
+                <div style="padding:16px 20px;border-bottom:1px solid #d1fae5;background:#ecfdf5;display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:#d1fae5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+                            <x-lucide-file-spreadsheet style="width:18px;height:18px;" />
+                        </div>
+                        <div>
+                            <div class="fw-700" style="font-size:15px;color:#065f46;">Export Stok Bulanan</div>
+                            <div class="text-muted" style="font-size:11.5px;">Rekapitulasi data stok material dan alat per kelompok</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeMonthlyStockModal()" style="background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;line-height:1;padding:4px;">
+                        <x-lucide-x />
+                    </button>
+                </div>
+
+                {{-- Modal Body --}}
+                <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+                    <div>
+                        <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;">Bulan</label>
+                        <select name="month" class="form-control" style="height:38px;border-radius:6px;font-size:13px;">
+                            @for ($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}" {{ now()->month == $m ? 'selected' : '' }}>
+                                    {{ \Carbon\Carbon::create(null, $m, 1)->translatedFormat('F') }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;">Tahun</label>
+                        <select name="year" class="form-control" style="height:38px;border-radius:6px;font-size:13px;">
+                            @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
+                                <option value="{{ $y }}" {{ now()->year == $y ? 'selected' : '' }}>
+                                    {{ $y }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;">Gudang / Proyek</label>
+                        <select name="warehouse_id" class="form-control" style="height:38px;border-radius:6px;font-size:13px;">
+                            @if($isGlobalAccess ?? false)
+                                <option value="all">Semua Gudang / Terkonsolidasi</option>
+                            @endif
+                            @foreach($accessibleWarehouses ?? [] as $wh)
+                                <option value="{{ $wh->id }}" {{ (isset($selectedWarehouseId) && $selectedWarehouseId == $wh->id) ? 'selected' : '' }}>
+                                    {{ $wh->name }} {{ $wh->is_central ? '(Pusat)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="text-muted" style="font-size:11px;margin-top:4px;">File Excel akan berisi 2 sheet: Rekap Stok Material dan Rekap Stok Alat Kerja.</div>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div style="background:#f8fafc;padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" onclick="closeMonthlyStockModal()" class="btn btn-secondary" style="height:36px;padding:0 14px;border-radius:6px;font-size:12.5px;font-weight:600;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-success" style="height:36px;padding:0 16px;border-radius:6px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;background:#059669;border-color:#059669;color:#fff;">
+                        <x-lucide-download style="width:14px;height:14px;" /> Unduh File Excel (.xlsx)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
+        function openMonthlyStockModal() {
+            var modal = document.getElementById('modalMonthlyStock');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeMonthlyStockModal() {
+            var modal = document.getElementById('modalMonthlyStock');
+            if (modal) modal.style.display = 'none';
+        }
         function openDeleteCategoryModal(catId, catName, itemCount) {
             var modal = document.getElementById('modalDeleteCategory');
             var form = document.getElementById('formDeleteCategory');
