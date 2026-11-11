@@ -117,4 +117,13 @@ class MaterialGroupPrintTest extends TestCase
         ]));
         $response->assertStatus(403);
     }
+
+    public function test_materials_index_renders_print_group_button_and_decimal_values(): void
+    {
+        $response = $this->actingAs($this->user)->get(route('materials.index'));
+        $response->assertOk();
+        $response->assertSee('materials/print-group');
+        $response->assertSee('125,75'); // Sisa stok desimal ditampilkan
+        $response->assertSee('24,75');  // Pemakaian desimal ditampilkan
+    }
 }

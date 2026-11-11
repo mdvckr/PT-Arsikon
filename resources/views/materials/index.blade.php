@@ -203,6 +203,15 @@
                                         ({{ $materialsInType->count() }})
                                     </span>
                                 </div>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('materials.print-group', [
+                                        'category_id'  => $category->id,
+                                        'type'         => $typeName,
+                                        'warehouse_id' => $selectedWarehouseId ?? 'all'
+                                    ]) }}" target="_blank" onclick="event.stopPropagation();" class="btn btn-sm" style="font-size:11px;padding:3px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #cbd5e1;color:#334155;text-decoration:none;" title="Cetak Rekapitulasi Kelompok {{ $typeName }}">
+                                        <x-lucide-printer style="width:12px;height:12px;color:#475569;" /> Cetak Kelompok
+                                    </a>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -273,6 +282,7 @@
                                         $iconColor = $isReceived ? '#16a34a' : ($isPartial ? '#2563eb' : '#d97706');
                                         $statusLabel = $stg['status_label'] ?? ($isReceived ? 'Masuk' : ($isPartial ? 'Masuk Sebagian' : 'Rencana'));
                                         $stageDate = !empty($stg['date']) ? \Carbon\Carbon::parse($stg['date'])->format('d/m/Y') : null;
+                                        $fmtQty = fn($val) => fmod((float)$val, 1) !== 0.0 ? number_format((float)$val, 2, ',', '.') : number_format((float)$val, 0, ',', '.');
                                         $stgQty = $isReceived
                                             ? (float)($stg['received_qty'] ?? ($stg['qty'] ?? 0))
                                             : (float)(($stg['remaining_qty'] ?? null) !== null && (float)$stg['remaining_qty'] > 0 ? $stg['remaining_qty'] : ($stg['qty'] ?? ($stg['planned_qty'] ?? 0)));
@@ -288,7 +298,7 @@
                                             data-unit="{{ $unitAbbr }}"
                                             data-stages='@json($stages)'
                                             style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:{{ $bg }};border:1px solid {{ $border }};color:{{ $color }};cursor:pointer;line-height:1.3;"
-                                            title="{{ $stg['reference'] ?? ($stg['stage'] ?? 'PO') }}: {{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }} ({{ $statusLabel }}){{ !empty($stg['warehouse_name']) ? ' · '.$stg['warehouse_name'] : '' }}{{ $stageDate ? ' · '.$stageDate : '' }}">
+                                            title="{{ $stg['reference'] ?? ($stg['stage'] ?? 'PO') }}: {{ $fmtQty($stgQty) }} {{ $unitAbbr }} ({{ $statusLabel }}){{ !empty($stg['warehouse_name']) ? ' · '.$stg['warehouse_name'] : '' }}{{ $stageDate ? ' · '.$stageDate : '' }}">
                                         @if($isReceived)
                                             <x-lucide-circle-check style="width:11px;height:11px;color:{{ $iconColor }};" />
                                         @else
@@ -297,15 +307,16 @@
                                         @if($isPartial)
                                             <span>{{ $stageDate ?: 'Masuk' }}</span>
                                             <span style="opacity:0.6;">•</span>
-                                            <span>{{ number_format((float)($stg['received_qty'] ?? 0), 0, ',', '.') }}/{{ number_format((float)($stg['planned_qty'] ?? $stgQty), 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                            <span>{{ $fmtQty($stg['received_qty'] ?? 0) }}/{{ $fmtQty($stg['planned_qty'] ?? $stgQty) }} {{ $unitAbbr }}</span>
                                         @else
                                             <span>{{ $stageDate ?: ($stg['reference'] ?? ($stg['stage'] ?? 'Masuk')) }}</span>
                                             <span style="opacity:0.6;">•</span>
-                                            <span>{{ number_format($stgQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                            <span>{{ $fmtQty($stgQty) }} {{ $unitAbbr }}</span>
                                         @endif
                                     </button>
                                 @else
                                     @php
+                                        $fmtQty = fn($val) => fmod((float)$val, 1) !== 0.0 ? number_format((float)$val, 2, ',', '.') : number_format((float)$val, 0, ',', '.');
                                         $allReceived = ($planQty <= 0 && $recQty > 0);
                                         $btnBg = $allReceived ? '#f0fdf4' : '#fffbeb';
                                         $btnBorder = $allReceived ? '#bbf7d0' : '#fde68a';
@@ -324,12 +335,12 @@
                                             <x-lucide-circle-check style="font-size:10px;color:#16a34a;" />
                                             <span>Lengkap Masuk</span>
                                             <span style="color:#86efac;">•</span>
-                                            <span style="font-weight:700;color:#15803d;">{{ number_format($recQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                            <span style="font-weight:700;color:#15803d;">{{ $fmtQty($recQty) }} {{ $unitAbbr }}</span>
                                         @else
                                             <x-lucide-clock style="font-size:10px;color:#d97706;" />
                                             <span>{{ $stageCount }} Tahap</span>
                                             <span style="color:#fde68a;">•</span>
-                                            <span style="font-weight:700;">{{ number_format($planQty, 0, ',', '.') }} {{ $unitAbbr }}</span>
+                                            <span style="font-weight:700;">{{ $fmtQty($planQty) }} {{ $unitAbbr }}</span>
                                         @endif
                                         <x-lucide-chevron-right style="font-size:9px;opacity:0.7;margin-left:2px;" />
                                     </button>
@@ -342,6 +353,7 @@
                             {{ $m->created_at ? $m->created_at->format('d/m/Y') : '-' }}
                         </td>
                         @php 
+                            $fmtQty = fn($val) => fmod((float)$val, 1) !== 0.0 ? number_format((float)$val, 2, ',', '.') : number_format((float)$val, 0, ',', '.');
                             $stockSisa = (float) $m->inventories->sum('quantity'); 
                             $activeInventories = $m->inventories->where('quantity', '>', 0);
                             $pemakaian = (float) abs($m->stockMutations->where('qty_change', '<', 0)->sum('qty_change'));
@@ -350,25 +362,25 @@
                             $totalPlanned = (float) $planQty;
                         @endphp
                         <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
-                            <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ number_format($totalStock, 0, ',', '.') }}</span>
+                            <span style="font-weight:600;font-size:13.5px;color:#0f172a;">{{ $fmtQty($totalStock) }}</span>
                             @if($m->unit?->abbreviation || $m->unit?->name)
                             <span class="text-muted" style="font-size:11px;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                             @endif
                             @if($totalPlanned > 0)
                             <div class="text-muted" style="font-size:10.5px;margin-top:1px;color:#b45309 !important;font-weight:600;">
-                                +{{ number_format($totalPlanned, 0, ',', '.') }} rencana
+                                +{{ $fmtQty($totalPlanned) }} rencana
                             </div>
                             @endif
                         </td>
                         <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
-                            <span style="font-size:13px;color:#334155;">{{ number_format($pemakaian, 0, ',', '.') }}</span>
+                            <span style="font-size:13px;color:#334155;">{{ $fmtQty($pemakaian) }}</span>
                             @if($m->unit?->abbreviation || $m->unit?->name)
                             <span class="text-muted" style="font-size:11px;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                             @endif
                         </td>
                         <td style="text-align:center;padding:10px 14px;vertical-align:middle;">
                             <div style="font-weight:700;font-size:13.5px;color:#0f172a;">
-                                {{ number_format($stockSisa, 0, ',', '.') }}
+                                {{ $fmtQty($stockSisa) }}
                                 @if($m->unit?->abbreviation || $m->unit?->name)
                                 <span class="text-muted" style="font-size:11px;font-weight:normal;">{{ $m->unit->abbreviation ?? $m->unit->name }}</span>
                                 @endif
