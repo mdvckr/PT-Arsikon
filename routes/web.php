@@ -20,6 +20,7 @@ use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseReceiptController;
+use App\Http\Controllers\ProjectMaterialNoteController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
@@ -141,6 +142,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
         Route::post('/purchase-orders/import-items-excel',       [PurchaseOrderController::class, 'importItemsExcel'])->name('purchase-orders.import-items-excel');
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show','edit','update']);
         Route::get('/purchase-orders/{purchaseOrder}/print',   [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
+        Route::get('/purchase-orders/{purchaseOrder}/file',    [PurchaseOrderController::class, 'file'])->name('purchase-orders.file');
         Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
         Route::post('/purchase-orders/{purchaseOrder}/send',   [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
@@ -158,6 +160,33 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/purchase-receipts/export-weekly',  [PurchaseReceiptController::class, 'exportWeekly'])->name('purchase-receipts.export-weekly');
     Route::get('/purchase-receipts/{purchaseReceipt}/file',          [PurchaseReceiptController::class, 'file'])->name('purchase-receipts.file');
     Route::resource('purchase-receipts', PurchaseReceiptController::class);
+
+    // Catatan Material & Sewa Alat Proyek (Mingguan)
+    Route::get('/project-notes', [ProjectMaterialNoteController::class, 'index'])->name('project-notes.index');
+    Route::post('/project-notes/ledgers', [ProjectMaterialNoteController::class, 'storeLedger'])->name('project-notes.ledgers.store');
+    Route::get('/project-notes/ledgers/{ledger}', [ProjectMaterialNoteController::class, 'showLedger'])->name('project-notes.ledgers.show');
+    Route::put('/project-notes/ledgers/{ledger}', [ProjectMaterialNoteController::class, 'updateLedger'])->name('project-notes.ledgers.update');
+    Route::delete('/project-notes/ledgers/{ledger}', [ProjectMaterialNoteController::class, 'destroyLedger'])->name('project-notes.ledgers.destroy');
+    Route::get('/project-notes/ledgers/{ledger}/export', [ProjectMaterialNoteController::class, 'exportSingleMaterial'])->name('project-notes.ledgers.export');
+    Route::get('/project-notes/ledgers/{ledger}/print', [ProjectMaterialNoteController::class, 'printSingleMaterial'])->name('project-notes.ledgers.print');
+
+    Route::post('/project-notes/ledgers/{ledger}/entries', [ProjectMaterialNoteController::class, 'storeEntry'])->name('project-notes.entries.store');
+    Route::put('/project-notes/entries/{entry}', [ProjectMaterialNoteController::class, 'updateEntry'])->name('project-notes.entries.update');
+    Route::delete('/project-notes/entries/{entry}', [ProjectMaterialNoteController::class, 'destroyEntry'])->name('project-notes.entries.destroy');
+
+    Route::post('/project-notes/rentals', [ProjectMaterialNoteController::class, 'storeToolRental'])->name('project-notes.rentals.store');
+    Route::put('/project-notes/rentals/{toolRental}', [ProjectMaterialNoteController::class, 'updateToolRental'])->name('project-notes.rentals.update');
+    Route::delete('/project-notes/rentals/{toolRental}', [ProjectMaterialNoteController::class, 'destroyToolRental'])->name('project-notes.rentals.destroy');
+
+    // 1/1 Exports & Prints
+    Route::get('/project-notes/export-material', [ProjectMaterialNoteController::class, 'exportMaterial'])->name('project-notes.export-material');
+    Route::get('/project-notes/print-material', [ProjectMaterialNoteController::class, 'printMaterial'])->name('project-notes.print-material');
+    Route::get('/project-notes/export-rentals', [ProjectMaterialNoteController::class, 'exportRentals'])->name('project-notes.export-rentals');
+    Route::get('/project-notes/print-rentals', [ProjectMaterialNoteController::class, 'printRentals'])->name('project-notes.print-rentals');
+
+    // Combined Weekly (for backward compatibility)
+    Route::get('/project-notes/export-weekly', [ProjectMaterialNoteController::class, 'exportWeekly'])->name('project-notes.export-weekly');
+    Route::get('/project-notes/print-weekly', [ProjectMaterialNoteController::class, 'printWeekly'])->name('project-notes.print-weekly');
 
     // Payments
     Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);

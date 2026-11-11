@@ -39,7 +39,7 @@
         @endif
     </div>
 
-    <form action="{{ route('purchase-orders.store') }}" method="POST">
+    <form action="{{ route('purchase-orders.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="card mb-4" style="padding:20px;">
@@ -160,6 +160,15 @@
                 <div class="md:col-span-3">
                     <label class="form-label font-semibold">Catatan</label>
                     <input type="text" name="notes" value="{{ old('notes') }}" class="form-control" placeholder="Catatan khusus / instruksi pengiriman...">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="form-label font-semibold">Upload Foto / Dokumen Lampiran PO</label>
+                    <input type="file" name="attachment" accept="image/*,application/pdf" class="form-control" style="padding:6px;">
+                    <small class="text-muted block mt-1" style="font-size:11px;">Format file: JPG, PNG, WEBP, PDF (Maksimal 10MB).</small>
+                    @error('attachment')
+                        <div class="text-danger mt-1 text-xs">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
         </div>

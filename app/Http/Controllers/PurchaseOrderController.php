@@ -221,6 +221,7 @@ class PurchaseOrderController extends Controller
             'expected_delivery'                => 'nullable|date|after_or_equal:order_date',
             'terms'                            => 'nullable|string',
             'notes'                            => 'nullable|string',
+            'attachment'                       => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'mimetypes:image/jpeg,image/png,image/webp,application/pdf', 'max:10240', new \App\Rules\NoExecutableCode()],
             'items'                            => 'required|array|min:1',
             'items.*.material_id'              => 'nullable|exists:materials,id',
             'items.*.tool_id'                  => 'nullable|exists:tools,id',
@@ -391,7 +392,13 @@ class PurchaseOrderController extends Controller
             $deliveryWarehouseId = MaterialRequest::find($materialRequestId)?->to_warehouse_id;
         }
 
-        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $materialRequestId) {
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            \App\Services\SecureUploadService::validateSafeFile($request->file('attachment'), 'attachment');
+            $attachmentPath = \App\Services\SecureUploadService::processAndStore($request->file('attachment'), 'purchase_orders', 'private');
+        }
+
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $materialRequestId, $attachmentPath) {
             $po = PurchaseOrder::create([
                 'supplier_id'           => $supplierId,
                 'supplier_name'         => $supplierName,
@@ -408,6 +415,7 @@ class PurchaseOrderController extends Controller
                 'expected_delivery'     => $validated['expected_delivery'] ?? null,
                 'terms'                 => $validated['terms'] ?? null,
                 'notes'                 => $validated['notes'] ?? null,
+                'attachment_path'       => $attachmentPath,
             ]);
 
             $total = 0;
@@ -740,6 +748,7 @@ class PurchaseOrderController extends Controller
             'expected_delivery'                => 'nullable|date|after_or_equal:order_date',
             'terms'                            => 'nullable|string',
             'notes'                            => 'nullable|string',
+            'attachment'                       => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'mimetypes:image/jpeg,image/png,image/webp,application/pdf', 'max:10240', new \App\Rules\NoExecutableCode()],
             'items'                            => 'required|array|min:1',
             'items.*.material_id'              => 'nullable|exists:materials,id',
             'items.*.tool_id'                  => 'nullable|exists:tools,id',
@@ -775,7 +784,13 @@ class PurchaseOrderController extends Controller
 
         $deliveryWarehouseId = !empty($validated['delivery_warehouse_id']) ? $validated['delivery_warehouse_id'] : null;
 
-        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $purchaseOrder) {
+        $newAttachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            \App\Services\SecureUploadService::validateSafeFile($request->file('attachment'), 'attachment');
+            $newAttachmentPath = \App\Services\SecureUploadService::processAndStore($request->file('attachment'), 'purchase_orders', 'private');
+        }
+
+        $po = DB::transaction(function () use ($validated, $supplierId, $supplierName, $deliveryWarehouseId, $purchaseOrder, $newAttachmentPath) {
             $po = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
 
             // 1. Kembalikan kuota sebelumnya pada item MR & PR
@@ -915,7 +930,7 @@ class PurchaseOrderController extends Controller
                 $newStatus = 'draft';
             }
 
-            $po->update([
+            $updateFields = [
                 'supplier_id'            => $supplierId,
                 'supplier_name'          => $supplierName,
                 'contact_person'         => !empty(trim($validated['contact_person'] ?? '')) ? trim($validated['contact_person']) : null,
@@ -930,7 +945,16 @@ class PurchaseOrderController extends Controller
                 'status'                 => $newStatus,
                 'approved_by'            => ($newStatus === 'draft') ? null : $po->approved_by,
                 'approved_at'            => ($newStatus === 'draft') ? null : $po->approved_at,
-            ]);
+            ];
+
+            if ($newAttachmentPath) {
+                if ($po->attachment_path && \Illuminate\Support\Facades\Storage::disk('private')->exists($po->attachment_path)) {
+                    \Illuminate\Support\Facades\Storage::disk('private')->delete($po->attachment_path);
+                }
+                $updateFields['attachment_path'] = $newAttachmentPath;
+            }
+
+            $po->update($updateFields);
 
             // Hapus item dan jadwal lama
             foreach ($po->items()->get() as $oldPoItem) {
@@ -1540,5 +1564,19 @@ class PurchaseOrderController extends Controller
                 'items'   => [],
             ], 500);
         }
+    }
+
+    /**
+     * Tampilkan atau unduh berkas lampiran PO secara aman dari private storage.
+     */
+    public function file(PurchaseOrder $purchaseOrder)
+    {
+        $this->authorize('view', $purchaseOrder);
+
+        if (!$purchaseOrder->attachment_path || !\Illuminate\Support\Facades\Storage::disk('private')->exists($purchaseOrder->attachment_path)) {
+            abort(404, 'Berkas lampiran PO tidak ditemukan.');
+        }
+
+        return response()->file(\Illuminate\Support\Facades\Storage::disk('private')->path($purchaseOrder->attachment_path));
     }
 }

@@ -46,7 +46,7 @@
         @endif
     </div>
 
-    <form action="{{ route('purchase-orders.update', $purchaseOrder) }}" method="POST">
+    <form action="{{ route('purchase-orders.update', $purchaseOrder) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -181,6 +181,25 @@
                 <div>
                     <label class="form-label font-semibold">Catatan Umum</label>
                     <input type="text" name="notes" value="{{ old('notes', $purchaseOrder->notes) }}" class="form-control" placeholder="Catatan khusus / instruksi pengiriman...">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="form-label font-semibold">Upload / Ganti Foto & Dokumen Lampiran PO</label>
+                    @if($purchaseOrder->attachment_path)
+                        <div class="mb-2 flex items-center gap-2 text-xs">
+                            <span class="text-success font-medium flex items-center gap-1">
+                                <x-lucide-file-check class="w-4 h-4 text-emerald-600" /> Lampiran saat ini tersimpan:
+                            </span>
+                            <a href="{{ route('purchase-orders.file', $purchaseOrder) }}" target="_blank" class="btn btn-xs btn-outline-primary" style="padding:2px 8px;">
+                                <x-lucide-eye class="w-3 h-3 me-1" /> Lihat Lampiran
+                            </a>
+                        </div>
+                    @endif
+                    <input type="file" name="attachment" accept="image/*,application/pdf" class="form-control" style="padding:6px;">
+                    <small class="text-muted block mt-1" style="font-size:11px;">Format: JPG, PNG, WEBP, PDF (Maksimal 10MB). Biarkan kosong jika tidak ingin mengubah berkas.</small>
+                    @error('attachment')
+                        <div class="text-danger mt-1 text-xs">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
         </div>

@@ -209,6 +209,51 @@
         </div>
     </div>
 
+    <!-- Card Bukti Lampiran Foto / Dokumen PO -->
+    <div class="card mb-4" style="padding:16px 20px; border:1px solid #e2e8f0; background:#ffffff; border-radius:8px;">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <x-lucide-file-text class="text-primary" style="width:18px;height:18px;" />
+                <h4 style="font-size:14px;font-weight:700;color:#1e293b;margin:0;">Berkas Bukti Foto / Dokumen PO</h4>
+            </div>
+            @if($purchaseOrder->attachment_path)
+                <div>
+                    <a href="{{ route('purchase-orders.file', $purchaseOrder) }}" target="_blank" class="btn btn-sm btn-primary" style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;">
+                        <x-lucide-external-link style="width:14px;height:14px;" /> Buka / Unduh Lampiran
+                    </a>
+                </div>
+            @endif
+        </div>
+        <div class="mt-3">
+            @if($purchaseOrder->attachment_path)
+                @php
+                    $isImage = in_array(strtolower(pathinfo($purchaseOrder->attachment_path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+                @endphp
+                @if($isImage)
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg inline-block">
+                        <a href="{{ route('purchase-orders.file', $purchaseOrder) }}" target="_blank" title="Klik untuk memperbesar">
+                            <img src="{{ route('purchase-orders.file', $purchaseOrder) }}" alt="Foto Lampiran PO" class="rounded shadow-xs max-h-60 max-w-sm hover:opacity-95 transition" style="object-fit:cover;">
+                        </a>
+                        <p class="text-xs text-muted mt-2 text-center">Foto Bukti PO Fisik (Klik gambar untuk membuka ukuran penuh)</p>
+                    </div>
+                @else
+                    <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg max-w-md">
+                        <x-lucide-file-text class="text-danger" style="width:28px;height:28px;" />
+                        <div>
+                            <div class="text-xs font-bold text-slate-800">Dokumen Lampiran PO (PDF)</div>
+                            <div class="text-[11px] text-slate-500">Berkas tersimpan aman di server private</div>
+                        </div>
+                        <a href="{{ route('purchase-orders.file', $purchaseOrder) }}" target="_blank" class="ms-auto btn btn-xs btn-outline-secondary">
+                            Lihat Dokumen
+                        </a>
+                    </div>
+                @endif
+            @else
+                <p class="text-xs text-muted italic mb-0">Tidak ada bukti foto atau lampiran dokumen PO yang diunggah.</p>
+            @endif
+        </div>
+    </div>
+
     @if($purchaseOrder->receipts && $purchaseOrder->receipts->count() > 0)
         {{-- Jika PO terhubung Nota Pembelian, ringkasan finansial & riwayat pembayaran dipindahkan ke halaman Nota Pembelian --}}
         <div class="card mb-6" style="padding:16px 20px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:8px;">

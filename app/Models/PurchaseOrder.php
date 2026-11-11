@@ -27,6 +27,7 @@ class PurchaseOrder extends Model
         'paid_amount',
         'terms',
         'notes',
+        'attachment_path',
         'approved_at',
         'week_number',
         'month',
@@ -115,6 +116,11 @@ class PurchaseOrder extends Model
     public function hasConfirmedGoodsReceipt(): bool
     {
         return $this->goodsReceipts()->where('status', 'confirmed')->exists();
+    }
+
+    public function getHasAttachmentAttribute(): bool
+    {
+        return !empty($this->attachment_path);
     }
 
     public function hasPayableProof(): bool
