@@ -438,30 +438,35 @@
             var catId = sel.value;
             var catName = sel.options[sel.selectedIndex].text;
 
-            if (!confirm(`Hapus kategori "${catName}" dari sistem?\n\nKategori hanya dapat dihapus bila tidak ada material yang menggunakannya.`)) {
-                return;
-            }
+            confirmAction({
+                title: 'Hapus Kategori Material',
+                text: `Hapus kategori "${catName}" dari sistem?\n\nKategori hanya dapat dihapus bila tidak ada material yang menggunakannya.`,
+                confirmButtonText: 'Ya, Hapus Kategori',
+                isDanger: true
+            }).then(function(confirmed) {
+                if (!confirmed) return;
 
-            fetch(`{{ url('/categories') }}/${catId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Kategori berhasil dihapus.');
-                    sel.remove(sel.selectedIndex);
-                    sel.value = '';
-                    onCategoryChange();
-                } else {
-                    alert(data.message || 'Gagal menghapus kategori.');
-                }
-            })
-            .catch(() => alert('Terjadi kesalahan koneksi saat menghapus kategori.'));
+                fetch(`{{ url('/categories') }}/${catId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message || 'Kategori berhasil dihapus.');
+                        sel.remove(sel.selectedIndex);
+                        sel.value = '';
+                        onCategoryChange();
+                    } else {
+                        alert(data.message || 'Gagal menghapus kategori.');
+                    }
+                })
+                .catch(() => alert('Terjadi kesalahan koneksi saat menghapus kategori.'));
+            });
         }
 
         function onCategoryChange() {

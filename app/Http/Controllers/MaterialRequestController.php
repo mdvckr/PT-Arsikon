@@ -93,41 +93,13 @@ class MaterialRequestController extends Controller
         // Fallback ke Gudang Pusat jika user belum punya gudang proyek yang tervalidasi.
         $sourceWarehouseId = $defaultSourceWarehouseId ?: $warehouseId ?: $centralWarehouse?->id;
 
-        $materialCategories = Category::where('type', 'material')
-            ->with(['materials' => function ($q) use ($sourceWarehouseId) {
-                $q->where('is_active', true)
-                  ->when($sourceWarehouseId, function ($mq) use ($sourceWarehouseId) {
-                      $mq->whereHas('inventories', function ($iq) use ($sourceWarehouseId) {
-                          $iq->where('warehouse_id', $sourceWarehouseId);
-                      });
-                  })
-                  ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
-                      if ($sourceWarehouseId) {
-                          $iq->where('warehouse_id', $sourceWarehouseId);
-                      }
-                  }])
-                  ->orderBy('name');
-            }])
+        $masterMaterials = Material::where('is_active', true)
+            ->with('unit')
             ->orderBy('name')
-            ->get()
-            ->filter(fn($cat) => $cat->materials->isNotEmpty())
-            ->values();
+            ->get(['id', 'name', 'sku', 'unit_id', 'size']);
 
-        // Material tanpa kategori
-        $uncategorizedMaterials = Material::where('is_active', true)
-            ->whereNull('category_id')
-            ->when($sourceWarehouseId, function ($q) use ($sourceWarehouseId) {
-                $q->whereHas('inventories', function ($iq) use ($sourceWarehouseId) {
-                    $iq->where('warehouse_id', $sourceWarehouseId);
-                });
-            })
-            ->with(['unit', 'inventories' => function ($iq) use ($sourceWarehouseId) {
-                if ($sourceWarehouseId) {
-                    $iq->where('warehouse_id', $sourceWarehouseId);
-                }
-            }])
-            ->orderBy('name')
-            ->get();
+        $materialCategories = collect();
+        $uncategorizedMaterials = collect();
 
         // Semua gudang aktif sebagai pilihan sumber (Gudang Pusat tampil pertama)
         $sourceWarehouses = Warehouse::where('is_active', true)
@@ -149,6 +121,7 @@ class MaterialRequestController extends Controller
         $toolCategories = Category::where('type', 'tool')->orderBy('name')->get();
 
         return view('material-requests.create', compact(
+            'masterMaterials',
             'materialCategories',
             'toolCategories',
             'uncategorizedMaterials',
@@ -178,6 +151,7 @@ class MaterialRequestController extends Controller
             'usage_locations'            => 'nullable|array',
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
+            'custom_items.*.material_id' => 'nullable|exists:materials,id',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
             'custom_items.*.item_type'   => 'nullable|in:material,tool',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
@@ -229,10 +203,11 @@ class MaterialRequestController extends Controller
                 if ($name === '') continue;
                 $customNote = trim($cItem['notes'] ?? '');
                 $itemType = in_array($cItem['item_type'] ?? '', ['material', 'tool']) ? $cItem['item_type'] : 'material';
+                $materialId = !empty($cItem['material_id']) ? (int) $cItem['material_id'] : null;
                 $itemsData[] = [
-                    'material_id'      => null,
+                    'material_id'      => $materialId,
                     'item_type'        => $itemType,
-                    'custom_item_name' => $name,
+                    'custom_item_name' => $materialId ? null : $name,
                     'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
                     'custom_item_unit' => trim($cItem['unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,
@@ -418,50 +393,13 @@ class MaterialRequestController extends Controller
         $stockWarehouseId = $sourceWarehouseId ?: $warehouseId ?: $centralWarehouse?->id;
         $existingMaterialIds = $materialRequest->items->pluck('material_id')->filter()->toArray();
 
-        $materialCategories = Category::where('type', 'material')
-            ->with(['materials' => function ($q) use ($stockWarehouseId, $existingMaterialIds) {
-                $q->where('is_active', true)
-                  ->when($stockWarehouseId, function ($mq) use ($stockWarehouseId, $existingMaterialIds) {
-                      $mq->where(function ($sub) use ($stockWarehouseId, $existingMaterialIds) {
-                          $sub->whereHas('inventories', function ($iq) use ($stockWarehouseId) {
-                              $iq->where('warehouse_id', $stockWarehouseId);
-                          });
-                          if (!empty($existingMaterialIds)) {
-                              $sub->orWhereIn('id', $existingMaterialIds);
-                          }
-                      });
-                  })
-                  ->with(['unit', 'inventories' => function ($iq) use ($stockWarehouseId) {
-                      if ($stockWarehouseId) {
-                          $iq->where('warehouse_id', $stockWarehouseId);
-                      }
-                  }])
-                  ->orderBy('name');
-            }])
+        $masterMaterials = Material::where('is_active', true)
+            ->with('unit')
             ->orderBy('name')
-            ->get()
-            ->filter(fn($cat) => $cat->materials->isNotEmpty())
-            ->values();
+            ->get(['id', 'name', 'sku', 'unit_id', 'size']);
 
-        $uncategorizedMaterials = Material::where('is_active', true)
-            ->whereNull('category_id')
-            ->when($stockWarehouseId, function ($q) use ($stockWarehouseId, $existingMaterialIds) {
-                $q->where(function ($sub) use ($stockWarehouseId, $existingMaterialIds) {
-                    $sub->whereHas('inventories', function ($iq) use ($stockWarehouseId) {
-                        $iq->where('warehouse_id', $stockWarehouseId);
-                    });
-                    if (!empty($existingMaterialIds)) {
-                        $sub->orWhereIn('id', $existingMaterialIds);
-                    }
-                });
-            })
-            ->with(['unit', 'inventories' => function ($iq) use ($stockWarehouseId) {
-                if ($stockWarehouseId) {
-                    $iq->where('warehouse_id', $stockWarehouseId);
-                }
-            }])
-            ->orderBy('name')
-            ->get();
+        $materialCategories = collect();
+        $uncategorizedMaterials = collect();
 
         $accessibleWhIds = $user->accessibleWarehouseIds();
         $warehouses = Warehouse::where('is_central', false)
@@ -491,6 +429,7 @@ class MaterialRequestController extends Controller
 
         return view('material-requests.edit', compact(
             'materialRequest',
+            'masterMaterials',
             'materialCategories',
             'toolCategories',
             'uncategorizedMaterials',
@@ -535,6 +474,7 @@ class MaterialRequestController extends Controller
             'usage_locations'            => 'nullable|array',
             'usage_dates'                => 'nullable|array',
             'custom_items'               => 'nullable|array',
+            'custom_items.*.material_id' => 'nullable|exists:materials,id',
             'custom_items.*.name'        => 'required_with:custom_items|string|max:255',
             'custom_items.*.item_type'   => 'nullable|in:material,tool',
             'custom_items.*.category_id' => 'nullable|exists:categories,id',
@@ -584,10 +524,11 @@ class MaterialRequestController extends Controller
                 if ($name === '') continue;
                 $customNote = trim($cItem['notes'] ?? '');
                 $itemType = in_array($cItem['item_type'] ?? '', ['material', 'tool']) ? $cItem['item_type'] : 'material';
+                $materialId = !empty($cItem['material_id']) ? (int) $cItem['material_id'] : null;
                 $itemsData[] = [
-                    'material_id'      => null,
+                    'material_id'      => $materialId,
                     'item_type'        => $itemType,
-                    'custom_item_name' => $name,
+                    'custom_item_name' => $materialId ? null : $name,
                     'custom_item_type' => trim($cItem['type'] ?? '') ?: null,
                     'custom_item_unit' => trim($cItem['unit'] ?? ($itemType === 'tool' ? 'unit' : 'pcs')) ?: 'unit',
                     'category_id'      => !empty($cItem['category_id']) ? (int) $cItem['category_id'] : null,

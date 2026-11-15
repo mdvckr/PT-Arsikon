@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GoodsReceipt;
-use App\Models\Inventory;
-use App\Models\Material;
-use App\Models\MaterialRequest;
-use App\Models\StockMutation;
-use App\Models\Tool;
-use App\Models\ToolAssignment;
-use App\Models\Distribution;
+use App\Services\DashboardMetricService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected DashboardMetricService $metricService;
+
+    public function __construct(DashboardMetricService $metricService)
+    {
+        $this->metricService = $metricService;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -23,110 +22,24 @@ class DashboardController extends Controller
         $warehouseId = $activeWarehouse?->id ?? session('active_warehouse_id');
         $accessibleIds = $user->accessibleWarehouseIds();
 
-        // KPI Cards — difilter berdasarkan warehouse yang dapat diakses user
-        $totalMaterials = Material::whereHas('inventories', function ($q) use ($accessibleIds) {
-                $q->whereIn('warehouse_id', $accessibleIds);
-            })->count();
+        // Determine Dashboard Persona
+        if ($user->hasAnyRole(['Admin Pengadaan', 'Admin PO']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat'])) {
+            $persona = 'procurement_center';
+            $data = $this->metricService->getProcurementCenterMetrics();
+        } elseif ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin PO', 'Admin Pengadaan'])) {
+            $persona = 'site_purchasing';
+            $data = $this->metricService->getSitePurchasingMetrics($user);
+        } elseif ($user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat'])) {
+            $persona = 'executive';
+            $data = $this->metricService->getExecutiveMetrics();
+            $warehouseData = $this->metricService->getWarehouseMetrics($user, $warehouseId, $accessibleIds);
+            $procurementData = $this->metricService->getProcurementCenterMetrics();
+            $data = array_merge($data, $warehouseData, ['procurement' => $procurementData]);
+        } else {
+            $persona = 'warehouse';
+            $data = $this->metricService->getWarehouseMetrics($user, $warehouseId, $accessibleIds);
+        }
 
-        $totalTools = Tool::whereHas('inventories', function ($q) use ($accessibleIds) {
-                $q->whereIn('warehouse_id', $accessibleIds);
-            })->count();
-
-        $pendingRequests = MaterialRequest::where(function ($q) use ($accessibleIds) {
-                $q->whereIn('from_warehouse_id', $accessibleIds)
-                  ->orWhereIn('to_warehouse_id', $accessibleIds);
-            })
-            ->where('status', 'pending')
-            ->count();
-
-        $lowStockItems = Inventory::where('warehouse_id', $warehouseId)
-                            ->where('quantity', '<=', DB::raw('min_stock'))
-                            ->where('min_stock', '>', 0)
-                            ->count();
-
-        // Recent Material Requests — filtered by accessible warehouses
-        $recentRequests = MaterialRequest::with(['requestedBy', 'toWarehouse', 'fromWarehouse'])
-            ->where(function ($q) use ($accessibleIds) {
-                $q->whereIn('from_warehouse_id', $accessibleIds)
-                  ->orWhereIn('to_warehouse_id', $accessibleIds);
-            })
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        // Recent Distributions (Surat Jalan)
-        $recentDistributions = Distribution::with(['fromWarehouse', 'toWarehouse'])
-            ->where(function ($q) use ($accessibleIds) {
-                $q->whereIn('from_warehouse_id', $accessibleIds)
-                  ->orWhereIn('to_warehouse_id', $accessibleIds);
-            })
-            ->latest()
-            ->limit(5)
-            ->get();
-
-        // Stock Mutations (last 7 days) — filtered by active warehouse
-        $mutations = StockMutation::where('created_at', '>=', now()->subDays(7))
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->selectRaw('DATE(created_at) as date, reference_type as type, SUM(qty_change) as total')
-            ->groupBy('date', 'reference_type')
-            ->orderBy('date')
-            ->get();
-
-        // Tool Status Summary
-        $toolsReady = (int) Tool::sum('stock_available');
-        $toolsInUse = ToolAssignment::where('status', 'active')
-            ->where(function ($q) use ($accessibleIds) {
-                $q->whereIn('from_warehouse_id', $accessibleIds)
-                  ->orWhereIn('to_warehouse_id', $accessibleIds);
-            })
-            ->count();
-        $toolsMaintenance = (int) Tool::sum('stock_maintenance');
-
-        $toolStats = [
-            'ready'       => $toolsReady,
-            'active'      => $toolsInUse,
-            'maintenance' => $toolsMaintenance,
-        ];
-
-        // Inventory value by category — filtered by active warehouse
-        $inventoryByCategory = Inventory::with(['material.category'])
-            ->where('warehouse_id', $warehouseId)
-            ->get()
-            ->groupBy(fn($i) => $i->material?->category?->name ?? 'Lainnya')
-            ->map(fn($items) => $items->sum('quantity'));
-
-        // T13: Monitoring Kedatangan Barang dari Jadwal PO (Hari Ini dan Terlambat)
-        $incomingTodayCount = \App\Models\PoDeliverySchedule::whereIn('status', ['planned', 'partial'])
-            ->whereDate('planned_date', now()->toDateString())
-            ->whereRaw('(planned_qty - received_qty) > 0')
-            ->whereHas('purchaseOrderItem.purchaseOrder', fn($q) => $q->whereIn('status', ['approved', 'sent', 'partial_received']))
-            ->when($warehouseId, function ($q) use ($warehouseId) {
-                $q->where(function ($w) use ($warehouseId) {
-                    $w->where('warehouse_id', $warehouseId)
-                      ->orWhereHas('purchaseOrderItem.purchaseOrder', fn($poQ) => $poQ->where('delivery_warehouse_id', $warehouseId));
-                });
-            })
-            ->count();
-
-        $incomingLateCount = \App\Models\PoDeliverySchedule::whereIn('status', ['planned', 'partial'])
-            ->whereNotNull('planned_date')
-            ->whereDate('planned_date', '<', now()->toDateString())
-            ->whereRaw('(planned_qty - received_qty) > 0')
-            ->whereHas('purchaseOrderItem.purchaseOrder', fn($q) => $q->whereIn('status', ['approved', 'sent', 'partial_received']))
-            ->when($warehouseId, function ($q) use ($warehouseId) {
-                $q->where(function ($w) use ($warehouseId) {
-                    $w->where('warehouse_id', $warehouseId)
-                      ->orWhereHas('purchaseOrderItem.purchaseOrder', fn($poQ) => $poQ->where('delivery_warehouse_id', $warehouseId));
-                });
-            })
-            ->count();
-
-        return view('dashboard', compact(
-            'totalMaterials', 'totalTools', 'pendingRequests', 'lowStockItems',
-            'recentRequests', 'recentDistributions', 'mutations', 'toolStats',
-            'toolsReady', 'toolsInUse', 'toolsMaintenance',
-            'inventoryByCategory',
-            'incomingTodayCount', 'incomingLateCount'
-        ));
+        return view('dashboard', array_merge(['persona' => $persona], $data));
     }
 }

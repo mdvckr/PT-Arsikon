@@ -170,25 +170,24 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
             'status'           => 'pending',
         ]);
 
-        // 1. Admin Pusat mengunjungi halaman payments -> status read-only, tidak ada tombol Setujui/Tolak
+        // 1. Admin Pusat mengunjungi halaman balance requests -> status read-only, tidak ada tombol Setujui/Tolak
         $this->flushSession();
-        $resPusat = $this->actingAs($this->adminPusat)->get(route('payments.index'));
+        $resPusat = $this->actingAs($this->adminPusat)->get(route('payments.balance-requests.index'));
         $resPusat->assertOk();
         $resPusat->assertSee('Menunggu Approval Admin PO');
-        $resPusat->assertDontSee(route('payments.approveBalanceRequest', $balanceRequest));
+        $resPusat->assertDontSee("promptApproveRequest({$balanceRequest->id}");
 
-        // 2. Owner mengunjungi halaman payments -> status read-only
+        // 2. Owner mengunjungi halaman balance requests -> status read-only
         $this->flushSession();
-        $resOwner = $this->actingAs($this->owner)->get(route('payments.index'));
+        $resOwner = $this->actingAs($this->owner)->get(route('payments.balance-requests.index'));
         $resOwner->assertOk();
         $resOwner->assertSee('Menunggu Approval Admin PO');
-        $resOwner->assertDontSee(route('payments.approveBalanceRequest', $balanceRequest));
+        $resOwner->assertDontSee("promptApproveRequest({$balanceRequest->id}");
 
-        // 3. Admin PO Pusat mengunjungi halaman payments -> ada tombol Setujui dan Tolak
+        // 3. Admin PO Pusat mengunjungi halaman balance requests -> ada tombol Setujui
         $this->flushSession();
-        $resPo = $this->actingAs($this->adminPo)->get(route('payments.index'));
+        $resPo = $this->actingAs($this->adminPo)->get(route('payments.balance-requests.index'));
         $resPo->assertOk();
-        $resPo->assertSee(route('payments.approveBalanceRequest', $balanceRequest));
-        $resPo->assertSee('Top-Up Saldo Langsung');
+        $resPo->assertSee("promptApproveRequest({$balanceRequest->id}");
     }
 }

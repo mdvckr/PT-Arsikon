@@ -3,22 +3,36 @@
    Matches User Design Mockup with 5 Semantic Pastel States
    ========================================================================== */
 
-/* Toast Container Base - Centered Top */
-.swal2-container.swal2-top {
-    top: 20px !important;
+/* Toast Container Base - Zero-height Floating Anchor */
+.swal2-container.swal2-top,
+.swal2-container.swal2-toast-clean-container,
+.swal2-container:has(.swal2-pastel-toast),
+.swal2-container:has(.swal2-toast) {
+    top: 24px !important;
     left: 50% !important;
     right: auto !important;
     bottom: auto !important;
     transform: translateX(-50%) !important;
     width: auto !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
     padding: 0 !important;
     z-index: 100000 !important;
     display: flex !important;
     justify-content: center !important;
+    align-items: flex-start !important;
     pointer-events: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
 }
 
-.swal2-container.swal2-top .swal2-popup {
+.swal2-container.swal2-top .swal2-popup,
+.swal2-container.swal2-toast-clean-container .swal2-popup {
     pointer-events: auto !important;
 }
 
@@ -32,23 +46,36 @@
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    width: auto !important;
-    max-width: 540px !important;
-    min-width: 360px !important;
-    padding: 12px 18px !important;
-    border-radius: 16px !important;
-    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.10), 0 3px 8px -1px rgba(15, 23, 42, 0.05) !important;
+    width: max-content !important;
+    max-width: min(520px, calc(100vw - 32px)) !important;
+    min-width: min(340px, calc(100vw - 32px)) !important;
+    padding: 10px 20px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06) !important;
     border: 1px solid transparent !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     box-sizing: border-box !important;
+    pointer-events: auto !important;
+    animation: swal2PastelToastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .swal2-popup.swal2-pastel-toast:hover {
-    box-shadow: 0 10px 28px -4px rgba(15, 23, 42, 0.14), 0 4px 10px -1px rgba(15, 23, 42, 0.07) !important;
+    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.16), 0 6px 12px -2px rgba(15, 23, 42, 0.08) !important;
     transform: translateY(-2px) !important;
+}
+
+@keyframes swal2PastelToastSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-22px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Hide Default SweetAlert2 Icon Container (we use custom stroke SVGs) */
@@ -263,4 +290,134 @@
     background-color: #fecaca !important;
     color: #7f1d1d !important;
 }
+
+/* ==========================================================================
+   SweetAlert2 PT Arsikon Premium Modal Dialog Theme
+   Replaces native browser alerts/confirms ('127.0.0.1:8000 says')
+   ========================================================================== */
+
+.swal2-popup.swal2-arsikon-modal {
+    border-radius: 18px !important;
+    padding: 24px !important;
+    box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.18), 0 10px 15px -5px rgba(15, 23, 42, 0.08) !important;
+    border: 1px solid #e2e8f0 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    max-width: 440px !important;
+    width: 90% !important;
+    box-sizing: border-box !important;
+}
+
+/* Backdrop ONLY for modal confirmation / alert dialogs (Bukan untuk Toast) */
+.swal2-container.swal2-backdrop-show:not(.swal2-top):not(.swal2-toast-clean-container):not(:has(.swal2-pastel-toast)):not(:has(.swal2-toast)) {
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Fallback pelindung: Jika container adalah swal2-top atau toast, pastikan 100% transparan tanpa backdrop */
+.swal2-container.swal2-top.swal2-backdrop-show,
+.swal2-container.swal2-toast-clean-container.swal2-backdrop-show,
+.swal2-container.swal2-backdrop-show:has(.swal2-pastel-toast),
+.swal2-container.swal2-backdrop-show:has(.swal2-toast) {
+    background: transparent !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-title {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin-top: 14px !important;
+    margin-bottom: 6px !important;
+    line-height: 1.35 !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-html-container {
+    font-size: 13px !important;
+    color: #475569 !important;
+    line-height: 1.55 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-actions {
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 24px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-deny {
+    display: none !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-confirm,
+.swal2-popup.swal2-arsikon-modal .swal2-cancel {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+.swal2-popup.swal2-arsikon-modal .swal2-actions button:only-child {
+    max-width: 220px !important;
+    margin: 0 auto !important;
+}
+
+.swal2-arsikon-btn-primary {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #c2410c !important;
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25) !important;
+}
+.swal2-arsikon-btn-primary:hover {
+    background: #c2410c !important;
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+.swal2-arsikon-btn-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid #b91c1c !important;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+}
+.swal2-arsikon-btn-danger:hover {
+    background: #b91c1c !important;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+.swal2-arsikon-btn-cancel {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+.swal2-arsikon-btn-cancel:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+    transform: translateY(-1px) !important;
+}
+
 

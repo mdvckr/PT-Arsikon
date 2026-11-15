@@ -21,6 +21,7 @@ use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseReceiptController;
 use App\Http\Controllers\ProjectMaterialNoteController;
+use App\Http\Controllers\ProjectBalanceRequestController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
@@ -64,7 +65,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     // Master Data
-    Route::get('/materials/print-group', [MaterialController::class, 'printGroup'])->name('materials.print-group');
+    Route::get('/materials/export-group', [MaterialController::class, 'exportGroup'])->name('materials.export-group');
     Route::get('/materials/export-monthly', [MaterialController::class, 'exportMonthly'])->name('materials.export-monthly');
     Route::post('/materials/delete-group', [MaterialController::class, 'deleteGroup'])->name('materials.delete-group');
     Route::resource('materials', MaterialController::class);
@@ -140,6 +141,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     // Purchase Orders (Hanya Admin Pusat, Admin PO, Admin Pengadaan, Owner, Super Admin, po_lapangan, admin_pusat)
     Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|Admin Pengadaan|po_lapangan|admin_pusat']], function () {
         Route::get('/purchase-orders/report/weekly',            [PurchaseOrderController::class, 'weeklyReport'])->name('purchase-orders.weekly-report');
+        Route::get('/purchase-orders/export-weekly-excel',      [PurchaseOrderController::class, 'exportWeeklyExcel'])->name('purchase-orders.export-weekly-excel');
         Route::get('/purchase-orders/template-items-excel',     [PurchaseOrderController::class, 'downloadItemsTemplate'])->name('purchase-orders.template-items-excel');
         Route::post('/purchase-orders/import-items-excel',       [PurchaseOrderController::class, 'importItemsExcel'])->name('purchase-orders.import-items-excel');
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store','show','edit','update']);
@@ -177,8 +179,32 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::delete('/project-notes/entries/{entry}', [ProjectMaterialNoteController::class, 'destroyEntry'])->name('project-notes.entries.destroy');
 
     Route::post('/project-notes/rentals', [ProjectMaterialNoteController::class, 'storeToolRental'])->name('project-notes.rentals.store');
+    Route::get('/project-notes/rentals/{rental}', [ProjectMaterialNoteController::class, 'showRental'])->name('project-notes.rentals.show');
     Route::put('/project-notes/rentals/{toolRental}', [ProjectMaterialNoteController::class, 'updateToolRental'])->name('project-notes.rentals.update');
     Route::delete('/project-notes/rentals/{toolRental}', [ProjectMaterialNoteController::class, 'destroyToolRental'])->name('project-notes.rentals.destroy');
+    Route::post('/project-notes/rentals/{rental}/logs', [ProjectMaterialNoteController::class, 'storeRentalLog'])->name('project-notes.rental-logs.store');
+    Route::put('/project-notes/rental-logs/{log}', [ProjectMaterialNoteController::class, 'updateRentalLog'])->name('project-notes.rental-logs.update');
+    Route::delete('/project-notes/rental-logs/{log}', [ProjectMaterialNoteController::class, 'destroyRentalLog'])->name('project-notes.rental-logs.destroy');
+
+    // Pemindahan / Mobilisasi Barang & Alat Antar Proyek (Faperta dll)
+    Route::post('/project-notes/transfers', [ProjectMaterialNoteController::class, 'storeTransfer'])->name('project-notes.transfers.store');
+    Route::get('/project-notes/transfers/{transfer}', [ProjectMaterialNoteController::class, 'showTransfer'])->name('project-notes.transfers.show');
+    Route::put('/project-notes/transfers/{transfer}', [ProjectMaterialNoteController::class, 'updateTransfer'])->name('project-notes.transfers.update');
+    Route::delete('/project-notes/transfers/{transfer}', [ProjectMaterialNoteController::class, 'destroyTransfer'])->name('project-notes.transfers.destroy');
+    Route::post('/project-notes/transfers/{transfer}/items', [ProjectMaterialNoteController::class, 'storeTransferItem'])->name('project-notes.transfer-items.store');
+    Route::put('/project-notes/transfer-items/{item}', [ProjectMaterialNoteController::class, 'updateTransferItem'])->name('project-notes.transfer-items.update');
+    Route::delete('/project-notes/transfer-items/{item}', [ProjectMaterialNoteController::class, 'destroyTransferItem'])->name('project-notes.transfer-items.destroy');
+
+    // Catatan Material Curah Lapangan (Pasir, Batu, Ritase - SUPRI model)
+    Route::post('/project-notes/bulk-materials', [ProjectMaterialNoteController::class, 'storeBulkMaterial'])->name('project-notes.bulk.store');
+    Route::get('/project-notes/bulk-materials/{bulkMaterial}', [ProjectMaterialNoteController::class, 'showBulkMaterial'])->name('project-notes.bulk.show');
+    Route::put('/project-notes/bulk-materials/{bulkMaterial}', [ProjectMaterialNoteController::class, 'updateBulkMaterial'])->name('project-notes.bulk.update');
+    Route::delete('/project-notes/bulk-materials/{bulkMaterial}', [ProjectMaterialNoteController::class, 'destroyBulkMaterial'])->name('project-notes.bulk.destroy');
+    Route::get('/project-notes/bulk-materials/{bulkMaterial}/print', [ProjectMaterialNoteController::class, 'printBulkMaterial'])->name('project-notes.bulk.print');
+    Route::get('/project-notes/bulk-materials/{bulkMaterial}/export', [ProjectMaterialNoteController::class, 'exportBulkMaterial'])->name('project-notes.bulk.export');
+    Route::post('/project-notes/bulk-materials/{bulkMaterial}/items', [ProjectMaterialNoteController::class, 'storeBulkItem'])->name('project-notes.bulk-items.store');
+    Route::put('/project-notes/bulk-items/{item}', [ProjectMaterialNoteController::class, 'updateBulkItem'])->name('project-notes.bulk-items.update');
+    Route::delete('/project-notes/bulk-items/{item}', [ProjectMaterialNoteController::class, 'destroyBulkItem'])->name('project-notes.bulk-items.destroy');
 
     // 1/1 Exports & Prints
     Route::get('/project-notes/export-material', [ProjectMaterialNoteController::class, 'exportMaterial'])->name('project-notes.export-material');
@@ -191,14 +217,25 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::get('/project-notes/print-weekly', [ProjectMaterialNoteController::class, 'printWeekly'])->name('project-notes.print-weekly');
 
     // Payments
-    Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);
     Route::post('/payments/topup-balance', [PaymentController::class, 'topupBalance'])->name('payments.topupBalance');
     Route::post('/payments/request-balance', [PaymentController::class, 'requestBalance'])->name('payments.requestBalance');
+    Route::get('/payments/balance-requests', [PaymentController::class, 'balanceRequestsIndex'])->name('payments.balance-requests.index');
+    Route::get('/payments/balance-requests/{balanceRequest}', [PaymentController::class, 'showBalanceRequest'])->name('payments.balance-requests.show');
     Route::get('/payments/balance-requests/{balanceRequest}/print', [PaymentController::class, 'printBalanceRequest'])->name('payments.balance-requests.print');
     Route::post('/payments/balance-requests/{balanceRequest}/approve', [PaymentController::class, 'approveBalanceRequest'])->name('payments.approveBalanceRequest');
     Route::post('/payments/balance-requests/{balanceRequest}/reject', [PaymentController::class, 'rejectBalanceRequest'])->name('payments.rejectBalanceRequest');
+    Route::resource('payments', PaymentController::class)->only(['index','create','store','show']);
     Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
     Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+
+    // Pengajuan Kas Saldo Proyek (Khusus Lapangan ke Admin PO Pusat)
+    Route::get('/project-balance-requests', [ProjectBalanceRequestController::class, 'index'])->name('project-balance-requests.index');
+    Route::get('/project-balance-requests/create', [ProjectBalanceRequestController::class, 'create'])->name('project-balance-requests.create');
+    Route::post('/project-balance-requests', [ProjectBalanceRequestController::class, 'store'])->name('project-balance-requests.store');
+    Route::get('/project-balance-requests/{balanceRequest}', [ProjectBalanceRequestController::class, 'show'])->name('project-balance-requests.show');
+    Route::get('/project-balance-requests/{balanceRequest}/print', [ProjectBalanceRequestController::class, 'print'])->name('project-balance-requests.print');
+    Route::post('/project-balance-requests/{balanceRequest}/approve', [ProjectBalanceRequestController::class, 'approve'])->name('project-balance-requests.approve');
+    Route::post('/project-balance-requests/{balanceRequest}/reject', [ProjectBalanceRequestController::class, 'reject'])->name('project-balance-requests.reject');
 
     // Admin: Users, Roles, Warehouses, Projects
     Route::resource('users', UserController::class);

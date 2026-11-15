@@ -177,9 +177,12 @@
                         </td>
                         <td style="text-align:center;">
                             @if($canApprove)
-                                <form method="POST" action="{{ route('transit-losses.approve', $loss) }}" style="display:inline-block;margin:0;">
+                                <form method="POST" action="{{ route('transit-losses.approve', $loss) }}" style="display:inline-block;margin:0;"
+                                      data-confirm="Setujui laporan kehilangan transit ini? Kuota PO akan dipotong dan dinyatakan hilang sah."
+                                      data-confirm-title="Persetujuan Laporan Kehilangan"
+                                      data-confirm-btn="Ya, Setujui">
                                     @csrf
-                                    <button type="submit" class="btn btn-sm btn-success" style="font-size:11.5px;padding:3px 8px;border-radius:5px;" onclick="return confirm('Setujui laporan kehilangan ini? Kuota PO akan dipotong dan dinyatakan hilang sah.')">
+                                    <button type="submit" class="btn btn-sm btn-success" style="font-size:11.5px;padding:3px 8px;border-radius:5px;">
                                         <x-lucide-check class="me-1" /> Setujui
                                     </button>
                                 </form>

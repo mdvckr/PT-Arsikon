@@ -41,9 +41,12 @@
 
             @can('approve procurement')
                 @if($procurement->status === 'submitted')
-                <form method="POST" action="{{ route('procurement.approve', $procurement) }}" style="display:inline;">
+                <form method="POST" action="{{ route('procurement.approve', $procurement) }}" style="display:inline;"
+                      data-confirm="Setujui Purchase Requisition (PR) ini?"
+                      data-confirm-title="Konfirmasi Persetujuan PR"
+                      data-confirm-btn="Ya, Setujui">
                     @csrf
-                    <button type="submit" class="pr-btn pr-btn-success" onclick="return confirm('Setujui PR ini?')">
+                    <button type="submit" class="pr-btn pr-btn-success">
                         Setujui
                     </button>
                 </form>

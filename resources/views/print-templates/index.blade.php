@@ -180,7 +180,7 @@
                                     Atur Jarak
                                 </button>
 
-                                <form action="{{ route('print-templates.destroy', $template) }}" method="POST" onsubmit="return confirm('Hapus template \'{{ addslashes($template->name) }}\'?')" style="margin: 0;">
+                                <form action="{{ route('print-templates.destroy', $template) }}" method="POST" data-confirm="Hapus template '{{ $template->name }}'?" data-confirm-title="Konfirmasi Hapus Template" data-confirm-btn="Hapus Template" data-confirm-danger="true" style="margin: 0;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" style="font-size: 12px; color: #dc2626; cursor: pointer; border: none; background: none; padding: 0;">

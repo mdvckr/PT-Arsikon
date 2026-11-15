@@ -235,7 +235,7 @@
             </div>
             <div>
                 <div class="meta-row">
-                    <span class="meta-label">Penerima (Mandor/Tukang)</span>
+                    <span class="meta-label">Pemakai (Mandor/Tukang)</span>
                     <span class="meta-val">: <strong>{{ $materialUsage->recipient_name }}</strong></span>
                 </div>
                 <div class="meta-row">
@@ -331,7 +331,7 @@
                 <div class="sig-role">Logistik / Gudang</div>
             </div>
             <div class="sig-box">
-                <div class="sig-title">Penerima Lapangan<br>(Mandor / Tukang / Subkon)</div>
+                <div class="sig-title">Pemakai Lapangan<br>(Mandor / Tukang / Subkon)</div>
                 <div class="sig-name">{{ $materialUsage->recipient_name }}</div>
                 <div class="sig-role">Pelaksana Lapangan</div>
             </div>

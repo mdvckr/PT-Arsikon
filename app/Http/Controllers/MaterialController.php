@@ -683,9 +683,9 @@ class MaterialController extends Controller
     }
 
     /**
-     * Cetak dokumen rekapitulasi data material per Kelompok Barang (type).
+     * Export rekapitulasi data material per Kelompok Barang (type) ke Excel.
      */
-    public function printGroup(Request $request)
+    public function exportGroup(Request $request)
     {
         $this->authorize('view materials');
 
@@ -715,36 +715,13 @@ class MaterialController extends Controller
             $category = Category::find($categoryId);
         }
 
-        $query = Material::query()->with([
-            'unit',
-            'supplier',
-            'category',
-            'inventories' => fn($iq) => $iq->whereIn('warehouse_id', $filterWarehouseIds)->with('warehouse'),
-            'stockMutations' => fn($smq) => $smq->whereIn('warehouse_id', $filterWarehouseIds)->latest(),
-        ]);
+        $typeSlug = \Illuminate\Support\Str::slug($typeName ?: 'kelompok');
+        $whSlug   = $warehouse ? \Illuminate\Support\Str::slug($warehouse->name) : 'semua-gudang';
+        $filename = "Rekap-Material-Kelompok-{$typeSlug}-{$whSlug}.xlsx";
 
-        if ($category) {
-            $query->where('category_id', $category->id);
-        }
-
-        if (!empty($typeName)) {
-            if ($typeName === 'Umum / Lainnya') {
-                $query->where(function ($q) {
-                    $q->whereNull('type')->orWhere('type', '')->orWhere('type', 'Umum / Lainnya');
-                });
-            } else {
-                $query->where('type', $typeName);
-            }
-        }
-
-        $materials = $query->orderBy('name')->get();
-
-        return view('materials.print-group', compact(
-            'category',
-            'typeName',
-            'materials',
-            'warehouse',
-            'filterWarehouseIds'
-        ));
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\MaterialTypeGroupExport($category, $typeName, $warehouse, $filterWarehouseIds),
+            $filename
+        );
     }
 }

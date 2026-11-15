@@ -100,7 +100,7 @@
                             <div class="flex gap-1">
                                 @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
                                 <a href="{{ route('projects.edit', $proj) }}" class="btn btn-sm btn-warning btn-icon" title="Edit"><x-lucide-pencil /></a>
-                                <form method="POST" action="{{ route('projects.destroy', $proj) }}" onsubmit="return confirm('Hapus proyek {{ addslashes($proj->name) }}?')">
+                                <form method="POST" action="{{ route('projects.destroy', $proj) }}" data-confirm="Hapus proyek {{ addslashes($proj->name) }} dari sistem?" data-confirm-title="Konfirmasi Hapus Proyek" data-confirm-btn="Hapus Proyek" data-confirm-danger="true">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-sm btn-danger btn-icon" title="Hapus"><x-lucide-trash-2 /></button>
                                 </form>

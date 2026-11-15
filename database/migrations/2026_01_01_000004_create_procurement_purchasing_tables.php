@@ -81,6 +81,7 @@ return new class extends Migration
             $table->decimal('paid_amount', 15, 2)->default(0.00);
             $table->text('terms')->nullable();
             $table->text('notes')->nullable();
+            $table->string('attachment_path', 255)->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
 
@@ -134,6 +135,7 @@ return new class extends Migration
             $table->foreignId('material_request_id')->nullable()->constrained('material_requests')->nullOnDelete();
             $table->string('status')->default('draft');
             $table->string('invoice_number', 100)->nullable();
+            $table->string('attachment_path', 255)->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('confirmed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('confirmed_at')->nullable();

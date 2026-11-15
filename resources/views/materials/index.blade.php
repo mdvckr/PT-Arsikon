@@ -204,12 +204,12 @@
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('materials.print-group', [
+                                    <a href="{{ route('materials.export-group', [
                                         'category_id'  => $category->id,
                                         'type'         => $typeName,
                                         'warehouse_id' => $selectedWarehouseId ?? 'all'
-                                    ]) }}" target="_blank" onclick="event.stopPropagation();" class="btn btn-sm" style="font-size:11px;padding:3px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #cbd5e1;color:#334155;text-decoration:none;" title="Cetak Rekapitulasi Kelompok {{ $typeName }}">
-                                        <x-lucide-printer style="width:12px;height:12px;color:#475569;" /> Cetak Kelompok
+                                    ]) }}" onclick="event.stopPropagation();" class="btn btn-sm" style="font-size:11px;padding:3px 9px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;text-decoration:none;font-weight:600;" title="Export Excel Kelompok {{ $typeName }}">
+                                        <x-lucide-file-spreadsheet style="width:12px;height:12px;color:#059669;" /> Excel Kelompok
                                     </a>
                                 </div>
                             </div>
@@ -408,7 +408,7 @@
                                 @endcan
                                 @can('delete materials')
                                 <form method="POST" action="{{ route('materials.destroy', $m) }}"
-                                    onsubmit="return confirm('Hapus material {{ addslashes($m->name) }}?')" style="display:inline-block;margin:0;">
+                                    data-confirm="Hapus material {{ $m->name }} dari sistem?" data-confirm-title="Konfirmasi Hapus Material" data-confirm-btn="Hapus Material" data-confirm-danger="true" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="action-btn action-btn-delete" title="Hapus Material">
                                         <x-lucide-trash-2 />

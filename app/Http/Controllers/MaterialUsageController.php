@@ -7,6 +7,7 @@ use App\Models\Material;
 use App\Models\MaterialUsage;
 use App\Models\Warehouse;
 use App\Services\MaterialUsageService;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,11 @@ class MaterialUsageController extends Controller
                 $q->where('usage_number', 'like', "%{$search}%")
                   ->orWhere('recipient_name', 'like', "%{$search}%")
                   ->orWhere('job_section', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                  ->orWhere('notes', 'like', "%{$search}%")
+                  ->orWhereHas('items', function ($itemQ) use ($search) {
+                      $itemQ->where('custom_item_name', 'like', "%{$search}%")
+                            ->orWhereHas('material', fn($matQ) => $matQ->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"));
+                  });
             });
         }
 
@@ -54,13 +59,27 @@ class MaterialUsageController extends Controller
             $query->whereDate('usage_date', '<=', $request->end_date);
         }
 
-        $usages = $query->latest('usage_date')->latest('id')->paginate(15)->withQueryString();
+        $usages = $query->latest('usage_date')->latest('id')->paginate(30)->withQueryString();
+
+        // Group collection by Week -> Day for structured view
+        $groupedUsages = $usages->getCollection()->groupBy(function ($usage) {
+            $cDate = Carbon::parse($usage->usage_date);
+            $wNum = $cDate->isoWeek();
+            $wYear = $cDate->isoWeekYear();
+            $start = $cDate->copy()->startOfWeek(Carbon::MONDAY)->translatedFormat('d M Y');
+            $end   = $cDate->copy()->endOfWeek(Carbon::SUNDAY)->translatedFormat('d M Y');
+            return "Minggu Ke-{$wNum} ({$start} - {$end})";
+        })->map(function ($weekItems) {
+            return $weekItems->groupBy(function ($usage) {
+                return Carbon::parse($usage->usage_date)->translatedFormat('l, d F Y');
+            });
+        });
 
         $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
             ? Warehouse::orderBy('name')->get()
             : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
-        return view('material-usages.index', compact('usages', 'warehouses'));
+        return view('material-usages.index', compact('usages', 'groupedUsages', 'warehouses'));
     }
 
     public function create()
@@ -82,6 +101,7 @@ class MaterialUsageController extends Controller
         // Get all active materials with their stock in this warehouse
         $materialsData = [];
         $materialsGrouped = collect();
+        $categoriesWithStock = [];
         if ($selectedWarehouse) {
             $inventoryItems = Inventory::where('warehouse_id', $selectedWarehouse->id)
                 ->with(['material.unit', 'material.category'])
@@ -91,20 +111,43 @@ class MaterialUsageController extends Controller
                 ->filter(fn($inv) => $inv->material && $inv->material->is_active)
                 ->map(function ($inv) {
                     $m = $inv->material;
+                    $catName = $m->category?->name ?? 'UMUM';
+                    $kelompok = !empty($m->type) ? $m->type : ($m->category?->name ?? 'Material Umum');
                     return [
-                        'id'       => $m->id,
-                        'name'     => $m->name,
-                        'code'     => $m->code ?? $m->sku ?? '',
-                        'stock'    => (float) $inv->quantity,
-                        'unit'     => $m->unit?->abbreviation ?? 'unit',
-                        'category' => $m->category?->name ?? 'Umum',
+                        'id'            => $m->id,
+                        'name'          => $m->name,
+                        'code'          => $m->code ?? $m->sku ?? '',
+                        'sku'           => $m->sku ?? ($m->code ?? ''),
+                        'stock'         => (float) $inv->quantity,
+                        'unit'          => $m->unit?->abbreviation ?? 'unit',
+                        'category'      => $catName,
+                        'category_id'   => $m->category_id,
+                        'category_name' => $catName,
+                        'category_code' => $m->category?->code ?? 'GEN',
+                        'type'          => $kelompok,
+                        'brand'         => $m->brand ?? '',
+                        'size'          => $m->size ?? '',
                     ];
                 })
-                ->sortBy('name')
+                ->sortBy(fn($item) => $item['category_name'] . ' ' . $item['type'] . ' ' . $item['name'])
                 ->values()
                 ->toArray();
 
-            $materialsGrouped = collect($materialsData)->groupBy('category')->sortKeys();
+            $materialsGrouped = collect($materialsData)->groupBy('category_name')->sortKeys();
+
+            $materialsHierarchy = collect($materialsData)
+                ->groupBy('category_name')
+                ->map(fn($catItems) => $catItems->groupBy('type'));
+
+            $categoriesWithStock = collect($materialsData)
+                ->groupBy('category_name')
+                ->map(fn($items, $cat) => [
+                    'name'  => $cat,
+                    'count' => $items->count(),
+                ])
+                ->sortBy('name')
+                ->values()
+                ->toArray();
         }
 
         $mrQuery = \App\Models\MaterialRequest::whereIn('status', ['approved', 'partially_fulfilled'])
@@ -119,7 +162,7 @@ class MaterialUsageController extends Controller
 
         $approvedMRs = $mrQuery->orderBy('id', 'desc')->get();
 
-        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'materialsGrouped', 'approvedMRs'));
+        return view('material-usages.create', compact('warehouses', 'selectedWarehouse', 'materialsData', 'materialsGrouped', 'materialsHierarchy', 'categoriesWithStock', 'approvedMRs'));
     }
 
     public function getMRDetails(Request $request, \App\Models\MaterialRequest $materialRequest)
@@ -237,7 +280,7 @@ class MaterialUsageController extends Controller
             abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
         }
 
-        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit', 'cancelledBy']);
+        $materialUsage->load(['warehouse', 'project', 'issuedBy', 'materialRequest.requestedBy', 'materialRequest.approvedBy', 'items.material.unit', 'items.material.category', 'cancelledBy']);
 
         return view('material-usages.show', compact('materialUsage'));
     }

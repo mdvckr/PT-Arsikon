@@ -83,9 +83,13 @@
                         </x-dropdown-link>
 
                         <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form method="POST" action="{{ route('logout') }}" 
+                              data-confirm="Apakah Anda yakin ingin mengakhiri sesi login saat ini?" 
+                              data-confirm-title="Konfirmasi Keluar Akun" 
+                              data-confirm-btn="Ya, Keluar" 
+                              data-confirm-danger="true">
                             @csrf
-                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();">
+                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));">
                                 Keluar (Log Out)
                             </x-dropdown-link>
                         </form>
@@ -123,9 +127,13 @@
                 <x-responsive-nav-link :href="route('profile.edit')" class="text-white">
                     Profil Pengguna
                 </x-responsive-nav-link>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" 
+                      data-confirm="Apakah Anda yakin ingin mengakhiri sesi login saat ini?" 
+                      data-confirm-title="Konfirmasi Keluar Akun" 
+                      data-confirm-btn="Ya, Keluar" 
+                      data-confirm-danger="true">
                     @csrf
-                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();" class="text-white">
+                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));" class="text-white">
                         Keluar (Log Out)
                     </x-responsive-nav-link>
                 </form>

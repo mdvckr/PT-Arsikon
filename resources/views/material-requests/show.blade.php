@@ -524,9 +524,12 @@
                 {{-- Persetujuan (Approve / Reject) --}}
                 @if($materialRequest->status === 'submitted')
                     @can('approve material requests')
-                    <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;">
+                    <form method="POST" action="{{ route('material-requests.approve', $materialRequest) }}" style="display:inline;"
+                          data-confirm="Apakah Anda yakin ingin menyetujui PO Lapangan ini?"
+                          data-confirm-title="Persetujuan PO Lapangan"
+                          data-confirm-btn="Ya, Setujui Permohonan">
                         @csrf
-                        <button type="submit" class="btn-dossier-success" onclick="return confirm('Apakah Anda yakin ingin menyetujui PO Lapangan ini?')">
+                        <button type="submit" class="btn-dossier-success">
                             <x-lucide-check />
                             <span>Setujui Permohonan</span>
                         </button>

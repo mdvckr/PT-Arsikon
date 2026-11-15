@@ -383,9 +383,12 @@
                         </p>
 
                         <div style="display:flex;flex-direction:column;gap:8px;">
-                            <form method="POST" action="{{ route('payments.verify', $payment) }}">
+                            <form method="POST" action="{{ route('payments.verify', $payment) }}"
+                                  data-confirm="Verifikasi pembayaran senilai Rp {{ number_format($payment->amount, 0, ',', '.') }} ini secara sah?"
+                                  data-confirm-title="Konfirmasi Verifikasi Pembayaran"
+                                  data-confirm-btn="Ya, Verifikasi Pembayaran">
                                 @csrf
-                                <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:9px;font-size:12.5px;font-weight:700;border-radius:6px;" onclick="return confirm('Verifikasi pembayaran senilai Rp {{ number_format($payment->amount, 0, ',', '.') }} ini?')">
+                                <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:9px;font-size:12.5px;font-weight:700;border-radius:6px;">
                                     <x-lucide-circle-check class="me-1" /> Verifikasi Pembayaran
                                 </button>
                             </form>

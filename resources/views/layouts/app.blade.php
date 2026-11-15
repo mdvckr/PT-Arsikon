@@ -11,6 +11,7 @@
     <!-- PWA Manifest & Mobile Configuration -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ea580c">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Arsikon">
@@ -25,7 +26,7 @@
 
     <!-- SweetAlert2 & Custom Pastel Toast Theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="{{ asset('css/sweetalert-pastel-toast.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sweetalert-pastel-toast.css') }}?v={{ filemtime(public_path('css/sweetalert-pastel-toast.css')) }}">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -33,6 +34,10 @@
     @stack('styles')
 
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
         :root {
             --sidebar-width: 260px;
             --topbar-height: 64px;
@@ -854,6 +859,14 @@
             box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
         }
 
+        .topbar-circle-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            margin: auto;
+            flex-shrink: 0;
+        }
+
         /* User Profile Chip */
         .topbar-user-chip {
             display: flex;
@@ -1197,22 +1210,68 @@
         /* ===== RESPONSIVE ===== */
         .mobile-toggle {
             display: none !important;
+            position: relative;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            max-width: 38px;
+            max-height: 38px;
+            padding: 0 !important;
+            margin: 0 !important;
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: #ffffff;
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            font-size: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            outline: none;
+            overflow: hidden;
+            box-sizing: border-box;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            -webkit-tap-highlight-color: transparent;
+            vertical-align: middle;
+        }
+
+        .mobile-toggle .toggle-icon-wrap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0;
+            padding: 0;
+            line-height: 0;
+            pointer-events: none;
+            box-sizing: border-box;
         }
+
+        .mobile-toggle svg {
+            width: 20px !important;
+            height: 20px !important;
+            max-width: 20px !important;
+            max-height: 20px !important;
+            display: block !important;
+            margin: auto !important;
+            flex-shrink: 0 !important;
+            stroke-width: 2.2 !important;
+            vertical-align: unset !important;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
         .mobile-toggle:hover {
-            background: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
             color: #ffffff;
+        }
+
+        .mobile-toggle:active,
+        .mobile-toggle.is-active {
+            background: rgba(234, 88, 12, 0.22);
+            border-color: rgba(234, 88, 12, 0.45);
+            color: #fb923c;
         }
 
         /* Sidebar backdrop overlay for mobile */
@@ -1259,13 +1318,14 @@
 
         /* ===== TABLET (max 1024px) ===== */
         @media (max-width: 1024px) {
-            .mobile-toggle { display: flex !important; }
+            .mobile-toggle { display: inline-flex !important; }
             .topbar-brand {
                 width: auto;
                 background: transparent !important;
                 border-right: none !important;
-                padding: 0 12px;
+                padding: 0 0 0 12px;
                 gap: 10px;
+                overflow: visible !important;
             }
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
@@ -1292,6 +1352,9 @@
 
         /* ===== SMALL TABLET (max 768px) ===== */
         @media (max-width: 768px) {
+            :root {
+                --topbar-height: 58px;
+            }
             .page-content { padding: 16px 14px; }
 
             /* Page header: title + button should stack */
@@ -1351,6 +1414,39 @@
             .btn-sm { padding: 4px 8px; font-size: 11px; }
 
             /* Topbar mobile */
+            .topbar {
+                padding: 0 14px;
+            }
+            .topbar-brand {
+                height: calc(100% - 2px);
+                padding: 0;
+                gap: 10px;
+                display: flex;
+                align-items: center;
+            }
+            .brand-link {
+                gap: 9px;
+            }
+            .brand-logo {
+                width: 34px;
+                height: 34px;
+            }
+            .brand-text {
+                display: flex !important;
+            }
+            .brand-title {
+                font-size: 13.5px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                line-height: 1.15;
+            }
+            .brand-subtitle {
+                display: block !important;
+                font-size: 8px;
+                font-weight: 700;
+                letter-spacing: 0.15em;
+                margin-top: 1.5px;
+            }
             .topbar-page-info,
             .topbar-divider,
             .topbar-clock,
@@ -1358,13 +1454,45 @@
                 display: none !important;
             }
             .topbar-actions {
+                height: calc(100% - 2px);
+                display: flex;
+                align-items: center;
                 gap: 8px;
-                padding-right: 12px;
+                padding-right: 0;
                 margin-left: auto;
             }
             .topbar-action-separator { display: none !important; }
-            .topbar-circle-btn { width: 34px; height: 34px; font-size: 13px; }
-            .topbar-user-name { max-width: 90px; font-size: 11.5px; }
+            .topbar-circle-btn {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                font-size: 14px;
+            }
+            .topbar-circle-btn:active {
+                transform: scale(0.95);
+            }
+            .topbar-circle-btn .notif-badge {
+                top: -3px;
+                right: -3px;
+                min-width: 17px;
+                height: 17px;
+                font-size: 9.5px;
+            }
+            .topbar-user-chip {
+                padding: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+            .topbar-user-name { display: none; }
+            .topbar-user-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                font-size: 13.5px;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+            }
 
             /* Breadcrumb compact */
             .breadcrumb { font-size: 12px; margin-bottom: 12px; }
@@ -1451,11 +1579,19 @@
             /* Alerts compact */
             .alert { padding: 10px 12px; font-size: 12.5px; border-radius: 8px; }
 
-            /* Topbar brand text hide subtitle */
-            .brand-subtitle { display: none; }
-            .brand-title { font-size: 13px; }
+            /* Topbar mobile */
+            .topbar { padding: 0 12px; }
+            .topbar-brand { height: calc(100% - 2px); gap: 8px; }
+            .mobile-toggle { width: 36px; height: 36px; min-width: 36px; min-height: 36px; max-width: 36px; max-height: 36px; }
+            .mobile-toggle svg { width: 19px !important; height: 19px !important; max-width: 19px !important; max-height: 19px !important; }
+            .brand-link { gap: 8px; }
             .brand-logo { width: 32px; height: 32px; }
-            .topbar-brand { gap: 8px; }
+            .brand-text { display: flex !important; }
+            .brand-title { font-size: 13px; font-weight: 800; }
+            .brand-subtitle { display: block !important; font-size: 7.5px; letter-spacing: 0.12em; }
+            .topbar-circle-btn { width: 36px; height: 36px; }
+            .topbar-user-avatar { width: 36px; height: 36px; font-size: 13px; }
+            .topbar-actions { height: calc(100% - 2px); gap: 6px; padding-right: 0; }
             .topbar-center,
             .topbar-page-info,
             .topbar-divider,
@@ -1469,22 +1605,6 @@
                 border: none !important;
                 box-shadow: none !important;
             }
-            .topbar-user-avatar { width: 34px; height: 34px; font-size: 13px; }
-        }
-
-        @media (max-width: 380px) {
-            .brand-text { display: none; }
-
-            /* Tabs scroll */
-            .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .tab-btn { padding: 8px 14px; font-size: 12.5px; white-space: nowrap; }
-
-            /* Form controls compact */
-            .form-control { padding: 8px 10px; font-size: 13px; border-radius: 6px; }
-            .form-label { font-size: 11.5px; margin-bottom: 4px; }
-
-            /* Badges compact */
-            .badge { padding: 2px 7px; font-size: 10.5px; }
         }
 
         /* ===== VERY SMALL PHONE (max 400px) ===== */
@@ -1495,16 +1615,24 @@
             .stat-card { padding: 10px; }
             .stat-info .value { font-size: 16px; }
 
-            .brand-text { display: none; }
-            .topbar-brand { padding: 0 8px; }
-            .topbar-actions { padding-right: 10px; gap: 6px; }
-            .topbar-circle-btn { width: 32px; height: 32px; font-size: 12px; }
-
             .card-header { padding: 10px 12px; }
             .card-body { padding: 12px; }
 
             table.data-table th { padding: 6px; font-size: 9px; }
             table.data-table td { padding: 6px; font-size: 11.5px; }
+        }
+
+        @media (max-width: 360px) {
+            .brand-subtitle { display: none !important; }
+            .brand-title { font-size: 12px; }
+            .mobile-toggle { width: 34px; height: 34px; min-width: 34px; min-height: 34px; max-width: 34px; max-height: 34px; }
+            .mobile-toggle svg { width: 18px !important; height: 18px !important; max-width: 18px !important; max-height: 18px !important; }
+            .brand-logo { width: 28px; height: 28px; }
+            .topbar-circle-btn { width: 34px; height: 34px; }
+            .topbar-user-avatar { width: 34px; height: 34px; font-size: 12px; }
+            .topbar-brand { gap: 6px; }
+            .topbar-actions { gap: 5px; }
+            .topbar { padding: 0 10px; }
         }
 
         /* ===== SCROLLBAR ===== */
@@ -1754,12 +1882,10 @@
     <header class="topbar" id="mainTopbar">
         <div class="topbar-brand">
             <button type="button" class="mobile-toggle" id="mobileToggleBtn" onclick="toggleSidebar()" aria-label="Toggle Menu">
-                <!-- Menu icon (≡) shown when sidebar closed -->
-                <span id="mobileToggleIconMenu" style="display:flex;align-items:center;justify-content:center;">
+                <span id="mobileToggleIconMenu" class="toggle-icon-wrap toggle-icon-menu">
                     <x-lucide-menu class="w-5 h-5" aria-hidden="true" />
                 </span>
-                <!-- X icon shown when sidebar open -->
-                <span id="mobileToggleIconClose" style="display:none;align-items:center;justify-content:center;">
+                <span id="mobileToggleIconClose" class="toggle-icon-wrap toggle-icon-close" style="display:none;">
                     <x-lucide-x class="w-5 h-5" aria-hidden="true" />
                 </span>
             </button>
@@ -1776,22 +1902,9 @@
             $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
             $userName = auth()->user()->name ?? 'User';
             $userInitial = strtoupper(substr($userName, 0, 1));
-            $greetingHour = now()->setTimezone('Asia/Jakarta')->hour;
-            $greeting = $greetingHour < 11 ? 'Selamat Pagi' : ($greetingHour < 15 ? 'Selamat Siang' : ($greetingHour < 18 ? 'Selamat Sore' : 'Selamat Malam'));
         @endphp
 
-        <div class="topbar-center">
-            <div class="topbar-left-info">
-                <div class="topbar-greeting">
-                    <span class="topbar-greeting-text">{{ $greeting }},</span>
-                    <span class="topbar-greeting-name">{{ explode(' ', $userName)[0] }}</span>
-                </div>
-            </div>
-            <div class="topbar-clock">
-                <span class="topbar-clock-time" id="topbar-clock">00:00:00</span>
-                <span class="topbar-clock-date" id="topbar-date">—</span>
-            </div>
-        </div>
+        <div class="topbar-center"></div>
 
         <div class="topbar-actions">
             <!-- Liquid Glass Notification Bell with Dropdown Panel -->
@@ -1935,7 +2048,7 @@
                     || auth()->user()->can('view payments')
                     || ($isRoleAdminPO && auth()->user()->can('view material requests'))
                 );
-                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'payments.*', 'print-templates.*'])
+                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'project-notes.*', 'payments.*', 'print-templates.*', 'project-balance-requests.*'])
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*']));
             @endphp
             @if($isRoleAdminPOProyek)
@@ -1950,6 +2063,12 @@
                         </a>
                         <a href="{{ route('purchase-receipts.index') }}" class="nav-item {{ request()->routeIs('purchase-receipts.index') || request()->routeIs('purchase-receipts.show') ? 'active' : '' }}">
                             <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Daftar Nota Harian
+                        </a>
+                        <a href="{{ route('project-notes.index') }}" class="nav-item {{ request()->routeIs('project-notes.*') ? 'active' : '' }}">
+                            <x-lucide-book-open class="nav-icon" aria-hidden="true" /> Buku Catatan Proyek
+                        </a>
+                        <a href="{{ route('project-balance-requests.index') }}" class="nav-item {{ request()->routeIs('project-balance-requests.*') ? 'active' : '' }}">
+                            <x-lucide-hand-coins class="nav-icon" aria-hidden="true" /> Pengajuan Kas Proyek
                         </a>
                     </div>
                 </div>
@@ -1979,6 +2098,10 @@
                         </a>
                         @endcan
 
+                        <a href="{{ route('project-notes.index') }}" class="nav-item {{ request()->routeIs('project-notes.*') ? 'active' : '' }}">
+                            <x-lucide-book-open class="nav-icon" aria-hidden="true" /> Buku Catatan Proyek
+                        </a>
+
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
                             <x-lucide-banknote class="nav-icon" aria-hidden="true" /> Keuangan
@@ -2004,6 +2127,10 @@
                             <x-lucide-receipt class="nav-icon" aria-hidden="true" /> Nota Pembelian Harian
                         </a>
                         @endcan
+
+                        <a href="{{ route('project-notes.index') }}" class="nav-item {{ request()->routeIs('project-notes.*') ? 'active' : '' }}">
+                            <x-lucide-book-open class="nav-icon" aria-hidden="true" /> Buku Catatan Proyek
+                        </a>
 
                         @can('view payments')
                         <a href="{{ route('payments.index') }}" class="nav-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
@@ -2141,6 +2268,7 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.getElementById('mobileToggleBtn');
             const iconMenu = document.getElementById('mobileToggleIconMenu');
             const iconClose = document.getElementById('mobileToggleIconClose');
             if (!sidebar) return;
@@ -2148,6 +2276,7 @@
             // Swap toggle icon: ≡ ↔ ✕
             if (iconMenu) iconMenu.style.display = isOpen ? 'none' : 'flex';
             if (iconClose) iconClose.style.display = isOpen ? 'flex' : 'none';
+            if (toggleBtn) toggleBtn.classList.toggle('is-active', isOpen);
             if (overlay) {
                 if (isOpen) {
                     overlay.classList.add('active');
@@ -2163,6 +2292,7 @@
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.getElementById('mobileToggleBtn');
             const iconMenu = document.getElementById('mobileToggleIconMenu');
             const iconClose = document.getElementById('mobileToggleIconClose');
             if (window.innerWidth <= 1024 && sidebar && sidebar.classList.contains('open')) {
@@ -2170,6 +2300,7 @@
                     sidebar.classList.remove('open');
                     if (iconMenu) iconMenu.style.display = 'flex';
                     if (iconClose) iconClose.style.display = 'none';
+                    if (toggleBtn) toggleBtn.classList.remove('is-active');
                     if (overlay) overlay.classList.remove('active');
                     document.body.style.overflow = '';
                 }
@@ -2180,11 +2311,13 @@
             if (window.innerWidth > 1024) {
                 const sidebar = document.getElementById('sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
+                const toggleBtn = document.getElementById('mobileToggleBtn');
                 const iconMenu = document.getElementById('mobileToggleIconMenu');
                 const iconClose = document.getElementById('mobileToggleIconClose');
                 if (sidebar) sidebar.classList.remove('open');
                 if (iconMenu) iconMenu.style.display = 'flex';
                 if (iconClose) iconClose.style.display = 'none';
+                if (toggleBtn) toggleBtn.classList.remove('is-active');
                 if (overlay) overlay.classList.remove('active');
                 document.body.style.overflow = '';
             }
@@ -2199,22 +2332,6 @@
                 setTimeout(() => el.remove(), 400);
             });
         }, 4000);
-
-        // Live Clock (Topbar)
-        (function() {
-            const DAYS_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            const MONTHS_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-            function pad(n) { return String(n).padStart(2, '0'); }
-            function updateClock() {
-                const now = new Date();
-                const timeEl = document.getElementById('topbar-clock');
-                const dateEl = document.getElementById('topbar-date');
-                if (timeEl) timeEl.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-                if (dateEl) dateEl.textContent = DAYS_ID[now.getDay()] + ', ' + now.getDate() + ' ' + MONTHS_ID[now.getMonth()] + ' ' + now.getFullYear();
-            }
-            updateClock();
-            setInterval(updateClock, 1000);
-        })();
     </script>
 
     <script>
@@ -2430,7 +2547,7 @@
     </script>
     <!-- SweetAlert2 & Custom Pastel Toast Engine -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('js/sweetalert-notifications.js') }}"></script>
+    <script src="{{ asset('js/sweetalert-notifications.js') }}?v={{ filemtime(public_path('js/sweetalert-notifications.js')) }}"></script>
     <script src="{{ asset('js/webpush-client.js') }}"></script>
     @php
         $serverFlashNotifs = [];

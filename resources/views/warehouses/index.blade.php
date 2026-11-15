@@ -179,7 +179,7 @@
                                 <a href="{{ route('warehouses.edit', $wh) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Data Gudang">
                                     <x-lucide-square-pen />
                                 </a>
-                                <form method="POST" action="{{ route('warehouses.destroy', $wh) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gudang {{ addslashes($wh->name) }}?')">
+                                <form method="POST" action="{{ route('warehouses.destroy', $wh) }}" data-confirm="Apakah Anda yakin ingin menghapus gudang {{ addslashes($wh->name) }}?" data-confirm-title="Konfirmasi Hapus Gudang" data-confirm-btn="Hapus Gudang" data-confirm-danger="true">
                                     @csrf 
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-danger btn-icon" title="Hapus Gudang">

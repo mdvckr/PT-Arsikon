@@ -145,7 +145,7 @@
                                 </a>
                                 @endif
                                 @if((auth()->user()->can('delete users') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])) && $user->id !== auth()->id())
-                                <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun pengguna {{ addslashes($user->name) }}?')">
+                                <form method="POST" action="{{ route('users.destroy', $user) }}" data-confirm="Apakah Anda yakin ingin menghapus akun pengguna {{ addslashes($user->name) }}?" data-confirm-title="Konfirmasi Hapus Pengguna" data-confirm-btn="Hapus Pengguna" data-confirm-danger="true">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus Pengguna">

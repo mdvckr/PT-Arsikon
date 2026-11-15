@@ -10,11 +10,12 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
-class MaterialGroupPrintTest extends TestCase
+class MaterialGroupExportTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -51,7 +52,6 @@ class MaterialGroupPrintTest extends TestCase
         $this->unit = Unit::create([
             'code'       => 'BTM',
             'name'       => 'Batang',
-            'is_decimal' => true,
         ]);
 
         $this->material = Material::create([
@@ -65,8 +65,6 @@ class MaterialGroupPrintTest extends TestCase
                     'stage'        => 'PO-2026-001',
                     'reference'    => 'PO-2026-001 (Tahap 1)',
                     'qty'          => 150.50,
-                    'planned_qty'  => 150.50,
-                    'received_qty' => 150.50,
                     'date'         => '2026-11-01',
                     'status'       => 'received',
                     'status_label' => 'Lengkap Masuk',
@@ -90,40 +88,36 @@ class MaterialGroupPrintTest extends TestCase
         ]);
     }
 
-    public function test_authorized_user_can_view_material_group_print_page(): void
+    public function test_authorized_user_can_export_material_group_to_excel(): void
     {
-        $response = $this->actingAs($this->user)->get(route('materials.print-group', [
+        Excel::fake();
+
+        $response = $this->actingAs($this->user)->get(route('materials.export-group', [
             'category_id'  => $this->category->id,
             'type'         => 'Besi Beton',
             'warehouse_id' => $this->warehouse->id,
         ]));
 
         $response->assertOk();
-        $response->assertViewIs('materials.print-group');
-        $response->assertSee('Besi Beton');
-        $response->assertSee('MAT-BSI-10');
-        $response->assertSee('125,75'); // Sisa stok dengan desimal
-        $response->assertSee('24,75');  // Pemakaian dengan desimal
-        $response->assertSee('150,50'); // Total/tahap masuk dengan desimal
-        $response->assertSee('01/11/2026'); // Tanggal kedatangan tahap
+        Excel::assertDownloaded('Rekap-Material-Kelompok-besi-beton-gudang-proyek-a.xlsx');
     }
 
-    public function test_unauthorized_user_cannot_access_print_group(): void
+    public function test_unauthorized_user_cannot_export_material_group(): void
     {
         $guest = User::factory()->create();
-        $response = $this->actingAs($guest)->get(route('materials.print-group', [
+        $response = $this->actingAs($guest)->get(route('materials.export-group', [
             'category_id' => $this->category->id,
             'type'        => 'Besi Beton',
         ]));
         $response->assertStatus(403);
     }
 
-    public function test_materials_index_renders_print_group_button_and_decimal_values(): void
+    public function test_materials_index_renders_export_group_button(): void
     {
         $response = $this->actingAs($this->user)->get(route('materials.index'));
         $response->assertOk();
-        $response->assertSee('materials/print-group');
-        $response->assertSee('125,75'); // Sisa stok desimal ditampilkan
-        $response->assertSee('24,75');  // Pemakaian desimal ditampilkan
+        $response->assertSee('materials/export-group');
+        $response->assertSee('Excel Kelompok');
+        $response->assertDontSee('materials/print-group');
     }
 }

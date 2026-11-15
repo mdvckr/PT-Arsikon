@@ -72,6 +72,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             // Payments
             'view payments', 'create payments', 'verify payments',
+            // Project Balance Requests (Pengajuan Kas Lapangan)
+            'view balance requests', 'create balance requests', 'approve balance requests', 'reject balance requests',
             // Transit Losses
             'create transit losses', 'approve transit losses',
             // Daily Logs
@@ -203,11 +205,12 @@ class RoleAndPermissionSeeder extends Seeder
             'view purchase orders', 'create purchase orders', 'edit purchase orders', 'approve purchase orders', 'send purchase orders', 'cancel purchase orders',
             'view purchase receipts', 'create purchase receipts', 'delete purchase receipts',
             'view payments', 'create payments', 'verify payments',
+            'view balance requests', 'approve balance requests', 'reject balance requests',
         ];
         $adminPORole->syncPermissions($adminPOPermissions);
         $adminPORoleLegacy->syncPermissions($adminPOPermissions);
 
-        // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek ---
+        // --- Admin PO Proyek: khusus pencatatan nota pembelian harian belanja di proyek & pengajuan kas ---
         $adminPOProyekRole = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek']);
         $adminPOProyekRoleLegacy = Role::firstOrCreate(['name' => 'Admin PO Proyek']);
         $adminPoNotaRoleLegacy = Role::firstOrCreate(['name' => 'admin-po-nota']);
@@ -217,6 +220,8 @@ class RoleAndPermissionSeeder extends Seeder
             'delete purchase receipts',
             'view materials',
             'view suppliers',
+            'view balance requests',
+            'create balance requests',
         ];
         $adminPOProyekRole->syncPermissions($adminPOProyekPermissions);
         $adminPOProyekRoleLegacy->syncPermissions($adminPOProyekPermissions);

@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\Material;
 use App\Models\PurchaseReceipt;
 use App\Exports\PurchaseOrderItemTemplateExport;
+use App\Exports\WeeklyPurchaseOrderExport;
 use App\Imports\PurchaseOrderItemImport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -76,7 +77,9 @@ class PurchaseOrderController extends Controller
             return $po->order_date ? $po->order_date->format('Y-m-d') : 'Tanpa Tanggal';
         });
 
-        return view('purchase-orders.index', compact('pos', 'groupedPOs'));
+        $projects = \App\Models\Project::orderBy('name')->get();
+
+        return view('purchase-orders.index', compact('pos', 'groupedPOs', 'projects'));
     }
 
     public function create(Request $request)
@@ -1161,7 +1164,8 @@ class PurchaseOrderController extends Controller
             $query->where(function ($q) use ($projectId) {
                 $q->whereHas('deliveryWarehouse', fn($w) => $w->where('project_id', $projectId))
                   ->orWhereHas('materialRequest.toWarehouse', fn($tw) => $tw->where('project_id', $projectId))
-                  ->orWhereHas('procurementRequest', fn($pr) => $pr->where('project_id', $projectId));
+                  ->orWhereHas('receipts', fn($r) => $r->where('project_id', $projectId))
+                  ->orWhereHas('procurementRequest.materialRequest.toWarehouse', fn($tw) => $tw->where('project_id', $projectId));
             });
         }
 
@@ -1229,8 +1233,82 @@ class PurchaseOrderController extends Controller
                 : $pdf->stream($fileName);
         }
 
+        // 7. Jika parameter format=excel, export langsung spreadsheet
+        if ($request->query('format') === 'excel') {
+            $fileName = "Rekap-PO-Minggu-{$weekNumber}-{$yearNumber}.xlsx";
+            $project = $request->filled('project_id') ? \App\Models\Project::find($request->query('project_id')) : null;
+            return Excel::download(
+                new WeeklyPurchaseOrderExport($orders, $startOfWeek, $endOfWeek, $project, $isBlind),
+                $fileName
+            );
+        }
+
         // Default: Tampilkan Layar Cetak Interaktif (Native Print Engine)
         return view('purchase-orders.print-weekly', $viewData);
+    }
+
+    /**
+     * Export Rekapitulasi Purchase Order Mingguan ke Excel lengkap dengan foto lampiran
+     */
+    public function exportWeeklyExcel(Request $request)
+    {
+        $user = auth()->user();
+        $userCanViewPrice = $user ? $user->canViewPoPrice() : false;
+        $isBlind = (!$userCanViewPrice) || ($request->query('mode') === 'blind');
+
+        // Tentukan periode (default bulan berjalan atau tanggal terpilih)
+        $targetDate = $request->filled('date')
+            ? Carbon::parse($request->query('date'), 'Asia/Jakarta')
+            : Carbon::now('Asia/Jakarta');
+
+        $scope = $request->query('scope', 'month'); // 'month' atau 'single_week'
+        if ($scope === 'single_week') {
+            $startDate = $targetDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            $endDate   = $targetDate->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+            $fileSuffix = "W{$targetDate->weekOfMonth}-" . $targetDate->format('Y-m');
+        } else {
+            $startDate = $targetDate->copy()->startOfMonth()->startOfDay();
+            $endDate   = $targetDate->copy()->endOfMonth()->endOfDay();
+            $fileSuffix = $targetDate->format('Y-m');
+        }
+
+        $query = PurchaseOrder::with([
+            'supplier',
+            'creator',
+            'approver',
+            'deliveryWarehouse.project',
+            'materialRequest.toWarehouse.project',
+            'procurementRequest.project',
+            'items.material.unit',
+            'items.tool',
+            'receipts.project',
+            'goodsReceipts',
+        ])
+        ->whereBetween('order_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+        if ($request->filled('project_id')) {
+            $projectId = $request->query('project_id');
+            $query->where(function ($q) use ($projectId) {
+                $q->whereHas('deliveryWarehouse', fn($w) => $w->where('project_id', $projectId))
+                  ->orWhereHas('materialRequest.toWarehouse', fn($tw) => $tw->where('project_id', $projectId))
+                  ->orWhereHas('receipts', fn($r) => $r->where('project_id', $projectId))
+                  ->orWhereHas('procurementRequest.materialRequest.toWarehouse', fn($tw) => $tw->where('project_id', $projectId));
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        $orders = $query->orderBy('order_date', 'asc')->orderBy('id', 'asc')->get();
+
+        $project = $request->filled('project_id') ? \App\Models\Project::find($request->query('project_id')) : null;
+        $fileName = "Rekap-PO-Mingguan-{$fileSuffix}.xlsx";
+
+        return Excel::download(
+            new WeeklyPurchaseOrderExport($orders, $startDate, $endDate, $project, $isBlind),
+            $fileName
+        );
     }
 
 

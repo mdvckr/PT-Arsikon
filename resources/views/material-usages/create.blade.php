@@ -72,6 +72,134 @@
             background: #fffbeb !important;
         }
 
+        /* Category Tabs & Group Divider Rows */
+        .category-tabs-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn-category-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .btn-category-tab:hover {
+            border-color: #94a3b8;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .btn-category-tab.active {
+            background: #1e3a8a;
+            border-color: #1e3a8a;
+            color: #ffffff;
+            box-shadow: 0 1px 3px rgba(30, 58, 138, 0.25);
+        }
+
+        .btn-category-tab .tab-badge {
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .btn-category-tab.active .tab-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        .category-divider-row td {
+            background: #f1f5f9 !important;
+            padding: 7px 14px !important;
+            border-top: 1px solid #e2e8f0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        .subgroup-divider-row td {
+            background: #f8fafc !important;
+            padding: 5px 14px 5px 36px !important;
+            border-bottom: 1px solid #edf2f7 !important;
+        }
+
+        .btn-clear-row {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #94a3b8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-clear-row:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .material-data-row {
+            transition: background-color 0.12s ease;
+        }
+
+        .material-data-row:hover {
+            background-color: #fbfcfe !important;
+        }
+
+        .material-data-row.row-active-qty {
+            background-color: #f0fdf4 !important;
+        }
+
+        /* Modal Material Picker */
+        #addMaterialModalBackdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(3px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-material-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: background 0.12s;
+        }
+
+        .modal-material-item:hover {
+            background: #f0f9ff;
+        }
+
         .sidebar-sticky-bon .form-control {
             height: 36px;
             padding: 7px 10px;
@@ -300,18 +428,69 @@
                                 <x-lucide-rotate-ccw class="me-1" /> Reset
                             </button>
                         </div>
+
+                        <div id="manualButtonsGroup" class="flex items-center gap-2">
+                            <button type="button" class="btn btn-sm" onclick="openAddMaterialModal()" style="height: 32px; font-size: 12px; border-radius: 6px; padding: 0 12px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Cari dan tambahkan material lain dari master data">
+                                <x-lucide-plus style="width:13px; height:13px;" /> Tambah Material Lain
+                            </button>
+                            <button type="button" class="btn btn-sm btn-light border" onclick="addCustomItemRow()" style="height: 32px; font-size: 12px; border-radius: 6px; padding: 0 10px; color: #475569; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;" title="Tambah item material tidak terdaftar / custom">
+                                <x-lucide-package-plus style="width:13px; height:13px;" /> Item Custom
+                            </button>
+                        </div>
                         
                     </div>
 
+                    {{-- Category Tabs Bar --}}
+                    @if(isset($categoriesWithStock) && count($categoriesWithStock) > 0)
+                    <div class="category-tabs-bar" id="categoryTabsBar">
+                        <button type="button" class="btn-category-tab active" id="tab-category-all" onclick="filterByCategory('all')">
+                            <span>Semua</span>
+                            <span class="tab-badge" id="badge-count-all">{{ count($materialsData) }}</span>
+                        </button>
+                        @foreach($categoriesWithStock as $cat)
+                        @php
+                            $catSlug = \Illuminate\Support\Str::slug($cat['name']);
+                            $catUpper = strtoupper($cat['name']);
+                        @endphp
+                        <button type="button" class="btn-category-tab" id="tab-category-{{ $catSlug }}" onclick="filterByCategory('{{ addslashes($cat['name']) }}')">
+                            @if(str_contains($catUpper, 'STRUKTUR'))
+                                <x-lucide-building-2 style="width:12px;height:12px;" />
+                            @elseif(str_contains($catUpper, 'ARSITEK'))
+                                <x-lucide-palette style="width:12px;height:12px;" />
+                            @elseif(str_contains($catUpper, 'MEP'))
+                                <x-lucide-zap style="width:12px;height:12px;" />
+                            @else
+                                <x-lucide-layers style="width:12px;height:12px;" />
+                            @endif
+                            <span>{{ $cat['name'] }}</span>
+                            <span class="tab-badge">{{ $cat['count'] }}</span>
+                        </button>
+                        @endforeach
+                    </div>
+                    @endif
+
                     {{-- Search Toolbar --}}
-                    <div style="padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                        <div style="position: relative; max-width: 320px; width: 100%;">
+                    <div style="padding: 10px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div style="position: relative; max-width: 360px; width: 100%;">
                             <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform:translateY(-50%); font-size: 11.5px; color: #94a3b8;" />
-                            <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama atau kode..." oninput="filterTableRows(this.value)" style="height: 34px; padding-left: 32px; font-size: 12px; border-radius: 6px; border-color:#cbd5e1;">
+                            <input type="text" id="tableSearchInput" class="form-control" placeholder="Cari nama material atau kelompok (cth: Semen, Pasir)..." oninput="filterTableRows(this.value)" style="height: 34px; padding-left: 32px; padding-right: 28px; font-size: 12px; border-radius: 6px; border-color:#cbd5e1;">
+                            <button type="button" id="clearSearchBtn" onclick="clearTableSearch()" style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" title="Hapus Pencarian">
+                                <x-lucide-x style="width:13px;height:13px;" />
+                            </button>
                         </div>
-                        <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
-                            {{ count($materialsData) }} item
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="flex items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-light border" onclick="expandAllAccordion()" style="height:32px; font-size:11.5px; font-weight:600; padding:0 10px; border-radius:6px; color:#475569; display:inline-flex; align-items:center; gap:4px;" title="Buka seluruh kategori dan kelompok material">
+                                    <x-lucide-chevrons-down-up style="width:12px;height:12px;" /> Buka Semua
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light border" onclick="collapseAllAccordion()" style="height:32px; font-size:11.5px; font-weight:600; padding:0 10px; border-radius:6px; color:#475569; display:inline-flex; align-items:center; gap:4px;" title="Tutup seluruh kategori dan kelompok material">
+                                    <x-lucide-chevrons-up-down style="width:12px;height:12px;" /> Tutup Semua
+                                </button>
+                            </div>
+                            <span class="text-muted" id="rowCountIndicator" style="font-size: 11px; font-weight: 600;">
+                                {{ count($materialsData) }} item terdaftar
+                            </span>
+                        </div>
                     </div>
 
                     {{-- Table Rincian Material --}}
@@ -319,48 +498,115 @@
                         <table class="data-table mb-0" id="itemsTable">
                             <thead>
                                 <tr style="background:#fafafa; border-bottom:1px solid #e2e8f0; font-size:10.5px; text-transform:uppercase; letter-spacing:0.3px; color:#64748b;">
-                                    <th style="text-align: left; padding:7px 12px;">Nama Material</th>
+                                    <th style="text-align: left; padding:7px 14px;">Nama Material & Spesifikasi</th>
                                     <th style="display:none; text-align: center; width: 110px; padding:7px 8px;" class="col-mr-only">Tiba / Pakai</th>
                                     <th style="display:none; text-align: center; width: 100px; padding:7px 8px;" class="col-mr-only">Sisa Kuota</th>
-                                    <th style="text-align: center; width: 100px; padding:7px 8px;">Stok Gudang</th>
-                                    <th style="text-align: center; width: 140px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
-                                    <th style="text-align: left; padding:7px 12px;">Keterangan</th>
-                                    <th style="width: 36px; text-align: center; padding:7px 6px;"></th>
+                                    <th style="text-align: center; width: 110px; padding:7px 8px;">Stok Gudang</th>
+                                    <th style="text-align: center; width: 145px; padding:7px 8px;">Jumlah Keluar <span class="text-danger">*</span></th>
+                                    <th style="text-align: left; padding:7px 12px;">Keterangan Keperluan</th>
+                                    <th style="width: 44px; text-align: center; padding:7px 6px;"></th>
                                 </tr>
                             </thead>
                             <tbody id="itemsBody">
+                                @php
+                                    $currentCat = null;
+                                    $currentType = null;
+                                    $catCountMap = collect($materialsData)->groupBy('category_name')->map->count();
+                                    $typeCountMap = collect($materialsData)->groupBy(function($item) {
+                                        return ($item['category_name'] ?? 'UMUM') . '|||' . (!empty($item['type']) ? $item['type'] : 'Material Umum');
+                                    })->map->count();
+                                @endphp
                                 @forelse($materialsData as $idx => $m)
-                                <tr id="row-{{ $idx }}" style="border-bottom: 1px solid #f1f5f9;">
-                                    <td style="padding: 8px 12px; position: relative;">
-                                        <div style="position: relative;">
-                                            <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;" />
-                                            <input type="text" 
-                                                   id="row-{{ $idx }}-name-input" 
-                                                   class="form-control material-autocomplete-input" 
-                                                   placeholder="Ketik nama material..." 
-                                                   autocomplete="off"
-                                                   value="{{ $m['name'] }}"
-                                                   oninput="onMaterialSearchInput(this, 'row-{{ $idx }}')"
-                                                   onfocus="onMaterialSearchFocus(this, 'row-{{ $idx }}')"
-                                                   onkeydown="onMaterialSearchKeydown(event, 'row-{{ $idx }}')"
-                                                   style="height: 38px; padding-left: 32px; padding-right: 28px; font-size: 12.5px; border-radius: 6px;">
-                                            <button type="button" 
-                                                    id="row-{{ $idx }}-clear-btn" 
-                                                    onclick="clearMaterialRowSelection('row-{{ $idx }}')" 
-                                                    style="display: block; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" 
-                                                    title="Hapus / Ganti">
-                                                <x-lucide-x />
-                                            </button>
+                                @php
+                                    $rowCat = $m['category_name'] ?? 'UMUM';
+                                    $rowType = !empty($m['type']) ? $m['type'] : 'Material Umum';
+                                    $catSlug = \Illuminate\Support\Str::slug($rowCat);
+                                    $subKey = 'sub-' . $catSlug . '-' . \Illuminate\Support\Str::slug($rowType);
+                                @endphp
+
+                                {{-- Level 1: Disiplin / Kategori Header (Collapsible) --}}
+                                @if($currentCat !== $rowCat)
+                                    @php 
+                                        $currentCat = $rowCat; 
+                                        $currentType = null;
+                                    @endphp
+                                    <tr class="group-toggle category-divider-row collapsed" data-group="group-cat-{{ $catSlug }}" data-cat-header="{{ $currentCat }}" style="background:#f1f5f9 !important; cursor:pointer; user-select:none; border-top:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0;">
+                                        <td colspan="7" style="padding:9px 14px !important;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <x-lucide-chevron-down class="group-chev" style="font-size:10px; color:#64748b; transition:transform .2s; transform:rotate(-90deg);" aria-hidden="true" />
+                                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 5px; {{ str_contains(strtoupper($currentCat), 'STRUKTUR') ? 'background:#dbeafe; color:#1d4ed8;' : (str_contains(strtoupper($currentCat), 'ARSITEK') ? 'background:#fef3c7; color:#b45309;' : (str_contains(strtoupper($currentCat), 'MEP') ? 'background:#e0e7ff; color:#4338ca;' : 'background:#f1f5f9; color:#475569;')) }}">
+                                                        @if(str_contains(strtoupper($currentCat), 'STRUKTUR'))
+                                                            <x-lucide-building-2 style="width:12px;height:12px;" />
+                                                        @elseif(str_contains(strtoupper($currentCat), 'ARSITEK'))
+                                                            <x-lucide-palette style="width:12px;height:12px;" />
+                                                        @elseif(str_contains(strtoupper($currentCat), 'MEP'))
+                                                            <x-lucide-zap style="width:12px;height:12px;" />
+                                                        @else
+                                                            <x-lucide-layers style="width:12px;height:12px;" />
+                                                        @endif
+                                                    </span>
+                                                    <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #1e293b;">{{ $currentCat }}</span>
+                                                </div>
+                                                <span class="badge" style="background:#ffffff; color:#475569; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; border:1px solid #cbd5e1;">
+                                                    {{ $catCountMap[$currentCat] ?? 0 }} Material
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                {{-- Level 2: Sub-group Kelompok Barang Header (Collapsible) --}}
+                                @if($currentType !== $rowType)
+                                    @php $currentType = $rowType; @endphp
+                                    <tr class="group-rows group-cat-{{ $catSlug }} subgroup-toggle subgroup-divider-row collapsed" data-group="{{ $subKey }}" data-cat-header="{{ $currentCat }}" data-subgroup-header="{{ $currentType }}" style="background:#f8fafc !important; cursor:pointer; user-select:none; border-bottom:1px solid #edf2f7; display:none;">
+                                        <td colspan="7" style="padding:7px 14px 7px 32px !important;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                                <div style="display: flex; align-items: center; gap: 7px;">
+                                                    <x-lucide-chevron-down class="subgroup-chev" style="font-size:9px; color:#94a3b8; transition:transform .2s; transform:rotate(-90deg);" aria-hidden="true" />
+                                                    <x-lucide-layers style="width:11px; height:11px; color:#64748b;" />
+                                                    <span style="font-size: 11.5px; font-weight: 600; color: #334155;">{{ $currentType }}</span>
+                                                </div>
+                                                <span class="text-muted" style="font-size:11px; font-weight:500;">
+                                                    ({{ $typeCountMap[$currentCat . '|||' . $currentType] ?? 1 }})
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                {{-- Material Data Row (Clean, no search input inside row!) --}}
+                                <tr id="row-{{ $idx }}" class="material-data-row group-rows group-cat-{{ $catSlug }} subgroup-rows {{ $subKey }}" 
+                                    data-category="{{ $rowCat }}" 
+                                    data-type="{{ $rowType }}"
+                                    data-name="{{ strtolower($m['name']) }}" 
+                                    data-code="{{ strtolower($m['code']) }}"
+                                    data-sku="{{ strtolower($m['sku'] ?? '') }}"
+                                    style="border-bottom: 1px solid #f1f5f9; display:none;">
+                                    <td style="padding: 10px 14px; vertical-align: middle;">
+                                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                                            <span style="font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3;">
+                                                {{ $m['name'] }}
+                                            </span>
+                                            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; margin-top: 2px;">
+                                                <span class="badge" style="font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; {{ str_contains(strtoupper($rowCat), 'STRUKTUR') ? 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;' : (str_contains(strtoupper($rowCat), 'ARSITEK') ? 'background:#fefce8; color:#a16207; border:1px solid #fef08a;' : (str_contains(strtoupper($rowCat), 'MEP') ? 'background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;' : 'background:#f8fafc; color:#64748b; border:1px solid #e2e8f0;')) }}">
+                                                    {{ $rowCat }}
+                                                </span>
+                                                @if(!empty($m['type']))
+                                                    <span class="fw-500" style="color: #475569;">• {{ $m['type'] }}</span>
+                                                @endif
+                                                @if(!empty($m['brand']))
+                                                    <span>• Merek: {{ $m['brand'] }}</span>
+                                                @endif
+                                                @if(!empty($m['size']))
+                                                    <span>• {{ $m['size'] }}</span>
+                                                @endif
+                                            </div>
                                         </div>
 
                                         <input type="hidden" name="items[{{ $idx }}][material_id]" id="row-{{ $idx }}-material-id" value="{{ $m['id'] }}">
                                         <input type="hidden" name="items[{{ $idx }}][custom_item_name]" id="row-{{ $idx }}-custom-name" value="">
                                         <input type="hidden" name="items[{{ $idx }}][custom_item_unit]" id="row-{{ $idx }}-custom-unit" value="">
-
-                                        <div id="row-{{ $idx }}-custom-badge-wrap" style="display: none; align-items: center; gap: 6px; margin-top: 5px;">
-                                            <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:2px 6px;">Non-Master</span>
-                                            <input type="text" id="row-{{ $idx }}-custom-unit-input" class="form-control" placeholder="Satuan (cth: sak, m3)" value="unit" style="height: 26px; font-size: 11px; padding: 2px 6px; width: 110px; border-radius: 4px;" oninput="onCustomUnitChange(this, 'row-{{ $idx }}')">
-                                        </div>
                                     </td>
                                     <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">
                                         -
@@ -386,15 +632,15 @@
                                         <input type="text" name="items[{{ $idx }}][notes]" class="form-control" placeholder="Keterangan keperluan...">
                                     </td>
                                     <td style="padding: 8px 6px; text-align: center;">
-                                        <button type="button" class="btn-delete-row" onclick="removeRow('row-{{ $idx }}')" title="Hapus Baris">
-                                            <x-lucide-trash-2 />
+                                        <button type="button" class="btn-clear-row" onclick="clearRowQty('row-{{ $idx }}')" title="Kosongkan Nilai Kuantitas">
+                                            <x-lucide-rotate-ccw style="width:13px; height:13px;" />
                                         </button>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr id="empty-stock-row">
-                                    <td colspan="5" class="text-center p-4 text-muted" style="font-size: 12.5px;">
-                                        Belum ada stok material yang tercatat di gudang ini. Klik <strong>+ Tambah Baris</strong> atau <strong>+ Item Custom</strong> di atas untuk mencatat pengeluaran.
+                                    <td colspan="7" class="text-center p-4 text-muted" style="font-size: 12.5px;">
+                                        Belum ada stok material yang tercatat di gudang ini. Klik <strong>+ Tambah Material Lain</strong> atau <strong>+ Item Custom</strong> di atas untuk mencatat pengeluaran.
                                     </td>
                                 </tr>
                                 @endforelse
@@ -472,11 +718,11 @@
                         @endif
                     </div>
 
-                    {{-- Nama Penerima --}}
+                    {{-- Nama Pemakai --}}
                     <div class="mb-2">
-                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Penerima (Mandor / Tukang) <span class="text-danger">*</span></label>
+                        <label class="form-label" style="font-size:11px; font-weight:600; color:#334155; margin-bottom:3px;">Pemakai (Mandor / Tukang) <span class="text-danger">*</span></label>
                         <input type="text" name="recipient_name" id="recipientNameInput" class="form-control"
-                               placeholder="Contoh: Pak Supri (Mandor)"
+                               placeholder="Contoh: Pak Supri (Mandor / Pekerja)"
                                value="{{ old('recipient_name') }}" required>
                     </div>
 
@@ -516,6 +762,48 @@
 
         </div>
     </form>
+
+    {{-- Modal Tambah Material Lain (Clean Material Picker Modal) --}}
+    <div id="addMaterialModalBackdrop" onclick="handleModalBackdropClick(event)">
+        <div id="addMaterialModal" style="background:#ffffff; border-radius:12px; width:100%; max-width:620px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border:1px solid #e2e8f0; overflow:hidden; display:flex; flex-direction:column; max-height:85vh; margin:auto;">
+            {{-- Modal Header --}}
+            <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background:#f8fafc;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:#eff6ff; color:#2563eb;">
+                        <x-lucide-boxes style="width:16px; height:16px;" />
+                    </span>
+                    <div>
+                        <h4 style="font-size:13.5px; font-weight:700; color:#0f172a; margin:0;">Pilih Material dari Master Data</h4>
+                        <p style="font-size:11px; color:#64748b; margin:0;">Cari dan tambahkan material ke tabel pengeluaran tanpa input autocomplete per-baris</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAddMaterialModal()" style="border:none; background:transparent; color:#94a3b8; cursor:pointer; padding:4px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;" title="Tutup">
+                    <x-lucide-x style="width:18px; height:18px;" />
+                </button>
+            </div>
+
+            {{-- Modal Search Input --}}
+            <div style="padding:12px 18px; border-bottom:1px solid #f1f5f9; background:#ffffff;">
+                <div style="position:relative;">
+                    <x-lucide-search style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:13px; color:#94a3b8;" />
+                    <input type="text" id="modalSearchInput" class="form-control" placeholder="Cari nama material atau kelompok (cth: Semen, Pasir)..." oninput="filterModalMaterials(this.value)" style="height:38px; padding-left:36px; padding-right:12px; font-size:12.5px; border-radius:6px; border:1px solid #cbd5e1; width:100%;">
+                </div>
+            </div>
+
+            {{-- Modal Materials List --}}
+            <div id="modalMaterialsList" style="flex:1; overflow-y:auto; max-height:420px; padding:4px 0;">
+                {{-- Rendered dynamically by JS --}}
+            </div>
+
+            {{-- Modal Footer --}}
+            <div style="padding:10px 18px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; align-items:center; justify-content:space-between;">
+                <span id="modalResultCount" style="font-size:11px; color:#64748b; font-weight:600;">0 material tersedia</span>
+                <button type="button" class="btn btn-light border" onclick="closeAddMaterialModal()" style="font-size:12px; padding:5px 14px; font-weight:600; border-radius:6px;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 
     {{-- Global Floating Material Autocomplete Suggestions Dropdown --}}
     <div id="material-suggestions-box" 
@@ -777,100 +1065,380 @@
         let currentSuggestions = [];
         let activeSuggestionIndex = -1;
 
-        function addManualRow(preselectedId = null, qtyVal = '', isCustom = false, initialCustomName = '') {
-            const tbody = document.getElementById('itemsBody');
-            const rowId = 'row-' + rowIndex;
-
-            let initialName = '';
-            let initialId = '';
-            let initialUnit = '-';
-            let initialStock = 0;
-
-            if (isCustom) {
-                initialName = initialCustomName || '';
-            } else if (preselectedId) {
-                const found = availableMaterials.find(m => m.id == preselectedId);
-                if (found) {
-                    initialName = found.name;
-                    initialId = found.id;
-                    initialUnit = found.unit || 'unit';
-                    initialStock = found.stock;
+        /* --- Modal Picker & Dynamic Row Management --- */
+        function openAddMaterialModal() {
+            const modal = document.getElementById('addMaterialModalBackdrop');
+            if (modal) {
+                modal.style.display = 'flex';
+                const searchInp = document.getElementById('modalSearchInput');
+                if (searchInp) {
+                    searchInp.value = '';
+                    filterModalMaterials('');
+                    setTimeout(() => searchInp.focus(), 100);
                 }
             }
+        }
+
+        function closeAddMaterialModal() {
+            const modal = document.getElementById('addMaterialModalBackdrop');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function handleModalBackdropClick(event) {
+            if (event.target && event.target.id === 'addMaterialModalBackdrop') {
+                closeAddMaterialModal();
+            }
+        }
+
+        function filterModalMaterials(query) {
+            const container = document.getElementById('modalMaterialsList');
+            const countLabel = document.getElementById('modalResultCount');
+            if (!container) return;
+
+            const q = (query || '').toLowerCase().trim();
+            let matched = availableMaterials.filter(m => {
+                if (!q) return true;
+                const name = (m.name || '').toLowerCase();
+                const code = (m.code || '').toLowerCase();
+                const sku = (m.sku || '').toLowerCase();
+                const cat = (m.category_name || m.category || '').toLowerCase();
+                const type = (m.type || '').toLowerCase();
+                const words = name.split(/[\s,.\/-]+/).filter(Boolean);
+                const startsWithWord = words.some(w => w.startsWith(q));
+                return startsWithWord || name.includes(q) || code.includes(q) || sku.includes(q) || cat.includes(q) || type.includes(q);
+            });
+
+            matched.sort((a, b) => {
+                if (q) {
+                    const aStarts = (a.name || '').toLowerCase().startsWith(q);
+                    const bStarts = (b.name || '').toLowerCase().startsWith(q);
+                    if (aStarts && !bStarts) return -1;
+                    if (!aStarts && bStarts) return 1;
+                }
+                return (a.name || '').localeCompare(b.name || '', 'id', { sensitivity: 'base' });
+            });
+
+            if (countLabel) {
+                countLabel.innerText = matched.length + ' material ditemukan';
+            }
+
+            if (matched.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:32px 16px; color:#94a3b8;">
+                        <div style="font-size:13px; font-weight:600; color:#475569;">Tidak ada material yang cocok</div>
+                        <div style="font-size:11.5px; margin-top:3px;">Coba kata kunci lain atau gunakan tombol "+ Item Custom" untuk item non-master.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const existingMatIds = new Set();
+            document.querySelectorAll('#itemsBody input[name*="[material_id]"]').forEach(inp => {
+                if (inp.value) existingMatIds.add(String(inp.value));
+            });
+
+            let html = '';
+            matched.forEach(m => {
+                const isAlreadyInTable = existingMatIds.has(String(m.id));
+                const stockVal = parseFloat(m.stock || 0);
+                const isInStock = stockVal > 0;
+                const catName = m.category_name || m.category || 'UMUM';
+                const catUpper = catName.toUpperCase();
+                const catColorStyle = catUpper.includes('STRUKTUR') 
+                    ? 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;' 
+                    : (catUpper.includes('ARSITEK') 
+                        ? 'background:#fefce8; color:#a16207; border:1px solid #fef08a;' 
+                        : (catUpper.includes('MEP') 
+                            ? 'background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;' 
+                            : 'background:#f8fafc; color:#64748b; border:1px solid #e2e8f0;'));
+
+                html += `
+                    <div class="modal-material-item" onclick="selectMaterialFromModal(${m.id})">
+                        <div style="flex:1; min-width:0;">
+                            <span style="font-size:12.5px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">
+                                ${highlightMatch(m.name, q)}
+                            </span>
+                            <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:#64748b; margin-top:3px;">
+                                <span class="badge" style="font-size:9.5px; font-weight:700; padding:1.5px 6px; border-radius:4px; ${catColorStyle}">
+                                    ${escapeHtml(catName)}
+                                </span>
+                                ${m.type ? `<span class="fw-500" style="color:#475569;">&bull; ${escapeHtml(m.type)}</span>` : ''}
+                                ${m.brand ? `<span>&bull; Merek: ${escapeHtml(m.brand)}</span>` : ''}
+                                ${m.size ? `<span>&bull; ${escapeHtml(m.size)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                            <span class="badge" style="font-size:11px; font-weight:700; padding:3px 7px; border-radius:4px; ${isInStock ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;'}">
+                                ${stockVal} ${escapeHtml(m.unit || '')}
+                            </span>
+                            ${isAlreadyInTable 
+                                ? `<span class="badge" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-size:10.5px; padding:3px 8px; border-radius:5px;">Sudah di Tabel</span>` 
+                                : `<button type="button" class="btn btn-sm btn-primary" style="font-size:11px; padding:3px 9px; font-weight:600; border-radius:5px;">+ Pilih</button>`}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function selectMaterialFromModal(materialId) {
+            closeAddMaterialModal();
+
+            let existingRow = null;
+            document.querySelectorAll('#itemsBody tr.material-data-row').forEach(tr => {
+                const hid = tr.querySelector('input[name*="[material_id]"]');
+                if (hid && hid.value == materialId) {
+                    existingRow = tr;
+                }
+            });
+
+            if (existingRow) {
+                if (currentActiveCategory !== 'all') {
+                    filterByCategory('all');
+                }
+                const searchInp = document.getElementById('tableSearchInput');
+                if (searchInp && searchInp.value) {
+                    clearTableSearch();
+                }
+
+                existingRow.classList.forEach(c => {
+                    if (c.startsWith('sub-')) {
+                        const sub = document.querySelector(`#itemsBody tr.subgroup-toggle[data-group="${c}"]`);
+                        if (sub) {
+                            sub.classList.remove('collapsed');
+                            sub.style.display = '';
+                            const sc = sub.querySelector('.subgroup-chev');
+                            if (sc) sc.style.transform = 'rotate(0deg)';
+                        }
+                    }
+                    if (c.startsWith('group-cat-')) {
+                        const cat = document.querySelector(`#itemsBody tr.group-toggle[data-group="${c}"]`);
+                        if (cat) {
+                            cat.classList.remove('collapsed');
+                            cat.style.display = '';
+                            const cc = cat.querySelector('.group-chev');
+                            if (cc) cc.style.transform = 'rotate(0deg)';
+                        }
+                    }
+                });
+
+                existingRow.style.display = '';
+                existingRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                existingRow.classList.add('row-active-qty');
+                const qtyInput = existingRow.querySelector('.qty-input');
+                if (qtyInput) {
+                    setTimeout(() => {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }, 200);
+                }
+                return;
+            }
+
+            addMaterialRowFromMaster(materialId);
+        }
+
+        function addMaterialRowFromMaster(materialId, initialQty = '', initialNotes = '') {
+            const m = availableMaterials.find(x => x.id == materialId);
+            if (!m) return;
+
+            const tbody = document.getElementById('itemsBody');
+            const emptyStockRow = document.getElementById('empty-stock-row');
+            if (emptyStockRow) emptyStockRow.remove();
+
+            const rowId = 'row-' + rowIndex;
+            const rowCat = m.category_name || m.category || 'UMUM';
+            const rowType = m.type || 'Material Umum';
+            const catUpper = rowCat.toUpperCase();
+            const catColorStyle = catUpper.includes('STRUKTUR') 
+                ? 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;' 
+                : (catUpper.includes('ARSITEK') 
+                    ? 'background:#fefce8; color:#a16207; border:1px solid #fef08a;' 
+                    : (catUpper.includes('MEP') 
+                        ? 'background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe;' 
+                        : 'background:#f8fafc; color:#64748b; border:1px solid #e2e8f0;'));
 
             const tr = document.createElement('tr');
             tr.id = rowId;
+            tr.className = 'material-data-row';
+            tr.setAttribute('data-category', rowCat);
+            tr.setAttribute('data-type', rowType);
+            tr.setAttribute('data-name', (m.name || '').toLowerCase());
+            tr.setAttribute('data-code', (m.code || '').toLowerCase());
+            tr.setAttribute('data-sku', (m.sku || '').toLowerCase());
             tr.style.borderBottom = '1px solid #f1f5f9';
+
             tr.innerHTML = `
-                <td style="padding: 8px 12px; position: relative;">
-                    <div style="position: relative;">
-                        <x-lucide-search style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 11.5px; pointer-events: none;" />
-                        <input type="text" 
-                               id="${rowId}-name-input" 
-                               class="form-control material-autocomplete-input" 
-                               placeholder="Ketik nama material (cth: Batu, Semen, Pasir)..." 
-                               autocomplete="off"
-                               value="${escapeHtml(initialName)}"
-                               oninput="onMaterialSearchInput(this, '${rowId}')"
-                               onfocus="onMaterialSearchFocus(this, '${rowId}')"
-                               onkeydown="onMaterialSearchKeydown(event, '${rowId}')"
-                               style="height: 38px; padding-left: 32px; padding-right: 28px; font-size: 12.5px; border-radius: 6px;">
-                        <button type="button" 
-                                id="${rowId}-clear-btn" 
-                                onclick="clearMaterialRowSelection('${rowId}')" 
-                                style="display: ${initialName ? 'block' : 'none'}; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #94a3b8; cursor: pointer; padding: 2px 4px; font-size: 12px;" 
-                                title="Hapus / Ganti">
-                            <x-lucide-x />
-                        </button>
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3;">
+                            ${escapeHtml(m.name)}
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; margin-top: 2px;">
+                            <span class="badge" style="font-size: 9.5px; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; ${catColorStyle}">
+                                ${escapeHtml(rowCat)}
+                            </span>
+                            ${m.type ? `<span class="fw-500" style="color: #475569;">• ${escapeHtml(m.type)}</span>` : ''}
+                            ${m.brand ? `<span>• Merek: ${escapeHtml(m.brand)}</span>` : ''}
+                            ${m.size ? `<span>• ${escapeHtml(m.size)}</span>` : ''}
+                        </div>
                     </div>
 
-                    {{-- Hidden Form Fields --}}
-                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="${initialId}">
-                    <input type="hidden" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" value="${isCustom ? escapeHtml(initialName) : ''}">
-                    <input type="hidden" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" value="${isCustom ? 'unit' : ''}">
-
-                    {{-- Custom item unit editor --}}
-                    <div id="${rowId}-custom-badge-wrap" style="display: ${isCustom ? 'flex' : 'none'}; align-items: center; gap: 6px; margin-top: 5px;">
-                        <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:2px 6px;">Non-Master</span>
-                        <input type="text" id="${rowId}-custom-unit-input" class="form-control" placeholder="Satuan (cth: sak, m3)" value="unit" style="height: 26px; font-size: 11px; padding: 2px 6px; width: 110px; border-radius: 4px;" oninput="onCustomUnitChange(this, '${rowId}')">
-                    </div>
+                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="${m.id}">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" value="">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" value="">
                 </td>
+                <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">-</td>
+                <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">-</td>
                 <td style="padding: 8px 8px; text-align: center;">
-                    <span class="badge" id="${rowId}-stock" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 5px; ${initialId ? (initialStock > 0 ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;') : 'background:#f1f5f9; color:#64748b;'}">
-                        ${initialId ? initialStock + ' ' + initialUnit : (isCustom ? 'Custom' : '-')}
+                    <span class="badge" id="${rowId}-stock" style="font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 5px; ${parseFloat(m.stock || 0) > 0 ? 'background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe;' : 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;'}">
+                        ${m.stock} ${escapeHtml(m.unit || '')}
                     </span>
                 </td>
                 <td style="padding: 8px 8px;">
                     <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
                         <input type="number" name="items[${rowIndex}][quantity]" id="${rowId}-qty" class="form-control qty-input text-center"
-                               step="0.01" min="0" placeholder="0" value="${qtyVal}" oninput="validateManualQty('${rowId}')"
-                               style="width: 85px;" ${initialId ? `max="${initialStock}"` : ''}>
-                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 24px;">${initialUnit}</span>
+                               step="0.01" min="0" placeholder="0" value="${initialQty}" oninput="validateManualQty('${rowId}')"
+                               style="width: 85px;" max="${m.stock}">
+                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 24px;">${escapeHtml(m.unit || '')}</span>
                     </div>
                     <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 3px; text-align:center; display: none;"></div>
                 </td>
                 <td style="padding: 8px 10px;">
-                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan keperluan...">
+                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan keperluan..." value="${escapeHtml(initialNotes)}">
                 </td>
                 <td style="padding: 8px 6px; text-align: center;">
-                    <button type="button" class="btn-delete-row" onclick="removeRow('${rowId}')" title="Hapus Baris">
-                        <x-lucide-trash-2 />
+                    <button type="button" class="btn-clear-row" onclick="clearRowQty('${rowId}')" title="Kosongkan Nilai Kuantitas">
+                        <x-lucide-rotate-ccw style="width:13px; height:13px;" />
                     </button>
                 </td>
             `;
 
             tbody.appendChild(tr);
             rowIndex++;
+            updateTableSummary();
 
-            if (isCustom && !initialCustomName) {
-                setTimeout(() => {
-                    const inp = document.getElementById(rowId + '-name-input');
-                    if (inp) inp.focus();
-                }, 100);
+            setTimeout(() => {
+                const qInp = document.getElementById(rowId + '-qty');
+                if (qInp) {
+                    qInp.focus();
+                    qInp.select();
+                }
+            }, 100);
+        }
+
+        function addCustomItemRow(initialName = '', initialQty = '', initialUnit = 'unit', initialNotes = '') {
+            const tbody = document.getElementById('itemsBody');
+            const emptyStockRow = document.getElementById('empty-stock-row');
+            if (emptyStockRow) emptyStockRow.remove();
+
+            const rowId = 'row-' + rowIndex;
+
+            const tr = document.createElement('tr');
+            tr.id = rowId;
+            tr.className = 'material-data-row';
+            tr.setAttribute('data-category', 'CUSTOM');
+            tr.setAttribute('data-type', 'Item Custom');
+            tr.setAttribute('data-name', initialName.toLowerCase());
+            tr.setAttribute('data-code', '');
+            tr.setAttribute('data-sku', '');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+
+            tr.innerHTML = `
+                <td style="padding: 10px 14px; vertical-align: middle;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:10px; padding:2px 6px;">Non-Master</span>
+                            <input type="text" class="form-control" placeholder="Ketik nama item custom / non-master..." value="${escapeHtml(initialName)}"
+                                   style="height:32px; font-size:12.5px; font-weight:600; border-radius:5px;"
+                                   oninput="onCustomItemNameInput(this, '${rowId}')">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size:11px; color:#64748b;">Satuan:</span>
+                            <input type="text" id="${rowId}-custom-unit-input" class="form-control" placeholder="Contoh: sak, btg, roll" value="${escapeHtml(initialUnit)}"
+                                   style="height: 26px; font-size: 11px; padding: 2px 6px; width: 110px; border-radius: 4px;"
+                                   oninput="onCustomUnitChange(this, '${rowId}')">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="items[${rowIndex}][material_id]" id="${rowId}-material-id" value="">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_name]" id="${rowId}-custom-name" value="${escapeHtml(initialName)}">
+                    <input type="hidden" name="items[${rowIndex}][custom_item_unit]" id="${rowId}-custom-unit" value="${escapeHtml(initialUnit)}">
+                </td>
+                <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">-</td>
+                <td style="display:none; padding: 7px 8px; text-align: center;" class="col-mr-only">-</td>
+                <td style="padding: 8px 8px; text-align: center;">
+                    <span class="badge" id="${rowId}-stock" style="font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 5px; background:#fef3c7; color:#92400e; border:1px solid #fde68a;">
+                        Custom
+                    </span>
+                </td>
+                <td style="padding: 8px 8px;">
+                    <div style="display: flex; align-items: center; justify-content:center; gap: 6px;">
+                        <input type="number" name="items[${rowIndex}][quantity]" id="${rowId}-qty" class="form-control qty-input text-center"
+                               step="0.01" min="0" placeholder="0" value="${initialQty}" oninput="validateManualQty('${rowId}')"
+                               style="width: 85px;">
+                        <span class="text-muted fw-600" id="${rowId}-unit" style="font-size: 11.5px; min-width: 24px;">${escapeHtml(initialUnit)}</span>
+                    </div>
+                    <div id="${rowId}-warning" class="text-danger fw-600" style="font-size: 10px; margin-top: 3px; text-align:center; display: none;"></div>
+                </td>
+                <td style="padding: 8px 10px;">
+                    <input type="text" name="items[${rowIndex}][notes]" class="form-control" placeholder="Keterangan keperluan..." value="${escapeHtml(initialNotes)}">
+                </td>
+                <td style="padding: 8px 6px; text-align: center;">
+                    <button type="button" class="btn-clear-row" onclick="removeRow('${rowId}')" title="Hapus Baris Ini">
+                        <x-lucide-trash-2 style="width:13px; height:13px; color:#ef4444;" />
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            rowIndex++;
+            updateTableSummary();
+
+            setTimeout(() => {
+                const nameInp = tr.querySelector('input[type="text"]');
+                if (nameInp) nameInp.focus();
+            }, 100);
+        }
+
+        function onCustomItemNameInput(input, rowId) {
+            const val = input.value.trim();
+            const customHidden = document.getElementById(rowId + '-custom-name');
+            if (customHidden) customHidden.value = val;
+            const tr = document.getElementById(rowId);
+            if (tr) tr.setAttribute('data-name', val.toLowerCase());
+        }
+
+        function clearRowQty(rowId) {
+            const qtyInput = document.getElementById(rowId + '-qty');
+            if (qtyInput) {
+                qtyInput.value = '';
+                qtyInput.classList.remove('is-invalid');
             }
-
+            const warningEl = document.getElementById(rowId + '-warning');
+            if (warningEl) {
+                warningEl.style.display = 'none';
+                warningEl.innerText = '';
+            }
+            const tr = document.getElementById(rowId);
+            if (tr) {
+                tr.classList.remove('row-active-qty');
+            }
             updateTableSummary();
         }
+
+        function addManualRow(preselectedId = null, qtyVal = '', isCustom = false, initialCustomName = '') {
+            if (isCustom) {
+                return addCustomItemRow(initialCustomName, qtyVal);
+            }
+            if (preselectedId) {
+                return addMaterialRowFromMaster(preselectedId, qtyVal);
+            }
+            openAddMaterialModal();
+        }
+
+            
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -995,7 +1563,16 @@
                     </div>`;
                     itemIdx++;
                 });
+            } else {
+                html += `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px;">
+                    Tidak ada material master yang cocok dengan "<strong>${escapeHtml(q)}</strong>".
+                </div>`;
             }
+
+            box.innerHTML = html;
+            positionSuggestionsBox(input);
+            box.style.display = 'block';
+        }
 
         function hideMaterialSuggestions() {
             const box = document.getElementById('material-suggestions-box');
@@ -1071,6 +1648,13 @@
             const stockBadge = document.getElementById(rowId + '-stock');
             const unitLabel = document.getElementById(rowId + '-unit');
             const qtyInput = document.getElementById(rowId + '-qty');
+            const tr = document.getElementById(rowId);
+
+            if (tr) {
+                tr.setAttribute('data-category', m.category_name || m.category || 'UMUM');
+                tr.setAttribute('data-name', (m.name || '').toLowerCase());
+                tr.setAttribute('data-code', (m.code || '').toLowerCase());
+            }
 
             if (nameInput) nameInput.value = m.name;
             if (matIdInput) matIdInput.value = m.id;
@@ -1252,23 +1836,255 @@
             updateTableSummary();
         }
 
-        function filterTableRows(query) {
-            const q = query.toLowerCase().trim();
-            const rows = document.querySelectorAll('#itemsBody tr');
-            let visibleCount = 0;
+        let currentActiveCategory = 'all';
 
-            rows.forEach(tr => {
-                const nameInput = tr.querySelector('.material-autocomplete-input');
-                const nameText = nameInput ? nameInput.value.toLowerCase() : '';
-                const fullText = (tr.innerText + ' ' + nameText).toLowerCase();
-                const match = !q || fullText.includes(q);
-                tr.style.display = match ? '' : 'none';
-                if (match) {
-                    visibleCount++;
-                }
+        function initAccordionToggles() {
+            // Level 1: Category Toggle
+            document.querySelectorAll('#itemsBody tr.group-toggle').forEach(row => {
+                row.onclick = function(e) {
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+                    const groupClass = this.getAttribute('data-group');
+                    const isCollapsed = this.classList.contains('collapsed');
+                    const chev = this.querySelector('.group-chev');
+
+                    if (isCollapsed) {
+                        this.classList.remove('collapsed');
+                        if (chev) chev.style.transform = 'rotate(0deg)';
+                        document.querySelectorAll('#itemsBody tr.' + groupClass + '.subgroup-toggle').forEach(sub => {
+                            sub.style.display = '';
+                            const subKey = sub.getAttribute('data-group');
+                            if (!sub.classList.contains('collapsed')) {
+                                document.querySelectorAll('#itemsBody tr.subgroup-rows.' + subKey).forEach(itemRow => {
+                                    itemRow.style.display = '';
+                                });
+                            }
+                        });
+                    } else {
+                        this.classList.add('collapsed');
+                        if (chev) chev.style.transform = 'rotate(-90deg)';
+                        document.querySelectorAll('#itemsBody tr.' + groupClass).forEach(r => {
+                            r.style.display = 'none';
+                        });
+                    }
+                };
             });
 
-            document.getElementById('rowCountIndicator').innerText = visibleCount + ' item ditampilkan';
+            // Level 2: Subgroup Toggle
+            document.querySelectorAll('#itemsBody tr.subgroup-toggle').forEach(row => {
+                row.onclick = function(e) {
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+                    const subKey = this.getAttribute('data-group');
+                    const isCollapsed = this.classList.contains('collapsed');
+                    const chev = this.querySelector('.subgroup-chev');
+
+                    if (isCollapsed) {
+                        this.classList.remove('collapsed');
+                        if (chev) chev.style.transform = 'rotate(0deg)';
+                        document.querySelectorAll('#itemsBody tr.subgroup-rows.' + subKey).forEach(itemRow => {
+                            itemRow.style.display = '';
+                        });
+                    } else {
+                        this.classList.add('collapsed');
+                        if (chev) chev.style.transform = 'rotate(-90deg)';
+                        document.querySelectorAll('#itemsBody tr.subgroup-rows.' + subKey).forEach(itemRow => {
+                            itemRow.style.display = 'none';
+                        });
+                    }
+                };
+            });
+        }
+
+        function expandAllAccordion() {
+            document.querySelectorAll('#itemsBody tr.group-toggle').forEach(cat => {
+                cat.classList.remove('collapsed');
+                cat.style.display = '';
+                const chev = cat.querySelector('.group-chev');
+                if (chev) chev.style.transform = 'rotate(0deg)';
+            });
+            document.querySelectorAll('#itemsBody tr.subgroup-toggle').forEach(sub => {
+                sub.classList.remove('collapsed');
+                sub.style.display = '';
+                const chev = sub.querySelector('.subgroup-chev');
+                if (chev) chev.style.transform = 'rotate(0deg)';
+            });
+            document.querySelectorAll('#itemsBody tr.material-data-row').forEach(row => {
+                row.style.display = '';
+            });
+            const indicator = document.getElementById('rowCountIndicator');
+            if (indicator) {
+                const total = document.querySelectorAll('#itemsBody tr.material-data-row').length;
+                indicator.innerText = total + ' item terdaftar (Semua Terbuka)';
+            }
+        }
+
+        function collapseAllAccordion() {
+            document.querySelectorAll('#itemsBody tr.group-toggle').forEach(cat => {
+                cat.classList.add('collapsed');
+                const chev = cat.querySelector('.group-chev');
+                if (chev) chev.style.transform = 'rotate(-90deg)';
+            });
+            document.querySelectorAll('#itemsBody tr.subgroup-toggle').forEach(sub => {
+                sub.classList.add('collapsed');
+                sub.style.display = 'none';
+                const chev = sub.querySelector('.subgroup-chev');
+                if (chev) chev.style.transform = 'rotate(-90deg)';
+            });
+            document.querySelectorAll('#itemsBody tr.material-data-row').forEach(row => {
+                const qtyInput = row.querySelector('.qty-input');
+                const qty = parseFloat(qtyInput?.value || 0);
+                if (qty > 0) {
+                    row.style.display = '';
+                    row.classList.forEach(c => {
+                        if (c.startsWith('sub-')) {
+                            const sub = document.querySelector(`#itemsBody tr.subgroup-toggle[data-group="${c}"]`);
+                            if (sub) {
+                                sub.classList.remove('collapsed');
+                                sub.style.display = '';
+                                const sc = sub.querySelector('.subgroup-chev');
+                                if (sc) sc.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                        if (c.startsWith('group-cat-')) {
+                            const cat = document.querySelector(`#itemsBody tr.group-toggle[data-group="${c}"]`);
+                            if (cat) {
+                                cat.classList.remove('collapsed');
+                                const cc = cat.querySelector('.group-chev');
+                                if (cc) cc.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            const indicator = document.getElementById('rowCountIndicator');
+            if (indicator) {
+                const total = document.querySelectorAll('#itemsBody tr.material-data-row').length;
+                indicator.innerText = total + ' item terdaftar (Tertutup)';
+            }
+        }
+
+        function filterByCategory(categoryName) {
+            currentActiveCategory = categoryName;
+            document.querySelectorAll('.btn-category-tab').forEach(btn => btn.classList.remove('active'));
+
+            const targetTab = categoryName === 'all'
+                ? document.getElementById('tab-category-all')
+                : (document.querySelector(`[onclick*="filterByCategory('${categoryName}')"]`) || document.getElementById('tab-category-' + categoryName.toLowerCase().replace(/[^a-z0-9]/g, '-')));
+
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            const searchVal = document.getElementById('tableSearchInput')?.value || '';
+            filterTableRows(searchVal);
+        }
+
+        function clearTableSearch() {
+            const input = document.getElementById('tableSearchInput');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) clearBtn.style.display = 'none';
+            filterTableRows('');
+        }
+
+        function filterTableRows(query) {
+            const q = (query || '').toLowerCase().trim();
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                clearBtn.style.display = q ? 'block' : 'none';
+            }
+
+            const rows = document.querySelectorAll('#itemsBody tr.material-data-row');
+            const categoryDividers = document.querySelectorAll('#itemsBody tr.category-divider-row');
+            const subgroupDividers = document.querySelectorAll('#itemsBody tr.subgroup-divider-row');
+
+            let visibleCount = 0;
+            const matchedSubgroups = new Set();
+            const matchedCategories = new Set();
+
+            if (q.length > 0) {
+                rows.forEach(tr => {
+                    const itemCategory = (tr.getAttribute('data-category') || 'UMUM').trim();
+                    const itemType = (tr.getAttribute('data-type') || '').trim();
+                    const itemName = (tr.getAttribute('data-name') || '').trim();
+                    const itemCode = (tr.getAttribute('data-code') || '').trim();
+                    const itemSku = (tr.getAttribute('data-sku') || '').trim();
+
+                    const categoryMatch = (currentActiveCategory === 'all' || itemCategory.toLowerCase() === currentActiveCategory.toLowerCase());
+
+                    const words = itemName.split(/[\s,.\/-]+/).filter(Boolean);
+                    const startsWithWord = words.some(w => w.startsWith(q));
+                    const containsMatch = itemName.includes(q) || itemCode.includes(q) || itemSku.includes(q) || itemCategory.toLowerCase().includes(q) || itemType.toLowerCase().includes(q);
+                    const searchMatch = startsWithWord || containsMatch;
+
+                    const isVisible = categoryMatch && searchMatch;
+                    tr.style.display = isVisible ? '' : 'none';
+
+                    if (isVisible) {
+                        visibleCount++;
+                        matchedCategories.add(itemCategory.toUpperCase());
+                        tr.classList.forEach(cls => {
+                            if (cls.startsWith('sub-')) matchedSubgroups.add(cls);
+                        });
+                    }
+                });
+
+                categoryDividers.forEach(cat => {
+                    const catHeader = (cat.getAttribute('data-cat-header') || '').trim().toUpperCase();
+                    const shouldShow = matchedCategories.has(catHeader);
+                    cat.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) {
+                        cat.classList.remove('collapsed');
+                        const chev = cat.querySelector('.group-chev');
+                        if (chev) chev.style.transform = 'rotate(0deg)';
+                    }
+                });
+
+                subgroupDividers.forEach(sub => {
+                    const subGroup = sub.getAttribute('data-group');
+                    const shouldShow = matchedSubgroups.has(subGroup);
+                    sub.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) {
+                        sub.classList.remove('collapsed');
+                        const chev = sub.querySelector('.subgroup-chev');
+                        if (chev) chev.style.transform = 'rotate(0deg)';
+                    }
+                });
+            } else {
+                categoryDividers.forEach(cat => {
+                    const catHeader = (cat.getAttribute('data-cat-header') || '').trim().toUpperCase();
+                    const isCatMatch = (currentActiveCategory === 'all' || catHeader === currentActiveCategory.toUpperCase());
+                    cat.style.display = isCatMatch ? '' : 'none';
+
+                    const groupClass = cat.getAttribute('data-group');
+                    const isCatCollapsed = cat.classList.contains('collapsed');
+
+                    document.querySelectorAll('#itemsBody tr.' + groupClass + '.subgroup-toggle').forEach(sub => {
+                        const isSubCollapsed = sub.classList.contains('collapsed');
+                        sub.style.display = (isCatMatch && !isCatCollapsed) ? '' : 'none';
+
+                        const subKey = sub.getAttribute('data-group');
+                        document.querySelectorAll('#itemsBody tr.subgroup-rows.' + subKey).forEach(itemRow => {
+                            const isVisible = isCatMatch && !isCatCollapsed && !isSubCollapsed;
+                            itemRow.style.display = isVisible ? '' : 'none';
+                            if (isCatMatch) visibleCount++;
+                        });
+                    });
+                });
+            }
+
+            const indicator = document.getElementById('rowCountIndicator');
+            if (indicator) {
+                if (q.length > 0 || currentActiveCategory !== 'all') {
+                    indicator.innerText = visibleCount + ' item ditampilkan';
+                } else {
+                    indicator.innerText = visibleCount + ' item terdaftar';
+                }
+            }
         }
 
         function updateTableSummary() {
@@ -1435,6 +2251,35 @@
             if (emptyState) emptyState.style.display = 'none';
             mrCols.forEach(el => el.style.display = 'none');
             initMaterialRows();
+            initAccordionToggles();
+
+            // Auto-expand any active/filled rows
+            document.querySelectorAll('#itemsBody tr.material-data-row').forEach(row => {
+                const qtyInput = row.querySelector('.qty-input');
+                const qty = parseFloat(qtyInput?.value || 0);
+                if (qty > 0) {
+                    row.style.display = '';
+                    row.classList.forEach(c => {
+                        if (c.startsWith('sub-')) {
+                            const sub = document.querySelector(`#itemsBody tr.subgroup-toggle[data-group="${c}"]`);
+                            if (sub) {
+                                sub.classList.remove('collapsed');
+                                sub.style.display = '';
+                                const sc = sub.querySelector('.subgroup-chev');
+                                if (sc) sc.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                        if (c.startsWith('group-cat-')) {
+                            const cat = document.querySelector(`#itemsBody tr.group-toggle[data-group="${c}"]`);
+                            if (cat) {
+                                cat.classList.remove('collapsed');
+                                const cc = cat.querySelector('.group-chev');
+                                if (cc) cc.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+                }
+            });
         }
 
         if (document.readyState === 'loading') {

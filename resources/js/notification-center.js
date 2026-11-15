@@ -46,9 +46,13 @@ export function notificationCenter() {
         },
 
         initEcho() {
+            let echoRetryCount = 0;
             const setupEcho = () => {
                 if (!window.Echo) {
-                    setTimeout(setupEcho, 500);
+                    if (echoRetryCount < 6) {
+                        echoRetryCount++;
+                        setTimeout(setupEcho, 500);
+                    }
                     return;
                 }
 

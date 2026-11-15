@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use NotificationChannels\WebPush\PushSubscription;
 
 return new class extends Migration
 {
@@ -61,6 +62,24 @@ return new class extends Migration
             $table->index(['user_id', 'created_at'], 'idx_security_logs_user_created');
             $table->index(['ip_address', 'created_at'], 'idx_security_logs_ip_created');
         });
+
+        // 4. Web Push Subscriptions (Browser push notification tokens)
+        $connection = config('webpush.database_connection');
+        $tableName = config('webpush.table_name', 'push_subscriptions');
+
+        if (!Schema::connection($connection)->hasTable($tableName)) {
+            Schema::connection($connection)->create($tableName, function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->morphs('subscribable', 'push_subscriptions_subscribable_morph_idx');
+                $table->string('endpoint', PushSubscription::ENDPOINT_MAX_LENGTH)
+                    ->charset('ascii')
+                    ->unique();
+                $table->string('public_key')->nullable();
+                $table->string('auth_token')->nullable();
+                $table->string('content_encoding')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
@@ -68,6 +87,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        $connection = config('webpush.database_connection');
+        $tableName = config('webpush.table_name', 'push_subscriptions');
+        Schema::connection($connection)->dropIfExists($tableName);
+
         Schema::dropIfExists('security_logs');
         Schema::dropIfExists('document_counters');
         Schema::dropIfExists('print_templates');

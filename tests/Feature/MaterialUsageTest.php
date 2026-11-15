@@ -154,10 +154,22 @@ class MaterialUsageTest extends TestCase
             'status' => 'completed',
         ]);
 
+        // Re-check index view with created usage
+        $indexResponse = $this->actingAs($this->adminProyek)->get(route('material-usages.index'));
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertSee('No. Pemakaian');
+        $indexResponse->assertSee('Pemakai');
+        $indexResponse->assertSee('Pak Mandor Test');
+        $indexResponse->assertSee('USG-TEST-0001');
+
         $showResponse = $this->actingAs($this->adminProyek)->get(route('material-usages.show', $usage));
         $showResponse->assertStatus(200);
         $showResponse->assertSee('USG-TEST-0001');
         $showResponse->assertSee('Pak Mandor Test');
+        $showResponse->assertSee('No. Pemakaian');
+        $showResponse->assertSee('Pemakai');
+        $showResponse->assertSee('Pekerjaan / Zona');
+        $showResponse->assertSee('Riwayat &amp; Jejak Audit', false);
 
         $printResponse = $this->actingAs($this->adminProyek)->get(route('material-usages.print', $usage));
         $printResponse->assertStatus(200);
@@ -206,7 +218,11 @@ class MaterialUsageTest extends TestCase
 
     public function test_karyawan_can_access_create_and_record_material_usage(): void
     {
-        $karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $karyawan = User::firstOrCreate(
+            ['email' => 'karyawan@arsikon.co.id'],
+            ['name' => 'Karyawan Lapangan', 'password' => bcrypt('password')]
+        );
+        $karyawan->syncRoles(['Karyawan']);
 
         // Karyawan tidak memiliki akses pemakaian material (hanya Admin Proyek/Pusat) — harus 403
         $response = $this->actingAs($karyawan)->get(route('material-usages.create'));

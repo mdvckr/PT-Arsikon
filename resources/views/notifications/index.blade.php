@@ -348,9 +348,12 @@
             </div>
 
             @if($unreadCount > 0)
-            <form method="POST" action="{{ route('notifications.markAllAsRead') }}" style="margin:0;">
+            <form method="POST" action="{{ route('notifications.markAllAsRead') }}" style="margin:0;"
+                  data-confirm="Tandai semua notifikasi belum dibaca sebagai telah dibaca?"
+                  data-confirm-title="Tandai Semua Dibaca"
+                  data-confirm-btn="Ya, Tandai Semua">
                 @csrf
-                <button type="submit" class="btn-notif-action btn-notif-primary" style="height:36px;padding:0 16px;box-shadow:0 1px 2px rgba(37,99,235,0.2);" onclick="return confirm('Tandai semua notifikasi telah dibaca?')">
+                <button type="submit" class="btn-notif-action btn-notif-primary" style="height:36px;padding:0 16px;box-shadow:0 1px 2px rgba(37,99,235,0.2);">
                     <x-lucide-check-check />
                     <span>Tandai Semua Dibaca</span>
                 </button>

@@ -48,9 +48,12 @@
 
             @if($purchaseOrder->status === 'draft')
                 @if(auth()->user()->can('approve purchase orders') || auth()->user()->hasAnyRole(['Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']))
-                    <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST">
+                    <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST"
+                          data-confirm="Setujui Purchase Order (PO) ini?"
+                          data-confirm-title="Konfirmasi Persetujuan PO"
+                          data-confirm-btn="Ya, Setujui PO">
                         @csrf
-                        <button type="submit" class="btn btn-success" onclick="return confirm('Setujui PO ini?')">
+                        <button type="submit" class="btn btn-success">
                             <x-lucide-check class="me-1" /> Setujui PO
                         </button>
                     </form>
@@ -58,18 +61,25 @@
             @endif
 
             @if($purchaseOrder->status === 'approved')
-                <form action="{{ route('purchase-orders.send', $purchaseOrder) }}" method="POST">
+                <form action="{{ route('purchase-orders.send', $purchaseOrder) }}" method="POST"
+                      data-confirm="Kirim PO ini ke Supplier secara resmi?"
+                      data-confirm-title="Kirim ke Supplier"
+                      data-confirm-btn="Ya, Kirim Sekarang">
                     @csrf
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('Kirim PO ini ke Supplier?')">
+                    <button type="submit" class="btn btn-primary">
                         <x-lucide-send class="me-1" /> Kirim ke Supplier
                     </button>
                 </form>
             @endif
 
             @if(in_array($purchaseOrder->status, ['draft', 'approved', 'sent']))
-                <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST">
+                <form action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" method="POST"
+                      data-confirm="Batalkan Purchase Order (PO) ini?"
+                      data-confirm-title="Konfirmasi Pembatalan PO"
+                      data-confirm-btn="Ya, Batalkan"
+                      data-confirm-danger="true">
                     @csrf
-                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Batalkan PO ini?')">
+                    <button type="submit" class="btn btn-outline-danger">
                         Batalkan
                     </button>
                 </form>

@@ -72,12 +72,15 @@
         Swal.fire({
             toast: true,
             position: 'top',
+            backdrop: false,
+            heightAuto: false,
             html: html,
             showConfirmButton: false,
             showCloseButton: true,
             timer: options.duration || 4500,
             timerProgressBar: false,
             customClass: {
+                container: 'swal2-toast-clean-container',
                 popup: `swal2-pastel-toast ${toastClass}`
             },
             didOpen: (toast) => {
@@ -102,6 +105,73 @@
     // Expose global helper
     window.notify = notify;
 
+    /**
+     * Global SweetAlert2 Confirmation Dialog for PT Arsikon
+     * Replaces native browser window.confirm
+     * @param {Object} options
+     * @param {string} [options.title='Konfirmasi Tindakan']
+     * @param {string} [options.text='Apakah Anda yakin ingin melanjutkan?']
+     * @param {string} [options.icon='warning']
+     * @param {string} [options.confirmButtonText='Ya, Lanjutkan']
+     * @param {string} [options.cancelButtonText='Batal']
+     * @param {boolean} [options.isDanger=false]
+     * @returns {Promise<boolean>}
+     */
+    function confirmAction(options) {
+        if (!options) options = {};
+        const title = options.title || 'Konfirmasi Tindakan';
+        const text = options.text || 'Apakah Anda yakin ingin melanjutkan tindakan ini?';
+        const isDanger = options.isDanger || /hapus|delete|batal|keluar|logout/i.test(text + ' ' + title);
+        const icon = options.icon || (isDanger ? 'warning' : 'question');
+        const confirmBtnText = options.confirmButtonText || (isDanger ? 'Ya, Lanjutkan' : 'Ya, Setuju');
+        const cancelBtnText = options.cancelButtonText || 'Batal';
+
+        if (typeof Swal === 'undefined') {
+            return Promise.resolve(window.confirm(text));
+        }
+
+        return Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            showCancelButton: true,
+            showDenyButton: false,
+            confirmButtonText: confirmBtnText,
+            cancelButtonText: cancelBtnText,
+            reverseButtons: true,
+            focusCancel: isDanger,
+            customClass: {
+                popup: 'swal2-arsikon-modal',
+                confirmButton: isDanger ? 'swal2-arsikon-btn-danger' : 'swal2-arsikon-btn-primary',
+                cancelButton: 'swal2-arsikon-btn-cancel'
+            },
+            buttonsStyling: false
+        }).then(function (result) {
+            return !!result.isConfirmed;
+        });
+    }
+
+    window.confirmAction = confirmAction;
+
+    // Override native window.alert to eliminate '127.0.0.1:8000 says'
+    window.alert = function (message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Pemberitahuan Sistem',
+                text: String(message || ''),
+                icon: 'info',
+                confirmButtonText: 'Mengerti',
+                customClass: {
+                    popup: 'swal2-arsikon-modal',
+                    confirmButton: 'swal2-arsikon-btn-primary'
+                },
+                buttonsStyling: false
+            });
+        } else {
+            console.warn('[Pemberitahuan]:', message);
+        }
+    };
+
     // Backward compatibility with legacy showNotificationToast & showGlassNotification
     window.showGlassNotification = function (data) {
         if (!data) return;
@@ -115,6 +185,94 @@
     };
 
     window.showNotificationToast = window.showGlassNotification;
+
+    // Global Delegated Handler for forms with data-confirm
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!form || !form.dataset) return;
+
+        if (form.dataset.confirm && !form.dataset.confirmed) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const confirmMsg = form.dataset.confirm;
+            const confirmTitle = form.dataset.confirmTitle;
+            const confirmBtn = form.dataset.confirmBtn;
+            const isDanger = form.dataset.confirmDanger === 'true' || 
+                /hapus|delete|batal|keluar|logout/i.test(confirmMsg + ' ' + (confirmTitle || ''));
+
+            confirmAction({
+                title: confirmTitle || (isDanger ? 'Konfirmasi Tindakan' : 'Konfirmasi'),
+                text: confirmMsg,
+                confirmButtonText: confirmBtn || (isDanger ? 'Ya, Lanjutkan' : 'Ya, Setuju'),
+                cancelButtonText: form.dataset.confirmCancel || 'Batal',
+                icon: form.dataset.confirmIcon || (isDanger ? 'warning' : 'question'),
+                isDanger: isDanger
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+            });
+        }
+    }, true);
+
+    // Global Delegated Handler for buttons/links with data-confirm
+    document.addEventListener('click', function (e) {
+        const target = e.target.closest('[data-confirm]');
+        if (!target) return;
+
+        // If target is inside a form without data-confirm on form itself
+        const form = target.closest('form');
+        if (form && !form.dataset.confirm) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const confirmMsg = target.dataset.confirm;
+            const confirmTitle = target.dataset.confirmTitle;
+            const confirmBtn = target.dataset.confirmBtn;
+            const isDanger = target.dataset.confirmDanger === 'true' || 
+                /hapus|delete|batal|keluar|logout/i.test(confirmMsg + ' ' + (confirmTitle || ''));
+
+            confirmAction({
+                title: confirmTitle || (isDanger ? 'Konfirmasi Tindakan' : 'Konfirmasi'),
+                text: confirmMsg,
+                confirmButtonText: confirmBtn || (isDanger ? 'Ya, Lanjutkan' : 'Ya, Setuju'),
+                cancelButtonText: target.dataset.confirmCancel || 'Batal',
+                icon: target.dataset.confirmIcon || (isDanger ? 'warning' : 'question'),
+                isDanger: isDanger
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    if (target.name) {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = target.name;
+                        hidden.value = target.value;
+                        form.appendChild(hidden);
+                    }
+                    form.submit();
+                }
+            });
+            return;
+        }
+
+        // If it is a standalone link
+        if (target.tagName === 'A' && target.href) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const href = target.href;
+            confirmAction({
+                title: target.dataset.confirmTitle || 'Konfirmasi',
+                text: target.dataset.confirm,
+                confirmButtonText: target.dataset.confirmBtn || 'Ya, Lanjutkan',
+                isDanger: target.dataset.confirmDanger === 'true'
+            }).then(function (confirmed) {
+                if (confirmed) {
+                    window.location.href = href;
+                }
+            });
+        }
+    }, true);
 
     // Render session flash notifications if configured in blade
     document.addEventListener('DOMContentLoaded', function () {

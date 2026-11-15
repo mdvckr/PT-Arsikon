@@ -243,7 +243,7 @@ class SecurityHardeningV2Test extends TestCase
         $this->assertTrue($validator2->fails());
 
         // Percobaan proses berkas berbahaya langsung ditolak dengan exception oleh SecureUploadService
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
         SecureUploadService::processAndStore($phpFile, 'uploads');
     }
 

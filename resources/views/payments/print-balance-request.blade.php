@@ -231,8 +231,8 @@
             {{-- 3. Menyetujui --}}
             <div class="sign-box">
                 <div>
-                    <div class="sign-label-top">Disetujui Oleh</div>
-                    <div class="sign-role">Admin PO Pusat / Pengadaan</div>
+                    <div class="sign-label-top">Disetujui &amp; Dicairkan Oleh</div>
+                    <div class="sign-role">Pengadaan Pusat</div>
                 </div>
                 <div class="sign-space">
                     @if($balanceRequest->status === 'approved')
@@ -242,7 +242,7 @@
                     @endif
                 </div>
                 <div class="sign-name">
-                    ( {{ $balanceRequest->signer_approver ?: ($balanceRequest->approver?->name ?? '..........................................') }} )
+                    ( {{ $balanceRequest->approver_display_name }} )
                 </div>
             </div>
         </div>

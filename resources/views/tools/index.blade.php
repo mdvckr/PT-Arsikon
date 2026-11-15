@@ -422,7 +422,7 @@
                                 @endcan
                                 @can('delete tools')
                                 <form method="POST" action="{{ route('tools.destroy', $tool) }}"
-                                    onsubmit="return confirm('Hapus alat {{ addslashes($tool->name) }}?')" style="display:inline-block;margin:0;">
+                                    data-confirm="Hapus alat {{ $tool->name }} dari sistem?" data-confirm-title="Konfirmasi Hapus Alat" data-confirm-btn="Hapus Alat" data-confirm-danger="true" style="display:inline-block;margin:0;">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="action-btn action-btn-delete" title="Hapus Alat">
                                         <x-lucide-trash-2 />

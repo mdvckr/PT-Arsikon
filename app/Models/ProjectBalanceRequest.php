@@ -71,9 +71,9 @@ class ProjectBalanceRequest extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'approved' => 'Disetujui & Masuk Saldo',
-            'rejected' => 'Ditolak Pusat/Owner',
-            default    => 'Menunggu Persetujuan Pusat/Owner',
+            'approved' => 'Disetujui PO Pusat',
+            'rejected' => 'Ditolak PO Pusat',
+            default    => 'Menunggu Persetujuan PO Pusat',
         };
     }
 
@@ -100,5 +100,31 @@ class ProjectBalanceRequest extends Model
             'urgent' => 'danger',
             default  => 'info',
         };
+    }
+
+    /**
+     * Nama akun PO Pusat untuk tanda tangan persetujuan (otomatis mengikuti akun aktif atau fallback 'Pengadaan')
+     */
+    public function getApproverDisplayNameAttribute(): string
+    {
+        if ($this->approver && !empty($this->approver->name)) {
+            return $this->approver->name;
+        }
+
+        if (!empty($this->signer_approver) && $this->signer_approver !== 'Admin PO Pusat') {
+            return $this->signer_approver;
+        }
+
+        $poPusatUser = User::where('email', 'admin.po@arsikon.co.id')
+            ->orWhereHas('roles', function ($q) {
+                $q->whereIn('name', ['Admin PO', 'Admin Pengadaan']);
+            })
+            ->first();
+
+        if ($poPusatUser && !empty($poPusatUser->name)) {
+            return $poPusatUser->name;
+        }
+
+        return 'Pengadaan';
     }
 }

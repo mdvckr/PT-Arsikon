@@ -11,6 +11,16 @@
             <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian</p>
         </div>
         <div class="flex gap-2 items-center">
+            <button type="button" 
+                    id="btnTriggerExportExcelPo"
+                    onclick="openExportExcelPoModal()"
+                    class="btn btn-secondary border shadow-sm flex items-center gap-1.5 font-semibold text-emerald-800"
+                    style="background:#f0fdf4;border-color:#bbf7d0;cursor:pointer;"
+                    title="Export Rekapitulasi Purchase Order ke Excel dengan Foto">
+                <x-lucide-file-spreadsheet class="text-emerald-600 w-4 h-4" />
+                <span>Export Excel PO</span>
+            </button>
+
             <a href="{{ route('purchase-orders.weekly-report') }}" 
                target="_blank" 
                class="btn btn-secondary border shadow-sm flex items-center gap-1.5 font-semibold text-slate-800"
@@ -310,7 +320,117 @@
         </div>
     @endif
 
+    <!-- Modal Export Excel Mingguan PO -->
+    <div class="modal-overlay" id="modalExportExcelPo" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div class="modal-box" style="background:#ffffff;border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid #e2e8f0;">
+            <div class="modal-header" style="padding:18px 22px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:12px;">
+                <div style="background:#dcfce7;color:#059669;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <x-lucide-file-spreadsheet style="width:20px;height:20px;" />
+                </div>
+                <div style="flex:1;">
+                    <h3 class="modal-title" style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Export Rekap PO ke Excel</h3>
+                    <p style="font-size:12px;color:#64748b;margin:2px 0 0 0;">Dikelompokkan per 1 minggu & dilengkapi foto lampiran</p>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeExportExcelPoModal()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;padding:4px 8px;line-height:1;">
+                    <x-lucide-x />
+                </button>
+            </div>
+
+            <form action="{{ route('purchase-orders.export-weekly-excel') }}" method="GET" target="_blank">
+                <div class="modal-body" style="padding:22px;display:flex;flex-direction:column;gap:16px;">
+                    <div>
+                        <label class="form-label" style="font-weight:600;font-size:13px;color:#334155;margin-bottom:6px;display:block;">Cakupan Periode Rekap</label>
+                        <select name="scope" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;">
+                            <option value="month" selected>1 Bulan Penuh (Dikelompokkan per Minggu: W1, W2, W3...)</option>
+                            <option value="single_week">1 Minggu Tertentu Saja</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-weight:600;font-size:13px;color:#334155;margin-bottom:6px;display:block;">Tanggal / Bulan Acuan</label>
+                        <input type="date" name="date" value="{{ date('Y-m-d') }}" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;" required>
+                        <p style="font-size:11.5px;color:#94a3b8;margin-top:4px;margin-bottom:0;">Sistem otomatis mengambil bulan dan memecahnya ke dalam kelompok mingguan.</p>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-weight:600;font-size:13px;color:#334155;margin-bottom:6px;display:block;">Filter Proyek</label>
+                        <select name="project_id" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;">
+                            <option value="">Semua Proyek</option>
+                            @if(isset($projects))
+                                @foreach($projects as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-weight:600;font-size:13px;color:#334155;margin-bottom:6px;display:block;">Filter Status PO</label>
+                        <select name="status" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;">
+                            <option value="">Semua Status PO</option>
+                            <option value="sent">Menunggu Pengiriman</option>
+                            <option value="partial_received">Sebagian Diterima</option>
+                            <option value="received">Selesai (Received)</option>
+                            <option value="approved">Disetujui (Approved)</option>
+                            <option value="draft">Draft</option>
+                            <option value="closed">Ditutup (Short Close)</option>
+                            <option value="cancelled">Dibatalkan</option>
+                        </select>
+                    </div>
+
+                    @if($canViewPrice)
+                        <div>
+                            <label class="form-label" style="font-weight:600;font-size:13px;color:#334155;margin-bottom:6px;display:block;">Kerahasiaan Harga</label>
+                            <select name="mode" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;">
+                                <option value="official" selected>Resmi (Tampilkan Harga Satuan, Subtotal & Total)</option>
+                                <option value="blind">Blind PO (Samarkan Seluruh Nominal Harga)</option>
+                            </select>
+                        </div>
+                    @else
+                        <input type="hidden" name="mode" value="blind">
+                    @endif
+                </div>
+
+                <div class="modal-footer" style="padding:16px 22px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;border-bottom-left-radius:14px;border-bottom-right-radius:14px;">
+                    <button type="button" onclick="closeExportExcelPoModal()" class="btn btn-secondary" style="height:36px;padding:0 16px;border-radius:6px;font-size:13px;">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="background:#059669;border-color:#059669;color:#ffffff;font-weight:600;height:36px;padding:0 18px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;font-size:13px;">
+                        <x-lucide-download style="width:15px;height:15px;" /> Unduh File Excel (.xlsx)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function openExportExcelPoModal() {
+            var modal = document.getElementById('modalExportExcelPo');
+            if (modal) {
+                modal.style.setProperty('display', 'flex', 'important');
+                modal.classList.add('show');
+            }
+        }
+
+        function closeExportExcelPoModal() {
+            var modal = document.getElementById('modalExportExcelPo');
+            if (modal) {
+                modal.style.setProperty('display', 'none', 'important');
+                modal.classList.remove('show');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById('modalExportExcelPo');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeExportExcelPoModal();
+                    }
+                });
+            }
+        });
+
         function toggleDateGroup(groupId) {
             const el = document.getElementById(groupId);
             const icon = document.getElementById('icon-' + groupId);

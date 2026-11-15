@@ -417,6 +417,8 @@
         const tas             = @json($tasJson);
         const initialLoanId   = @json($initialLoanId);
 
+        const distForm             = document.getElementById('distribution-form');
+        const btnSubmit            = document.getElementById('btn-submit');
         const itemsBody            = document.getElementById('itemsBody');
         const emptyRow             = document.getElementById('empty-row');
         const fromSelect           = document.getElementById('from-warehouse');
@@ -542,7 +544,6 @@
                 rowIndex++;
             });
 
-            updateSourceIndicator();
             updateBadge();
             updateManualSelect();
         }
@@ -1027,51 +1028,68 @@
                 const val = document.getElementById('manual-custom-name').value;
                 renderSuggestions(val);
             }
+            // Also refresh stock if a master inventory item is currently selected in input
+            const typeInput = document.getElementById('selected-item-type');
+            const idInput = document.getElementById('selected-item-id');
+            const stockInput = document.getElementById('selected-item-stock');
+            const stockPill = document.getElementById('selected-master-stock-pill');
+            const unitInput = document.getElementById('manual-custom-unit');
+
+            if (typeInput && typeInput.value !== 'custom' && idInput && idInput.value) {
+                const allItems = getAllInventoryItems();
+                const matched = allItems.find(it => it.type === typeInput.value && it.id == idInput.value);
+                if (matched) {
+                    if (stockInput) stockInput.value = matched.stock;
+                    if (stockPill) stockPill.textContent = `Stok: ${matched.stock} ${unitInput ? unitInput.value : 'unit'}`;
+                    validateManualQty();
+                }
+            }
         }
 
         // Listener: Ketika Gudang Asal berubah, perbarui stok di dalam dropdown list
-        fromSelect.addEventListener('change', () => {
-            const currentItemVal = manualItemSelect.value;
-            updateManualSelect();
-            if (currentItemVal) {
-                manualItemSelect.value = currentItemVal;
-                onItemSelectionChanged();
-            }
-        });
+        if (fromSelect) {
+            fromSelect.addEventListener('change', () => {
+                updateManualSelect();
+            });
+        }
 
         // Form Submit handler
-        distForm.addEventListener('submit', function(e) {
-            const rows = itemsBody.querySelectorAll('tr[data-kind]');
-            if (rows.length === 0) {
-                e.preventDefault();
-                alert("Harap masukkan minimal 1 barang atau alat ke dalam Surat Jalan.");
-                return false;
-            }
+        if (distForm) {
+            distForm.addEventListener('submit', function(e) {
+                const rows = itemsBody.querySelectorAll('tr[data-kind]');
+                if (rows.length === 0) {
+                    e.preventDefault();
+                    alert("Harap masukkan minimal 1 barang atau alat ke dalam Surat Jalan.");
+                    return false;
+                }
 
-            if (!fromSelect.value) {
-                e.preventDefault();
-                alert("Pilih Gudang Asal (Pengirim).");
-                fromSelect.focus();
-                return false;
-            }
+                if (!fromSelect.value) {
+                    e.preventDefault();
+                    alert("Pilih Gudang Asal (Pengirim).");
+                    fromSelect.focus();
+                    return false;
+                }
 
-            if (!toSelect.value) {
-                e.preventDefault();
-                alert("Pilih Gudang Tujuan (Penerima).");
-                toSelect.focus();
-                return false;
-            }
+                if (!toSelect.value) {
+                    e.preventDefault();
+                    alert("Pilih Gudang Tujuan (Penerima).");
+                    toSelect.focus();
+                    return false;
+                }
 
-            if (fromSelect.value === toSelect.value) {
-                e.preventDefault();
-                alert("Gudang Asal dan Gudang Tujuan tidak boleh sama.");
-                toSelect.focus();
-                return false;
-            }
+                if (fromSelect.value === toSelect.value) {
+                    e.preventDefault();
+                    alert("Gudang Asal dan Gudang Tujuan tidak boleh sama.");
+                    toSelect.focus();
+                    return false;
+                }
 
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<x-lucide-loader-2 class="animate-spin" /> Menyimpan Surat Jalan...`;
-        });
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = `<x-lucide-loader-2 class="animate-spin" /> Menyimpan Surat Jalan...`;
+                }
+            });
+        }
 
         // Initialize on load
         updateManualSelect();
@@ -1082,9 +1100,6 @@
         });
 
         // Auto trigger initial selection if coming from URL parameter
-        if (initialMrId) {
-            onSourceMrSelected(initialMrId);
-        }
         if (initialLoanId) {
             onSourceTaSelected(initialLoanId);
         }

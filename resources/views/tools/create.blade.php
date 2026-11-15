@@ -437,45 +437,50 @@
             var catId = sel.value;
             var catName = sel.options[sel.selectedIndex].text;
 
-            if (!confirm('Hapus kategori "' + catName + '"? Kategori yang salah dimasukkan akan dihapus dari sistem.')) {
-                return;
-            }
+            confirmAction({
+                title: 'Hapus Kategori Alat',
+                text: 'Hapus kategori "' + catName + '"? Kategori yang salah dimasukkan akan dihapus dari sistem.',
+                confirmButtonText: 'Ya, Hapus Kategori',
+                isDanger: true
+            }).then(function(confirmed) {
+                if (!confirmed) return;
 
-            var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '{{ csrf_token() }}';
+                var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '{{ csrf_token() }}';
 
-            fetch('{{ url("/categories") }}/' + catId, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ _method: 'DELETE' })
-            })
-            .then(function(res) {
-                return res.json().then(function(data) {
-                    return { ok: res.ok, data: data };
-                });
-            })
-            .then(function(res) {
-                if (res.ok && res.data.success) {
-                    alert(res.data.message || 'Kategori berhasil dihapus.');
-                    for (var i = 0; i < sel.options.length; i++) {
-                        if (sel.options[i].value == catId) {
-                            sel.remove(i);
-                            break;
+                fetch('{{ url("/categories") }}/' + catId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                })
+                .then(function(res) {
+                    return res.json().then(function(data) {
+                        return { ok: res.ok, data: data };
+                    });
+                })
+                .then(function(res) {
+                    if (res.ok && res.data.success) {
+                        alert(res.data.message || 'Kategori berhasil dihapus.');
+                        for (var i = 0; i < sel.options.length; i++) {
+                            if (sel.options[i].value == catId) {
+                                sel.remove(i);
+                                break;
+                            }
                         }
+                        sel.value = '';
+                        onCategoryChange();
+                    } else {
+                        alert(res.data.message || 'Gagal menghapus kategori. Kategori mungkin masih memiliki data alat kerja.');
                     }
-                    sel.value = '';
-                    onCategoryChange();
-                } else {
-                    alert(res.data.message || 'Gagal menghapus kategori. Kategori mungkin masih memiliki data alat kerja.');
-                }
-            })
-            .catch(function(err) {
-                console.error(err);
-                alert('Terjadi kesalahan saat menghapus kategori.');
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    alert('Terjadi kesalahan saat menghapus kategori.');
+                });
             });
         }
 

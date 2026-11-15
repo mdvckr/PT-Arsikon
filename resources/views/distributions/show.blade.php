@@ -189,7 +189,10 @@
 
                 @php $canReceive = $distribution->canUserReceive(auth()->user()); @endphp
                 @if($canReceive)
-                <form method="POST" action="{{ route('distributions.receive', $distribution) }}">
+                <form method="POST" action="{{ route('distributions.receive', $distribution) }}"
+                      data-confirm="Konfirmasi penerimaan barang/alat di gudang tujuan? Stok fisik akan langsung ditambahkan."
+                      data-confirm-title="Konfirmasi Penerimaan Distribusi"
+                      data-confirm-btn="Ya, Konfirmasi Penerimaan">
                 @csrf
                 @endif
 
@@ -308,7 +311,7 @@
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;">No. Surat Jalan</label>
                         <input type="text" name="surat_jalan" class="form-control" value="{{ old('surat_jalan', $distribution->surat_jalan ?? '') }}" placeholder="Masukkan No. Surat Jalan" style="height:32px;border-radius:5px;font-size:12px;">
                     </div>
-                    <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12.5px;font-weight:600;border-radius:6px;" onclick="return confirm('Konfirmasi penerimaan barang/alat di gudang tujuan?')">
+                    <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12.5px;font-weight:600;border-radius:6px;">
                         <x-lucide-clipboard-check class="me-1" /> Konfirmasi Penerimaan
                     </button>
                 </div>

@@ -443,6 +443,14 @@
             </div>
         @endif
 
+        {{-- Direct Excel Export dengan Foto --}}
+        <a href="{{ route('purchase-orders.weekly-report', array_merge(request()->query(), ['format' => 'excel'])) }}" 
+           class="btn-ctl" 
+           style="background:#059669;color:#ffffff;" 
+           title="Unduh Rekap PO Minggu Ini format Excel lengkap dengan Foto">
+            <i class="fa fa-file-excel"></i> Unduh Excel
+        </a>
+
         {{-- Direct PDF via DomPDF --}}
         <a href="{{ route('purchase-orders.weekly-report', array_merge(request()->query(), ['format' => 'pdf', 'action' => 'download'])) }}" 
            class="btn-ctl btn-pdf" title="Unduh File PDF Dokumen">

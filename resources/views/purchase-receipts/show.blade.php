@@ -35,7 +35,11 @@
                     <x-lucide-receipt class="me-1" /> Lihat PO terkait ({{ $purchaseReceipt->purchaseOrder->po_number }})
                 </a>
             @endif
-            <form action="{{ route('purchase-receipts.destroy', $purchaseReceipt) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus nota pembelian harian ini? Saldo kas operasional proyek akan otomatis dikembalikan (refund).')">
+            <form action="{{ route('purchase-receipts.destroy', $purchaseReceipt) }}" method="POST"
+                  data-confirm="Apakah Anda yakin ingin menghapus nota pembelian harian ini? Saldo kas operasional proyek akan otomatis dikembalikan (refund)."
+                  data-confirm-title="Konfirmasi Hapus Nota Pembelian"
+                  data-confirm-btn="Ya, Hapus & Refund"
+                  data-confirm-danger="true">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-outline-danger btn-sm">

@@ -51,6 +51,18 @@
         </div>
     </div>
 
+    {{-- Sub Tab Navigasi PO Nota Proyek --}}
+    <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+        <a href="{{ route('purchase-receipts.index', request()->only(['project_id'])) }}"
+           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-slate-900 text-white shadow-xs">
+            <x-lucide-receipt style="width:14px;height:14px;" /> Nota Belanja Harian (Kas Operasional)
+        </a>
+        <a href="{{ route('project-balance-requests.index', request()->only(['project_id'])) }}"
+           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
+            <x-lucide-hand-coins style="width:14px;height:14px;" /> Pengajuan Kas Saldo Proyek
+        </a>
+    </div>
+
     @if(session('success'))
         <div class="alert alert-success mb-4 flex items-center justify-between" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
             <span><x-lucide-circle-check class="me-2" />{{ session('success') }}</span>
@@ -159,6 +171,13 @@
                            style="background:#059669;border:1px solid #047857;color:#ffffff;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"
                            title="Export Excel Rekap Minggu Ini (.xlsx)">
                             <x-lucide-file-spreadsheet /> Excel
+                        </a>
+                        <a href="{{ route('project-notes.index', array_filter(['project_id' => $projId, 'date' => $firstDate])) }}"
+                           onclick="event.stopPropagation();"
+                           class="btn btn-xs"
+                           style="background:#ea580c;border:1px solid #c2410c;color:#ffffff;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:5px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;"
+                           title="Lihat Catatan Material & Sewa Alat Minggu Ini">
+                            <x-lucide-clipboard-check /> Material & Alat
                         </a>
                     @endif
                     <x-lucide-chevron-down class="week-icon" id="week-icon-{{ $weekIdx }}" style="font-size:14px;color:#94a3b8;transition:transform 0.2s;" />
@@ -292,7 +311,11 @@
                                                     <x-lucide-eye />
                                                 </a>
                                                 @can('delete purchase receipts')
-                                                    <form action="{{ route('purchase-receipts.destroy', $receipt) }}" method="POST" class="inline" onsubmit="return confirm('Hapus nota {{ $receipt->receipt_number ?? '#'.$receipt->id }}? Saldo kas operasional proyek akan otomatis dikembalikan (refund).')">
+                                                    <form action="{{ route('purchase-receipts.destroy', $receipt) }}" method="POST" class="inline" 
+                                                          data-confirm="Hapus nota {{ $receipt->receipt_number ?? '#'.$receipt->id }}? Saldo kas operasional proyek akan otomatis dikembalikan (refund)."
+                                                          data-confirm-title="Konfirmasi Hapus Nota Pembelian"
+                                                          data-confirm-btn="Ya, Hapus Nota"
+                                                          data-confirm-danger="true">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger btn-icon" title="Hapus Nota (Refund Saldo)">

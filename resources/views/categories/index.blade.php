@@ -100,7 +100,7 @@
                                     </button>
                                     @endcan
                                     @can('delete categories')
-                                    <form method="POST" action="{{ route('units.destroy', $unit) }}" onsubmit="return confirm('Hapus satuan ini?')">
+                                    <form method="POST" action="{{ route('units.destroy', $unit) }}" data-confirm="Hapus satuan {{ $unit->name }} ({{ $unit->abbreviation }})?" data-confirm-title="Konfirmasi Hapus Satuan" data-confirm-btn="Hapus Satuan" data-confirm-danger="true">
                                         @csrf @method('DELETE')
                                         <button class="btn btn-sm btn-danger btn-icon"><x-lucide-trash-2 /></button>
                                     </form>

@@ -41,4 +41,19 @@ class Project extends Model
     {
         return $this->hasMany(ProjectBalanceLog::class)->latest('id');
     }
+
+    public function purchaseReceipts(): HasMany
+    {
+        return $this->hasMany(PurchaseReceipt::class);
+    }
+
+    public function materialLedgers(): HasMany
+    {
+        return $this->hasMany(MaterialLedger::class);
+    }
+
+    public function toolRentals(): HasMany
+    {
+        return $this->hasMany(ProjectToolRental::class);
+    }
 }

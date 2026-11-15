@@ -145,7 +145,7 @@
                                     <button type="button" class="btn btn-sm btn-secondary btn-icon" onclick="openEditRoleModal('{{ $role->id }}', '{{ addslashes($role->name) }}')" title="Edit Hak Akses">
                                         <x-lucide-square-pen />
                                     </button>
-                                    <form method="POST" action="{{ route('roles.destroy', $role) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jabatan kustom {{ addslashes($role->name) }}?');" style="margin:0;">
+                                    <form method="POST" action="{{ route('roles.destroy', $role) }}" data-confirm="Apakah Anda yakin ingin menghapus jabatan kustom {{ $role->name }}?" data-confirm-title="Konfirmasi Hapus Jabatan" data-confirm-btn="Hapus Jabatan" data-confirm-danger="true" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger btn-icon" title="Hapus Jabatan">

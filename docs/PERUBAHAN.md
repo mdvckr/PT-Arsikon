@@ -1638,3 +1638,41 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
   4. **Pengujian Otomatis (`tests/Feature/NotificationSweetAlertViewTest.php` & `GoodsReceiptStandaloneControllerTest.php`)**:
      - `NotificationSweetAlertViewTest`: Memverifikasi script memuat `position: 'top'` dan CSS mendefinisikan container top-center serta flex ordering `order: 1` & `order: 2`.
      - `GoodsReceiptStandaloneControllerTest`: Menambahkan test `test_goods_receipt_brand_is_decoupled_from_item_name` untuk memverifikasi pengetikan merek tidak merubah nama barang dan data merek tersimpan dengan benar ke database.
+
+---
+
+### T32. Penyelarasan Keamanan CSP (Content Security Policy) & Perbaikan Warning `eval`
+- **Tujuan**:
+  - Menghilangkan pemblokiran/peringatan CSP di browser terhadap penggunaan `eval` / `new Function()` yang digunakan oleh Alpine.js dan Vite.
+  - Menyelaraskan global HTTP middleware di `app/Http/Kernel.php` ke `\App\Http\Middleware\SecurityHeaders::class`.
+  - Melengkapi whitelist sumber daya eksternal (CDN SweetAlert2 `cdn.jsdelivr.net`, FontAwesome `cdnjs.cloudflare.com`, Google Fonts, serta WebSocket `ws: wss:` untuk HMR).
+- **Rincian Perubahan File**:
+  1. `app/Http/Kernel.php`: Mendaftarkan `\App\Http\Middleware\SecurityHeaders::class` sebagai global HTTP middleware.
+  2. `app/Http/Middleware/SecurityHeadersMiddleware.php`: Diubah menjadi alias backward-compatible turunan dari `SecurityHeaders`.
+  3. `config/security.php`: Mengaktifkan `'unsafe-eval'`, `'unsafe-inline'`, `https://cdn.jsdelivr.net`, `ws: wss:`, dan `blob:` pada default CSP policy.
+  4. `deploy/arsikon-nginx.conf`: Menyelaraskan header `Content-Security-Policy` di Nginx agar seragam dengan config Laravel.
+  5. `tests/Feature/SecurityHardeningV2Test.php` & `SecurityHardeningPhaseTest.php`: Memperbarui assertion test untuk sinkronisasi nilai header terbaru.
+- **Hasil Pengujian**:
+  - `SecurityHardeningV2Test`: 11 passed
+  - `SecurityHardeningPhaseTest`: 5 passed
+  - `SecurityHeadersTest`: 2 passed
+
+---
+
+### T33. Redesign UI & Pembersihan Layar Keuangan (Eliminasi Kartu Metrik & Filter Redundan)
+- **Tujuan**:
+  - Merapikan halaman Keuangan & Kas Proyek (`resources/views/payments/index.blade.php`) sesuai standar senior craft UI/UX.
+  - Menghapus 4 kartu metrik besar yang redundan (*Total Terverifikasi*, *Menunggu Verifikasi*, *Total Catatan Bayar*, *Pembayaran Ditolak*).
+  - Menghapus baris 6 tab filter pill yang berantakan (*Semua*, *Instan*, *Reguler*, *Menunggu*, *Terverifikasi*, *Ditolak*).
+  - Menyempurnakan header tabel transaksi pembayaran, kontrol collapse/expand kondisional, dan empty state ringkas dengan tombol reset pencarian instan.
+- **Rincian Perubahan File**:
+  1. `resources/views/payments/index.blade.php`:
+     - Menghapus blok grid `Executive Multi-Metric Rail` (Lines 496–557).
+     - Menghapus blok toolbar `Segmented Stream Controller` (Lines 559–601).
+     - Merestrukturisasi header tabel dengan ikon `x-lucide-receipt` netral slate, badge jumlah data, dan tombol *"Buka/Tutup Semua"* yang hanya tampil jika data > 0.
+     - Menyediakan input pencarian dengan tombol hapus (`x`) cepat dan pagination info.
+     - Menyederhanakan empty state tabel dengan tipografi bersih dan tombol *"Hapus Pencarian"*.
+  2. `docs/superpowers/plans/2026-11-15-csp-eval-hardening-and-payments-ui-cleanup.md`: Rencana dan dokumentasi komprehensif.
+- **Hasil Pengujian**:
+  - `ProjectBalanceRequestTest`: 12 passed
+  - `AdminPoFinanceApprovalAndExcelImportTest`: 3 passed

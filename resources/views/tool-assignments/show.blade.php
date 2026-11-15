@@ -396,19 +396,26 @@
                             Pengajuan peminjaman alat dapat disetujui langsung oleh Admin Gudang Proyek maupun Admin Pusat untuk mempercepat operasional proyek.
                         </p>
                         @endif
-                        <form method="POST" action="{{ route('tool-assignments.approve', $toolLoan->id) }}" class="mb-2">
+                        <form method="POST" action="{{ route('tool-assignments.approve', $toolLoan->id) }}" class="mb-2"
+                              data-confirm="Setujui pengajuan peminjaman #{{ $toolLoan->loan_number }} ini? Stok seluruh alat akan otomatis dikurangi."
+                              data-confirm-title="Persetujuan Peminjaman Alat"
+                              data-confirm-btn="Ya, Setujui Peminjaman">
                             @csrf
-                            <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12px;font-weight:600;border-radius:6px;" onclick="return confirm('Setujui pengajuan peminjaman #{{ $toolLoan->loan_number }} ini? Stok seluruh alat akan otomatis dikurangi.')">
+                            <button type="submit" class="btn btn-success w-full" style="justify-content:center;padding:8px;font-size:12px;font-weight:600;border-radius:6px;">
                                 <x-lucide-circle-check class="me-1" /> Setujui Peminjaman
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('tool-assignments.reject', $toolLoan->id) }}">
+                        <form method="POST" action="{{ route('tool-assignments.reject', $toolLoan->id) }}"
+                              data-confirm="Tolak pengajuan peminjaman alat ini?"
+                              data-confirm-title="Konfirmasi Penolakan Peminjaman"
+                              data-confirm-btn="Ya, Tolak Pengajuan"
+                              data-confirm-danger="true">
                             @csrf
                             <div class="mb-2">
                                 <label class="form-label" style="font-size:11px;font-weight:600;color:#78350f;">Alasan Penolakan <span class="text-danger">*</span></label>
                                 <input type="text" name="rejection_reason" class="form-control" placeholder="Alasan penolakan..." required style="font-size:11.5px;height:36px;padding:6px 10px;border-radius:5px;border-color:#fcd34d;">
                             </div>
-                            <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:11.5px;font-weight:600;border-radius:6px;" onclick="return confirm('Tolak pengajuan peminjaman ini?')">
+                            <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:11.5px;font-weight:600;border-radius:6px;">
                                 <x-lucide-x class="me-1" /> Tolak Pengajuan
                             </button>
                         </form>
@@ -464,7 +471,10 @@
                         <span class="card-title" style="font-size:12.5px;font-weight:700;color:#0f172a;">Proses Pengembalian</span>
                     </div>
                     <div class="card-body" style="padding:12px 14px;">
-                        <form method="POST" action="{{ route('tool-assignments.return', $toolLoan->id) }}" id="toolReturnForm">
+                        <form method="POST" action="{{ route('tool-assignments.return', $toolLoan->id) }}" id="toolReturnForm"
+                              data-confirm="Konfirmasi pengembalian seluruh alat? Stok fisik gudang akan otomatis diperbarui."
+                              data-confirm-title="Konfirmasi Pengembalian Alat"
+                              data-confirm-btn="Ya, Konfirmasi Pengembalian">
                             @csrf
                             <div class="mb-3">
                                 <label class="form-label" style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.02em;">
@@ -560,7 +570,7 @@
                                 <textarea name="notes" class="form-control" rows="2" placeholder="Catatan umum kondisi pengembalian..." style="padding:8px 10px;border-radius:6px;font-size:11.5px;"></textarea>
                             </div>
 
-                            <button type="submit" id="btnSubmitReturn" class="btn btn-success w-full" style="justify-content:center;padding:9px;font-size:12.5px;font-weight:700;border-radius:6px;" onclick="return confirm('Konfirmasi pengembalian seluruh alat? Stok fisik gudang akan otomatis diperbarui.')">
+                            <button type="submit" id="btnSubmitReturn" class="btn btn-success w-full" style="justify-content:center;padding:9px;font-size:12.5px;font-weight:700;border-radius:6px;">
                                 <x-lucide-circle-check class="me-1" /> Konfirmasi Pengembalian
                             </button>
                         </form>
@@ -585,13 +595,17 @@
                                 Membatalkan pengajuan ini tidak akan memotong stok.
                             @endif
                         </p>
-                        <form method="POST" action="{{ route('tool-assignments.cancel', $toolLoan->id) }}">
+                        <form method="POST" action="{{ route('tool-assignments.cancel', $toolLoan->id) }}"
+                              data-confirm="Yakin ingin MEMBATALKAN peminjaman ini?"
+                              data-confirm-title="Batalkan Peminjaman Alat"
+                              data-confirm-btn="Ya, Batalkan Transaksi"
+                              data-confirm-danger="true">
                             @csrf
                             <div class="mb-3">
                                 <label class="form-label" style="font-size:11px;font-weight:700;color:#475569;">Alasan Pembatalan <span class="text-danger">*</span></label>
                                 <textarea name="cancellation_reason" class="form-control" rows="2" required placeholder="Alasan..." style="padding:8px 10px;border-radius:5px;font-size:11.5px;border-color:#fca5a5;"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:12px;font-weight:600;border-radius:6px;" onclick="return confirm('Yakin ingin MEMBATALKAN peminjaman ini?')">
+                            <button type="submit" class="btn btn-outline-danger w-full" style="justify-content:center;padding:6px;font-size:12px;font-weight:600;border-radius:6px;">
                                 <x-lucide-ban class="me-1" /> Batalkan Transaksi
                             </button>
                         </form>
