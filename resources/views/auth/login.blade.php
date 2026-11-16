@@ -223,7 +223,7 @@
     </form>
 
     <div class="form-meta">
-        &copy; {{ date('Y') }} PT ARSIKON CIPTA KARYA
+        &copy; {{ date('Y') }} PT ARSIKON CIPTA KARYA | 24.02.1158 · 24.02.1149 · 24.02.1152
     </div>
 
     <script>
