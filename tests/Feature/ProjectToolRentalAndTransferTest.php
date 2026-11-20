@@ -23,10 +23,10 @@ class ProjectToolRentalAndTransferTest extends TestCase
     {
         parent::setUp();
 
-        Role::firstOrCreate(['name' => 'Admin PO', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
 
         $this->user = User::factory()->create();
-        $this->user->assignRole('Admin PO');
+        $this->user->assignRole('Admin Pengadaan');
 
         $this->project = Project::create([
             'code'                => 'PRJ-FAP-TEST',

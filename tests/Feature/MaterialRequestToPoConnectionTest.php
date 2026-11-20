@@ -49,15 +49,15 @@ class MaterialRequestToPoConnectionTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'admin.po.test@example.com'],
-            ['name' => 'Admin PO Test', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Test', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->siteAdmin = User::firstOrCreate(
             ['email' => 'admin.site.test@example.com'],
-            ['name' => 'Admin Gudang Proyek Test', 'password' => bcrypt('password')]
+            ['name' => 'Admin Logistik Proyek Test', 'password' => bcrypt('password')]
         );
-        $this->siteAdmin->syncRoles(['Admin Gudang Proyek']);
+        $this->siteAdmin->syncRoles(['Admin Logistik Proyek']);
         $this->siteAdmin->warehouses()->attach($this->projectWarehouse->id);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
@@ -78,7 +78,7 @@ class MaterialRequestToPoConnectionTest extends TestCase
         );
     }
 
-    public function test_po_lapangan_with_no_source_warehouse_defaults_to_purchase_fulfillment(): void
+    public function test_Admin_Pengadaan_Proyek_with_no_source_warehouse_defaults_to_purchase_fulfillment(): void
     {
         // 1. Ajukan PO Lapangan tanpa gudang sumber (ditujukan ke Pengadaan)
         $mrData = [

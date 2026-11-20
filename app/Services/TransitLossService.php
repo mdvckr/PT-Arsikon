@@ -14,8 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class TransitLossService
-{
+class TransitLossService {
     /**
      * Catat laporan kehilangan barang (Aksi "Nyatakan Hilang").
      */

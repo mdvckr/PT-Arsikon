@@ -6,8 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class SecurityHeaders
-{
+class SecurityHeaders {
     /**
      * Handle an incoming request.
      *

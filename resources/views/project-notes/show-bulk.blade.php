@@ -28,7 +28,7 @@
             };
             this.showEditItemModal = true;
         }
-    }" class="space-y-4">
+    }" class="space-y-4" data-animate="panel">
 
         {{-- 1. Top Breadcrumb & Quick Nav --}}
         <div class="flex items-center justify-between gap-3 text-xs flex-wrap">
@@ -65,7 +65,7 @@
                         <span class="text-slate-300 dark:text-slate-700">/</span>
                         <span class="font-bold text-blue-700 dark:text-blue-400">{{ $bulkMaterial->project?->name ?? ($bulkMaterial->project_name ?? 'Proyek') }}</span>
                     </div>
-                    <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
+                    <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1" data-animate="header">
                         {{ $bulkMaterial->title }}
                     </h1>
                     <div class="flex items-center gap-3 mt-2 text-xs text-slate-600 dark:text-slate-400 flex-wrap">

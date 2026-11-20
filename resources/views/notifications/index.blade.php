@@ -324,7 +324,7 @@
         $totalCount = $notifications->total();
     @endphp
 
-    <div class="notif-container">
+    <div class="notif-container" data-animate="panel">
         
         {{-- Breadcrumb --}}
         <div class="notif-breadcrumb">
@@ -336,7 +336,7 @@
         {{-- Page Header Banner --}}
         <div class="notif-header-banner">
             <div class="notif-title-area">
-                <h1>
+                <h1 data-animate="header">
                     <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base shrink-0 border border-blue-100">
                         <x-lucide-bell />
                     </div>

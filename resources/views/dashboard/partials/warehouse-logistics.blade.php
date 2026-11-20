@@ -180,7 +180,7 @@
     <a href="{{ route('tool-assignments.index') }}" class="glass-erp-card kpi-erp-card" title="Buka Peminjaman Alat">
         <div>
             <div class="kpi-header-row">
-                <span class="kpi-title-label">Armada Alat Kerja</span>
+                <span class="kpi-title-label">Alat Kerja</span>
                 <div class="kpi-icon-lens">
                     <x-lucide-wrench style="width:15px;height:15px;" />
                 </div>
@@ -336,7 +336,7 @@
         <div class="analytics-card-header">
             <h3 class="analytics-card-title">
                 <x-lucide-shield-check style="width:15px;height:15px;color:var(--arsikon-emerald);" />
-                Kesiapan Operasional Armada Alat
+                Alat Kerja
             </h3>
             <a href="{{ route('tool-assignments.index') }}" class="btn btn-sm btn-light border" style="height:25px;padding:0 8px;font-size:10.5px;font-weight:700;">
                 Data Peminjaman &rarr;

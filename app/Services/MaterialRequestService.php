@@ -12,8 +12,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class MaterialRequestService
-{
+class MaterialRequestService {
     /**
      * Create Material Request from any source Warehouse to a Project Warehouse.
      */
@@ -158,10 +157,10 @@ class MaterialRequestService
                     route('material-requests.show', $request)
                 );
 
-                // Jika sumber adalah Gudang Proyek lain, beritahu juga admin gudang proyek sumber tersebut
+                // Jika sumber adalah Gudang Proyek lain, beritahu juga Admin Logistik Proyek sumber tersebut
                 if ($sourceWarehouse && !$sourceWarehouse->is_central) {
                     $sourceAdmins = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $sourceWarehouse->id))
-                        ->whereHas('roles', fn($r) => $r->where('name', 'Admin Gudang Proyek'))
+                        ->whereHas('roles', fn($r) => $r->where('name', 'Admin Logistik Proyek'))
                         ->get();
                     foreach ($sourceAdmins as $sAdmin) {
                         if ($sAdmin->id !== $requestedBy->id) {
@@ -176,7 +175,7 @@ class MaterialRequestService
                     }
                 }
 
-                // Jika terdapat item manual/custom, kirim notifikasi ke Admin PO
+                // Jika terdapat item manual/custom, kirim notifikasi ke Admin Pengadaan
                 $hasCustomItems = $request->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
                 if ($hasCustomItems) {
                     $customCount = $request->items->whereNull('material_id')->count();
@@ -420,7 +419,7 @@ class MaterialRequestService
                 'approved_by_user_id' => $approvedBy->id,
             ]);
 
-            // Notify requestedBy directly and then other warehouse admins (excluding regular karyawan)
+            // Notify requestedBy directly and then other warehouse admins (excluding regular Site Engineer)
             if ($request->requestedBy) {
                 NotificationHelper::notifyUser(
                     $request->requestedBy,
@@ -430,9 +429,9 @@ class MaterialRequestService
                     route('material-requests.show', $request)
                 );
             }
-            $projectAdmins = User::whereHas('roles', fn($r) => $r->where('name', 'Admin Gudang Proyek'))
+            $projectAdmins = User::whereHas('roles', fn($r) => $r->where('name', 'Admin Logistik Proyek'))
                 ->whereHas('warehouses', fn($q) => $q->where('warehouses.id', $request->from_warehouse_id))
-                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
+                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Site Engineer'))
                 ->get();
             $allTargets = collect($projectAdmins)->merge($request->requestedBy ? [$request->requestedBy] : [])->unique('id');
             foreach ($allTargets as $targetUser) {
@@ -517,12 +516,12 @@ class MaterialRequestService
             return $query;
         }
 
-        // Admin Gudang Pusat: dapat melihat seluruh pengajuan untuk keperluan approval dan monitoring
-        if ($user->hasRole('Admin Gudang Pusat')) {
+        // Admin Logistik Pusat: dapat melihat seluruh pengajuan untuk keperluan approval dan monitoring
+        if ($user->hasRole('Admin Logistik Pusat')) {
             return $query;
         }
 
-        // Gudang Proyek / Karyawan / Tim Teknis Proyek (Site Engineer, Site Manager, PM): hanya melihat data gudang proyek mereka
+        // Gudang Proyek / Site Engineer / Tim Teknis Proyek (Site Engineer, Site Manager, PM): hanya melihat data gudang proyek mereka
         $userWarehouseIds = $user->warehouses->pluck('id')->toArray();
         if ($activeWarehouseId && in_array($activeWarehouseId, $userWarehouseIds)) {
             $query->where(function ($q) use ($activeWarehouseId) {

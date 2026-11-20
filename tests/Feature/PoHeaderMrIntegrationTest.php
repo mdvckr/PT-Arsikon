@@ -35,9 +35,9 @@ class PoHeaderMrIntegrationTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'adminpo.header.test@example.com'],
-            ['name' => 'Admin PO Header Test', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Header Test', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->adminPusat = User::firstOrCreate(
             ['email' => 'adminpusat.header.test@example.com'],
@@ -75,7 +75,7 @@ class PoHeaderMrIntegrationTest extends TestCase
         );
     }
 
-    public function test_create_po_form_displays_dari_po_lapangan_header_dropdown(): void
+    public function test_create_po_form_displays_dari_Admin_Pengadaan_Proyek_header_dropdown(): void
     {
         $mr = MaterialRequest::create([
             'request_number' => 'REQ-HDR-001',

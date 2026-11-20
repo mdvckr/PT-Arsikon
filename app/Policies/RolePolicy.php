@@ -6,8 +6,7 @@ use App\Http\Controllers\RoleController;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 
-class RolePolicy
-{
+class RolePolicy {
     /**
      * Tentukan apakah pengguna dapat melihat daftar jabatan / role.
      */

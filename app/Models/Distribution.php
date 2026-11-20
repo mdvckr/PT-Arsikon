@@ -104,8 +104,8 @@ class Distribution extends Model
             return true;
         }
 
-        // Jika gudang asal adalah Gudang Pusat, Admin Gudang Pusat berhak
-        if ($this->fromWarehouse?->is_central && $user->hasRole('Admin Gudang Pusat')) {
+        // Jika gudang asal adalah Gudang Pusat, Admin Logistik Pusat berhak
+        if ($this->fromWarehouse?->is_central && $user->hasRole('Admin Logistik Pusat')) {
             return true;
         }
 
@@ -137,8 +137,8 @@ class Distribution extends Model
             return true;
         }
 
-        // Jika gudang tujuan adalah Gudang Pusat, Admin Gudang Pusat berhak
-        if ($this->toWarehouse?->is_central && $user->hasRole('Admin Gudang Pusat')) {
+        // Jika gudang tujuan adalah Gudang Pusat, Admin Logistik Pusat berhak
+        if ($this->toWarehouse?->is_central && $user->hasRole('Admin Logistik Pusat')) {
             return true;
         }
 

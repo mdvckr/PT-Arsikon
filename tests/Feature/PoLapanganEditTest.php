@@ -33,7 +33,7 @@ class PoLapanganEditTest extends TestCase
         $this->seed();
 
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->otherAdminProyek = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $this->otherAdminProyek = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
         $this->adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->centralWh = Warehouse::where('is_central', true)->firstOrFail();
 

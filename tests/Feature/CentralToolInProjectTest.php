@@ -29,7 +29,7 @@ class CentralToolInProjectTest extends TestCase
     protected Warehouse $projectWarehouse;
     protected User $adminPusat;
     protected User $adminGudangProyek;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected Supplier $supplier;
     protected Tool $tool;
     protected Category $category;
@@ -43,7 +43,7 @@ class CentralToolInProjectTest extends TestCase
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminPusat       = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->adminGudangProyek= User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->karyawan         = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
+        $this->siteEngineer         = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
 
         $this->supplier = Supplier::firstOrCreate(
             ['code' => 'SUPP-T14'],
@@ -307,7 +307,7 @@ class CentralToolInProjectTest extends TestCase
         $mrService->createRequest(
             $this->projectWarehouse,
             $this->centralWarehouse,
-            $this->karyawan,
+            $this->siteEngineer,
             [
                 [
                     'item_type'     => 'tool',

@@ -9,8 +9,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class StockService
-{
+class StockService {
     /**
      * Increase inventory stock (e.g. from Goods Receipt or Receive Goods at Project).
      * Uses DB Transaction and lockForUpdate.

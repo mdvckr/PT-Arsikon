@@ -30,7 +30,7 @@ class AdminPoNotaRbacTest extends TestCase
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
 
-        $role = Role::firstOrCreate(['name' => 'admin-po-nota', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
         $role->syncPermissions([
             'view material requests',
             'view purchase receipts',
@@ -41,28 +41,28 @@ class AdminPoNotaRbacTest extends TestCase
         ]);
     }
 
-    public function test_admin_po_nota_can_view_po_lapangan_list(): void
+    public function test_admin_po_nota_can_view_Admin_Pengadaan_Proyek_list(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('admin-po-nota');
+        $user->assignRole('Admin Pengadaan Proyek');
 
         $response = $this->actingAs($user)->get(route('material-requests.index'));
         $response->assertOk();
     }
 
-    public function test_admin_po_nota_cannot_access_create_po_lapangan(): void
+    public function test_admin_po_nota_cannot_access_create_Admin_Pengadaan_Proyek(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('admin-po-nota');
+        $user->assignRole('Admin Pengadaan Proyek');
 
         $response = $this->actingAs($user)->get(route('material-requests.create'));
         $response->assertForbidden();
     }
 
-    public function test_admin_po_nota_cannot_store_po_lapangan(): void
+    public function test_admin_po_nota_cannot_store_Admin_Pengadaan_Proyek(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('admin-po-nota');
+        $user->assignRole('Admin Pengadaan Proyek');
 
         $response = $this->actingAs($user)->post(route('material-requests.store'), [
             'needed_at' => now()->addDays(2)->toDateString(),
@@ -73,7 +73,7 @@ class AdminPoNotaRbacTest extends TestCase
     public function test_admin_po_nota_can_view_and_create_nota_pembelian_harian(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('admin-po-nota');
+        $user->assignRole('Admin Pengadaan Proyek');
 
         $indexResponse = $this->actingAs($user)->get(route('purchase-receipts.index'));
         $indexResponse->assertOk();

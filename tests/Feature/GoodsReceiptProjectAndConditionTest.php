@@ -72,11 +72,11 @@ class GoodsReceiptProjectAndConditionTest extends TestCase
         $this->adminProyek = User::firstOrCreate(
             ['email' => 'admin.proyek.t11@example.com'],
             [
-                'name' => 'Admin Gudang Proyek T11',
+                'name' => 'Admin Logistik Proyek T11',
                 'password' => bcrypt('password'),
             ]
         );
-        $this->adminProyek->syncRoles(['Admin Gudang Proyek']);
+        $this->adminProyek->syncRoles(['Admin Logistik Proyek']);
         $this->adminProyek->warehouses()->syncWithoutDetaching([$this->projectWarehouse->id]);
 
         $this->supplier = Supplier::firstOrCreate(

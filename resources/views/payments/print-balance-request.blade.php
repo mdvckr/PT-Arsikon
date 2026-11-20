@@ -116,7 +116,7 @@
                 <div class="field-row">
                     <span class="field-label">Pemohon</span>
                     <span class="field-colon">:</span>
-                    <span class="field-val">{{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }}</span>
+                    <span class="field-val">{{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }}</span>
                 </div>
             </div>
 
@@ -204,13 +204,13 @@
             <div class="sign-box">
                 <div>
                     <div class="sign-label-top">Yang Mengajukan</div>
-                    <div class="sign-role">Admin PO Proyek / Lapangan</div>
+                    <div class="sign-role">Admin Pengadaan Proyek / Lapangan</div>
                 </div>
                 <div class="sign-space">
                     {{-- Ruang tanda tangan fisik --}}
                 </div>
                 <div class="sign-name">
-                    ( {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }} )
+                    ( {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }} )
                 </div>
             </div>
 

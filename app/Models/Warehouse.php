@@ -33,9 +33,9 @@ class Warehouse extends Model
     /**
      * Scope to filter warehouses based on user role.
      * Owner/Admin: all active warehouses.
-     * Admin Gudang Pusat: only central warehouses.
-     * Admin Gudang Proyek: only assigned project warehouses.
-     * Admin PO: only central warehouses.
+     * Admin Logistik Pusat: only central warehouses.
+     * Admin Logistik Proyek: only assigned project warehouses.
+     * Admin Pengadaan: only central warehouses.
      * Others: only warehouses assigned to the user.
      */
     public function scopeForUser(Builder $query, ?object $user = null): Builder
@@ -54,19 +54,19 @@ class Warehouse extends Model
             return $query->where('is_active', true);
         }
 
-        if ($user->hasRole('Admin Gudang Pusat')) {
+        if ($user->hasRole('Admin Logistik Pusat')) {
             return $query->where('is_active', true)->where('is_central', true);
         }
 
-        if ($user->hasRole('Admin Gudang Proyek')) {
+        if ($user->hasRole('Admin Logistik Proyek')) {
             return $query->whereIn('id', $user->warehouses->pluck('id'))->where('is_active', true);
         }
 
-        if ($user->hasAnyRole(['Admin PO', 'Admin Pengadaan'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan'])) {
             return $query->where('is_active', true)->where('is_central', true);
         }
 
-        // Karyawan, User, dll: only assigned warehouses
+        // Site Engineer, User, dll: only assigned warehouses
         return $query->whereIn('id', $user->warehouses->pluck('id'))->where('is_active', true);
     }
 

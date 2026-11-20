@@ -7,8 +7,7 @@ use App\Models\Warehouse;
 use App\Notifications\SystemNotification;
 use Illuminate\Support\Facades\Log;
 
-class NotificationHelper
-{
+class NotificationHelper {
     /**
      * Kirim notifikasi langsung ke seluruh akun Admin Pusat (Pengambil Keputusan & Approval Utama).
      */
@@ -56,7 +55,7 @@ class NotificationHelper
 
     /**
      * Kirim notifikasi umum ke seluruh jajaran manajemen/admin dan masukkan ke pantauan Owner.
-     * Pengguna dengan dual-role (misal Admin Gudang yang juga Karyawan) tetap menerima notifikasi.
+     * Pengguna dengan dual-role (misal Admin Gudang yang juga Site Engineer) tetap menerima notifikasi.
      */
     public static function notifyAdmins(
         string $title,
@@ -69,9 +68,9 @@ class NotificationHelper
             $admins = User::whereHas('roles', function ($q) {
                 $q->whereIn('name', [
                     'Admin Pusat',
-                    'Admin Gudang Pusat',
-                    'Admin Gudang Proyek',
-                    'Admin PO',
+                    'Admin Logistik Pusat',
+                    'Admin Logistik Proyek',
+                    'Admin Pengadaan',
                     'Owner',
                 ]);
             })->get();
@@ -85,7 +84,7 @@ class NotificationHelper
     }
 
     /**
-     * Kirim notifikasi ke Admin Gudang Pusat dan Admin Pusat.
+     * Kirim notifikasi ke Admin Logistik Pusat dan Admin Pusat.
      */
     public static function notifyCentralWarehouseAdmins(
         string $title,
@@ -96,7 +95,7 @@ class NotificationHelper
     ): void {
         try {
             $admins = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Admin Pusat', 'Admin Gudang Pusat']);
+                $q->whereIn('name', ['Admin Pusat', 'Admin Logistik Pusat']);
             })->get();
 
             foreach ($admins as $admin) {
@@ -106,12 +105,12 @@ class NotificationHelper
             // Sertakan salinan informasi pemantauan untuk Owner
             self::notifyOwnerMonitoring($title, $message, $url);
         } catch (\Throwable $e) {
-            Log::warning('Gagal mengirim notifikasi admin gudang pusat: ' . $e->getMessage());
+            Log::warning('Gagal mengirim notifikasi Admin Logistik Pusat: ' . $e->getMessage());
         }
     }
 
     /**
-     * Kirim notifikasi pengadaan ke Admin PO dan Admin Pusat.
+     * Kirim notifikasi pengadaan ke Admin Pengadaan dan Admin Pusat.
      */
     public static function notifyPurchasingAdmins(
         string $title,
@@ -122,7 +121,7 @@ class NotificationHelper
     ): void {
         try {
             $admins = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Admin PO', 'Admin Pusat']);
+                $q->whereIn('name', ['Admin Pengadaan', 'Admin Pusat']);
             })->get();
 
             foreach ($admins as $admin) {
@@ -137,8 +136,8 @@ class NotificationHelper
     }
 
     /**
-     * Kirim notifikasi spesifik ke Admin Gudang Proyek untuk gudang tertentu.
-     * Aman dari konflik dual-role (Admin Gudang yang merangkap Karyawan tetap menerima).
+     * Kirim notifikasi spesifik ke Admin Logistik Proyek untuk gudang tertentu.
+     * Aman dari konflik dual-role (Admin Gudang yang merangkap Site Engineer tetap menerima).
      */
     public static function notifyProjectWarehouseAdmins(
         int $warehouseId,
@@ -149,7 +148,7 @@ class NotificationHelper
         ?string $soundType = 'approval'
     ): void {
         try {
-            $projectAdmins = User::role('Admin Gudang Proyek')->whereHas('warehouses', function ($w) use ($warehouseId) {
+            $projectAdmins = User::role('Admin Logistik Proyek')->whereHas('warehouses', function ($w) use ($warehouseId) {
                 $w->where('warehouses.id', $warehouseId);
             })->get();
 
@@ -162,7 +161,7 @@ class NotificationHelper
                 $admin->notify(new SystemNotification($title, $message, $type, $url, $soundType));
             }
         } catch (\Throwable $e) {
-            Log::warning('Gagal mengirim notifikasi admin gudang proyek: ' . $e->getMessage());
+            Log::warning('Gagal mengirim notifikasi Admin Logistik Proyek: ' . $e->getMessage());
         }
     }
 
@@ -179,7 +178,7 @@ class NotificationHelper
         ?string $url = null,
         ?int $warehouseId = null
     ): void {
-        // 1. Jika ada gudang proyek spesifik, kabari admin gudang proyek tersebut.
+        // 1. Jika ada gudang proyek spesifik, kabari Admin Logistik Proyek tersebut.
         // Jika gudang pusat atau tanpa warehouseId, kabari Admin Pusat.
         if ($warehouseId) {
             try {
@@ -189,7 +188,7 @@ class NotificationHelper
                 } else {
                     self::notifyAdminPusat($title, $message, $type, $url, 'approval');
                     if ($warehouse && $warehouse->is_central) {
-                        $gudangPusat = User::role('Admin Gudang Pusat')->get();
+                        $gudangPusat = User::role('Admin Logistik Pusat')->get();
                         foreach ($gudangPusat as $admin) {
                             $admin->notify(new SystemNotification($title, $message, $type, $url, 'approval'));
                         }

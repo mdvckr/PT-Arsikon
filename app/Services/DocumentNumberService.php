@@ -10,8 +10,7 @@ use App\Models\ProcurementRequest;
 use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\DB;
 
-class DocumentNumberService
-{
+class DocumentNumberService {
     /**
      * Generate next safe document number using document_counters with pessimistic locking (lockForUpdate).
      */

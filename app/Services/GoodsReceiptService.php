@@ -18,8 +18,7 @@ use App\Services\NotificationHelper;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class GoodsReceiptService
-{
+class GoodsReceiptService {
     protected ToolInventoryService $toolInventoryService;
 
     public function __construct(
@@ -772,7 +771,7 @@ class GoodsReceiptService
                 route('goods-receipts.show', $receipt)
             );
 
-            // Notifikasi spesifik ke Purchasing / Admin PO untuk setiap PO yang menerima barang
+            // Notifikasi spesifik ke Purchasing / Admin Pengadaan untuk setiap PO yang menerima barang
             foreach ($affectedPoIds as $poId) {
                 $po = PurchaseOrder::find($poId);
                 if ($po) {

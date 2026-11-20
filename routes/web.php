@@ -50,6 +50,8 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Notifications
@@ -129,17 +131,14 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
 
     // Inventory
     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
-    Route::get('/inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
-    Route::get('/inventory/{inventory}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
-    Route::delete('/inventory/{inventory}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
 
     // Procurement Requests
     Route::resource('procurement', ProcurementController::class)->only(['index','create','store','show']);
     Route::post('/procurement/{procurement}/approve', [ProcurementController::class, 'approve'])->name('procurement.approve');
     Route::post('/procurement/{procurement}/reject',  [ProcurementController::class, 'reject'])->name('procurement.reject');
 
-    // Purchase Orders (Hanya Admin Pusat, Admin PO, Admin Pengadaan, Owner, Super Admin, po_lapangan, admin_pusat)
-    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin PO|Admin Pengadaan|po_lapangan|admin_pusat']], function () {
+    // Purchase Orders (Hanya Admin Pusat, Admin Pengadaan, Admin Pengadaan, Owner, Super Admin, Admin Pengadaan Proyek, admin_pusat)
+    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin|Admin Pengadaan|Admin Pengadaan|Admin Pengadaan Proyek|admin_pusat']], function () {
         Route::get('/purchase-orders/report/weekly',            [PurchaseOrderController::class, 'weeklyReport'])->name('purchase-orders.weekly-report');
         Route::get('/purchase-orders/export-weekly-excel',      [PurchaseOrderController::class, 'exportWeeklyExcel'])->name('purchase-orders.export-weekly-excel');
         Route::get('/purchase-orders/template-items-excel',     [PurchaseOrderController::class, 'downloadItemsTemplate'])->name('purchase-orders.template-items-excel');
@@ -228,7 +227,7 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::post('/payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
     Route::post('/payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
 
-    // Pengajuan Kas Saldo Proyek (Khusus Lapangan ke Admin PO Pusat)
+    // Pengajuan Kas Saldo Proyek (Khusus Lapangan ke Admin Pengadaan Pusat)
     Route::get('/project-balance-requests', [ProjectBalanceRequestController::class, 'index'])->name('project-balance-requests.index');
     Route::get('/project-balance-requests/create', [ProjectBalanceRequestController::class, 'create'])->name('project-balance-requests.create');
     Route::post('/project-balance-requests', [ProjectBalanceRequestController::class, 'store'])->name('project-balance-requests.store');

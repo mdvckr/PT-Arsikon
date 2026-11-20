@@ -12,8 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Owner dilarang keras melakukan aksi mutasi data (Create, Update, Delete,
  * serta aksi Approval/Reject/Cancel/Ship/Receive) di seluruh modul operasional.
  */
-class EnsureNotReadOnlyOwner
-{
+class EnsureNotReadOnlyOwner {
     /**
      * Route yang dikecualikan dari pemblokiran mutasi bagi Owner:
      * Hanya perpindahan workspace, penandaan notifikasi telah dibaca,

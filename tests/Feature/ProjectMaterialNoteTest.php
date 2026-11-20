@@ -30,14 +30,14 @@ class ProjectMaterialNoteTest extends TestCase
     {
         parent::setUp();
 
-        $roleProyek = Role::firstOrCreate(['name' => 'Admin PO Proyek', 'guard_name' => 'web']);
-        $rolePusat  = Role::firstOrCreate(['name' => 'Admin PO', 'guard_name' => 'web']);
+        $roleProyek = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
+        $rolePusat  = Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
 
         $this->userProyek = User::factory()->create();
-        $this->userProyek->assignRole('Admin PO Proyek');
+        $this->userProyek->assignRole('Admin Pengadaan Proyek');
 
         $this->userPusat = User::factory()->create();
-        $this->userPusat->assignRole('Admin PO');
+        $this->userPusat->assignRole('Admin Pengadaan');
 
         $this->project = Project::create([
             'code'                => 'PRJ-UGM-TEST',

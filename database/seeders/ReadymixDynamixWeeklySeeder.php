@@ -32,7 +32,7 @@ class ReadymixDynamixWeeklySeeder extends Seeder
             ]
         );
 
-        // Pastikan Gudang Proyek FK Teknik terhubung ke Proyek UGM dan Admin PO Proyek
+        // Pastikan Gudang Proyek FK Teknik terhubung ke Proyek UGM dan Admin Pengadaan Proyek
         $warehouse = \App\Models\Warehouse::where('name', 'like', '%FK Teknik%')->orWhere('project_id', $project->id)->first();
         if ($warehouse) {
             $warehouse->update(['project_id' => $project->id]);

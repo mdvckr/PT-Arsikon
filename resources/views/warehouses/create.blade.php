@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Tambah Gudang Baru</x-slot>
 
-    <div class="warehouse-edit-container">
+    <div class="warehouse-edit-container" data-animate="panel">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
             <a href="{{ route('warehouses.index') }}"><x-lucide-warehouse style="font-size:12px;" /> Data Gudang</a>
@@ -18,7 +18,7 @@
                             <x-lucide-plus />
                         </div>
                         <div>
-                            <span class="card-title" style="font-size:16px;">Form Tambah Gudang Baru</span>
+                            <span class="card-title" style="font-size:16px;" data-animate="header">Form Tambah Gudang Baru</span>
                             <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Daftarkan lokasi pergudangan sentral atau gudang logistik proyek site.</p>
                         </div>
                     </div>

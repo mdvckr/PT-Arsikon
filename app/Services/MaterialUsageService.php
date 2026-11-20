@@ -12,8 +12,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class MaterialUsageService
-{
+class MaterialUsageService {
     protected StockService $stockService;
 
     public function __construct(StockService $stockService)
@@ -37,7 +36,7 @@ class MaterialUsageService
 
         // Check if bypass approval is allowed
         $bypassApproval = !$warehouse->isCentral()
-            && $issuedBy->hasRole('Admin Gudang Proyek')
+            && $issuedBy->hasRole('Admin Logistik Proyek')
             && $issuedBy->hasAccessToWarehouse($warehouse)
             && empty($data['material_request_id']);
 

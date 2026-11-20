@@ -111,13 +111,13 @@ class ProjectBalanceRequest extends Model
             return $this->approver->name;
         }
 
-        if (!empty($this->signer_approver) && $this->signer_approver !== 'Admin PO Pusat') {
+        if (!empty($this->signer_approver) && $this->signer_approver !== 'Admin Pengadaan Pusat') {
             return $this->signer_approver;
         }
 
-        $poPusatUser = User::where('email', 'admin.po@arsikon.co.id')
+        $poPusatUser = User::where('email', 'admin.pengadaan@arsikon.co.id')
             ->orWhereHas('roles', function ($q) {
-                $q->whereIn('name', ['Admin PO', 'Admin Pengadaan']);
+                $q->whereIn('name', ['Admin Pengadaan', 'Admin Pengadaan']);
             })
             ->first();
 

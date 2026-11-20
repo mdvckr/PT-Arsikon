@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Edit Gudang - {{ $warehouse->name }}</x-slot>
 
-    <div class="warehouse-edit-container">
+    <div class="warehouse-edit-container" data-animate="panel">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
             <a href="{{ route('warehouses.index') }}"><x-lucide-warehouse style="font-size:12px;" /> Data Gudang</a>
@@ -27,7 +27,7 @@
                     </div>
                     <div class="warehouse-banner-info">
                         <div class="flex items-center gap-2 flex-wrap mb-1">
-                            <h2 class="warehouse-banner-title">{{ $warehouse->name }}</h2>
+                            <h2 class="warehouse-banner-title" data-animate="header">{{ $warehouse->name }}</h2>
                             @if($isCentral)
                                 <span class="badge badge-primary"><x-lucide-building-2 /> Gudang Pusat</span>
                             @else

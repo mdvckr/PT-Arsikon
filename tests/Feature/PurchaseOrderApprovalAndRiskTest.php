@@ -44,7 +44,7 @@ class PurchaseOrderApprovalAndRiskTest extends TestCase
             ['email' => 'creator.po@example.com'],
             ['name' => 'Creator PO', 'password' => bcrypt('password')]
         );
-        $this->creatorPO->syncRoles(['Admin PO']);
+        $this->creatorPO->syncRoles(['Admin Pengadaan']);
 
         $this->approverPO = User::firstOrCreate(
             ['email' => 'approver.po@example.com'],
@@ -53,10 +53,10 @@ class PurchaseOrderApprovalAndRiskTest extends TestCase
         $this->approverPO->syncRoles(['Admin Pusat']);
 
         $this->unauthorizedUser = User::firstOrCreate(
-            ['email' => 'karyawan.t8@example.com'],
-            ['name' => 'Karyawan Biasa', 'password' => bcrypt('password')]
+            ['email' => 'Site Engineer.t8@example.com'],
+            ['name' => 'Site Engineer Biasa', 'password' => bcrypt('password')]
         );
-        $this->unauthorizedUser->syncRoles(['Karyawan']);
+        $this->unauthorizedUser->syncRoles(['Site Engineer']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Mitra Pengadaan T8',

@@ -23,10 +23,10 @@ class DashboardController extends Controller
         $accessibleIds = $user->accessibleWarehouseIds();
 
         // Determine Dashboard Persona
-        if ($user->hasAnyRole(['Admin Pengadaan', 'Admin PO']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat'])) {
+        if ($user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat'])) {
             $persona = 'procurement_center';
             $data = $this->metricService->getProcurementCenterMetrics();
-        } elseif ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin PO', 'Admin Pengadaan'])) {
+        } elseif ($user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan'])) {
             $persona = 'site_purchasing';
             $data = $this->metricService->getSitePurchasingMetrics($user);
         } elseif ($user->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat'])) {

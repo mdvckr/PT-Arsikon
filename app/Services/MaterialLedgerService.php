@@ -6,8 +6,7 @@ use App\Models\MaterialLedger;
 use App\Models\MaterialLedgerEntry;
 use Illuminate\Support\Collection;
 
-class MaterialLedgerService
-{
+class MaterialLedgerService {
     /**
      * Hitung baris tabel lengkap dengan Running Total (Kumulatif Rp & Kumulatif Volume)
      * persis seperti rumus lembar kerja Excel PT Arsikon.

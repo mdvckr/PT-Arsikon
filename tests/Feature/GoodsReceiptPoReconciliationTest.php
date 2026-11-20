@@ -61,11 +61,11 @@ class GoodsReceiptPoReconciliationTest extends TestCase
         );
 
         $this->adminGudang = User::factory()->create(['name' => 'Petugas Gudang Proyek']);
-        $this->adminGudang->assignRole('Admin Gudang Proyek');
+        $this->adminGudang->assignRole('Admin Logistik Proyek');
         $this->adminGudang->warehouses()->attach($this->warehouse->id);
 
         $this->adminPengadaan = User::factory()->create(['name' => 'Tim Pengadaan Pusat']);
-        $this->adminPengadaan->assignRole('Admin PO');
+        $this->adminPengadaan->assignRole('Admin Pengadaan');
         $this->adminPengadaan->warehouses()->attach($this->warehouse->id);
 
         // 1. Buat PO Lapangan (Material Request)

@@ -48,7 +48,7 @@ class PoLapanganLabelTest extends TestCase
         $this->adminProyek->warehouses()->attach($this->projectWh->id);
     }
 
-    public function test_material_request_index_shows_po_lapangan_and_does_not_contain_permintaan_material(): void
+    public function test_material_request_index_shows_Admin_Pengadaan_Proyek_and_does_not_contain_permintaan_material(): void
     {
         $response = $this->actingAs($this->adminPusat)->get(route('material-requests.index'));
 
@@ -57,7 +57,7 @@ class PoLapanganLabelTest extends TestCase
         $response->assertDontSee('Permintaan Material');
     }
 
-    public function test_material_request_create_shows_po_lapangan_and_does_not_contain_permintaan_material(): void
+    public function test_material_request_create_shows_Admin_Pengadaan_Proyek_and_does_not_contain_permintaan_material(): void
     {
         $response = $this->actingAs($this->adminProyek)->get(route('material-requests.create'));
 
@@ -66,7 +66,7 @@ class PoLapanganLabelTest extends TestCase
         $response->assertDontSee('Permintaan Material');
     }
 
-    public function test_material_request_show_shows_po_lapangan_and_warehouse_project_display_format(): void
+    public function test_material_request_show_shows_Admin_Pengadaan_Proyek_and_warehouse_project_display_format(): void
     {
         $mr = MaterialRequest::create([
             'request_number' => 'MR-2026-0001',

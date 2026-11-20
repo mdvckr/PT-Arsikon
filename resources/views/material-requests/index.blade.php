@@ -128,39 +128,6 @@
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
                 </div>
-                <div class="filter-col" style="max-width:160px;">
-                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Kategori</label>
-                    <select name="category_id" class="form-control" onchange="this.form.submit()">
-                        <option value="">Semua Kategori</option>
-                        @foreach($categories ?? [] as $cat)
-                        <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="filter-col" style="max-width:150px;">
-                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Urutan</label>
-                    <select name="sort" class="form-control" onchange="this.form.submit()">
-                        <option value="created_at" {{ request('sort', 'created_at') === 'created_at' ? 'selected' : '' }}>Tgl Order</option>
-                        <option value="needed_at" {{ request('sort') === 'needed_at' ? 'selected' : '' }}>Dibutuhkan Tgl</option>
-                    </select>
-                </div>
-                <div class="filter-col" style="max-width:130px;">
-                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Status Waktu</label>
-                    <select name="overdue" class="form-control" onchange="this.form.submit()">
-                        <option value="">Semua</option>
-                        <option value="1" {{ request('overdue') === '1' ? 'selected' : '' }}>Terlambat</option>
-                    </select>
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-primary">
-                        <x-lucide-filter class="me-1" /> Filter
-                    </button>
-                    @if(request()->anyFilled(['search', 'status', 'category_id', 'sort', 'overdue']))
-                    <a href="{{ route('material-requests.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <x-lucide-rotate-ccw style="font-size:11px;" />
-                    </a>
-                    @endif
-                </div>
             </form>
         </div>
     </div>

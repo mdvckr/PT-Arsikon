@@ -8,8 +8,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class ToolInventoryService
-{
+class ToolInventoryService {
     /**
      * Add stock for a tool in a specific warehouse.
      */

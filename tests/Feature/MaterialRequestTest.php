@@ -115,7 +115,7 @@ class MaterialRequestTest extends TestCase
 
     public function test_hybrid_material_request_triggers_purchasing_notification_and_prepopulates_po(): void
     {
-        $adminPo = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
+        $adminPo = User::where('email', 'admin.pengadaan@arsikon.co.id')->firstOrFail();
 
         // 1. Submit Hybrid MR (Material inventori + Item manual yang tidak ada di inventori)
         $request = $this->requestService->createRequest(
@@ -134,16 +134,16 @@ class MaterialRequestTest extends TestCase
         $this->assertCount(2, $request->items);
         $this->assertTrue($request->items()->whereNull('material_id')->exists());
 
-        // 2. Admin PO should receive notification regarding custom items
+        // 2. Admin Pengadaan should receive notification regarding custom items
         $this->assertTrue(
             $adminPo->notifications()
                 ->where('data->title', 'like', "%{$request->request_number}%")
                 ->where('data->url', 'like', "%from_mr_id={$request->id}%")
                 ->exists(),
-            'Admin PO should receive notification for MR with custom/manual items'
+            'Admin Pengadaan should receive notification for MR with custom/manual items'
         );
 
-        // 3. Admin PO accesses PO creation route with from_mr_id parameter
+        // 3. Admin Pengadaan accesses PO creation route with from_mr_id parameter
         $response = $this->actingAs($adminPo)->get(route('purchase-orders.create', ['from_mr_id' => $request->id]));
 
         $response->assertStatus(200);

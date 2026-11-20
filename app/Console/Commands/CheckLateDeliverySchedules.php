@@ -20,7 +20,7 @@ class CheckLateDeliverySchedules extends Command
      *
      * @var string
      */
-    protected $description = 'Periksa jadwal kedatangan PO yang melewati batas waktu (terlambat) dan kirim notifikasi ke Admin PO.';
+    protected $description = 'Periksa jadwal kedatangan PO yang melewati batas waktu (terlambat) dan kirim notifikasi ke Admin Pengadaan.';
 
     /**
      * Execute the console command.

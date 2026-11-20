@@ -90,14 +90,14 @@
                                         <span class="badge" style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;"><x-lucide-crown /> Owner</span>
                                     @elseif($role->name === 'Admin Pusat')
                                         <span class="badge" style="background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;"><x-lucide-shield-check /> Admin Pusat</span>
-                                    @elseif($role->name === 'Admin Gudang Pusat')
-                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-building-2 /> Admin Gudang Pusat</span>
-                                    @elseif($role->name === 'Admin Gudang Proyek')
-                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-hard-hat /> Admin Gudang Proyek</span>
-                                    @elseif($role->name === 'Admin PO')
-                                        <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;"><x-lucide-package-check /> Admin PO</span>
-                                    @elseif($role->name === 'Admin PO Proyek')
-                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;"><x-lucide-receipt /> Admin PO Proyek</span>
+                                    @elseif($role->name === 'Admin Logistik Pusat')
+                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-building-2 /> Admin Logistik Pusat</span>
+                                    @elseif($role->name === 'Admin Logistik Proyek')
+                                        <span class="badge" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11px;font-weight:600;"><x-lucide-hard-hat /> Admin Logistik Proyek</span>
+                                    @elseif($role->name === 'Admin Pengadaan')
+                                        <span class="badge" style="background:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;"><x-lucide-package-check /> Admin Pengadaan</span>
+                                    @elseif($role->name === 'Admin Pengadaan Proyek')
+                                        <span class="badge" style="background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;"><x-lucide-receipt /> Admin Pengadaan Proyek</span>
                                     @else
                                         <span class="badge badge-secondary" style="font-size:11px;font-weight:600;">{{ ucfirst($role->name) }}</span>
                                     @endif

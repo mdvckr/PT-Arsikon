@@ -41,7 +41,7 @@ class IncomingStagesVisibilityTest extends TestCase
             ['email' => 'admin.gudang.stage.test@example.com'],
             ['name' => 'Admin Gudang Test', 'password' => bcrypt('password')]
         );
-        $admin->syncRoles(['Admin Gudang Proyek']);
+        $admin->syncRoles(['Admin Logistik Proyek']);
         $admin->warehouses()->syncWithoutDetaching([$warehouse->id]);
 
         $supplier = Supplier::firstOrCreate(

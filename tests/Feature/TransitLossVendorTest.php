@@ -30,7 +30,7 @@ class TransitLossVendorTest extends TestCase
     protected User $adminPusat;
     protected User $adminProyek;
     protected User $adminPO;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected Material $material;
 
     protected function setUp(): void
@@ -43,8 +43,8 @@ class TransitLossVendorTest extends TestCase
         $this->supplier = Supplier::firstOrFail();
         $this->adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->adminPO = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
-        $this->karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $this->adminPO = User::where('email', 'admin.pengadaan@arsikon.co.id')->firstOrFail();
+        $this->siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
 
         $this->material = Material::firstOrCreate(
             ['sku' => 'MAT-LOSS-001'],
@@ -105,8 +105,8 @@ class TransitLossVendorTest extends TestCase
             'unit_price'             => 1000,
         ]);
 
-        // Karyawan does not have 'create transit losses'
-        $this->actingAs($this->karyawan);
+        // Site Engineer does not have 'create transit losses'
+        $this->actingAs($this->siteEngineer);
         $file = UploadedFile::fake()->create('surat_jalan_rusak.pdf', 100);
         $response = $this->post(route('transit-losses.store'), [
             'goods_receipt_item_id' => $grItem->id,
@@ -328,7 +328,7 @@ class TransitLossVendorTest extends TestCase
         $mr = MaterialRequest::create([
             'request_number'   => 'MR-2026-TEST-LOSS',
             'to_warehouse_id'  => $this->projectWarehouse->id,
-            'requested_by_user_id' => $this->karyawan->id,
+            'requested_by_user_id' => $this->siteEngineer->id,
             'needed_at'        => now()->addDays(5)->toDateString(),
             'status'           => 'approved',
         ]);

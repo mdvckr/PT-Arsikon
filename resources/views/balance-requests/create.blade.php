@@ -23,7 +23,7 @@
         formatRupiah(num) {
             return 'Rp ' + (new Intl.NumberFormat('id-ID')).format(Math.round(num || 0));
         }
-    }" class="space-y-5 max-w-4xl mx-auto">
+    }" class="space-y-5 max-w-4xl mx-auto" data-animate="panel">
 
         {{-- Top Nav --}}
         <div class="flex items-center justify-between gap-3 text-xs">
@@ -47,11 +47,11 @@
                         <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                             Formulir Pengajuan Dana Lapangan
                         </div>
-                        <h1 class="text-lg font-black text-slate-900 dark:text-white tracking-tight mt-0.5">
+                        <h1 class="text-lg font-black text-slate-900 dark:text-white tracking-tight mt-0.5" data-animate="header">
                             Permohonan Kas Saldo Proyek
                         </h1>
                         <p class="text-xs text-slate-500 mt-1">
-                            Diajukan oleh <strong>{{ auth()->user()->name }}</strong> kepada <strong>Admin PO Pusat (Manager / Kasir Pusat)</strong>.
+                            Diajukan oleh <strong>{{ auth()->user()->name }}</strong> kepada <strong>Admin Pengadaan Pusat (Manager / Kasir Pusat)</strong>.
                         </p>
                     </div>
 
@@ -199,7 +199,7 @@
                     </div>
 
                     <div class="text-[11px] text-slate-500 italic">
-                        * Langsung dicairkan oleh Admin PO Pusat tanpa butuh Owner.
+                        * Langsung dicairkan oleh Admin Pengadaan Pusat tanpa butuh Owner.
                     </div>
                 </div>
 

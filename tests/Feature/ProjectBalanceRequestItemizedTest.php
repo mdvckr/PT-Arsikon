@@ -38,9 +38,9 @@ class ProjectBalanceRequestItemizedTest extends TestCase
 
         $this->adminPo = User::firstOrCreate(
             ['email' => 'admin.po.pkl.test@arsikon.com'],
-            ['name' => 'Admin PO Pusat Testing', 'password' => bcrypt('Password123!')]
+            ['name' => 'Admin Pengadaan Pusat Testing', 'password' => bcrypt('Password123!')]
         );
-        $this->adminPo->syncRoles(['Admin PO']);
+        $this->adminPo->syncRoles(['Admin Pengadaan']);
 
         $this->project = Project::firstOrCreate(
             ['code' => 'PRJ-TEST-PKL'],
@@ -58,9 +58,9 @@ class ProjectBalanceRequestItemizedTest extends TestCase
 
         $this->adminPoProyek = User::firstOrCreate(
             ['email' => 'po.proyek.test@arsikon.com'],
-            ['name' => 'Admin PO Proyek Testing', 'password' => bcrypt('Password123!')]
+            ['name' => 'Admin Pengadaan Proyek Testing', 'password' => bcrypt('Password123!')]
         );
-        $this->adminPoProyek->syncRoles(['Admin PO Proyek']);
+        $this->adminPoProyek->syncRoles(['Admin Pengadaan Proyek']);
         $this->adminPoProyek->warehouses()->sync([$this->warehouse->id]);
     }
 

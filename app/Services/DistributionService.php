@@ -15,8 +15,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class DistributionService
-{
+class DistributionService {
     public function __construct(
         protected StockService $stockService,
         protected ToolInventoryService $toolInvService
@@ -283,12 +282,12 @@ class DistributionService
                 'shipped_at'        => now(),
             ]);
 
-            // Notify destination warehouse users / admins (excluding regular karyawan)
+            // Notify destination warehouse users / admins (excluding regular Site Engineer)
             $destUsers = User::whereHas('warehouses', fn($q) => $q->where('warehouses.id', $distribution->to_warehouse_id))
-                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Karyawan'))
+                ->whereDoesntHave('roles', fn($r) => $r->where('name', 'Site Engineer'))
                 ->get();
             if ($destUsers->isEmpty()) {
-                $destUsers = User::role(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])->get();
+                $destUsers = User::role(['Owner', 'Admin Pusat', 'Admin Logistik Pusat'])->get();
             }
             foreach ($destUsers as $destUser) {
                 NotificationHelper::notifyUser(
@@ -301,8 +300,8 @@ class DistributionService
                 );
             }
 
-            // Notify central admins (Owner, Admin Pusat, Admin Gudang Pusat) - always notify for visibility
-            $centralAdmins = User::role(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])->get();
+            // Notify central admins (Owner, Admin Pusat, Admin Logistik Pusat) - always notify for visibility
+            $centralAdmins = User::role(['Owner', 'Admin Pusat', 'Admin Logistik Pusat'])->get();
             foreach ($centralAdmins as $admin) {
                 // Avoid duplicate notification if already notified as destUser
                 if (!$destUsers->contains('id', $admin->id)) {
@@ -532,7 +531,7 @@ class DistributionService
                 );
             }
 
-            // 4. Notifikasi ke Admin Gudang Pusat & Owner
+            // 4. Notifikasi ke Admin Logistik Pusat & Owner
             NotificationHelper::notifyCentralWarehouseAdmins(
                 "Konfirmasi Surat Jalan: #{$distribution->distribution_number}",
                 "Surat Jalan #{$distribution->distribution_number} dari {$fromName} telah dikonfirmasi dan diterima di {$toName} oleh {$receiverName}.",
@@ -541,7 +540,7 @@ class DistributionService
                 "success"
             );
 
-            // 5. Jika Gudang Asal adalah Gudang Proyek, notifikasi admin gudang proyek tersebut
+            // 5. Jika Gudang Asal adalah Gudang Proyek, notifikasi Admin Logistik Proyek tersebut
             if ($distribution->fromWarehouse && !$distribution->fromWarehouse->is_central) {
                 NotificationHelper::notifyProjectWarehouseAdmins(
                     $distribution->from_warehouse_id,

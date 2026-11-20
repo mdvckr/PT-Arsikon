@@ -7,8 +7,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-class SecureFileUploadService
-{
+class SecureFileUploadService {
     /**
      * Daftar MIME Type yang diizinkan secara ketat untuk Gambar.
      */

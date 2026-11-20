@@ -47,7 +47,7 @@ class PurchaseOrderShortCloseTest extends TestCase
             ['email' => 'creator.po.t10@example.com'],
             ['name' => 'Creator PO T10', 'password' => bcrypt('password')]
         );
-        $this->creatorPO->syncRoles(['Admin PO']);
+        $this->creatorPO->syncRoles(['Admin Pengadaan']);
 
         $this->closerPO = User::firstOrCreate(
             ['email' => 'closer.po.t10@example.com'],
@@ -56,10 +56,10 @@ class PurchaseOrderShortCloseTest extends TestCase
         $this->closerPO->syncRoles(['Admin Pusat']);
 
         $this->unauthorizedUser = User::firstOrCreate(
-            ['email' => 'karyawan.t10@example.com'],
-            ['name' => 'Karyawan T10', 'password' => bcrypt('password')]
+            ['email' => 'Site Engineer.t10@example.com'],
+            ['name' => 'Site Engineer T10', 'password' => bcrypt('password')]
         );
-        $this->unauthorizedUser->syncRoles(['Karyawan']);
+        $this->unauthorizedUser->syncRoles(['Site Engineer']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Supplier T10',

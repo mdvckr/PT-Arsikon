@@ -603,7 +603,7 @@ class MaterialController extends Controller
     public function deleteGroup(Request $request)
     {
         $user = auth()->user();
-        if (!$user->can('delete materials') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat'])) {
+        if (!$user->can('delete materials') && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menghapus kelompok material.');
         }
 

@@ -28,7 +28,7 @@ class GoodsReceiptController extends Controller
             ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId));
 
         // Batasi ke gudang yang boleh diakses user (kecuali Owner/Admin)
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $allowedIds = $user->warehouses->pluck('id');
             $query->whereIn('warehouse_id', $allowedIds);
         }
@@ -153,7 +153,7 @@ class GoodsReceiptController extends Controller
             $iq->whereRaw('(quantity - received_qty - lost_qty - short_closed_qty) > 0');
         });
 
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $poQuery->where(function ($sub) use ($accessibleWarehouseIds) {
                 $sub->whereIn('delivery_warehouse_id', $accessibleWarehouseIds)
                     ->orWhereHas('items.materialRequestItem.materialRequest', fn($mrQ) => $mrQ->whereIn('to_warehouse_id', $accessibleWarehouseIds))
@@ -172,7 +172,7 @@ class GoodsReceiptController extends Controller
             'distributions' => fn($dq) => $dq->where('status', 'in_transit')
         ])->whereIn('status', ['approved', 'partially_fulfilled']);
 
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $mrQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
         }
 
@@ -1053,7 +1053,7 @@ class GoodsReceiptController extends Controller
             'items.materialRequestItem.materialRequest.toWarehouse.project'
         ])->whereIn('status', ['draft', 'approved', 'sent', 'partial_received']);
 
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $poQuery->where(function ($sub) use ($accessibleWarehouseIds) {
                 $sub->whereIn('delivery_warehouse_id', $accessibleWarehouseIds)
                     ->orWhereHas('items.materialRequestItem.materialRequest', fn($mrQ) => $mrQ->whereIn('to_warehouse_id', $accessibleWarehouseIds))
@@ -1076,7 +1076,7 @@ class GoodsReceiptController extends Controller
             'distributions' => fn($dq) => $dq->where('status', 'in_transit')
         ])->whereIn('status', ['approved', 'partially_fulfilled']);
 
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $mrQuery->whereIn('to_warehouse_id', $accessibleWarehouseIds);
         }
 
@@ -1462,7 +1462,7 @@ class GoodsReceiptController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO', 'Super Admin'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan', 'Super Admin'])) {
             return Warehouse::where('is_active', true)
                 ->orWhere('is_central', true)
                 ->orderBy('name')

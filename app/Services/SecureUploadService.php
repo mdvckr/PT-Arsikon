@@ -8,8 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
-class SecureUploadService
-{
+class SecureUploadService {
     /**
      * Ekstensi berbahaya yang mutlak ditolak untuk mencegah eksekusi webshell dan payload (Layer 5 / High-Security Hardening).
      */

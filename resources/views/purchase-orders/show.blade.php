@@ -22,7 +22,7 @@
 
         <div class="flex gap-2 items-center flex-wrap">
             @if($canViewPrice)
-                {{-- Opsi Cetak Ganda untuk Admin PO / Admin Pusat / Owner --}}
+                {{-- Opsi Cetak Ganda untuk Admin Pengadaan / Admin Pusat / Owner --}}
                 <a href="{{ route('purchase-orders.print', ['purchaseOrder' => $purchaseOrder->id, 'mode' => 'official']) }}" target="_blank"
                    class="btn" style="background:#0f766e;color:#fff;font-weight:600;" title="Cetak PO Resmi dengan harga untuk Supplier / Keuangan">
                     <x-lucide-file-spreadsheet class="me-1" /> Cetak PO Resmi (Harga)
@@ -47,7 +47,7 @@
             @endcan
 
             @if($purchaseOrder->status === 'draft')
-                @if(auth()->user()->can('approve purchase orders') || auth()->user()->hasAnyRole(['Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']))
+                @if(auth()->user()->can('approve purchase orders') || auth()->user()->hasAnyRole(['Admin Pusat', 'Admin', 'Admin Pengadaan', 'Admin Pengadaan']))
                     <form action="{{ route('purchase-orders.approve', $purchaseOrder) }}" method="POST"
                           data-confirm="Setujui Purchase Order (PO) ini?"
                           data-confirm-title="Konfirmasi Persetujuan PO"

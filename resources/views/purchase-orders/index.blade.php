@@ -11,25 +11,6 @@
             <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian</p>
         </div>
         <div class="flex gap-2 items-center">
-            <button type="button" 
-                    id="btnTriggerExportExcelPo"
-                    onclick="openExportExcelPoModal()"
-                    class="btn btn-secondary border shadow-sm flex items-center gap-1.5 font-semibold text-emerald-800"
-                    style="background:#f0fdf4;border-color:#bbf7d0;cursor:pointer;"
-                    title="Export Rekapitulasi Purchase Order ke Excel dengan Foto">
-                <x-lucide-file-spreadsheet class="text-emerald-600 w-4 h-4" />
-                <span>Export Excel PO</span>
-            </button>
-
-            <a href="{{ route('purchase-orders.weekly-report') }}" 
-               target="_blank" 
-               class="btn btn-secondary border shadow-sm flex items-center gap-1.5 font-semibold text-slate-800"
-               style="background:#f8fafc;border-color:#cbd5e1;"
-               title="Cetak Rekapitulasi Surat PO Minggu Berjalan">
-                <x-lucide-printer class="text-primary w-4 h-4" />
-                <span>Cetak PO Minggu Ini</span>
-                <span class="badge badge-primary text-xs ml-1" style="font-size:10.5px;padding:2px 6px;">W{{ \Carbon\Carbon::now()->weekOfMonth }}</span>
-            </a>
 
             <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
                 <x-lucide-plus class="me-1" /> Buat PO Baru
@@ -53,8 +34,13 @@
             </div>
 
             <form method="GET" class="flex flex-wrap gap-2 items-center ms-auto">
-                <input type="date" name="date" value="{{ request('date') }}" class="form-control" style="width:160px;padding:6px 10px;font-size:13px;" title="Filter Tanggal Tertentu" onchange="this.form.submit()">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. PO / Supplier / Barang..." class="form-control" style="width:230px;padding:6px 10px;font-size:13px;">
 
+                <button type="submit" class="btn btn-secondary btn-sm" title="Cari">
+                    <x-lucide-search />
+                </button>
+
+                
                 <select name="status" class="form-control" style="width:175px;padding:6px 10px;font-size:13px;" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
                     <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Menunggu Pengiriman</option>
@@ -65,11 +51,8 @@
                     <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                 </select>
 
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari No. PO / Supplier / Barang..." class="form-control" style="width:230px;padding:6px 10px;font-size:13px;">
+                <input type="date" name="date" value="{{ request('date') }}" class="form-control" style="width:160px;padding:6px 10px;font-size:13px;" title="Filter Tanggal Tertentu" onchange="this.form.submit()">
 
-                <button type="submit" class="btn btn-secondary btn-sm" title="Cari">
-                    <x-lucide-search />
-                </button>
 
                 @if(request('date') || request('status') || request('search'))
                     <a href="{{ route('purchase-orders.index') }}" class="btn btn-light btn-sm" title="Reset Filter">

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Edit Pengguna - {{ $user->name }}</x-slot>
 
-    <div class="user-edit-container">
+    <div class="user-edit-container" data-animate="panel">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
             <a href="{{ route('users.index') }}"><x-lucide-users style="font-size:12px;" /> Data Pengguna</a>
@@ -18,7 +18,7 @@
                     </div>
                     <div class="user-banner-info">
                         <div class="flex items-center gap-2 flex-wrap mb-1">
-                            <h2 class="user-banner-title">{{ $user->name }}</h2>
+                            <h2 class="user-banner-title" data-animate="header">{{ $user->name }}</h2>
                             @if($user->is_active)
                                 <span class="badge badge-success"><x-lucide-circle-check style="font-size:10px;" /> Akun Aktif</span>
                             @else
@@ -178,11 +178,11 @@
                                 $roleConfig = match($role->name) {
                                     'Owner' => ['icon' => 'crown', 'color' => '#7c3aed', 'bg' => 'rgba(124,58,237,0.1)', 'desc' => 'Pemilik Sistem (Akses penuh tanpa batas ke seluruh modul)'],
                                     'Admin Pusat' => ['icon' => 'shield-check', 'color' => '#d97706', 'bg' => 'rgba(217,119,6,0.1)', 'desc' => 'Kantor Pusat (Full kontrol user, gudang, jabatan, master data & logistik)'],
-                                    'Admin Gudang Pusat' => ['icon' => 'warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
-                                    'Admin Gudang Proyek' => ['icon' => 'hard-hat', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
-                                    'Admin PO' => ['icon' => 'file-spreadsheet', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Pengadaan Pusat & Purchase Order (Pemasok, harga resmi, pembayaran vendor)'],
-                                    'Admin PO Proyek' => ['icon' => 'receipt', 'color' => '#0284c7', 'bg' => 'rgba(2,132,199,0.1)', 'desc' => 'Site Proyek - Khusus Pengisian Nota Harian (Bon belanja toko, harga PO dirahasiakan)'],
-                                    'Karyawan' => ['icon' => 'user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
+                                    'Admin Logistik Pusat' => ['icon' => 'warehouse', 'color' => '#2563eb', 'bg' => 'rgba(37,99,235,0.1)', 'desc' => 'Sentral Logistik Jakarta (Kelola material, alat, stok gudang pusat, distribusi)'],
+                                    'Admin Logistik Proyek' => ['icon' => 'hard-hat', 'color' => '#0891b2', 'bg' => 'rgba(8,145,178,0.1)', 'desc' => 'Site Proyek (Penerimaan kiriman, stok site, peminjaman alat & pemakaian)'],
+                                    'Admin Pengadaan' => ['icon' => 'file-spreadsheet', 'color' => '#059669', 'bg' => 'rgba(5,150,105,0.1)', 'desc' => 'Pengadaan Pusat & Purchase Order (Pemasok, harga resmi, pembayaran vendor)'],
+                                    'Admin Pengadaan Proyek' => ['icon' => 'receipt', 'color' => '#0284c7', 'bg' => 'rgba(2,132,199,0.1)', 'desc' => 'Site Proyek - Khusus Pengisian Nota Harian (Bon belanja toko, harga PO dirahasiakan)'],
+                                    'Site Engineer' => ['icon' => 'user-check', 'color' => '#475569', 'bg' => 'rgba(71,85,105,0.1)', 'desc' => 'Staff Operasional (Mengajukan peminjaman alat & PO Lapangan)'],
                                     default => ['icon' => 'id-card', 'color' => '#64748b', 'bg' => 'rgba(100,116,139,0.1)', 'desc' => 'Hak akses jabatan khusus'],
                                 };
                                 $isChecked = in_array($role->name, old('roles', $userRoles));

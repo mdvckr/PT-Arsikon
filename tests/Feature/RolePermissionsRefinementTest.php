@@ -18,7 +18,7 @@ class RolePermissionsRefinementTest extends TestCase
         $this->seed(RoleAndPermissionSeeder::class);
     }
 
-    public function test_admin_proyek_has_access_to_technical_po_lapangan_inventory_and_daily_log_only(): void
+    public function test_admin_proyek_has_access_to_technical_Admin_Pengadaan_Proyek_inventory_and_daily_log_only(): void
     {
         $role = Role::findByName('Admin Proyek');
 
@@ -37,7 +37,7 @@ class RolePermissionsRefinementTest extends TestCase
 
     public function test_gudang_proyek_has_access_strictly_to_logistics_only(): void
     {
-        $role = Role::findByName('Admin Gudang Proyek');
+        $role = Role::findByName('Admin Logistik Proyek');
 
         // Boleh: Surat Jalan (distributions), Penerimaan (goods receipts), Peminjaman alat, Pemakaian material, Inventory, Material, Alat
         $this->assertTrue($role->hasPermissionTo('view distributions'), 'Gudang Proyek harus bisa melihat surat jalan');

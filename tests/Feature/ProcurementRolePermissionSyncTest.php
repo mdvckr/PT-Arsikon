@@ -20,10 +20,10 @@ class ProcurementRolePermissionSyncTest extends TestCase
         // Verify that canonical roles are created
         $this->assertTrue(Role::where('name', 'Owner')->exists());
         $this->assertTrue(Role::where('name', 'Admin Pusat')->exists());
-        $this->assertTrue(Role::where('name', 'Admin PO')->exists());
-        $this->assertTrue(Role::where('name', 'Admin Gudang Pusat')->exists());
-        $this->assertTrue(Role::where('name', 'Admin Gudang Proyek')->exists());
-        $this->assertTrue(Role::where('name', 'Karyawan')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Pengadaan')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Logistik Pusat')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Logistik Proyek')->exists());
+        $this->assertTrue(Role::where('name', 'Site Engineer')->exists());
     }
 
     public function test_owner_role_is_strictly_view_only(): void
@@ -59,7 +59,7 @@ class ProcurementRolePermissionSyncTest extends TestCase
     {
         Artisan::call('permissions:sync-procurement');
 
-        $adminPO = Role::findByName('Admin PO', 'web');
+        $adminPO = Role::findByName('Admin Pengadaan', 'web');
 
         // Boleh:
         $this->assertTrue($adminPO->hasPermissionTo('create purchase orders'));
@@ -83,21 +83,18 @@ class ProcurementRolePermissionSyncTest extends TestCase
         $this->assertFalse($adminPO->hasPermissionTo('approve transit losses'));
     }
 
-    public function test_karyawan_role_permissions_comply_with_t16(): void
+    public function test_site_engineer_role_permissions_comply_with_t16(): void
     {
         Artisan::call('permissions:sync-procurement');
 
-        $karyawan = Role::findByName('Karyawan', 'web');
+        $siteEngineer = Role::findByName('Site Engineer', 'web');
 
         // Boleh:
-        $this->assertTrue($karyawan->hasPermissionTo('create material requests'));
-        $this->assertTrue($karyawan->hasPermissionTo('view material requests'));
-        $this->assertTrue($karyawan->hasPermissionTo('create tool assignments'));
-        $this->assertTrue($karyawan->hasPermissionTo('view tool assignments'));
-        $this->assertTrue($karyawan->hasPermissionTo('view distributions'));
+        $this->assertTrue($siteEngineer->hasPermissionTo('create material requests'));
+        $this->assertTrue($siteEngineer->hasPermissionTo('view material requests'));
 
         // Dilarang: Surat jalan hanya dikeluarkan gudang/logistik
-        $this->assertFalse($karyawan->hasPermissionTo('create distributions'));
+        $this->assertFalse($siteEngineer->hasPermissionTo('create distributions'));
     }
 
     public function test_command_is_idempotent(): void
@@ -110,7 +107,7 @@ class ProcurementRolePermissionSyncTest extends TestCase
 
         $this->assertSame($firstCount, $secondCount);
 
-        $adminPO = Role::findByName('Admin PO', 'web');
+        $adminPO = Role::findByName('Admin Pengadaan', 'web');
         $this->assertFalse($adminPO->hasPermissionTo('approve purchase orders'));
         $this->assertFalse($adminPO->hasPermissionTo('verify payments'));
         $this->assertTrue($adminPO->hasPermissionTo('approve material requests'));

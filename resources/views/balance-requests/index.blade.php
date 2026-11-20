@@ -1,12 +1,12 @@
 <x-app-layout>
     <x-slot name="title">Pengajuan Kas Saldo Proyek - Arsikon</x-slot>
 
-    <div class="space-y-5">
+    <div class="space-y-5" data-animate="panel">
         {{-- Header Bar --}}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight" data-animate="header">
                         Pengajuan Kas Saldo Proyek
                     </h1>
                     @if(isset($selectedProject) && $selectedProject)
@@ -16,7 +16,7 @@
                     @endif
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Permohonan dana operasional kas belanja lapangan yang diajukan langsung ke Admin PO Pusat (Manajer / Kasir Pusat).
+                    Permohonan dana operasional kas belanja lapangan yang diajukan langsung ke Admin Pengadaan Pusat (Manajer / Kasir Pusat).
                 </p>
             </div>
 
@@ -71,7 +71,7 @@
                     {{ $pendingCount }} <span class="text-sm font-semibold">Pengajuan</span>
                 </div>
                 <div class="text-[11px] text-slate-400 mt-1">
-                    Sedang ditinjau Admin PO Pusat (tanpa butuh Owner)
+                    Sedang ditinjau Admin Pengadaan Pusat (tanpa butuh Owner)
                 </div>
             </div>
 
@@ -209,8 +209,8 @@
                                         <span>Cetak</span>
                                     </a>
 
-                                    {{-- Tombol Approval Langsung untuk Admin PO Pusat (Jika status pending) --}}
-                                    @if(auth()->user()->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Admin Pusat', 'Super Admin']) && $req->status === 'pending')
+                                    {{-- Tombol Approval Langsung untuk Admin Pengadaan Pusat (Jika status pending) --}}
+                                    @if(auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Admin Pusat', 'Super Admin']) && $req->status === 'pending')
                                         <form method="POST" action="{{ route('project-balance-requests.approve', $req) }}" class="m-0 p-0 inline"
                                               onsubmit="return confirm('Setujui pengajuan kas #{{ $req->request_number }} sebesar Rp {{ number_format($req->amount, 0, ',', '.') }}? Saldo kas proyek akan bertambah seketika tanpa approval Owner.')">
                                             @csrf

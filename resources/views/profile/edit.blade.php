@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">Pengaturan Profil Pegawai - Arsikon</x-slot>
+    <x-slot name="title">Profil Pegawai - Arsikon</x-slot>
 
     @push('styles')
     <style>
@@ -46,6 +46,13 @@
             min-width: 280px;
         }
 
+        .profile-avatar-wrapper {
+            position: relative;
+            width: 68px;
+            height: 68px;
+            flex-shrink: 0;
+        }
+
         .profile-avatar-squircle {
             width: 68px;
             height: 68px;
@@ -57,11 +64,81 @@
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             letter-spacing: 0.5px;
             position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            user-select: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .profile-avatar-squircle:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 18px rgba(234, 88, 12, 0.35);
+        }
+
+        .profile-avatar-squircle .avatar-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .avatar-hover-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .profile-avatar-squircle:hover .avatar-hover-overlay {
+            opacity: 1;
+        }
+
+        .avatar-camera-badge-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transition: all 0.2s ease;
+            z-index: 5;
+            padding: 0;
+            margin: 0;
+        }
+
+        .avatar-camera-badge-btn svg {
+            width: 12px !important;
+            height: 12px !important;
+            display: block !important;
+            margin: auto !important;
             flex-shrink: 0;
+        }
+
+        .avatar-camera-badge-btn:hover {
+            background: #ea580c;
+            transform: scale(1.1);
         }
 
         .profile-online-badge {
@@ -473,7 +550,7 @@
                 <x-lucide-home class="w-3.5 h-3.5" /> Beranda
             </a>
             <x-lucide-chevron-right class="w-3 h-3 text-slate-400" />
-            <span class="text-slate-800 font-semibold">Pengaturan Profil & Keamanan</span>
+            <span class="text-slate-800 font-semibold">Profil Pegawai</span>
         </div>
 
         {{-- Flash Alerts --}}
@@ -484,6 +561,26 @@
                 Informasi profil berhasil diperbarui dan disinkronkan ke seluruh sistem.
             </span>
             <button type="button" onclick="this.parentElement.remove()" class="text-emerald-700 hover:text-emerald-900">&times;</button>
+        </div>
+        @endif
+
+        @if (session('status') === 'photo-updated')
+        <div class="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between">
+            <span class="flex items-center gap-2">
+                <x-lucide-circle-check class="w-4 h-4 text-emerald-600" />
+                Foto profil berhasil diperbarui!
+            </span>
+            <button type="button" onclick="this.parentElement.remove()" class="text-emerald-700 hover:text-emerald-900">&times;</button>
+        </div>
+        @endif
+
+        @if (session('status') === 'photo-deleted')
+        <div class="mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center justify-between">
+            <span class="flex items-center gap-2">
+                <x-lucide-info class="w-4 h-4 text-amber-600" />
+                Foto profil telah dihapus. Tampilan avatar kembali menggunakan inisial nama.
+            </span>
+            <button type="button" onclick="this.parentElement.remove()" class="text-amber-700 hover:text-amber-900">&times;</button>
         </div>
         @endif
 
@@ -511,19 +608,47 @@
         </div>
         @endif
 
+        {{-- Form Upload & Hapus Foto Profil (Hidden) --}}
+        <form id="profilePhotoForm" method="POST" action="{{ route('profile.photo.update') }}" enctype="multipart/form-data" style="display: none;">
+            @csrf
+            <input type="file" id="profilePhotoInput" name="photo" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="handlePhotoSelect(this)">
+        </form>
+
+        <form id="deletePhotoForm" method="POST" action="{{ route('profile.photo.delete') }}" style="display: none;">
+            @csrf
+            @method('delete')
+        </form>
+
         {{-- TOP FULL-WIDTH HERO BANNER --}}
         <div class="profile-hero-card">
+            @php
+                $words = explode(' ', trim($user->name));
+                $initials = count($words) >= 2 
+                    ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1))
+                    : strtoupper(substr($words[0], 0, 2));
+            @endphp
             <div class="profile-hero-identity">
-                <div class="profile-avatar-squircle">
-                    @php
-                        $words = explode(' ', trim($user->name));
-                        $initials = count($words) >= 2 
-                            ? strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1))
-                            : strtoupper(substr($words[0], 0, 2));
-                    @endphp
-                    <span>{{ $initials }}</span>
-                    <span class="profile-online-badge" title="Akun Aktif"></span>
+                <div class="profile-avatar-wrapper">
+                    <div class="profile-avatar-squircle" onclick="document.getElementById('profilePhotoInput').click()" title="Klik untuk mengunggah atau mengganti foto profil">
+                        @if($user->profile_photo_url)
+                            <img id="avatarImage" src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" class="avatar-photo-img">
+                            <span id="avatarInitials" style="display: none;">{{ $initials }}</span>
+                        @else
+                            <img id="avatarImage" src="" alt="{{ $user->name }}" class="avatar-photo-img" style="display: none;">
+                            <span id="avatarInitials">{{ $initials }}</span>
+                        @endif
+
+                        <div class="avatar-hover-overlay">
+                            <x-lucide-camera class="w-4 h-4" />
+                            <span>Ubah</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="avatar-camera-badge-btn" onclick="document.getElementById('profilePhotoInput').click()" title="Pilih Foto Profil">
+                        <x-lucide-camera class="w-3.5 h-3.5" />
+                    </button>
                 </div>
+
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <h1 class="profile-hero-name">{{ $user->name }}</h1>
@@ -545,15 +670,40 @@
                             <span class="role-pill-clean gold"><x-lucide-crown class="w-3.5 h-3.5" /> Owner / Direksi</span>
                         @elseif($primaryRole === 'Admin Pusat')
                             <span class="role-pill-clean blue"><x-lucide-shield-check class="w-3.5 h-3.5" /> Admin Pusat</span>
-                        @elseif(in_array($primaryRole, ['Admin PO', 'Admin Pengadaan']))
+                        @elseif(in_array($primaryRole, ['Admin Pengadaan', 'Admin Pengadaan']))
                             <span class="role-pill-clean amber"><x-lucide-shopping-cart class="w-3.5 h-3.5" /> Admin Pengadaan Pusat</span>
-                        @elseif(in_array($primaryRole, ['Admin PO Proyek', 'Admin Pengadaan Proyek', 'admin-po-nota']))
-                            <span class="role-pill-clean green"><x-lucide-receipt class="w-3.5 h-3.5" /> Admin PO Proyek</span>
+                        @elseif(in_array($primaryRole, ['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']))
+                            <span class="role-pill-clean green"><x-lucide-receipt class="w-3.5 h-3.5" /> Admin Pengadaan Proyek</span>
                         @elseif(in_array($primaryRole, ['Site Engineer', 'site-engineer']))
                             <span class="role-pill-clean amber"><x-lucide-hard-hat class="w-3.5 h-3.5" /> Site Engineer Lapangan</span>
                         @else
                             <span class="role-pill-clean slate"><x-lucide-user class="w-3.5 h-3.5" /> {{ ucfirst($primaryRole) }}</span>
                         @endif
+                    </div>
+
+                    {{-- Action Row for Photo Management --}}
+                    <div class="flex items-center gap-2 mt-2.5 flex-wrap">
+                        <button type="button" onclick="document.getElementById('profilePhotoInput').click()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition cursor-pointer">
+                            <x-lucide-camera class="w-3.5 h-3.5 text-orange-600" />
+                            <span>{{ $user->profile_photo_url ? 'Ganti Foto' : 'Unggah Foto' }}</span>
+                        </button>
+
+                        @if($user->profile_photo_url)
+                        <button type="button" id="btnDeletePhoto" onclick="confirmDeletePhoto()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer">
+                            <x-lucide-trash-2 class="w-3.5 h-3.5" />
+                            <span>Hapus Foto</span>
+                        </button>
+                        @endif
+
+                        {{-- Tombol Konfirmasi Preview Foto Baru --}}
+                        <div id="photoPendingActions" class="inline-flex items-center gap-1.5" style="display: none;">
+                            <button type="button" onclick="submitPhotoUpload()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1 transition cursor-pointer">
+                                <x-lucide-check class="w-3.5 h-3.5" /> Simpan Foto
+                            </button>
+                            <button type="button" onclick="cancelPhotoSelection()" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition cursor-pointer">
+                                <x-lucide-x class="w-3.5 h-3.5" /> Batal
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1029,12 +1179,20 @@
 
         function openDeleteModal() {
             const modal = document.getElementById('deleteAccountModal');
-            if (modal) modal.classList.add('open');
+            if (window.ArsikonAnimate) {
+                window.ArsikonAnimate.openModal(modal);
+            } else if (modal) {
+                modal.classList.add('open');
+            }
         }
 
         function closeDeleteModal() {
             const modal = document.getElementById('deleteAccountModal');
-            if (modal) modal.classList.remove('open');
+            if (window.ArsikonAnimate) {
+                window.ArsikonAnimate.closeModal(modal);
+            } else if (modal) {
+                modal.classList.remove('open');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -1043,6 +1201,117 @@
                 openDeleteModal();
             }
         });
+
+        // ===== PHOTO UPLOAD & PREVIEW LOGIC =====
+        const originalAvatarSrc = "{{ $user->profile_photo_url ?? '' }}";
+        const hasOriginalPhoto = {{ $user->profile_photo_url ? 'true' : 'false' }};
+
+        function handlePhotoSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Validasi ukuran: max 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ukuran Foto Terlalu Besar',
+                        text: 'Ukuran foto maksimal adalah 2MB. Silakan pilih foto dengan resolusi lebih kecil.',
+                        confirmButtonColor: '#ea580c'
+                    });
+                } else {
+                    alert('Ukuran foto maksimal adalah 2MB.');
+                }
+                input.value = '';
+                return;
+            }
+
+            // Validasi format file
+            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Format Tidak Didukung',
+                        text: 'Silakan gunakan format gambar JPG, JPEG, PNG, atau WEBP.',
+                        confirmButtonColor: '#ea580c'
+                    });
+                } else {
+                    alert('Format gambar harus JPG, PNG, atau WEBP.');
+                }
+                input.value = '';
+                return;
+            }
+
+            // Tampilkan preview foto langsung
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('avatarImage');
+                const initials = document.getElementById('avatarInitials');
+                const pendingActions = document.getElementById('photoPendingActions');
+                const btnDelete = document.getElementById('btnDeletePhoto');
+
+                img.src = e.target.result;
+                img.style.display = 'block';
+                if (initials) initials.style.display = 'none';
+                if (pendingActions) pendingActions.style.display = 'flex';
+                if (btnDelete) btnDelete.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelPhotoSelection() {
+            const input = document.getElementById('profilePhotoInput');
+            const img = document.getElementById('avatarImage');
+            const initials = document.getElementById('avatarInitials');
+            const pendingActions = document.getElementById('photoPendingActions');
+            const btnDelete = document.getElementById('btnDeletePhoto');
+
+            input.value = '';
+            if (hasOriginalPhoto) {
+                img.src = originalAvatarSrc;
+                img.style.display = 'block';
+                if (initials) initials.style.display = 'none';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                if (initials) initials.style.display = 'block';
+            }
+
+            if (pendingActions) pendingActions.style.display = 'none';
+            if (btnDelete) btnDelete.style.display = 'inline-flex';
+        }
+
+        function submitPhotoUpload() {
+            const input = document.getElementById('profilePhotoInput');
+            if (input.files && input.files[0]) {
+                document.getElementById('profilePhotoForm').submit();
+            }
+        }
+
+        function confirmDeletePhoto() {
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Hapus Foto Profil?',
+                    text: 'Foto profil Anda akan dihapus dan avatar kembali menggunakan inisial nama.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('deletePhotoForm').submit();
+                    }
+                });
+            } else {
+                if (confirm('Apakah Anda yakin ingin menghapus foto profil?')) {
+                    document.getElementById('deletePhotoForm').submit();
+                }
+            }
+        }
     </script>
     @endpush
 </x-app-layout>

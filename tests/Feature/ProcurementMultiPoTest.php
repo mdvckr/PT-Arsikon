@@ -38,9 +38,9 @@ class ProcurementMultiPoTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'adminpo.multi@example.com'],
-            ['name' => 'Admin PO Multi', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Multi', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Semen Perkasa',

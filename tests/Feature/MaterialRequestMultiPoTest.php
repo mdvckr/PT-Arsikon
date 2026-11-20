@@ -41,9 +41,9 @@ class MaterialRequestMultiPoTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'adminpo.mr.multi@example.com'],
-            ['name' => 'Admin PO MR Multi', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan MR Multi', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Mitra Pengadaan MR',

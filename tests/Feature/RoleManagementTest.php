@@ -28,10 +28,10 @@ class RoleManagementTest extends TestCase
         // Verifikasi role kanonikal ada
         $this->assertContains('Owner', $roleNames);
         $this->assertContains('Admin Pusat', $roleNames);
-        $this->assertContains('Admin Gudang Pusat', $roleNames);
-        $this->assertContains('Admin Gudang Proyek', $roleNames);
-        $this->assertContains('Admin PO', $roleNames);
-        $this->assertContains('Karyawan', $roleNames);
+        $this->assertContains('Admin Logistik Pusat', $roleNames);
+        $this->assertContains('Admin Logistik Proyek', $roleNames);
+        $this->assertContains('Admin Pengadaan', $roleNames);
+        $this->assertContains('Site Engineer', $roleNames);
     }
 
     public function test_protected_roles_cannot_be_deleted(): void

@@ -24,10 +24,10 @@ class WorkspaceAndRoleTest extends TestCase
     {
         $this->assertTrue(Role::where('name', 'Owner')->exists());
         $this->assertTrue(Role::where('name', 'Admin Pusat')->exists());
-        $this->assertTrue(Role::where('name', 'Admin Gudang Pusat')->exists());
-        $this->assertTrue(Role::where('name', 'Admin Gudang Proyek')->exists());
-        $this->assertTrue(Role::where('name', 'Admin PO')->exists());
-        $this->assertTrue(Role::where('name', 'Karyawan')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Logistik Pusat')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Logistik Proyek')->exists());
+        $this->assertTrue(Role::where('name', 'Admin Pengadaan')->exists());
+        $this->assertTrue(Role::where('name', 'Site Engineer')->exists());
 
         $owner = User::where('email', 'owner@arsikon.co.id')->first();
         $admin = User::where('email', 'admin.pusat@arsikon.co.id')->first();
@@ -40,7 +40,7 @@ class WorkspaceAndRoleTest extends TestCase
         $this->assertTrue($admin->hasRole('Admin Pusat'));
 
         $this->assertNotNull($user);
-        $this->assertTrue($user->hasRole('Admin Gudang Proyek'));
+        $this->assertTrue($user->hasRole('Admin Logistik Proyek'));
     }
 
     public function test_user_can_switch_active_workspace(): void
@@ -72,14 +72,14 @@ class WorkspaceAndRoleTest extends TestCase
     public function test_admin_pusat_and_admin_po_can_access_purchase_orders(): void
     {
         $adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $adminPo = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
+        $adminPo = User::where('email', 'admin.pengadaan@arsikon.co.id')->firstOrFail();
         $owner = User::where('email', 'owner@arsikon.co.id')->firstOrFail();
 
         // Admin Pusat can access PO index and create
         $this->actingAs($adminPusat)->get(route('purchase-orders.index'))->assertStatus(200);
         $this->actingAs($adminPusat)->get(route('purchase-orders.create'))->assertStatus(200);
 
-        // Admin PO can access PO index and create
+        // Admin Pengadaan can access PO index and create
         $this->actingAs($adminPo)->get(route('purchase-orders.index'))->assertStatus(200);
         $this->actingAs($adminPo)->get(route('purchase-orders.create'))->assertStatus(200);
 
@@ -88,22 +88,22 @@ class WorkspaceAndRoleTest extends TestCase
         $this->actingAs($owner)->get(route('purchase-orders.create'))->assertStatus(403);
     }
 
-    public function test_admin_gudang_proyek_and_karyawan_cannot_access_or_create_purchase_orders(): void
+    public function test_admin_gudang_proyek_and_Site_Engineer_cannot_access_or_create_purchase_orders(): void
     {
         $userProyek = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
-        $karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
 
-        // Admin Gudang Proyek cannot view PO list or form (Forbidden 403)
+        // Admin Logistik Proyek cannot view PO list or form (Forbidden 403)
         $this->actingAs($userProyek)->get(route('purchase-orders.index'))->assertStatus(403);
         $this->actingAs($userProyek)->get(route('purchase-orders.create'))->assertStatus(403);
 
-        // Admin Gudang Proyek cannot post PO (Forbidden 403)
+        // Admin Logistik Proyek cannot post PO (Forbidden 403)
         $this->actingAs($userProyek)->post(route('purchase-orders.store'), [
             'notes' => 'Attempting unauthorized PO from project warehouse',
         ])->assertStatus(403);
 
-        // Karyawan cannot view PO list or form (Forbidden 403)
-        $this->actingAs($karyawan)->get(route('purchase-orders.index'))->assertStatus(403);
-        $this->actingAs($karyawan)->get(route('purchase-orders.create'))->assertStatus(403);
+        // Site Engineer cannot view PO list or form (Forbidden 403)
+        $this->actingAs($siteEngineer)->get(route('purchase-orders.index'))->assertStatus(403);
+        $this->actingAs($siteEngineer)->get(route('purchase-orders.create'))->assertStatus(403);
     }
 }

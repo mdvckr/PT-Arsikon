@@ -41,7 +41,7 @@ class DailyLogController extends Controller
     protected function authorizeDailyLog(): void
     {
         $user = auth()->user();
-        if (!$user || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) && !$user->can('view daily logs')) || $user->hasAnyRole(['Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek'])) {
+        if (!$user || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) && !$user->can('view daily logs')) || $user->hasAnyRole(['Admin Logistik Pusat', 'Admin Logistik Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek'])) {
             abort(403, 'Anda tidak memiliki hak akses untuk melihat Log Harian Proyek.');
         }
     }

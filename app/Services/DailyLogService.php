@@ -25,8 +25,7 @@ use Illuminate\Http\Request;
  * - Gudang Pusat & Proyek terpisah: agregasi selalu filter by warehouse_id, tidak ada sum lintas gudang.
  * - Neraca menampilkan hanya material yang dipakai (qty_in>0 || qty_out>0) dan alat yang dipinjam (has_activity), grouped by kategori.
  */
-class DailyLogService
-{
+class DailyLogService {
     /**
      * Compile semua data untuk Log Harian satu gudang + tanggal.
      * Dipindahkan dari DailyLogController agar dapat di-reuse (print, API, export).

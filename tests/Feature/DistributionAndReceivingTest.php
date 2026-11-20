@@ -47,7 +47,7 @@ class DistributionAndReceivingTest extends TestCase
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminUser = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->projectUser = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->adminPOUser = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
+        $this->adminPOUser = User::where('email', 'admin.pengadaan@arsikon.co.id')->firstOrFail();
         
         // Create supplier since not seeded
         $this->supplier = Supplier::firstOrCreate(
@@ -516,7 +516,7 @@ class DistributionAndReceivingTest extends TestCase
 
         // Create an admin strictly assigned to Warehouse B
         $adminProyekB = User::factory()->create();
-        $adminProyekB->syncRoles(['Admin Gudang Proyek']);
+        $adminProyekB->syncRoles(['Admin Logistik Proyek']);
         $adminProyekB->warehouses()->sync([$warehouseB->id]);
 
         // 2. Create distribution destined for Warehouse A

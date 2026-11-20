@@ -11,8 +11,7 @@ use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class ToolManagementService
-{
+class ToolManagementService {
     protected ToolInventoryService $toolInvService;
 
     public function __construct(ToolInventoryService $toolInvService)

@@ -23,8 +23,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class DashboardMetricService
-{
+class DashboardMetricService {
     /**
      * Metrics for Admin Pengadaan Pusat (Procurement Command Center)
      */
@@ -119,7 +118,7 @@ class DashboardMetricService
     }
 
     /**
-     * Metrics for Admin PO Proyek (Site Purchasing & Notes Command Center)
+     * Metrics for Admin Pengadaan Proyek (Site Purchasing & Notes Command Center)
      */
     public function getSitePurchasingMetrics(User $user): array
     {

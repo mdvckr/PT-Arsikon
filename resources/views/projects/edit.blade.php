@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Edit Proyek - {{ $project->name }}</x-slot>
 
-    <div class="project-edit-container">
+    <div class="project-edit-container" data-animate="panel">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
             <a href="{{ route('projects.index') }}"><x-lucide-folder style="font-size:12px;" /> Data Proyek</a>
@@ -18,7 +18,7 @@
                     </div>
                     <div class="project-banner-info">
                         <div class="flex items-center gap-2 flex-wrap mb-1">
-                            <h2 class="project-banner-title">{{ $project->name }}</h2>
+                            <h2 class="project-banner-title" data-animate="header">{{ $project->name }}</h2>
                             @php
                                 $badgeClass = match($project->status) {
                                     'active', 'ongoing' => 'badge-success',

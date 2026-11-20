@@ -181,7 +181,7 @@
                         <div class="info-val" style="color:#0f172a;display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
                             <span>{{ $toolLoan->borrower_name }}</span>
                             @if($toolLoan->borrowerUser)
-                            <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-size:10px;padding:1px 6px;border-radius:4px;">Akun Karyawan</span>
+                            <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;font-size:10px;padding:1px 6px;border-radius:4px;">Akun Site Engineer</span>
                             @endif
                         </div>
                     </div>
@@ -393,7 +393,7 @@
                         </div>
                         @else
                         <p class="text-muted mb-2" style="font-size:11.5px;line-height:1.4;color:#78350f;">
-                            Pengajuan peminjaman alat dapat disetujui langsung oleh Admin Gudang Proyek maupun Admin Pusat untuk mempercepat operasional proyek.
+                            Pengajuan peminjaman alat dapat disetujui langsung oleh Admin Logistik Proyek maupun Admin Pusat untuk mempercepat operasional proyek.
                         </p>
                         @endif
                         <form method="POST" action="{{ route('tool-assignments.approve', $toolLoan->id) }}" class="mb-2"

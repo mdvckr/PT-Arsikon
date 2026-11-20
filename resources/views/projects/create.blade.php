@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Tambah Proyek Baru</x-slot>
 
-    <div class="project-edit-container">
+    <div class="project-edit-container" data-animate="panel">
         <!-- Breadcrumb -->
         <div class="breadcrumb mb-3">
             <a href="{{ route('projects.index') }}"><x-lucide-folder style="font-size:12px;" /> Data Proyek</a>
@@ -18,7 +18,7 @@
                             <x-lucide-folder-plus />
                         </div>
                         <div>
-                            <span class="card-title" style="font-size:16px;">Form Tambah Proyek Baru</span>
+                            <span class="card-title" style="font-size:16px;" data-animate="header">Form Tambah Proyek Baru</span>
                             <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Daftarkan proyek baru beserta jadwal dan lokasi pengerjaan site.</p>
                         </div>
                     </div>

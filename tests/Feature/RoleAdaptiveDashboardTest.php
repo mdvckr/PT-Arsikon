@@ -15,12 +15,12 @@ class RoleAdaptiveDashboardTest extends TestCase
         parent::setUp();
 
         // Ensure roles exist
-        Role::firstOrCreate(['name' => 'Admin PO', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'Admin PO Proyek', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'admin-po-nota', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'Admin Gudang Pusat', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'Admin Gudang Proyek', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Logistik Pusat', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Admin Logistik Proyek', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'Admin Pusat', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
     }
@@ -28,7 +28,7 @@ class RoleAdaptiveDashboardTest extends TestCase
     public function test_admin_po_sees_procurement_center_dashboard(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('Admin PO');
+        $user->assignRole('Admin Pengadaan');
 
         $response = $this->actingAs($user)->get(route('dashboard'));
 
@@ -52,7 +52,7 @@ class RoleAdaptiveDashboardTest extends TestCase
         );
 
         $user = User::factory()->create();
-        $user->assignRole('Admin PO Proyek');
+        $user->assignRole('Admin Pengadaan Proyek');
         $user->warehouses()->attach($warehouse->id);
 
         $response = $this->actingAs($user)->get(route('dashboard'));
@@ -71,7 +71,7 @@ class RoleAdaptiveDashboardTest extends TestCase
         );
 
         $user = User::factory()->create();
-        $user->assignRole('Admin Gudang Pusat');
+        $user->assignRole('Admin Logistik Pusat');
         $user->warehouses()->attach($warehouse->id);
 
         $response = $this->actingAs($user)->get(route('dashboard'));

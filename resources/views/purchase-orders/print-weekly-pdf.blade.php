@@ -301,7 +301,7 @@
             </td>
             <td style="width: 25%;">
                 <span class="meta-lbl">Dicetak Oleh:</span>
-                <span class="meta-val">{{ auth()->user()->name ?? 'Admin PO' }}</span>
+                <span class="meta-val">{{ auth()->user()->name ?? 'Admin Pengadaan' }}</span>
             </td>
             <td style="width: 25%; text-align: right;">
                 <span class="meta-lbl">Waktu Cetak:</span>
@@ -428,7 +428,7 @@
         <tr>
             <td class="sig-box">
                 <div class="sig-role">Dibuat Oleh,</div>
-                <div class="sig-subrole">Admin PO / Pengadaan Pusat</div>
+                <div class="sig-subrole">Admin Pengadaan / Pengadaan Pusat</div>
                 <div class="sig-space"></div>
                 <div class="sig-name">( {{ auth()->user()->name ?? 'Admin Pengadaan' }} )</div>
             </td>

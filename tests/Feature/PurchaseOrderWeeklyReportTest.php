@@ -33,21 +33,21 @@ class PurchaseOrderWeeklyReportTest extends TestCase
         $this->seed(RoleAndPermissionSeeder::class);
         $this->seed(MasterDataSeeder::class);
 
-        // Pastikan role po_lapangan terdaftar
-        $poLapanganRole = Role::firstOrCreate(['name' => 'po_lapangan', 'guard_name' => 'web']);
+        // Pastikan role Admin Pengadaan Proyek terdaftar
+        $poLapanganRole = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
         $poLapanganRole->givePermissionTo('view purchase orders');
 
         $this->adminPo = User::firstOrCreate(
             ['email' => 'admin.po.weekly@example.com'],
-            ['name' => 'Admin PO Weekly', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Weekly', 'password' => bcrypt('password')]
         );
-        $this->adminPo->syncRoles(['Admin PO']);
+        $this->adminPo->syncRoles(['Admin Pengadaan']);
 
         $this->poLapangan = User::firstOrCreate(
             ['email' => 'po.lapangan.weekly@example.com'],
             ['name' => 'PO Lapangan Weekly', 'password' => bcrypt('password')]
         );
-        $this->poLapangan->syncRoles(['po_lapangan']);
+        $this->poLapangan->syncRoles(['Admin Pengadaan Proyek']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Supplier Bahan Bangunan',
@@ -134,11 +134,11 @@ class PurchaseOrderWeeklyReportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('PO-2026-INWEEK');
         $response->assertDontSee('PO-2026-OLDWEEK');
-        // Admin PO berhak melihat harga
+        // Admin Pengadaan berhak melihat harga
         $response->assertSee('7.500.000');
     }
 
-    public function test_po_lapangan_receives_blind_report_with_masked_prices(): void
+    public function test_Admin_Pengadaan_Proyek_receives_blind_report_with_masked_prices(): void
     {
         $now = Carbon::now('Asia/Jakarta');
         $mon = $now->copy()->startOfWeek(Carbon::MONDAY);

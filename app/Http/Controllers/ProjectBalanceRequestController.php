@@ -18,9 +18,9 @@ class ProjectBalanceRequestController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         
-        // Halaman ini khusus untuk Admin PO Proyek. Admin PO Pusat dan role manajemen mengelola pengajuan lewat menu Keuangan.
+        // Halaman ini khusus untuk Admin Pengadaan Proyek. Admin Pengadaan Pusat dan role manajemen mengelola pengajuan lewat menu Keuangan.
         if (!$isRoleAdminPOProyek) {
             return redirect()->route('payments.index')
                 ->with('info', 'Pengajuan kas operasional proyek dikelola langsung melalui menu Keuangan.');
@@ -72,11 +72,11 @@ class ProjectBalanceRequestController extends Controller
     public function create(Request $request)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
 
         if (!$isRoleAdminPOProyek) {
             return redirect()->route('payments.index')
-                ->with('info', 'Pembuatan formulir pengajuan kas lapangan dikhususkan untuk Admin PO Proyek.');
+                ->with('info', 'Pembuatan formulir pengajuan kas lapangan dikhususkan untuk Admin Pengadaan Proyek.');
         }
 
         $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
@@ -168,7 +168,7 @@ class ProjectBalanceRequestController extends Controller
 
         $formatted = number_format($balanceRequest->amount, 0, ',', '.');
         return redirect()->route('project-balance-requests.index', ['project_id' => $balanceRequest->project_id])
-            ->with('success', "Pengajuan Kas Lapangan #{$balanceRequest->request_number} sebesar Rp {$formatted} berhasil dikirim ke Admin PO Pusat. Anda dapat mencetak formulirnya sekarang.");
+            ->with('success', "Pengajuan Kas Lapangan #{$balanceRequest->request_number} sebesar Rp {$formatted} berhasil dikirim ke Admin Pengadaan Pusat. Anda dapat mencetak formulirnya sekarang.");
     }
 
     /**
@@ -177,7 +177,7 @@ class ProjectBalanceRequestController extends Controller
     public function show(ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         if ($isRoleAdminPOProyek && !empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
@@ -194,7 +194,7 @@ class ProjectBalanceRequestController extends Controller
     public function print(ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         if (!empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
@@ -206,15 +206,15 @@ class ProjectBalanceRequestController extends Controller
     }
 
     /**
-     * Persetujuan Mandiri oleh Admin PO Pusat (Sebagai Manajer / Bank Pusat)
+     * Persetujuan Mandiri oleh Admin Pengadaan Pusat (Sebagai Manajer / Bank Pusat)
      */
     public function approve(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
 
-        // Verifikasi hak akses: Admin PO, Admin Pengadaan, Admin Pusat, Super Admin
-        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Admin Pusat', 'Owner', 'Super Admin']) && !$user->can('approve balance requests')) {
-            abort(403, 'Hanya Admin PO Pusat atau Manajer yang berwenang menyetujui pengajuan kas proyek.');
+        // Verifikasi hak akses: Admin Pengadaan, Admin Pengadaan, Admin Pusat, Super Admin
+        if (!$user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Admin Pusat', 'Owner', 'Super Admin']) && !$user->can('approve balance requests')) {
+            abort(403, 'Hanya Admin Pengadaan Pusat atau Manajer yang berwenang menyetujui pengajuan kas proyek.');
         }
 
         if ($balanceRequest->status !== 'pending') {
@@ -235,7 +235,7 @@ class ProjectBalanceRequestController extends Controller
             $project->update(['operational_balance' => $after]);
 
             $ref = (!empty($validated['reference_number'])) ? $validated['reference_number'] : $balanceRequest->request_number;
-            $requesterName = $balanceRequest->requester?->name ?? 'Admin PO Proyek';
+            $requesterName = $balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek';
             $noteText = (!empty($validated['notes'])) ? $validated['notes'] : $balanceRequest->purpose;
 
             ProjectBalanceLog::create([
@@ -246,7 +246,7 @@ class ProjectBalanceRequestController extends Controller
                 'balance_before'   => $before,
                 'balance_after'    => $after,
                 'reference_number' => $ref,
-                'notes'            => "Disetujui & dicairkan oleh Admin PO Pusat ({$user->name}) dari Pengajuan #{$balanceRequest->request_number}: " . $noteText,
+                'notes'            => "Disetujui & dicairkan oleh Admin Pengadaan Pusat ({$user->name}) dari Pengajuan #{$balanceRequest->request_number}: " . $noteText,
             ]);
 
             $balanceRequest->update([
@@ -259,18 +259,18 @@ class ProjectBalanceRequestController extends Controller
         });
 
         $formatted = number_format($balanceRequest->amount, 0, ',', '.');
-        return back()->with('success', "Pengajuan Kas #{$balanceRequest->request_number} sebesar Rp {$formatted} berhasil disetujui & dicairkan oleh Admin PO Pusat ke saldo proyek!");
+        return back()->with('success', "Pengajuan Kas #{$balanceRequest->request_number} sebesar Rp {$formatted} berhasil disetujui & dicairkan oleh Admin Pengadaan Pusat ke saldo proyek!");
     }
 
     /**
-     * Penolakan oleh Admin PO Pusat
+     * Penolakan oleh Admin Pengadaan Pusat
      */
     public function reject(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
 
-        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Admin Pusat', 'Owner', 'Super Admin']) && !$user->can('reject balance requests')) {
-            abort(403, 'Hanya Admin PO Pusat atau Manajer yang berwenang menolak pengajuan kas proyek.');
+        if (!$user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Admin Pusat', 'Owner', 'Super Admin']) && !$user->can('reject balance requests')) {
+            abort(403, 'Hanya Admin Pengadaan Pusat atau Manajer yang berwenang menolak pengajuan kas proyek.');
         }
 
         if ($balanceRequest->status !== 'pending') {

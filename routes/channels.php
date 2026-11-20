@@ -32,7 +32,7 @@ Broadcast::channel('owner-monitoring', function ($user) {
 
 // 4. Private Channel Gudang Spesifik
 Broadcast::channel('warehouse.{warehouseId}', function ($user, $warehouseId) {
-    if ($user->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat'])) {
+    if ($user->hasAnyRole(['Admin Pusat', 'Admin Logistik Pusat'])) {
         return true;
     }
     return $user->hasAccessToWarehouse(\App\Models\Warehouse::find($warehouseId));

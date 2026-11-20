@@ -10,8 +10,7 @@ use Illuminate\Http\Request;
  * Utility helper untuk eksekusi query Eloquent/Query Builder yang aman dari SQL Injection
  * dan Denial of Service (DoS) di level database.
  */
-class SafeQuery
-{
+class SafeQuery {
     /**
      * Menerapkan sorting dinamis secara aman dengan Whitelist ketat.
      * Mencegah "Order By SQL Injection" dan validasi arah sorting.

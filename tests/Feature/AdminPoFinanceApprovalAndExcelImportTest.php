@@ -46,9 +46,9 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
 
         $this->adminPo = User::firstOrCreate(
             ['email' => 'admin.po.unit@arsikon.com'],
-            ['name' => 'Admin PO Pusat Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+            ['name' => 'Admin Pengadaan Pusat Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
-        $this->adminPo->syncRoles(['Admin PO']);
+        $this->adminPo->syncRoles(['Admin Pengadaan']);
 
         $this->adminPusat = User::firstOrCreate(
             ['email' => 'admin.pusat.unit@arsikon.com'],
@@ -64,9 +64,9 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
 
         $this->adminPoProyek = User::firstOrCreate(
             ['email' => 'po.proyek.unit@arsikon.com'],
-            ['name' => 'Admin PO Proyek Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+            ['name' => 'Admin Pengadaan Proyek Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
-        $this->adminPoProyek->syncRoles(['Admin PO Proyek']);
+        $this->adminPoProyek->syncRoles(['Admin Pengadaan Proyek']);
         $this->adminPoProyek->warehouses()->sync([$this->warehouse->id]);
     }
 
@@ -110,14 +110,14 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
         $balanceRequest->refresh();
         $this->assertEquals('pending', $balanceRequest->status);
 
-        // 4. Admin PO menyetujui -> Berhasil approved & saldo bertambah
+        // 4. Admin Pengadaan menyetujui -> Berhasil approved & saldo bertambah
         $initialBalance = (float) $this->project->operational_balance;
         $this->flushSession();
         $resApprovePo = $this->actingAs($this->adminPo)
             ->from(route('payments.index'))
             ->post(route('payments.approveBalanceRequest', $balanceRequest), [
                 'reference_number' => 'REF-APPR-PO-01',
-                'notes'            => 'Disetujui penuh oleh Admin PO Pusat',
+                'notes'            => 'Disetujui penuh oleh Admin Pengadaan Pusat',
             ]);
         $resApprovePo->assertRedirect(route('payments.index'));
         $resApprovePo->assertSessionHas('success');
@@ -139,7 +139,7 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
                 'project_id'       => $this->project->id,
                 'amount'           => 750000,
                 'reference_number' => 'TOPUP-PO-001',
-                'notes'            => 'Top-up mandiri oleh Admin PO Pusat',
+                'notes'            => 'Top-up mandiri oleh Admin Pengadaan Pusat',
             ]);
 
         $response->assertRedirect();
@@ -174,17 +174,17 @@ class AdminPoFinanceApprovalAndExcelImportTest extends TestCase
         $this->flushSession();
         $resPusat = $this->actingAs($this->adminPusat)->get(route('payments.balance-requests.index'));
         $resPusat->assertOk();
-        $resPusat->assertSee('Menunggu Approval Admin PO');
+        $resPusat->assertSee('MENUNGGU APPROVAL ADMIN PENGADAAN');
         $resPusat->assertDontSee("promptApproveRequest({$balanceRequest->id}");
 
         // 2. Owner mengunjungi halaman balance requests -> status read-only
         $this->flushSession();
         $resOwner = $this->actingAs($this->owner)->get(route('payments.balance-requests.index'));
         $resOwner->assertOk();
-        $resOwner->assertSee('Menunggu Approval Admin PO');
+        $resOwner->assertSee('MENUNGGU APPROVAL ADMIN PENGADAAN');
         $resOwner->assertDontSee("promptApproveRequest({$balanceRequest->id}");
 
-        // 3. Admin PO Pusat mengunjungi halaman balance requests -> ada tombol Setujui
+        // 3. Admin Pengadaan Pusat mengunjungi halaman balance requests -> ada tombol Setujui
         $this->flushSession();
         $resPo = $this->actingAs($this->adminPo)->get(route('payments.balance-requests.index'));
         $resPo->assertOk();

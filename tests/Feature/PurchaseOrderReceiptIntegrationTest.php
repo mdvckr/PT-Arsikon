@@ -36,9 +36,9 @@ class PurchaseOrderReceiptIntegrationTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'admin.po.receipt@example.com'],
-            ['name' => 'Admin PO Pengadaan', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Pengadaan', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->adminPusat = User::firstOrCreate(
             ['email' => 'admin.pusat.receipt@example.com'],

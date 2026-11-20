@@ -65,7 +65,7 @@
     </div>
 
     {{-- PR Document Container (A4 Letterhead Sheet) --}}
-    <div class="pr-doc-sheet-wrapper">
+    <div class="pr-doc-sheet-wrapper" data-animate="panel">
         <div class="pr-doc-sheet" id="printArea" style="--pad-top: {{ $padTop }}mm; --pad-left: {{ $padLeft }}mm; --pad-right: {{ $padRight }}mm; --pad-bottom: {{ $padBottom }}mm;">
 
             {{-- Background Letterhead Cover A4 --}}
@@ -77,7 +77,7 @@
             <div class="doc-content">
                 {{-- 1. JUDUL DOKUMEN --}}
                 <div class="doc-title-section">
-                    <h2 class="doc-title-main">PURCHASE REQUEST</h2>
+                    <h2 class="doc-title-main" data-animate="header">PURCHASE REQUEST</h2>
                     <div class="doc-title-sub">(SURAT PERMINTAAN PENGADAAN)</div>
                     <div class="doc-number-main">No. {{ $procurement->pr_number }}</div>
                 </div>

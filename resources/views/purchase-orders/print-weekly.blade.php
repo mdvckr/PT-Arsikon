@@ -518,7 +518,7 @@
             </div>
             <div class="meta-item">
                 <span class="meta-lbl">Dicetak Oleh:</span>
-                <span class="meta-val">{{ auth()->user()->name ?? 'Admin PO' }}</span>
+                <span class="meta-val">{{ auth()->user()->name ?? 'Admin Pengadaan' }}</span>
             </div>
             <div class="meta-item">
                 <span class="meta-lbl">Waktu Cetak:</span>
@@ -645,7 +645,7 @@
         <div class="sig-section">
             <div class="sig-box">
                 <div class="sig-role">Dibuat Oleh,</div>
-                <div class="sig-subrole">Admin PO / Pengadaan Pusat</div>
+                <div class="sig-subrole">Admin Pengadaan / Pengadaan Pusat</div>
                 <div class="sig-space"></div>
                 <div class="sig-name">( {{ auth()->user()->name ?? 'Admin Pengadaan' }} )</div>
             </div>

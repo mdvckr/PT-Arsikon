@@ -140,7 +140,7 @@ class MultiWarehouseIsolationTest extends TestCase
             'email' => 'isolated@arsikon.co.id',
             'password' => bcrypt('password123'),
         ]);
-        $isolatedUser->syncRoles(['Admin Gudang Proyek']);
+        $isolatedUser->syncRoles(['Admin Logistik Proyek']);
         $isolatedUser->warehouses()->sync([$otherWarehouse->id]);
 
         // When isolated user visits materials, they must NOT see BESI-TEST-01

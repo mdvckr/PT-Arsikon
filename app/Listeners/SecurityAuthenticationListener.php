@@ -11,8 +11,7 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Events\Dispatcher;
 
-class SecurityAuthenticationListener
-{
+class SecurityAuthenticationListener {
     /**
      * Tangani event Login berhasil.
      */

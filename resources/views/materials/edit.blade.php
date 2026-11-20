@@ -125,7 +125,7 @@
     </style>
     @endpush
 
-    <div class="w-full">
+    <div class="w-full" data-animate="panel">
         {{-- Page Header --}}
         <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
@@ -136,7 +136,7 @@
                     <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:9px;" /></span>
                     <span>Edit</span>
                 </div>
-                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;">
+                <h2 class="fw-700" style="font-size:20px;color:#0f172a;margin:0;display:flex;align-items:center;gap:8px;" data-animate="header">
                     <x-lucide-square-pen class="text-primary" /> Edit Material: {{ $material->name }}
                 </h2>
             </div>
@@ -184,7 +184,7 @@
                                     <label class="form-label mb-0" style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;">
                                         Kategori <span style="color:#ef4444;">*</span>
                                     </label>
-                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat']))
+                                    @if(auth()->user()->can('delete categories') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat']))
                                     <button type="button" onclick="deleteSelectedCategory()" id="btn_delete_cat" style="display:none;font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;padding:0;font-weight:600;white-space:nowrap;" title="Hapus kategori yang dipilih jika salah memasukkan">
                                         <x-lucide-trash-2 class="me-1" /> Hapus Kategori
                                     </button>

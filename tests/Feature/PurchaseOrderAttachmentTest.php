@@ -33,9 +33,9 @@ class PurchaseOrderAttachmentTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'admin.po.attach@example.com'],
-            ['name' => 'Admin PO Attachment', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Attachment', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'code'         => 'SUP-TEST-01',

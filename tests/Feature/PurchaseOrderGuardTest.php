@@ -24,7 +24,7 @@ class PurchaseOrderGuardTest extends TestCase
 
     protected User $adminPusat;
     protected User $adminPO;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected Supplier $supplier;
     protected Warehouse $centralWarehouse;
     protected Warehouse $projectWarehouse;
@@ -46,13 +46,13 @@ class PurchaseOrderGuardTest extends TestCase
             ['email' => 'po.guard@example.com'],
             ['name' => 'PO Guard', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
-        $this->karyawan = User::firstOrCreate(
-            ['email' => 'karyawan.guard@example.com'],
-            ['name' => 'Karyawan Guard', 'password' => bcrypt('password')]
+        $this->siteEngineer = User::firstOrCreate(
+            ['email' => 'Site Engineer.guard@example.com'],
+            ['name' => 'Site Engineer Guard', 'password' => bcrypt('password')]
         );
-        $this->karyawan->syncRoles(['Karyawan']);
+        $this->siteEngineer->syncRoles(['Site Engineer']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Mitra Supplier',
@@ -133,11 +133,11 @@ class PurchaseOrderGuardTest extends TestCase
             'total_amount' => 100000,
         ]);
 
-        $this->actingAs($this->karyawan)
+        $this->actingAs($this->siteEngineer)
             ->post(route('purchase-orders.send', $po))
             ->assertStatus(403);
 
-        $this->actingAs($this->karyawan)
+        $this->actingAs($this->siteEngineer)
             ->post(route('purchase-orders.cancel', $po))
             ->assertStatus(403);
     }

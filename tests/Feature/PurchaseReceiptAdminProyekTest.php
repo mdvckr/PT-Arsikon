@@ -15,7 +15,7 @@ class PurchaseReceiptAdminProyekTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminProyek;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected Warehouse $projectWarehouse;
     protected Project $project;
     protected Material $material;
@@ -28,11 +28,11 @@ class PurchaseReceiptAdminProyekTest extends TestCase
 
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->first()
             ?? User::factory()->create(['email' => 'admin.proyek1@arsikon.co.id']);
-        $this->adminProyek->syncRoles(['Admin Gudang Proyek']);
+        $this->adminProyek->syncRoles(['Admin Logistik Proyek']);
 
-        $this->karyawan = User::where('email', 'karyawan@arsikon.co.id')->first()
-            ?? User::factory()->create(['email' => 'karyawan@arsikon.co.id']);
-        $this->karyawan->syncRoles(['Karyawan']);
+        $this->siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->first()
+            ?? User::factory()->create(['email' => 'engineer.prj1@arsikon.co.id']);
+        $this->siteEngineer->syncRoles(['Site Engineer']);
 
         $this->projectWarehouse = Warehouse::where('is_central', false)->first()
             ?? Warehouse::create(['name' => 'Gudang Uji', 'code' => 'WH-TEST', 'type' => 'project', 'is_central' => false]);
@@ -54,12 +54,12 @@ class PurchaseReceiptAdminProyekTest extends TestCase
         $responseCreate->assertForbidden();
     }
 
-    public function test_karyawan_cannot_access_purchase_receipts(): void
+    public function test_site_engineer_cannot_access_purchase_receipts(): void
     {
-        $responseIndex = $this->actingAs($this->karyawan)->get(route('purchase-receipts.index'));
+        $responseIndex = $this->actingAs($this->siteEngineer)->get(route('purchase-receipts.index'));
         $responseIndex->assertForbidden();
 
-        $responseCreate = $this->actingAs($this->karyawan)->get(route('purchase-receipts.create'));
+        $responseCreate = $this->actingAs($this->siteEngineer)->get(route('purchase-receipts.create'));
         $responseCreate->assertForbidden();
     }
 }

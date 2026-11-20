@@ -7,8 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class SecurityLogger
-{
+class SecurityLogger {
     /**
      * Daftar kunci sensitif yang wajib di-redact dan tidak boleh masuk database log.
      */

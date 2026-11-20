@@ -26,7 +26,7 @@ class DistributionController extends Controller
         $query = Distribution::with(['fromWarehouse', 'toWarehouse', 'materialRequest', 'creator', 'items.tool']);
 
         // Non-admin: wajib scope ke warehouse yang dimiliki user
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $userWhIds = $user->accessibleWarehouseIds();
             $query->where(function ($q) use ($userWhIds) {
                 $q->whereIn('from_warehouse_id', $userWhIds)
@@ -77,7 +77,7 @@ class DistributionController extends Controller
         ])
         ->whereIn('status', ['submitted', 'approved', 'partially_fulfilled']);
 
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             // Non-admin pusat: hanya dapat memproses MR yang meminta barang ke gudang miliknya (from_warehouse_id)
             // dan bukan MR yang diminta oleh gudang miliknya sendiri (to_warehouse_id)
             $mrQuery->whereIn('from_warehouse_id', $accessibleWarehouseIds)
@@ -416,7 +416,7 @@ class DistributionController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             return Warehouse::orderBy('name')->get();
         }
 

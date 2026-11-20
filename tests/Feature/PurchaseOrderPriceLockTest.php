@@ -48,7 +48,7 @@ class PurchaseOrderPriceLockTest extends TestCase
             ['email' => 'admin.gudang.t9@example.com'],
             ['name' => 'Admin Gudang T9', 'password' => bcrypt('password')]
         );
-        $this->adminGudang->syncRoles(['Admin Gudang Pusat']);
+        $this->adminGudang->syncRoles(['Admin Logistik Pusat']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Supplier T9',

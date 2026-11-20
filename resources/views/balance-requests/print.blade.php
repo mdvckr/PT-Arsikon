@@ -284,7 +284,7 @@
                     <span class="meta-val">{{ $balanceRequest->project?->name ?? '-' }}</span>
                 </div>
                 <div class="meta-row">
-                    <span class="meta-label">Pemohon (Admin PO)</span>
+                    <span class="meta-label">Pemohon (Admin Pengadaan)</span>
                     <span class="meta-colon">:</span>
                     <span class="meta-val">{{ $balanceRequest->signer_requester ?? $balanceRequest->requester?->name ?? 'Admin Pembelian Proyek' }}</span>
                 </div>
@@ -385,7 +385,7 @@
                 </div>
                 <div class="sign-space"></div>
                 <div class="sign-name">
-                    ( {{ $balanceRequest->signer_requester ?? $balanceRequest->requester?->name ?? 'Admin PO Proyek' }} )
+                    ( {{ $balanceRequest->signer_requester ?? $balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek' }} )
                 </div>
             </div>
 

@@ -27,8 +27,8 @@ class MaterialUsageController extends Controller
         $user = auth()->user();
         $query = MaterialUsage::with(['warehouse', 'project', 'issuedBy', 'items.material.unit']);
 
-        // Scope to user's authorized warehouses if not Owner/Admin/Admin Gudang Pusat/Admin PO
-        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        // Scope to user's authorized warehouses if not Owner/Admin/Admin Logistik Pusat/Admin Pengadaan
+        if (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             $userWarehouseIds = $user->accessibleWarehouseIds();
             $query->whereIn('warehouse_id', $userWarehouseIds);
         }
@@ -75,7 +75,7 @@ class MaterialUsageController extends Controller
             });
         });
 
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])
             ? Warehouse::orderBy('name')->get()
             : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
@@ -87,14 +87,14 @@ class MaterialUsageController extends Controller
         $this->authorize('create material usages');
 
         $user = auth()->user();
-        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])
+        $warehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])
             ? Warehouse::orderBy('name')->get()
             : Warehouse::whereIn('id', $user->accessibleWarehouseIds())->orderBy('name')->get();
 
         $activeWarehouseId = request('warehouse_id') ?? session('active_warehouse_id') ?? $user->activeWarehouse()?->id;
         $selectedWarehouse = Warehouse::find($activeWarehouseId);
 
-        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
+        if (!$selectedWarehouse || (!$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) && !$user->hasAccessToWarehouse($selectedWarehouse))) {
             $selectedWarehouse = $warehouses->first();
         }
 
@@ -276,7 +276,7 @@ class MaterialUsageController extends Controller
         $this->authorize('view material usages');
 
         $user = auth()->user();
-        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
         }
 
@@ -290,7 +290,7 @@ class MaterialUsageController extends Controller
         $this->authorize('view material usages');
 
         $user = auth()->user();
-        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
         }
 
@@ -304,7 +304,7 @@ class MaterialUsageController extends Controller
         $this->authorize('cancel material usages');
 
         $user = auth()->user();
-        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
+        if ($materialUsage->warehouse && !$user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) && !$user->hasAccessToWarehouse($materialUsage->warehouse)) {
             abort(403, 'Anda tidak memiliki akses ke data pemakaian material di gudang ini.');
         }
 

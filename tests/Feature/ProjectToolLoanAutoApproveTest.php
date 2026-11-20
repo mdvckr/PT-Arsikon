@@ -88,7 +88,7 @@ class ProjectToolLoanAutoApproveTest extends TestCase
 
     /**
      * Skenario 1:
-     * Admin Gudang Proyek meminjamkan alat milik proyek sendiri:
+     * Admin Logistik Proyek meminjamkan alat milik proyek sendiri:
      * TIDAK PERLU aproval Admin Pusat, status langsung 'active', stok otomatis berkurang.
      */
     public function test_admin_proyek_borrowing_own_project_tool_does_not_need_central_approval(): void
@@ -135,7 +135,7 @@ class ProjectToolLoanAutoApproveTest extends TestCase
 
     /**
      * Skenario 2:
-     * Admin Gudang Proyek meminjamkan alat milik Pusat yang ada di proyek:
+     * Admin Logistik Proyek meminjamkan alat milik Pusat yang ada di proyek:
      * TETAP PERLU persetujuan Admin Pusat (status 'pending').
      */
     public function test_admin_proyek_borrowing_central_owned_tool_still_requires_central_approval(): void

@@ -3,8 +3,8 @@
 
     @php
         $user = auth()->user();
-        $isCanApprove = $user && $user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin']);
-        $backUrl = $isRoleAdminPOProyek ? route('project-balance-requests.index') : route('payments.index');
+        $isCanApprove = $user && $user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin']);
+        $backUrl = $isRoleAdminPOProyek ? route('project-balance-requests.index') : route('payments.balance-requests.index');
         $currentBalance = (float) ($balanceRequest->project?->operational_balance ?? 0);
         $projectedBalance = $currentBalance + (float) $balanceRequest->amount;
     @endphp
@@ -28,7 +28,7 @@
                 </a>
                 <div>
                     <div class="flex items-center gap-2.5 flex-wrap">
-                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">
+                        <h1 class="text-xl font-extrabold text-slate-900 tracking-tight" data-animate="header">
                             Pengajuan Kas #{{ $balanceRequest->request_number ?? ('PKL-' . $balanceRequest->id) }}
                         </h1>
 
@@ -59,7 +59,7 @@
                         @endif
                     </div>
                     <p class="text-xs text-slate-500 mt-1">
-                        Diajukan pada {{ $balanceRequest->created_at->format('d F Y, H:i') }} WIB oleh {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }}
+                        Diajukan pada {{ $balanceRequest->created_at->format('d F Y, H:i') }} WIB oleh {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }}
                     </p>
                 </div>
             </div>
@@ -88,8 +88,8 @@
     </div>
     @endif
 
-    {{-- Main Container --}}
-    <div class="max-w-5xl mx-auto space-y-6">
+    {{-- Main Container Full Width (Rata Kanan Kiri) --}}
+    <div class="w-full space-y-6" data-animate="panel">
 
         {{-- 4 Executive Metric Cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -116,8 +116,8 @@
             {{-- 3. Admin Pemohon --}}
             <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs">
                 <span class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider block">ADMIN PEMOHON (LAPANGAN)</span>
-                <span class="text-sm font-bold text-slate-800 mt-1 block truncate" title="{{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }}">
-                    {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }}
+                <span class="text-sm font-bold text-slate-800 mt-1 block truncate" title="{{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }}">
+                    {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }}
                 </span>
                 <span class="text-[11px] text-slate-500 mt-1 block">
                     Site Mgr: {{ $balanceRequest->signer_site_manager ?? '-' }}
@@ -162,7 +162,7 @@
                     </div>
                     <div>
                         <h2 class="text-sm font-bold text-slate-900">Rincian Barang &amp; Kebutuhan Belanja Nota</h2>
-                        <p class="text-[11px] text-slate-500">Daftar item belanja nota operasional yang diajukan oleh Admin PO Proyek</p>
+                        <p class="text-[11px] text-slate-500">Daftar item belanja nota operasional yang diajukan oleh Admin Pengadaan Proyek</p>
                     </div>
                 </div>
                 <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
@@ -238,7 +238,7 @@
                         {{ $balanceRequest->created_at->format('d F Y, H:i') }} WIB
                     </span>
                     <span class="text-[11px] text-slate-500 mt-0.5 block">
-                        Diajukan oleh: {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin PO Proyek') }}
+                        Diajukan oleh: {{ $balanceRequest->signer_requester ?: ($balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek') }}
                     </span>
                 </div>
 
@@ -254,14 +254,14 @@
                             ✅ Disetujui &amp; Dicairkan
                         </span>
                         <span class="text-[11px] text-slate-500 mt-0.5 block">
-                            Oleh: {{ $balanceRequest->approver?->name ?? 'Admin PO Pusat' }}
+                            Oleh: {{ $balanceRequest->approver?->name ?? 'Admin Pengadaan Pusat' }}
                         </span>
                     @elseif($balanceRequest->status === 'rejected')
                         <span class="font-bold text-rose-700 mt-1 block">
                             ❌ Pengajuan Ditolak
                         </span>
                         <span class="text-[11px] text-slate-500 mt-0.5 block">
-                            Oleh: {{ $balanceRequest->approver?->name ?? 'Admin PO Pusat' }}
+                            Oleh: {{ $balanceRequest->approver?->name ?? 'Admin Pengadaan Pusat' }}
                         </span>
                     @endif
                 </div>

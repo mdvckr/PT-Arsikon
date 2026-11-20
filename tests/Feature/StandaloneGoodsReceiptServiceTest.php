@@ -39,7 +39,7 @@ class StandaloneGoodsReceiptServiceTest extends TestCase
         $this->unit = Unit::firstOrCreate(['code' => 'SAK'], ['name' => 'Sak']);
 
         $this->gudangUser = User::factory()->create(['email_verified_at' => now()]);
-        $this->gudangUser->assignRole('Admin Gudang Proyek');
+        $this->gudangUser->assignRole('Admin Logistik Proyek');
         $this->gudangUser->warehouses()->attach($this->warehouse->id);
     }
 

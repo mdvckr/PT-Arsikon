@@ -327,62 +327,38 @@
                     <span class="card-title" style="font-size:13px;font-weight:700;color:#1e293b;">Informasi Peminjaman</span>
                 </div>
                 <div class="card-body" style="padding:14px;">
-                    {{-- Mode Pekerja: Manual Lapangan vs Akun Karyawan --}}
-                    <div class="mb-2">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:4px;display:block;">
-                            Tipe Peminjam Fisik
-                        </label>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:3px;border-radius:6px;margin-bottom:8px;">
-                            <button type="button" id="tabWorkerManual" onclick="switchBorrowerType('manual')" style="border:none;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;background:#ffffff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,0.05);transition:all .15s;">
-                                Pekerja Lapangan
-                            </button>
-                            <button type="button" id="tabWorkerUser" onclick="switchBorrowerType('user')" style="border:none;border-radius:5px;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:#64748b;transition:all .15s;">
-                                Karyawan Terdaftar
-                            </button>
+                    {{-- Petugas Input (Admin Gudang / Logistik) --}}
+                    <div class="mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;">
+                        <div style="width:30px;height:30px;border-radius:8px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <x-lucide-user-check style="font-size:15px;" />
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <span style="font-size:10.5px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.025em;display:block;">Petugas Pencatat (Admin)</span>
+                            <span style="font-size:12px;font-weight:700;color:#0f172a;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                {{ auth()->user()->name }} ({{ auth()->user()->roles->first()?->name ?? 'Admin Logistik/Gudang' }})
+                            </span>
                         </div>
                     </div>
 
-                    {{-- Dropdown Akun Karyawan (Tampil saat tab user aktif) --}}
-                    <div id="userSelectContainer" class="mb-2" style="display:none;">
-                        <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Pilih Akun Karyawan
-                        </label>
-                        <select name="borrower_user_id" id="borrowerUserSelect" class="form-control" onchange="onWorkerUserSelected(this)">
-                            <option value="">-- Pilih Nama Karyawan --</option>
-                            @foreach($users as $u)
-                            <option value="{{ $u->id }}" data-name="{{ $u->name }}" data-phone="{{ $u->phone ?? '' }}" {{ old('borrower_user_id') == $u->id ? 'selected' : '' }}>
-                                {{ $u->name }} ({{ $u->roles->first()?->name ?? 'Karyawan' }})
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <input type="hidden" name="is_representative" value="1">
+                    <input type="hidden" name="borrower_user_id" value="">
 
+                    {{-- Data Pekerja Lapangan --}}
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            Nama Pekerja / Peminjam <span class="text-danger">*</span>
+                            Nama Pekerja Lapangan / Mandor <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="borrower_name" id="borrowerNameInput" class="form-control"
-                               placeholder="Contoh: Pak Slamet (Tukang Besi)"
+                               placeholder="Contoh: Pak Slamet (Tukang Besi) / Mandor Budi"
                                value="{{ old('borrower_name') }}" required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label" style="font-size:11px;font-weight:600;color:#334155;margin-bottom:3px;">
-                            No. Telepon / Kontak <span class="text-muted" style="font-weight:400;">(Opsional)</span>
+                            No. Telepon / Kontak Pekerja <span class="text-muted" style="font-weight:400;">(Opsional)</span>
                         </label>
                         <input type="text" name="borrower_phone" id="borrowerPhoneInput" class="form-control"
                                placeholder="Contoh: 0812-3456-7890"
                                value="{{ old('borrower_phone') }}">
-                    </div>
-
-                    {{-- Indikator Mewakili Pekerja --}}
-                    <div class="mb-2" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
-                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin:0;">
-                            <input type="checkbox" name="is_representative" value="1" {{ old('is_representative', '1') == '1' ? 'checked' : '' }} style="margin-top:2px;accent-color:#2563eb;width:15px;height:15px;">
-                            <div>
-                                <span style="font-size:11.5px;font-weight:600;color:#1e293b;display:block;">Mewakili Pekerja Lapangan</span>
-                                <span style="font-size:10.5px;color:#64748b;display:block;line-height:1.3;">Admin Gudang mencatat peminjaman alat fisik atas nama pekerja/mandor.</span>
-                            </div>
-                        </label>
                     </div>
 
                     <div class="mb-2">
@@ -541,56 +517,6 @@
                 formCard.scrollIntoView({ behavior: 'smooth' });
                 const borrowerInput = formCard.querySelector('input[name="borrower_name"]');
                 if (borrowerInput) setTimeout(() => borrowerInput.focus(), 300);
-            }
-        }
-
-        function switchBorrowerType(type) {
-            const tabManual = document.getElementById('tabWorkerManual');
-            const tabUser   = document.getElementById('tabWorkerUser');
-            const userContainer = document.getElementById('userSelectContainer');
-            const nameInput = document.getElementById('borrowerNameInput');
-            const phoneInput = document.getElementById('borrowerPhoneInput');
-            const userSelect = document.getElementById('borrowerUserSelect');
-
-            if (type === 'user') {
-                tabUser.style.background = '#ffffff';
-                tabUser.style.color = '#0f172a';
-                tabUser.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-                tabManual.style.background = 'transparent';
-                tabManual.style.color = '#64748b';
-                tabManual.style.boxShadow = 'none';
-
-                userContainer.style.display = 'block';
-                onWorkerUserSelected(userSelect);
-            } else {
-                tabManual.style.background = '#ffffff';
-                tabManual.style.color = '#0f172a';
-                tabManual.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-                tabUser.style.background = 'transparent';
-                tabUser.style.color = '#64748b';
-                tabUser.style.boxShadow = 'none';
-
-                userContainer.style.display = 'none';
-                if (userSelect) userSelect.value = '';
-                nameInput.readOnly = false;
-            }
-        }
-
-        function onWorkerUserSelected(select) {
-            if (!select) return;
-            const option = select.options[select.selectedIndex];
-            const nameInput = document.getElementById('borrowerNameInput');
-            const phoneInput = document.getElementById('borrowerPhoneInput');
-
-            if (option && option.value) {
-                const userName = option.getAttribute('data-name');
-                const userPhone = option.getAttribute('data-phone');
-                if (userName && nameInput) {
-                    nameInput.value = userName;
-                }
-                if (userPhone && phoneInput) {
-                    phoneInput.value = userPhone;
-                }
             }
         }
 

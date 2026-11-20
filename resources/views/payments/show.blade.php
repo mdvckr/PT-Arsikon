@@ -57,7 +57,7 @@
                 </a>
                 <div>
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;">
+                        <h2 style="font-size:20px;font-weight:800;color:#0f172a;margin:0;" data-animate="header">
                             #{{ $payment->payment_number }}
                         </h2>
 
@@ -124,7 +124,7 @@
     @endif
 
     {{-- Main Layout --}}
-    <div class="payment-show-layout">
+    <div class="payment-show-layout" data-animate="panel">
         
         {{-- Left: Payment Details & Related PO --}}
         <div style="display:flex;flex-direction:column;gap:18px;">
@@ -162,7 +162,7 @@
                     <div style="background:#f8fafc;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                             <span style="font-size:11.5px;font-weight:700;color:#065f46;">
-                                <x-lucide-zap class="text-warning me-1" /> Mutasi Saldo Kas Proyek Admin PO
+                                <x-lucide-zap class="text-warning me-1" /> Mutasi Saldo Kas Proyek Admin Pengadaan
                             </span>
                             <span class="badge" style="background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;">
                                 Kas Operasional
@@ -366,7 +366,7 @@
                                 <x-lucide-zap class="text-warning" /> Terverifikasi Instan Otomatis
                             </div>
                             <div style="font-size:12px;line-height:1.4;">
-                                Pembayaran ini menggunakan <strong>Saldo Kas Operasional Proyek (Admin PO)</strong> sehingga langsung otomatis berstatus Terverifikasi saat diajukan, saldo kas proyek telah dipotong, dan nota harian terkait telah berstatus lunas.
+                                Pembayaran ini menggunakan <strong>Saldo Kas Operasional Proyek (Admin Pengadaan)</strong> sehingga langsung otomatis berstatus Terverifikasi saat diajukan, saldo kas proyek telah dipotong, dan nota harian terkait telah berstatus lunas.
                             </div>
                             @if($payment->creator)
                             <div style="font-size:11px;margin-top:8px;padding-top:8px;border-top:1px dashed #a7f3d0;color:#047857;">

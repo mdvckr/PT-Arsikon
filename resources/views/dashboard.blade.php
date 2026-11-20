@@ -690,14 +690,14 @@
             $userRoleText = 'Super Admin';
         } elseif ($authUser->hasRole('Admin Pusat')) {
             $userRoleText = 'Admin Pusat';
-        } elseif ($authUser->hasRole('Admin Gudang Pusat')) {
-            $userRoleText = 'Admin Gudang Pusat';
-        } elseif ($authUser->hasRole('Admin Gudang Proyek')) {
-            $userRoleText = 'Admin Gudang Proyek';
-        } elseif ($authUser->hasAnyRole(['Admin PO', 'Admin Pengadaan'])) {
+        } elseif ($authUser->hasRole('Admin Logistik Pusat')) {
+            $userRoleText = 'Admin Logistik Pusat';
+        } elseif ($authUser->hasRole('Admin Logistik Proyek')) {
+            $userRoleText = 'Admin Logistik Proyek';
+        } elseif ($authUser->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan'])) {
             $userRoleText = 'Admin Pengadaan Pusat';
-        } elseif ($authUser->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian'])) {
-            $userRoleText = 'Admin PO Proyek';
+        } elseif ($authUser->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek'])) {
+            $userRoleText = 'Admin Pengadaan Proyek';
         } else {
             $userRoleText = $authUser->roles->first()?->name ?? 'Petugas Logistik';
         }

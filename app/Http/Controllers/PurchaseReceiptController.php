@@ -47,9 +47,9 @@ class PurchaseReceiptController extends Controller
             $query->whereDate('receipt_date', $request->date);
         }
 
-        // Scope to user's assigned projects if Admin PO Proyek
+        // Scope to user's assigned projects if Admin Pengadaan Proyek
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         if ($isRoleAdminPOProyek) {
@@ -130,7 +130,7 @@ class PurchaseReceiptController extends Controller
         $this->authorize('create purchase receipts');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
@@ -197,7 +197,7 @@ class PurchaseReceiptController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         // Project identification
@@ -512,7 +512,7 @@ class PurchaseReceiptController extends Controller
         $this->authorize('view purchase receipts');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projectId = $request->project_id;
@@ -582,7 +582,7 @@ class PurchaseReceiptController extends Controller
         $this->authorize('view purchase receipts');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projectId = $request->project_id;
@@ -646,7 +646,7 @@ class PurchaseReceiptController extends Controller
         $this->authorize('view purchase receipts');
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projectId = $request->project_id;

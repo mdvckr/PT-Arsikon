@@ -22,7 +22,7 @@
             this.editEntry = { ...entry };
             this.showEditEntryModal = true;
         }
-    }" class="space-y-6">
+    }" class="space-y-6" data-animate="panel">
 
         {{-- 1. Top Breadcrumb & Actions --}}
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
@@ -85,7 +85,7 @@
                         </span>
                         <span class="text-xs text-slate-400 font-mono">#{{ $ledger->id }}</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1.5 tracking-tight">
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1.5 tracking-tight" data-animate="header">
                         {{ $ledger->title }}
                     </h1>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">

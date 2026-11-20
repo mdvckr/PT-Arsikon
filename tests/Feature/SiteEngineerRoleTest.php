@@ -1,0 +1,161 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Sprint 2 - Issue 9: Site Engineer Role Cleanup
+ * Site Engineer boleh: lihat inventori, pinjam alat, buat Permintaan Material & Surat Jalan, lihat Pemakaian Material.
+ * Site Engineer TIDAK boleh: membuat Pemakaian Material, akses Pengembalian & Log Harian.
+ */
+class SiteEngineerRoleTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $siteEngineer;
+    protected User $adminProyekA;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(\Database\Seeders\DatabaseSeeder::class);
+
+        $this->siteEngineer     = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
+        $this->adminProyekA = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
+    }
+
+    // Site Engineer BOLEH akses Material Requests (membuat permintaan material)
+
+    public function test_site_engineer_can_view_material_requests_index(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/material-requests')
+            ->assertOk();
+    }
+
+    public function test_site_engineer_can_access_material_request_create(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/material-requests/create')
+            ->assertOk();
+    }
+
+    // Site Engineer BOLEH akses Distributions (membuat surat jalan)
+
+    public function test_site_engineer_can_view_distributions_index(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/distributions')
+            ->assertOk();
+    }
+
+    public function test_site_engineer_cannot_access_distribution_create(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/distributions/create')
+            ->assertForbidden();
+    }
+
+    // Site Engineer BOLEH lihat Pemakaian Material, TIDAK boleh membuatnya
+
+    public function test_site_engineer_can_view_material_usages_index(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/material-usages')
+            ->assertOk();
+    }
+
+    public function test_site_engineer_cannot_access_material_usage_create(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/material-usages/create')
+            ->assertForbidden();
+    }
+
+    // Site Engineer TIDAK boleh akses Pengembalian & Daily Log
+
+    public function test_site_engineer_cannot_access_returns_index(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/returns')
+            ->assertForbidden();
+    }
+
+    public function test_site_engineer_cannot_access_daily_log(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/daily-log')
+            ->assertForbidden();
+    }
+
+    // Site Engineer BOLEH akses Tool Assignments
+
+    public function test_site_engineer_can_view_tool_assignments_index(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/tool-assignments')
+            ->assertOk();
+    }
+
+    // Site Engineer BOLEH akses Inventory
+
+    public function test_site_engineer_can_view_inventory(): void
+    {
+        $this->actingAs($this->siteEngineer)
+            ->get('/inventory')
+            ->assertOk();
+    }
+
+    // Permission check menggunakan model
+
+    public function test_site_engineer_has_view_material_requests_permission(): void
+    {
+        $this->assertTrue($this->siteEngineer->hasPermissionTo('view material requests'));
+    }
+
+    public function test_site_engineer_has_view_distributions_permission(): void
+    {
+        $this->assertTrue($this->siteEngineer->hasPermissionTo('view distributions'));
+    }
+
+    public function test_site_engineer_does_not_have_create_material_usages_permission(): void
+    {
+        $this->assertFalse($this->siteEngineer->hasPermissionTo('create material usages'));
+    }
+
+    public function test_site_engineer_has_create_tool_assignments_permission(): void
+    {
+        $this->assertTrue($this->siteEngineer->hasPermissionTo('create tool assignments'));
+    }
+
+    public function test_site_engineer_has_create_material_requests_permission(): void
+    {
+        $this->assertTrue($this->siteEngineer->hasPermissionTo('create material requests'));
+    }
+
+    public function test_site_engineer_does_not_have_create_distributions_permission(): void
+    {
+        $this->assertFalse($this->siteEngineer->hasPermissionTo('create distributions'));
+    }
+
+    // Admin Proyek masih bisa akses MR dan Distributions
+
+    public function test_admin_proyek_can_still_view_material_requests(): void
+    {
+        $this->actingAs($this->adminProyekA)
+            ->get('/material-requests')
+            ->assertOk();
+    }
+
+    public function test_admin_proyek_cannot_view_distributions(): void
+    {
+        // Surat Jalan kini dipindah ke Logistik (eksklusif Admin Logistik Proyek)
+        $this->actingAs($this->adminProyekA)
+            ->get('/distributions')
+            ->assertForbidden();
+    }
+}

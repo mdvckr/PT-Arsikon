@@ -34,8 +34,8 @@ class AuthServiceProvider extends ServiceProvider
      * - Owner  : super admin, semua ability diizinkan via Gate::before().
      * - Role lain : bergantung pada permission Spatie yang di-assign di seeder.
      *   Gate::before() hanya menangani logika yang TIDAK bisa ditangani Spatie secara bersih:
-     *   (1) Override khusus Karyawan (deny ship distributions).
-     *   (2) Bypass untuk Admin Gudang Pusat/Proyek pada 'ship distributions'.
+     *   (1) Override khusus Site Engineer (deny ship distributions).
+     *   (2) Bypass untuk Admin Logistik Pusat/Proyek pada 'ship distributions'.
      * Semua ability lain DIDELEGASIKAN ke Spatie Permission agar satu-satunya
      * source of truth ada di seeder, bukan tersebar di dua tempat.
      */
@@ -66,19 +66,13 @@ class AuthServiceProvider extends ServiceProvider
                 return false;
             }
 
-            // 3. Resolusi Dual-Role: Jika user memiliki role Karyawan DAN Admin Gudang,
-            // hak wewenang Admin Gudang diutamakan agar operasional pengiriman (ship distributions) tidak terblokir
-            if ($user->hasRole('Karyawan') && !$user->hasAnyRole(['Admin Pusat', 'Admin Gudang Pusat', 'Admin Gudang Proyek']) && $ability === 'ship distributions') {
-                return false;
-            }
-
             // Untuk aksi lain, delegasikan ke Spatie Permission
             return null;
         });
 
         // Gate untuk bypass approval MaterialUsage di gudang proyek
         Gate::define('bypass-material-usage-approval', function (User $user, Warehouse $warehouse) {
-            return $user->hasRole('Admin Gudang Proyek')
+            return $user->hasRole('Admin Logistik Proyek')
                 && !$warehouse->isCentral()
                 && $user->hasAccessToWarehouse($warehouse);
         });

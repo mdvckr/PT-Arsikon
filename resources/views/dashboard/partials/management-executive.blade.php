@@ -92,7 +92,7 @@
         </div>
         <div class="kpi-badge-pills">
             <span class="badge-erp-pill badge-pill-gray">
-                Armada & Alat Kerja Sewa
+                Alat Kerja
             </span>
         </div>
     </a>

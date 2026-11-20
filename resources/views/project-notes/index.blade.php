@@ -254,7 +254,7 @@
                             <button type="button" @click="showLedgerModal = true"
                                     class="btn btn-xs btn-primary"
                                     style="font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                                <x-lucide-circle-plus style="width:13px;height:13px;" /> + Catat Material
+                                <x-lucide-circle-plus style="width:13px;height:13px;" /> Catat Material
                             </button>
                         </div>
                     </div>
@@ -415,7 +415,7 @@
                                     <td colspan="10" class="text-center py-8 text-muted">
                                         <x-lucide-clipboard-list class="mx-auto mb-1 text-slate-400" style="width:28px;height:28px;" />
                                         <div class="font-semibold text-slate-600 dark:text-slate-300">Belum ada Buku Catatan Material yang tercatat.</div>
-                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>+ Catat Material</strong> di atas untuk membuat buku baru.</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>Catat Material</strong> di atas untuk membuat buku baru.</div>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -493,7 +493,7 @@
                             <button type="button" @click="showRentalModal = true"
                                     class="btn btn-xs"
                                     style="background:#4f46e5;border:1px solid #4338ca;color:#ffffff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                                <x-lucide-truck style="width:13px;height:13px;" /> + Catat Sewa
+                                <x-lucide-truck style="width:13px;height:13px;" /> Catat Sewa
                             </button>
                         </div>
                     </div>
@@ -623,7 +623,7 @@
                                     <td colspan="7" class="text-center py-8 text-muted">
                                         <x-lucide-truck class="mx-auto mb-1 text-slate-400" style="width:28px;height:28px;" />
                                         <div class="font-semibold text-slate-600 dark:text-slate-300">Belum ada catatan sewa alat kerja.</div>
-                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>+ Catat Sewa</strong> di atas untuk menambahkan alat.</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong> Catat Sewa</strong> di atas untuk menambahkan alat.</div>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -679,7 +679,7 @@
                             <button type="button" @click="showBulkModal = true"
                                     class="btn btn-xs"
                                     style="background:#d97706;border:1px solid #b45309;color:#ffffff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                                <x-lucide-circle-plus style="width:13px;height:13px;" /> + Catat Material Curah
+                                <x-lucide-circle-plus style="width:13px;height:13px;" /> Catat Material Curah
                             </button>
                         </div>
                     </div>
@@ -817,7 +817,7 @@
                                     <td colspan="7" class="text-center py-8 text-muted">
                                         <x-lucide-layers class="mx-auto mb-1 text-slate-400" style="width:28px;height:28px;" />
                                         <div class="font-semibold text-slate-600 dark:text-slate-300">Belum ada Catatan Material Curah (Pasir/Batu).</div>
-                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>+ Catat Material Curah</strong> di atas untuk membuat rekap baru.</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>Catat Material Curah</strong> di atas untuk membuat rekap baru.</div>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -868,7 +868,7 @@
                             <button type="button" @click="showTransferModal = true"
                                     class="btn btn-xs"
                                     style="background:#0d9488;border:1px solid #0f766e;color:#ffffff;font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;">
-                                <x-lucide-plus-circle style="width:13px;height:13px;" /> + Surat Jalan Pemindahan
+                                <x-lucide-plus-circle style="width:13px;height:13px;" /> Surat Jalan Pemindahan
                             </button>
                         </div>
                     </div>
@@ -996,7 +996,7 @@
                                     <td colspan="7" class="text-center py-8 text-muted">
                                         <x-lucide-arrow-right-left class="mx-auto mb-1 text-slate-400" style="width:28px;height:28px;" />
                                         <div class="font-semibold text-slate-600 dark:text-slate-300">Belum ada surat jalan pemindahan / mobilisasi barang.</div>
-                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>+ Surat Jalan Pemindahan</strong> di atas untuk mencatat perpindahan logistik.</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">Klik tombol <strong>Surat Jalan Pemindahan</strong> di atas untuk mencatat perpindahan logistik.</div>
                                     </td>
                                 </tr>
                                 @endforelse

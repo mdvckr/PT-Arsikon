@@ -39,11 +39,11 @@ class PurchaseReceiptItemizedDiscountAndExportTest extends TestCase
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
 
-        $role = Role::firstOrCreate(['name' => 'admin-po-nota', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
         $role->syncPermissions($permissions);
 
         $this->user = User::factory()->create();
-        $this->user->assignRole('admin-po-nota');
+        $this->user->assignRole('Admin Pengadaan Proyek');
 
         $this->project = Project::create([
             'code'                => 'PRJ-EXP-TEST',

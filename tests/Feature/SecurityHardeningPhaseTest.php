@@ -33,23 +33,23 @@ class SecurityHardeningPhaseTest extends TestCase
         $this->assertTrue(config('session.encrypt'));
     }
 
-    public function test_phase3_rbac_purchase_order_policy_blocks_po_nota_harian()
+    public function test_phase3_rbac_purchase_order_policy_blocks_Admin_Pengadaan_Proyek()
     {
         $policy = new PurchaseOrderPolicy();
 
         $user = new User();
-        // Simulasi role po_nota_harian
+        // Simulasi role Admin Pengadaan Proyek
         $user->setRelation('roles', collect([
-            (object)['name' => 'po_nota_harian']
+            (object)['name' => 'Admin Pengadaan Proyek']
         ]));
 
         $po = new PurchaseOrder();
 
-        // po_nota_harian DILARANG melihat atau mutasi PO Pusat reguler (diisolasi ke Nota Pembelian Harian)
+        // Admin Pengadaan Proyek DILARANG melihat atau mutasi PO Pusat reguler (diisolasi ke Nota Pembelian Harian)
         $this->assertFalse($policy->viewAny($user));
         $this->assertFalse($policy->view($user, $po));
 
-        // po_nota_harian DILARANG melakukan mutasi (create, update, delete, approve)
+        // Admin Pengadaan Proyek DILARANG melakukan mutasi (create, update, delete, approve)
         $this->assertFalse($policy->create($user));
         $this->assertFalse($policy->update($user, $po));
         $this->assertFalse($policy->delete($user, $po));

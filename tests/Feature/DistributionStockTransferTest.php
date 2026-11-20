@@ -47,15 +47,15 @@ class DistributionStockTransferTest extends TestCase
 
         $this->adminGudangPusat = User::firstOrCreate(
             ['email' => 'gudang.pusat@example.com'],
-            ['name' => 'Admin Gudang Pusat', 'password' => bcrypt('password')]
+            ['name' => 'Admin Logistik Pusat', 'password' => bcrypt('password')]
         );
-        $this->adminGudangPusat->syncRoles(['Admin Gudang Pusat']);
+        $this->adminGudangPusat->syncRoles(['Admin Logistik Pusat']);
 
         $this->adminProyek = User::firstOrCreate(
             ['email' => 'gudang.proyek@example.com'],
-            ['name' => 'Admin Gudang Proyek', 'password' => bcrypt('password')]
+            ['name' => 'Admin Logistik Proyek', 'password' => bcrypt('password')]
         );
-        $this->adminProyek->syncRoles(['Admin Gudang Proyek']);
+        $this->adminProyek->syncRoles(['Admin Logistik Proyek']);
 
         $this->centralWarehouse = Warehouse::where('is_central', true)->first() ?? Warehouse::create([
             'name' => 'Gudang Sentral Test',

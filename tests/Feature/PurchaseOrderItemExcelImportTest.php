@@ -31,9 +31,9 @@ class PurchaseOrderItemExcelImportTest extends TestCase
 
         $this->adminPo = User::firstOrCreate(
             ['email' => 'admin.po.excel@arsikon.com'],
-            ['name' => 'Admin PO Excel Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
+            ['name' => 'Admin Pengadaan Excel Test', 'password' => bcrypt('password'), 'email_verified_at' => now()]
         );
-        $this->adminPo->syncRoles(['Admin PO']);
+        $this->adminPo->syncRoles(['Admin Pengadaan']);
 
         $category = Category::firstOrCreate(['name' => 'Struktur']);
         $unitSak = Unit::firstOrCreate(['code' => 'SAK'], ['name' => 'Sak']);

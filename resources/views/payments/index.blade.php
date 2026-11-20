@@ -105,7 +105,7 @@
                     <span class="bg-rose-600 text-white text-[10.5px] px-2 py-0.5 rounded-full font-black ml-0.5 animate-bounce">{{ $pendingBalanceRequestsCount }}</span>
                 @endif
             </a>
-            @if(auth()->user()->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin']))
+            @if(auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin']))
             <button type="button" onclick="openTopupModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition shadow-2xs inline-flex items-center gap-2">
                 <x-lucide-circle-plus class="w-4 h-4 text-emerald-400" />
                 <span>Top-Up Saldo</span>
@@ -116,9 +116,9 @@
     </div>
 
     @if($isRoleAdminPOProyek)
-        {{-- ==================== KHUSUS ADMIN PO PROYEK: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
+        {{-- ==================== KHUSUS Admin Pengadaan Proyek: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
         
-        {{-- Card: Kas Proyek Lapangan (Admin PO Proyek) --}}
+        {{-- Card: Kas Proyek Lapangan (Admin Pengadaan Proyek) --}}
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-6 shadow-2xs mb-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -144,14 +144,14 @@
                 </div>
             </div>
         </div>
-        {{-- ==================== KHUSUS ADMIN PO PROYEK: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
+        {{-- ==================== KHUSUS Admin Pengadaan Proyek: KAS & PENGELOLAAN SALDO NOTA HARIAN ==================== --}}
         
         {{-- Card 1: Status Pengajuan Permintaan Saldo Kas ke Pusat / Owner --}}
         <div class="card mb-4" style="border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;">
             <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
                 <div class="flex items-center gap-2">
                     <x-lucide-hand-coins class="text-emerald-600" style="font-size:16px;" />
-                    <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Status Pengajuan Permintaan Saldo Kas ke Admin PO Pusat</h3>
+                    <h3 style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">Status Pengajuan Permintaan Saldo Kas ke Admin Pengadaan Pusat</h3>
                     <span class="badge badge-secondary" style="font-size:11px;">{{ $balanceRequests->count() }} Pengajuan</span>
                 </div>
             </div>
@@ -361,7 +361,7 @@
         </div>
 
     @else
-        {{-- ==================== KHUSUS ADMIN PUSAT, OWNER, ADMIN PO: MANAJEMEN PEMBAYARAN PO ==================== --}}
+        {{-- ==================== KHUSUS ADMIN PUSAT, OWNER, Admin Pengadaan: MANAJEMEN PEMBAYARAN PO ==================== --}}
 
         {{-- Bento Grid: Treasury Vault & Operational Dispatch Station --}}
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
@@ -414,7 +414,7 @@
                                 <div class="font-mono font-bold text-slate-900 dark:text-white text-xs tabular-nums">
                                     Rp {{ number_format($prj->operational_balance, 0, ',', '.') }}
                                 </div>
-                                @if(auth()->user()->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin']))
+                                @if(auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin']))
                                 <button type="button" onclick="openTopupModal({{ $prj->id }}, '{{ addslashes($prj->name) }}')" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
                                     + Top-up
                                 </button>
@@ -428,7 +428,7 @@
 
                 {{-- Action Bar under Vault --}}
                 <div class="pt-2 flex items-center gap-2 flex-wrap">
-                    @if(auth()->user()->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin']))
+                    @if(auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin']))
                     <button type="button" onclick="openTopupModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition shadow-2xs inline-flex items-center gap-1.5">
                         <x-lucide-circle-plus class="w-3.5 h-3.5 text-emerald-400" />
                         <span>Top-Up Saldo Langsung</span>
@@ -468,7 +468,7 @@
                             Ada {{ $pendingBalanceRequestsCount }} Pengajuan Kas Saldo Proyek Menunggu Persetujuan
                         </h4>
                         <p class="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
-                            Admin PO Proyek di lapangan telah mengajukan kebutuhan dana belanja nota harian. Sebagai Manager/Bank kas pengadaan, persetujuan Anda bersifat final dan langsung menambah saldo operasional proyek.
+                            Admin Pengadaan Proyek di lapangan telah mengajukan kebutuhan dana belanja nota harian. Sebagai Manager/Bank kas pengadaan, persetujuan Anda bersifat final dan langsung menambah saldo operasional proyek.
                         </p>
                     @else
                         <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">
@@ -836,7 +836,7 @@
     </div>
     @endif
 
-    {{-- ==================== MODAL 1: Input / Top-Up Saldo Admin PO ==================== --}}
+    {{-- ==================== MODAL 1: Input / Top-Up Saldo Admin Pengadaan ==================== --}}
     <div id="modalTopupBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
         <div style="background:#ffffff;border-radius:14px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);width:100%;max-width:520px;overflow:hidden;animation:fadeIn 0.2s ease;">
             
@@ -848,7 +848,7 @@
                     </div>
                     <div>
                         <h3 style="font-size:15px;font-weight:800;margin:0;line-height:1.2;">Top-Up Saldo Kas Proyek</h3>
-                        <p style="font-size:11px;color:#94a3b8;margin:2px 0 0 0;">Petty cash operasional Admin PO untuk pembayaran nota harian</p>
+                        <p style="font-size:11px;color:#94a3b8;margin:2px 0 0 0;">Petty cash operasional Admin Pengadaan untuk pembayaran nota harian</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeTopupModal()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:18px;line-height:1;padding:4px;">
@@ -920,7 +920,7 @@
                         </label>
                         <textarea name="notes" 
                                   rows="2" 
-                                  placeholder="Contoh: Saldo petty cash minggu ke-3 untuk Admin PO proyek gedung..." 
+                                  placeholder="Contoh: Saldo petty cash minggu ke-3 untuk Admin Pengadaan Proyek gedung..." 
                                   class="form-control" 
                                   style="font-size:12.5px;padding:8px 12px;border-radius:8px;border-color:#cbd5e1;"></textarea>
                     </div>
@@ -1099,7 +1099,7 @@
         </div>
     </div>
 
-    {{-- ==================== MODAL 3: Formulir PENGAJUAN KAS LAPANGAN (Admin PO Proyek ke PO Pusat) ==================== --}}
+    {{-- ==================== MODAL 3: Formulir PENGAJUAN KAS LAPANGAN (Admin Pengadaan Proyek ke PO Pusat) ==================== --}}
     <div id="modalRequestBalance" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:16px;">
         <div style="background:#ffffff;border-radius:14px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);width:100%;max-width:920px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
             
@@ -1111,7 +1111,7 @@
                     </div>
                     <div>
                         <h3 style="font-size:16px;font-weight:900;margin:0;line-height:1.2;letter-spacing:0.3px;">PENGAJUAN KAS LAPANGAN</h3>
-                        <p style="font-size:11.5px;color:#ffedd5;margin:2px 0 0 0;">Formulir resmi permohonan dana kas operasional (petty cash) proyek ke Admin PO Pusat (Manager Pengadaan)</p>
+                        <p style="font-size:11.5px;color:#ffedd5;margin:2px 0 0 0;">Formulir resmi permohonan dana kas operasional (petty cash) proyek ke Admin Pengadaan Pusat (Manager Pengadaan)</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeRequestBalanceModal()" style="background:none;border:none;color:#ffedd5;cursor:pointer;font-size:20px;line-height:1;padding:4px;">

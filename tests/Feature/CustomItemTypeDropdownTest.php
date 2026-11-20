@@ -24,7 +24,7 @@ class CustomItemTypeDropdownTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected User $adminPusat;
     protected Warehouse $projectWarehouse;
     protected Warehouse $centralWarehouse;
@@ -48,12 +48,12 @@ class CustomItemTypeDropdownTest extends TestCase
             'is_central' => false,
         ]);
 
-        $this->karyawan = User::firstOrCreate(
-            ['email' => 'karyawan.custom.test@example.com'],
-            ['name' => 'Karyawan Test', 'password' => bcrypt('password')]
+        $this->siteEngineer = User::firstOrCreate(
+            ['email' => 'Site Engineer.custom.test@example.com'],
+            ['name' => 'Site Engineer Test', 'password' => bcrypt('password')]
         );
-        $this->karyawan->syncRoles(['Karyawan']);
-        $this->karyawan->warehouses()->syncWithoutDetaching([$this->projectWarehouse->id]);
+        $this->siteEngineer->syncRoles(['Site Engineer']);
+        $this->siteEngineer->warehouses()->syncWithoutDetaching([$this->projectWarehouse->id]);
 
         $this->adminPusat = User::firstOrCreate(
             ['email' => 'admin.pusat.custom.test@example.com'],
@@ -64,7 +64,7 @@ class CustomItemTypeDropdownTest extends TestCase
 
     public function test_create_and_edit_forms_render_item_dropdown_for_custom_items(): void
     {
-        $response = $this->actingAs($this->karyawan)->get(route('material-requests.create', [
+        $response = $this->actingAs($this->siteEngineer)->get(route('material-requests.create', [
             'warehouse_id' => $this->projectWarehouse->id,
         ]));
 
@@ -109,7 +109,7 @@ class CustomItemTypeDropdownTest extends TestCase
             ],
         ];
 
-        $response = $this->actingAs($this->karyawan)->post(route('material-requests.store'), $payload);
+        $response = $this->actingAs($this->siteEngineer)->post(route('material-requests.store'), $payload);
         $response->assertSessionHasNoErrors();
 
         $mr = MaterialRequest::where('notes', 'Permintaan alat custom lapangan')->first();
@@ -130,7 +130,7 @@ class CustomItemTypeDropdownTest extends TestCase
         $this->assertEquals(15.5, (float)$matItem->qty_requested);
 
         // Test show view renders the tag
-        $showResponse = $this->actingAs($this->karyawan)->get(route('material-requests.show', $mr));
+        $showResponse = $this->actingAs($this->siteEngineer)->get(route('material-requests.show', $mr));
         $showResponse->assertStatus(200);
         $showResponse->assertSee('Input Manual (Alat)');
         $showResponse->assertSee('Input Manual (Material)');
@@ -158,7 +158,7 @@ class CustomItemTypeDropdownTest extends TestCase
             ],
         ];
 
-        $response = $this->actingAs($this->karyawan)->post(route('material-requests.store'), $payload);
+        $response = $this->actingAs($this->siteEngineer)->post(route('material-requests.store'), $payload);
         $response->assertSessionHasErrors();
 
         $this->assertDatabaseMissing('material_requests', [
@@ -170,7 +170,7 @@ class CustomItemTypeDropdownTest extends TestCase
     {
         $toolCategory = Category::where('type', 'tool')->first();
 
-        // 1. Karyawan submits MR with custom tool
+        // 1. Site Engineer submits MR with custom tool
         $mrPayload = [
             'warehouse_id'        => $this->projectWarehouse->id,
             'source_warehouse_id' => null,
@@ -189,7 +189,7 @@ class CustomItemTypeDropdownTest extends TestCase
             ],
         ];
 
-        $this->actingAs($this->karyawan)->post(route('material-requests.store'), $mrPayload);
+        $this->actingAs($this->siteEngineer)->post(route('material-requests.store'), $mrPayload);
         $mr = MaterialRequest::where('notes', 'PO Lapangan untuk mesin stamper custom')->first();
         $this->assertNotNull($mr);
         $mrToolItem = $mr->items()->first();
@@ -243,9 +243,9 @@ class CustomItemTypeDropdownTest extends TestCase
                     'condition'              => 'good',
                 ],
             ],
-        ], $this->karyawan->id);
+        ], $this->siteEngineer->id);
 
-        $confirmedGr = $service->confirm($gr, $this->karyawan->id);
+        $confirmedGr = $service->confirm($gr, $this->siteEngineer->id);
         $this->assertEquals('confirmed', $confirmedGr->status);
 
         // 4. Verify tool was auto-registered

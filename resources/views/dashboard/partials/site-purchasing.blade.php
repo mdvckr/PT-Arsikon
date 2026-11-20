@@ -1,5 +1,5 @@
 {{-- ========================================================================= --}}
-{{-- DASHBOARD: ADMIN PO PROYEK (SITE PURCHASING & PROJECT NOTES)             --}}
+{{-- DASHBOARD: Admin Pengadaan Proyek (SITE PURCHASING & PROJECT NOTES)             --}}
 {{-- ========================================================================= --}}
 
 {{-- ROW 1: 4 TOP MODULAR KPI CARDS --}}

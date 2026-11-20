@@ -20,8 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
  * - Security Event Logging untuk audit keamanan
  * - Dukungan response RFC 6585 (Header Retry-After & 429 Too Many Requests)
  */
-class DdosProtection
-{
+class DdosProtection {
     protected RateLimiter $limiter;
 
     public function __construct(RateLimiter $limiter)

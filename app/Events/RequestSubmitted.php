@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Event Real-Time WebSocket (Laravel Reverb) saat Karyawan atau Admin Gudang
+ * Event Real-Time WebSocket (Laravel Reverb) saat Site Engineer atau Admin Gudang
  * mengajukan permohonan baru (Material Request, Tool Loan, Procurement Request, dll).
  */
 class RequestSubmitted implements ShouldBroadcastNow

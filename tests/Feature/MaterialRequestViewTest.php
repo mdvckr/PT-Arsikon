@@ -125,7 +125,7 @@ class MaterialRequestViewTest extends TestCase
         $response->assertSee('Simpan Perubahan PO Lapangan');
     }
 
-    public function test_can_submit_po_lapangan_with_items_table(): void
+    public function test_can_submit_Admin_Pengadaan_Proyek_with_items_table(): void
     {
         $cat = Category::create(['name' => 'Besi', 'code' => 'CAT-BSI', 'type' => 'material']);
         $unit = Unit::create(['name' => 'Batang', 'code' => 'btg']);
@@ -184,7 +184,7 @@ class MaterialRequestViewTest extends TestCase
         $this->assertEquals(20, (float)$customItem->qty_requested);
     }
 
-    public function test_can_update_po_lapangan_items(): void
+    public function test_can_update_Admin_Pengadaan_Proyek_items(): void
     {
         $cat = Category::create(['name' => 'Semen', 'code' => 'CAT-SMN-UPD', 'type' => 'material']);
         $unit = Unit::create(['name' => 'Sak', 'code' => 'sak']);

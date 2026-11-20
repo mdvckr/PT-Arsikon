@@ -4,7 +4,7 @@
     {{-- Page Header --}}
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
-            <h2 class="fw-700" style="font-size: 20px; color: #0f172a; margin: 0;">
+            <h2 class="fw-700" style="font-size: 20px; color: #0f172a; margin: 0;" data-animate="header">
                 Template Kop Surat
             </h2>
             <p class="text-muted" style="font-size: 13px; margin-top: 4px;">
@@ -88,7 +88,7 @@
     </div>
 
     {{-- Templates Grid --}}
-    <div class="template-grid">
+    <div class="template-grid" data-animate="panel">
         @forelse($templates as $template)
             <div class="card template-card">
                 {{-- Preview Thumbnail --}}

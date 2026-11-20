@@ -44,9 +44,9 @@ class PoDirectFromMrTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'adminpo.t7@example.com'],
-            ['name' => 'Admin PO T7', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan T7', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Mitra Pengadaan T7',

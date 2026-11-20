@@ -15,7 +15,7 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
 
         if (!$user->can('view payments') && !($isRoleAdminPOProyek && $user->can('view balance requests'))) {
             $this->authorize('view payments');
@@ -78,7 +78,7 @@ class PaymentController extends Controller
 
         $payments = $query->latest('payment_date')->latest('id')->paginate(15)->withQueryString();
 
-        // Projects & Saldo metrics for Admin PO & Admin PO Proyek
+        // Projects & Saldo metrics for Admin Pengadaan & Admin Pengadaan Proyek
         if ($isRoleAdminPOProyek && !empty($userProjectIds)) {
             $projects = Project::whereIn('id', $userProjectIds)->orderBy('name')->get();
             $totalOperationalBalance = (float) Project::whereIn('id', $userProjectIds)->sum('operational_balance');
@@ -180,34 +180,28 @@ class PaymentController extends Controller
         }
         $pendingBalanceRequestsCount = ProjectBalanceRequest::where('status', 'pending')->count();
 
-        // Group pengajuan kas per minggu (1 siklus operasional)
-        $groupedBalanceRequestWeeks = $balanceRequests->groupBy(function ($item) {
+        // Group pengajuan kas per bulan kalender operasional
+        $groupedBalanceRequestMonths = $balanceRequests->groupBy(function ($item) {
             $date = $item->request_date ?? $item->created_at;
             if (!$date) return 'no-date';
-            $carbon = \Carbon\Carbon::parse($date);
-            $year = $carbon->isoWeekYear();
-            $week = str_pad($carbon->isoWeek(), 2, '0', STR_PAD_LEFT);
-            return "{$year}-W{$week}";
-        })->map(function ($weekItems, $weekKey) {
-            $firstItem = $weekItems->first();
+            return \Carbon\Carbon::parse($date)->format('Y-m');
+        })->map(function ($monthItems, $monthKey) {
+            $firstItem = $monthItems->first();
             $date = \Carbon\Carbon::parse($firstItem->request_date ?? $firstItem->created_at);
-            $startOfWeek = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-            $endOfWeek   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
-            $weekNumber  = $date->isoWeek();
 
             return (object) [
-                'week_key'        => $weekKey,
-                'week_number'     => $weekNumber,
-                'week_label'      => 'Minggu ke-' . $weekNumber . ' (' . $startOfWeek->translatedFormat('d M Y') . ' — ' . $endOfWeek->translatedFormat('d M Y') . ')',
-                'is_current_week' => $date->isCurrentWeek(),
-                'has_pending'     => $weekItems->where('status', 'pending')->count() > 0,
-                'pending_count'   => $weekItems->where('status', 'pending')->count(),
-                'approved_count'  => $weekItems->where('status', 'approved')->count(),
-                'total_amount'    => (float) $weekItems->sum('amount'),
-                'approved_amount' => (float) $weekItems->where('status', 'approved')->sum('amount'),
-                'items'           => $weekItems,
+                'month_key'        => $monthKey,
+                'month_label'      => $monthKey === 'no-date' ? 'Tanpa Tanggal' : $date->translatedFormat('F Y'),
+                'is_current_month' => $monthKey !== 'no-date' && $date->isCurrentMonth(),
+                'has_pending'      => $monthItems->where('status', 'pending')->count() > 0,
+                'pending_count'    => $monthItems->where('status', 'pending')->count(),
+                'approved_count'   => $monthItems->where('status', 'approved')->count(),
+                'total_amount'     => (float) $monthItems->sum('amount'),
+                'approved_amount'  => (float) $monthItems->where('status', 'approved')->sum('amount'),
+                'items'            => $monthItems,
             ];
         });
+        $groupedBalanceRequestWeeks = $groupedBalanceRequestMonths;
 
         $assignedProject = null;
         if (!empty($userProjectIds)) {
@@ -246,7 +240,7 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds)) {
@@ -370,9 +364,9 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
-            return back()->with('error', 'Admin PO Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Admin PO Pusat.');
+            return back()->with('error', 'Admin Pengadaan Proyek tidak dapat melakukan top-up langsung. Pengisian saldo kas operasional proyek harus diajukan ke Admin Pengadaan Pusat.');
         }
 
         $project = DB::transaction(function () use ($validated) {
@@ -391,7 +385,7 @@ class PaymentController extends Controller
                 'balance_before'   => $before,
                 'balance_after'    => $after,
                 'reference_number' => $validated['reference_number'] ?? null,
-                'notes'            => (!empty($validated['notes']) ? $validated['notes'] : 'Top-up saldo operasional kas proyek untuk Admin PO'),
+                'notes'            => (!empty($validated['notes']) ? $validated['notes'] : 'Top-up saldo operasional kas proyek untuk Admin Pengadaan'),
             ]);
 
             return $p;
@@ -427,7 +421,7 @@ class PaymentController extends Controller
         ]);
 
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projectId = $validated['project_id'] ?? null;
@@ -513,7 +507,7 @@ class PaymentController extends Controller
             $this->authorize('view payments');
         }
 
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         $userProjectIds = $isRoleAdminPOProyek ? $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray() : [];
 
         $projects = Project::orderBy('name')->get();
@@ -534,34 +528,28 @@ class PaymentController extends Controller
 
         $balanceRequests = $query->get();
 
-        // Group pengajuan kas per minggu (1 siklus operasional)
-        $groupedBalanceRequestWeeks = $balanceRequests->groupBy(function ($item) {
+        // Group pengajuan kas per bulan kalender operasional
+        $groupedBalanceRequestMonths = $balanceRequests->groupBy(function ($item) {
             $date = $item->request_date ?? $item->created_at;
             if (!$date) return 'no-date';
-            $carbon = \Carbon\Carbon::parse($date);
-            $year = $carbon->isoWeekYear();
-            $week = str_pad($carbon->isoWeek(), 2, '0', STR_PAD_LEFT);
-            return "{$year}-W{$week}";
-        })->map(function ($weekItems, $weekKey) {
-            $firstItem = $weekItems->first();
+            return \Carbon\Carbon::parse($date)->format('Y-m');
+        })->map(function ($monthItems, $monthKey) {
+            $firstItem = $monthItems->first();
             $date = \Carbon\Carbon::parse($firstItem->request_date ?? $firstItem->created_at);
-            $startOfWeek = $date->copy()->startOfWeek(\Carbon\Carbon::MONDAY);
-            $endOfWeek   = $date->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
-            $weekNumber  = $date->isoWeek();
 
             return (object) [
-                'week_key'        => $weekKey,
-                'week_number'     => $weekNumber,
-                'week_label'      => 'Minggu ke-' . $weekNumber . ' (' . $startOfWeek->translatedFormat('d M Y') . ' — ' . $endOfWeek->translatedFormat('d M Y') . ')',
-                'is_current_week' => $date->isCurrentWeek(),
-                'has_pending'     => $weekItems->where('status', 'pending')->count() > 0,
-                'pending_count'   => $weekItems->where('status', 'pending')->count(),
-                'approved_count'  => $weekItems->where('status', 'approved')->count(),
-                'total_amount'    => (float) $weekItems->sum('amount'),
-                'approved_amount' => (float) $weekItems->where('status', 'approved')->sum('amount'),
-                'items'           => $weekItems,
+                'month_key'        => $monthKey,
+                'month_label'      => $monthKey === 'no-date' ? 'Tanpa Tanggal' : $date->translatedFormat('F Y'),
+                'is_current_month' => $monthKey !== 'no-date' && $date->isCurrentMonth(),
+                'has_pending'      => $monthItems->where('status', 'pending')->count() > 0,
+                'pending_count'    => $monthItems->where('status', 'pending')->count(),
+                'approved_count'   => $monthItems->where('status', 'approved')->count(),
+                'total_amount'     => (float) $monthItems->sum('amount'),
+                'approved_amount'  => (float) $monthItems->where('status', 'approved')->sum('amount'),
+                'items'            => $monthItems,
             ];
         });
+        $groupedBalanceRequestWeeks = $groupedBalanceRequestMonths;
 
         $metrics = [
             'pending_count'   => $balanceRequests->where('status', 'pending')->count(),
@@ -573,6 +561,7 @@ class PaymentController extends Controller
 
         return view('payments.balance-requests', compact(
             'balanceRequests',
+            'groupedBalanceRequestMonths',
             'groupedBalanceRequestWeeks',
             'projects',
             'metrics',
@@ -587,7 +576,7 @@ class PaymentController extends Controller
             $this->authorize('view payments');
         }
 
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
@@ -607,7 +596,7 @@ class PaymentController extends Controller
             $this->authorize('view payments');
         }
 
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
         if ($isRoleAdminPOProyek) {
             $userProjectIds = $user->warehouses()->whereNotNull('project_id')->pluck('project_id')->filter()->unique()->toArray();
             if (!empty($userProjectIds) && !in_array($balanceRequest->project_id, $userProjectIds) && $balanceRequest->requested_by !== $user->id) {
@@ -623,8 +612,8 @@ class PaymentController extends Controller
     public function approveBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin'])) {
-            abort(403, 'Wewenang persetujuan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
+        if (!$user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin'])) {
+            abort(403, 'Wewenang persetujuan pengajuan kas lapangan berada pada Admin Pengadaan Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
         if ($balanceRequest->status !== 'pending') {
@@ -654,7 +643,7 @@ class PaymentController extends Controller
             $project->update(['operational_balance' => $after]);
 
             $ref = (!empty($validated['reference_number'])) ? $validated['reference_number'] : "REQ-BAL-{$balanceRequest->id}";
-            $requesterName = $balanceRequest->requester?->name ?? 'Admin PO Proyek';
+            $requesterName = $balanceRequest->requester?->name ?? 'Admin Pengadaan Proyek';
             $noteText = (!empty($validated['notes'])) ? $validated['notes'] : $balanceRequest->purpose;
 
             $paymentDate = !empty($validated['payment_date']) ? $validated['payment_date'] : now()->toDateString();
@@ -710,8 +699,8 @@ class PaymentController extends Controller
     public function rejectBalanceRequest(Request $request, ProjectBalanceRequest $balanceRequest)
     {
         $user = auth()->user();
-        if (!$user->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'Super Admin'])) {
-            abort(403, 'Wewenang penolakan pengajuan kas lapangan berada pada Admin PO Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
+        if (!$user->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'Super Admin'])) {
+            abort(403, 'Wewenang penolakan pengajuan kas lapangan berada pada Admin Pengadaan Pusat. Admin Pusat dan Owner hanya memiliki hak akses melihat (read-only).');
         }
 
         if ($balanceRequest->status !== 'pending') {
@@ -735,7 +724,7 @@ class PaymentController extends Controller
     public function show(Payment $payment)
     {
         $user = auth()->user();
-        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']) && !$user->hasAnyRole(['Admin Pusat', 'Admin PO', 'Admin Pengadaan', 'Owner', 'Super Admin']);
+        $isRoleAdminPOProyek = $user && $user->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']) && !$user->hasAnyRole(['Admin Pusat', 'Admin Pengadaan', 'Admin Pengadaan', 'Owner', 'Super Admin']);
 
         if (!$user->can('view payments') && !($isRoleAdminPOProyek && $user->can('view balance requests'))) {
             $this->authorize('view payments');

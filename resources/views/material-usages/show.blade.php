@@ -71,7 +71,7 @@
     </style>
     @endpush
 
-    <div class="voucher-container space-y-5" x-data="{ showCancelModal: false, showAuditDetails: false }">
+    <div class="voucher-container space-y-5" x-data="{ showCancelModal: false, showAuditDetails: false }" data-animate="panel">
         {{-- ==================== 1. Breadcrumbs & Top Action Bar ==================== --}}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
             <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
@@ -170,7 +170,7 @@
                                 </span>
                             @endif
                         </div>
-                        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white m-0 mt-0.5 font-mono">
+                        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white m-0 mt-0.5 font-mono" data-animate="header">
                             #{{ $materialUsage->usage_number }}
                         </h1>
                     </div>

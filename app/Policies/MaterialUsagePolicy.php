@@ -5,15 +5,14 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Warehouse;
 
-class MaterialUsagePolicy
-{
+class MaterialUsagePolicy {
     /**
      * Determine if user can bypass approval for material usage.
-     * Admin Gudang Proyek bisa bypass approval di project warehouse mereka sendiri.
+     * Admin Logistik Proyek bisa bypass approval di project warehouse mereka sendiri.
      */
     public function bypassApproval(User $user, Warehouse $warehouse): bool
     {
-        if (!$user->hasRole('Admin Gudang Proyek')) {
+        if (!$user->hasRole('Admin Logistik Proyek')) {
             return false;
         }
 

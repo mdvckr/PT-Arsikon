@@ -80,10 +80,10 @@ class SidebarIconsTest extends TestCase
         return [
             'Owner' => ['Owner', 'owner@arsikon.co.id'],
             'Admin Pusat' => ['Admin Pusat', 'admin.pusat@arsikon.co.id'],
-            'Admin Gudang Pusat' => ['Admin Gudang Pusat', 'gudang.pusat@arsikon.co.id'],
-            'Admin Gudang Proyek' => ['Admin Gudang Proyek', 'admin.proyek1@arsikon.co.id'],
-            'Admin PO' => ['Admin PO', 'admin.po@arsikon.co.id'],
-            'Karyawan' => ['Karyawan', 'karyawan@arsikon.co.id'],
+            'Admin Logistik Pusat' => ['Admin Logistik Pusat', 'gudang.pusat@arsikon.co.id'],
+            'Admin Logistik Proyek' => ['Admin Logistik Proyek', 'admin.proyek1@arsikon.co.id'],
+            'Admin Pengadaan' => ['Admin Pengadaan', 'admin.pengadaan@arsikon.co.id'],
+            'Site Engineer' => ['Site Engineer', 'engineer.prj1@arsikon.co.id'],
         ];
     }
 

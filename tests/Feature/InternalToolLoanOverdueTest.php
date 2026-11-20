@@ -22,7 +22,7 @@ class InternalToolLoanOverdueTest extends TestCase
     protected Warehouse $projectWarehouse;
     protected User $adminPusat;
     protected User $adminProyek;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected Tool $tool;
     protected Category $category;
 
@@ -35,7 +35,7 @@ class InternalToolLoanOverdueTest extends TestCase
         $this->projectWarehouse = Warehouse::where('is_central', false)->firstOrFail();
         $this->adminPusat       = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->adminProyek      = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->karyawan         = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
+        $this->siteEngineer         = User::where('email', 'user.proyek@arsikon.co.id')->firstOrFail();
 
         $this->category = Category::firstOrCreate(
             ['code' => 'CAT-T17'],
@@ -190,7 +190,7 @@ class InternalToolLoanOverdueTest extends TestCase
             'from_warehouse_id'   => $this->projectWarehouse->id,
             'assigned_by_user_id' => $this->adminProyek->id,
             'approved_by_user_id' => $this->adminPusat->id,
-            'borrower_name'       => $this->karyawan->name,
+            'borrower_name'       => $this->siteEngineer->name,
             'borrower_phone'      => '08123456789',
             'location_name'       => 'Zona Proyek B',
             'assigned_at'         => now()->subDays(5),
@@ -206,8 +206,8 @@ class InternalToolLoanOverdueTest extends TestCase
             'quantity'            => 2,
             'from_warehouse_id'   => $this->projectWarehouse->id,
             'assigned_by_user_id' => $this->adminProyek->id,
-            'assigned_to_user_id' => $this->karyawan->id,
-            'borrower_name'       => $this->karyawan->name,
+            'assigned_to_user_id' => $this->siteEngineer->id,
+            'borrower_name'       => $this->siteEngineer->name,
             'location_name'       => 'Zona Proyek B',
             'status'              => 'active',
         ]);

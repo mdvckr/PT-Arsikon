@@ -49,7 +49,7 @@ class PoLapanganCustomItemGroupTest extends TestCase
         ]);
     }
 
-    public function test_can_create_po_lapangan_with_custom_item_group(): void
+    public function test_can_create_Admin_Pengadaan_Proyek_with_custom_item_group(): void
     {
         $this->actingAs($this->adminProyek);
 
@@ -85,7 +85,7 @@ class PoLapanganCustomItemGroupTest extends TestCase
         $this->assertEquals(10, (float) $item->qty_requested);
     }
 
-    public function test_can_update_po_lapangan_custom_item_group(): void
+    public function test_can_update_Admin_Pengadaan_Proyek_custom_item_group(): void
     {
         $this->actingAs($this->adminProyek);
 

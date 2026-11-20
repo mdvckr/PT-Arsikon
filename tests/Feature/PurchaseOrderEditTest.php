@@ -48,15 +48,15 @@ class PurchaseOrderEditTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'admin.po.poedit@example.com'],
-            ['name' => 'Admin PO Edit', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan Edit', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->poNotaHarian = User::firstOrCreate(
             ['email' => 'po.nota.poedit@example.com'],
             ['name' => 'PO Nota Harian Read Only', 'password' => bcrypt('password')]
         );
-        $this->poNotaHarian->syncRoles(['admin-po-nota']);
+        $this->poNotaHarian->syncRoles(['Admin Pengadaan Proyek']);
 
         $this->supplierA = Supplier::create(['name' => 'Supplier Alpha', 'phone' => '081234567891']);
         $this->supplierB = Supplier::create(['name' => 'Supplier Beta', 'phone' => '081234567892']);

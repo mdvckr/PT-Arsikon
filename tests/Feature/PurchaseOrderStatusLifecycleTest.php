@@ -41,9 +41,9 @@ class PurchaseOrderStatusLifecycleTest extends TestCase
 
         $this->adminPO = User::firstOrCreate(
             ['email' => 'admin.po.lc@example.com'],
-            ['name' => 'Admin PO LC', 'password' => bcrypt('password')]
+            ['name' => 'Admin Pengadaan LC', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO', 'Admin Pusat']);
+        $this->adminPO->syncRoles(['Admin Pengadaan', 'Admin Pusat']);
 
         $this->supplier  = Supplier::first() ?? Supplier::create(['name' => 'PT Mitra LC', 'phone' => '0812345']);
         $this->warehouse = Warehouse::where('type', 'project')->first() ?? Warehouse::first();

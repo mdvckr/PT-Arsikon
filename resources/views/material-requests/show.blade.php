@@ -370,7 +370,7 @@
     @php
         $hasPurchaseItems = $materialRequest->items->contains(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id) || ($it->fulfillment !== 'stock' && empty($materialRequest->from_warehouse_id))) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0);
         $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
-        $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']) || auth()->user()->can('create purchase orders');
+        $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) || auth()->user()->can('create purchase orders');
         $relatedPos = $materialRequest->items->flatMap->purchaseOrderItems->map->purchaseOrder->filter()->unique('id');
         $sentPo = $relatedPos->first(fn($p) => in_array($p->status, ['sent', 'partial_received', 'approved']))
             ?? $relatedPos->first(fn($p) => $p->status !== 'received' && $p->status !== 'cancelled')

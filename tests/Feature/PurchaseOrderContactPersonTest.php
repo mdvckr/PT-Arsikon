@@ -35,7 +35,7 @@ class PurchaseOrderContactPersonTest extends TestCase
             ['email' => 'admin.po.test@example.com'],
             ['name' => 'Admin Pengadaan PO', 'password' => bcrypt('password')]
         );
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->supplier = Supplier::first() ?? Supplier::create([
             'name' => 'PT Mitra Pengadaan CP',

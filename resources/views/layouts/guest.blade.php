@@ -309,6 +309,9 @@
         letter-spacing: 0.02em;
     }
 </style>
+
+    <!-- Scripts & Styles -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body>

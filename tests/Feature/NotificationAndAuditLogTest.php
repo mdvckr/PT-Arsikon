@@ -92,14 +92,14 @@ class NotificationAndAuditLogTest extends TestCase
         $this->assertEquals(0, $this->adminUser->unreadNotifications()->count());
     }
 
-    public function test_karyawan_loan_request_only_notifies_project_warehouse_admin_not_central_admin(): void
+    public function test_site_engineer_loan_request_only_notifies_project_warehouse_admin_not_central_admin(): void
     {
         Notification::fake();
 
         $projectWarehouse = \App\Models\Warehouse::where('is_central', false)->firstOrFail();
         $adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
         $adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
 
         \App\Services\NotificationHelper::notifyApprovers(
             'Pengajuan Peminjaman Alat: #LOAN-001',
@@ -112,17 +112,17 @@ class NotificationAndAuditLogTest extends TestCase
         // Project Admin must receive
         Notification::assertSentTo($adminProyek, SystemNotification::class);
 
-        // Central Admin and Karyawan must NOT receive
+        // Central Admin and Site Engineer must NOT receive
         Notification::assertNotSentTo($adminPusat, SystemNotification::class);
-        Notification::assertNotSentTo($karyawan, SystemNotification::class);
+        Notification::assertNotSentTo($siteEngineer, SystemNotification::class);
     }
 
-    public function test_material_request_to_central_notifies_central_admin_not_karyawan(): void
+    public function test_material_request_to_central_notifies_central_admin_not_Site_Engineer(): void
     {
         Notification::fake();
 
         $adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $karyawan = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
         $adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
 
         \App\Services\NotificationHelper::notifyCentralWarehouseAdmins(
@@ -134,8 +134,8 @@ class NotificationAndAuditLogTest extends TestCase
         // Central Admin must receive
         Notification::assertSentTo($adminPusat, SystemNotification::class);
 
-        // Karyawan and Project Admin must NOT receive
-        Notification::assertNotSentTo($karyawan, SystemNotification::class);
+        // Site Engineer and Project Admin must NOT receive
+        Notification::assertNotSentTo($siteEngineer, SystemNotification::class);
         Notification::assertNotSentTo($adminProyek, SystemNotification::class);
     }
 

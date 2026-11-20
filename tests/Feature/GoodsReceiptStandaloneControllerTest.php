@@ -32,7 +32,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
         $this->category = Category::firstOrCreate(['code' => 'CAT-ARSITEK'], ['name' => 'ARSITEK', 'type' => 'material']);
 
         $this->gudangUser = User::factory()->create(['email_verified_at' => now()]);
-        $this->gudangUser->assignRole('Admin Gudang Proyek');
+        $this->gudangUser->assignRole('Admin Logistik Proyek');
         $this->gudangUser->warehouses()->attach($this->warehouse->id);
     }
 
@@ -534,7 +534,7 @@ class GoodsReceiptStandaloneControllerTest extends TestCase
 
     public function test_admin_gudang_proyek_stores_goods_receipt_with_auto_selected_warehouse(): void
     {
-        // Admin gudang proyek with assigned warehouse
+        // Admin Logistik Proyek with assigned warehouse
         $postData = [
             'supplier_id'      => $this->supplier->id,
             'received_at'      => now()->format('Y-m-d'),

@@ -27,7 +27,7 @@ class WarehouseIndependenceTest extends TestCase
     protected Warehouse $projectWarehouseB;
     protected User $adminPusat;
     protected User $adminProyekA;
-    protected User $karyawan;
+    protected User $siteEngineer;
 
     protected function setUp(): void
     {
@@ -40,7 +40,7 @@ class WarehouseIndependenceTest extends TestCase
 
         $this->adminPusat   = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
         $this->adminProyekA = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
-        $this->karyawan     = User::where('email', 'karyawan@arsikon.co.id')->firstOrFail();
+        $this->siteEngineer     = User::where('email', 'engineer.prj1@arsikon.co.id')->firstOrFail();
 
         Material::firstOrCreate(
             ['sku' => 'MAT-SEM-001'],
@@ -84,9 +84,9 @@ class WarehouseIndependenceTest extends TestCase
         $this->assertNotContains($this->projectWarehouseB->id, $ids);
     }
 
-    public function test_karyawan_accessible_warehouse_ids_only_assigned_warehouse(): void
+    public function test_site_engineer_accessible_warehouse_ids_only_assigned_warehouse(): void
     {
-        $ids = $this->karyawan->accessibleWarehouseIds();
+        $ids = $this->siteEngineer->accessibleWarehouseIds();
 
         $this->assertContains($this->projectWarehouseA->id, $ids);
         $this->assertNotContains($this->centralWarehouse->id, $ids);
@@ -104,9 +104,9 @@ class WarehouseIndependenceTest extends TestCase
         $this->actingAs($this->adminProyekA)->get('/inventory')->assertOk();
     }
 
-    public function test_karyawan_can_access_inventory_page(): void
+    public function test_site_engineer_can_access_inventory_page(): void
     {
-        $this->actingAs($this->karyawan)->get('/inventory')->assertOk();
+        $this->actingAs($this->siteEngineer)->get('/inventory')->assertOk();
     }
 
     // DistributionController: index scoping
@@ -182,7 +182,7 @@ class WarehouseIndependenceTest extends TestCase
         $this->actingAs($this->adminProyekA)->get('/distributions/create')->assertOk();
     }
 
-    // Phase A: Bypass approval — Admin Gudang Proyek bisa mencatat pemakaian di gudang proyeknya tanpa MR
+    // Phase A: Bypass approval — Admin Logistik Proyek bisa mencatat pemakaian di gudang proyeknya tanpa MR
 
     public function test_admin_proyek_can_record_usage_at_own_project_warehouse_without_mr(): void
     {
@@ -225,12 +225,12 @@ class WarehouseIndependenceTest extends TestCase
 
         $this->assertFalse(
             auth()->user()->can('bypass-material-usage-approval', $this->centralWarehouse),
-            'Admin Gudang Proyek tidak boleh bypass approval di gudang pusat.'
+            'Admin Logistik Proyek tidak boleh bypass approval di gudang pusat.'
         );
 
         $this->assertTrue(
             auth()->user()->can('bypass-material-usage-approval', $this->projectWarehouseA),
-            'Admin Gudang Proyek boleh bypass approval di gudang proyeknya sendiri.'
+            'Admin Logistik Proyek boleh bypass approval di gudang proyeknya sendiri.'
         );
     }
 

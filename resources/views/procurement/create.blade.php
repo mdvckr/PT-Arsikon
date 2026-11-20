@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="title">Buat Permintaan Pengadaan</x-slot>
 
-    <div class="breadcrumb">
+    <div class="breadcrumb" data-animate="header">
         <a href="{{ route('procurement.index') }}">Permintaan Pengadaan</a>
         <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
         <span>Buat Baru</span>
@@ -11,7 +11,7 @@
         @csrf
 
         {{-- PO Document Card --}}
-        <div class="po-wrapper">
+        <div class="po-wrapper" data-animate="panel">
 
             {{-- PO Header --}}
             <div class="po-header">

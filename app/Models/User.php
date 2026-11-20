@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'is_active',
         'email_verified_at',
+        'profile_photo_path',
     ];
 
     /**
@@ -51,6 +52,17 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the URL for the user's profile photo.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        if ($this->profile_photo_path) {
+            return asset('storage/' . $this->profile_photo_path);
+        }
+        return null;
+    }
+
+    /**
      * Get warehouses accessible by this user, filtered by role.
      * Returns a Collection of Warehouse models.
      */
@@ -60,12 +72,12 @@ class User extends Authenticatable
             return Warehouse::where('is_active', true)->orderBy('name')->get();
         }
 
-        if ($this->hasRole('Admin Gudang Pusat')) {
+        if ($this->hasRole('Admin Logistik Pusat')) {
             return Warehouse::where('is_active', true)->where('is_central', true)->orderBy('name')->get();
         }
 
-        // Admin PO: hanya gudang central (konsisten dengan accessibleWarehouseIds)
-        if ($this->hasRole('Admin PO')) {
+        // Admin Pengadaan: hanya gudang central (konsisten dengan accessibleWarehouseIds)
+        if ($this->hasRole('Admin Pengadaan')) {
             return Warehouse::where('is_active', true)->where('is_central', true)->orderBy('name')->get();
         }
 
@@ -90,7 +102,7 @@ class User extends Authenticatable
         }
 
         // Default fallback for Owner/Admin Pusat vs User
-        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO', 'Admin Pengadaan'])) {
+        if ($this->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan', 'Admin Pengadaan'])) {
             return Warehouse::where('is_central', true)->first() ?? $this->warehouses()->first();
         }
 
@@ -103,7 +115,7 @@ class User extends Authenticatable
             return true;
         }
 
-        if ($this->hasRole('Admin Gudang Pusat')) {
+        if ($this->hasRole('Admin Logistik Pusat')) {
             return (bool) $warehouse->is_central;
         }
 
@@ -113,10 +125,10 @@ class User extends Authenticatable
     /**
      * Mengembalikan array ID warehouse yang boleh diakses user.
      * Owner/Admin Pusat: semua warehouse.
-     * Admin Gudang Pusat: hanya gudang central (is_central = true).
-     * Admin Gudang Proyek: hanya gudang project yang ditugaskan.
-     * Admin PO: hanya gudang central.
-     * Role lain (Karyawan, dll): hanya warehouse yang ditugaskan via user_warehouses.
+     * Admin Logistik Pusat: hanya gudang central (is_central = true).
+     * Admin Logistik Proyek: hanya gudang project yang ditugaskan.
+     * Admin Pengadaan: hanya gudang central.
+     * Role lain (Site Engineer, dll): hanya warehouse yang ditugaskan via user_warehouses.
      */
     public function accessibleWarehouseIds(): array
     {
@@ -124,31 +136,31 @@ class User extends Authenticatable
             return Warehouse::pluck('id')->toArray();
         }
 
-        if ($this->hasRole('Admin Gudang Pusat')) {
+        if ($this->hasRole('Admin Logistik Pusat')) {
             return Warehouse::where('is_central', true)->pluck('id')->toArray();
         }
 
-        if ($this->hasRole('Admin Gudang Proyek')) {
+        if ($this->hasRole('Admin Logistik Proyek')) {
             return $this->warehouses()->pluck('warehouses.id')->toArray();
         }
 
-        if ($this->hasAnyRole(['Admin PO', 'Admin Pengadaan'])) {
+        if ($this->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan'])) {
             return Warehouse::where('is_central', true)->pluck('id')->toArray();
         }
 
-        // Karyawan, User, dll: hanya warehouse yang ditugaskan
+        // Site Engineer, User, dll: hanya warehouse yang ditugaskan
         return $this->warehouses()->pluck('warehouses.id')->toArray();
     }
 
     /**
      * Menentukan apakah user berhak melihat nominal harga satuan, subtotal, dan total nilai pada PO.
-     * Hanya role Admin Pusat dan Admin PO (serta Owner) yang berhak melihat harga PO.
+     * Hanya role Admin Pusat dan Admin Pengadaan (serta Owner) yang berhak melihat harga PO.
      */
     public function canViewPoPrice(): bool
     {
         return $this->hasAnyRole([
             'Admin Pusat',
-            'Admin PO',
+            'Admin Pengadaan',
             'Admin Pengadaan',
             'Owner',
             'Super Admin',

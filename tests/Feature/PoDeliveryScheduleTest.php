@@ -41,7 +41,7 @@ class PoDeliveryScheduleTest extends TestCase
         $this->supplier = Supplier::firstOrFail();
 
         $this->adminPusat = User::where('email', 'admin.pusat@arsikon.co.id')->firstOrFail();
-        $this->adminPO = User::where('email', 'admin.po@arsikon.co.id')->firstOrFail();
+        $this->adminPO = User::where('email', 'admin.pengadaan@arsikon.co.id')->firstOrFail();
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->firstOrFail();
 
         $this->material = Material::firstOrCreate(

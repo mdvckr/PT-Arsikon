@@ -216,16 +216,16 @@ class MaterialUsageTest extends TestCase
         $this->assertEquals('Pak Joko Santoso', $assignment->borrower_display);
     }
 
-    public function test_karyawan_can_access_create_and_record_material_usage(): void
+    public function test_site_engineer_can_access_create_and_record_material_usage(): void
     {
-        $karyawan = User::firstOrCreate(
-            ['email' => 'karyawan@arsikon.co.id'],
-            ['name' => 'Karyawan Lapangan', 'password' => bcrypt('password')]
+        $siteEngineer = User::firstOrCreate(
+            ['email' => 'engineer.prj1@arsikon.co.id'],
+            ['name' => 'Site Engineer Lapangan', 'password' => bcrypt('password')]
         );
-        $karyawan->syncRoles(['Karyawan']);
+        $siteEngineer->syncRoles(['Site Engineer']);
 
-        // Karyawan tidak memiliki akses pemakaian material (hanya Admin Proyek/Pusat) — harus 403
-        $response = $this->actingAs($karyawan)->get(route('material-usages.create'));
+        // Site Engineer tidak memiliki akses pemakaian material (hanya Admin Proyek/Pusat) — harus 403
+        $response = $this->actingAs($siteEngineer)->get(route('material-usages.create'));
         $response->assertForbidden();
         return; // skip store check — sudah ditolak di gate
 
@@ -234,13 +234,13 @@ class MaterialUsageTest extends TestCase
             $this->projectWarehouse,
             $this->material,
             50,
-            'initial_karyawan_test',
+            'initial_Site Engineer_test',
             null,
-            $karyawan->id,
-            'Stok pengujian karyawan'
+            $siteEngineer->id,
+            'Stok pengujian Site Engineer'
         );
 
-        // 2. Karyawan can submit material usage store
+        // 2. Site Engineer can submit material usage store
         $postData = [
             'warehouse_id'   => $this->projectWarehouse->id,
             'recipient_name' => 'Tukang Cat (Pak Yanto)',
@@ -256,7 +256,7 @@ class MaterialUsageTest extends TestCase
             ],
         ];
 
-        $storeResponse = $this->actingAs($karyawan)->post(route('material-usages.store'), $postData);
+        $storeResponse = $this->actingAs($siteEngineer)->post(route('material-usages.store'), $postData);
         $storeResponse->assertSessionHasNoErrors();
 
         $usage = MaterialUsage::where('recipient_name', 'Tukang Cat (Pak Yanto)')->first();

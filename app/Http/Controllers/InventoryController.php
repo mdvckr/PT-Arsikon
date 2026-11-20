@@ -18,7 +18,7 @@ class InventoryController extends Controller
         $user = auth()->user();
 
         // Cek hak akses admin/owner yang dapat melihat seluruh gudang
-        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO']);
+        $canViewAllWarehouses = $user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']);
         $accessibleWarehouses = $this->accessibleWarehouses();
 
         // Ambil input warehouse_id dari request query
@@ -46,7 +46,7 @@ class InventoryController extends Controller
                 }
             }
         } else {
-            // Untuk Admin Proyek / Karyawan: batasi pilihan hanya pada gudang yang ditugaskan kepadanya
+            // Untuk Admin Proyek / Site Engineer: batasi pilihan hanya pada gudang yang ditugaskan kepadanya
             $userWhIds = $user->accessibleWarehouseIds();
             if (!empty($requestedWarehouseId) && in_array((int)$requestedWarehouseId, $userWhIds)) {
                 $warehouseId = (int)$requestedWarehouseId;
@@ -120,7 +120,7 @@ class InventoryController extends Controller
             $catQuery = Category::query()
                 ->where('type', 'material')
                 ->with(['materials' => function ($q) use ($request, $warehouseId, $search, $type, $size) {
-                    $q->with(['unit', 'inventories' => function ($invQ) use ($warehouseId) {
+                    $q->with(['unit', 'supplier', 'inventories' => function ($invQ) use ($warehouseId) {
                         if ($warehouseId) {
                             $invQ->where('warehouse_id', $warehouseId);
                         }
@@ -192,7 +192,7 @@ class InventoryController extends Controller
             $toolCatQuery = Category::query()
                 ->where('type', 'tool')
                 ->with(['tools' => function ($q) use ($request, $warehouseId, $search, $type, $size, $stockLevel) {
-                    $q->with(['currentWarehouse', 'inventories' => function ($invQ) use ($warehouseId) {
+                    $q->with(['currentWarehouse', 'supplier', 'inventories' => function ($invQ) use ($warehouseId) {
                         if ($warehouseId) {
                             $invQ->where('warehouse_id', $warehouseId);
                         }
@@ -289,36 +289,13 @@ class InventoryController extends Controller
         ));
     }
 
-    public function show(Inventory $inventory)
-    {
-        $this->authorize('view inventory');
-        $inventory->load(['material.unit', 'material.category', 'warehouse',
-            'stockMutations' => fn($q) => $q->latest()->limit(30)]);
-
-        return view('inventory.show', compact('inventory'));
-    }
-
-    public function destroy(Inventory $inventory)
-    {
-        $this->authorize('delete inventory');
-
-        if ($inventory->quantity > 0) {
-            return back()->with('error', 'Tidak dapat menghapus inventori yang masih memiliki stok aktif.');
-        }
-
-        $inventory->delete();
-
-        return redirect()->route('inventory.index')
-            ->with('success', 'Data inventori berhasil dihapus.');
-    }
-
     // ── Helper ────────────────────────────────────────────────────────────
 
     protected function accessibleWarehouses()
     {
         $user = auth()->user();
 
-        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Gudang Pusat', 'Admin PO'])) {
+        if ($user->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan'])) {
             return Warehouse::where('is_active', true)->orderBy('name')->get();
         }
 

@@ -185,14 +185,13 @@ class UserController extends Controller
         $order = [
             'Owner',
             'Admin Pusat',
-            'Admin Gudang Pusat',
-            'Admin Gudang Proyek',
+            'Admin Logistik Pusat',
+            'Admin Logistik Proyek',
             'Site Engineer',
             'Site Manager',
             'Project Manager',
-            'Admin PO',
-            'Admin PO Proyek',
-            'admin-po-nota',
+            'Admin Pengadaan',
+            'Admin Pengadaan Proyek',
         ];
         return Role::all()->sortBy(function ($r) use ($order) {
             $pos = array_search($r->name, $order, true);

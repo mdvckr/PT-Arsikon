@@ -51,18 +51,6 @@
         </div>
     </div>
 
-    {{-- Sub Tab Navigasi PO Nota Proyek --}}
-    <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
-        <a href="{{ route('purchase-receipts.index', request()->only(['project_id'])) }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-slate-900 text-white shadow-xs">
-            <x-lucide-receipt style="width:14px;height:14px;" /> Nota Belanja Harian (Kas Operasional)
-        </a>
-        <a href="{{ route('project-balance-requests.index', request()->only(['project_id'])) }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 hover:bg-slate-100 border border-slate-200">
-            <x-lucide-hand-coins style="width:14px;height:14px;" /> Pengajuan Kas Saldo Proyek
-        </a>
-    </div>
-
     @if(session('success'))
         <div class="alert alert-success mb-4 flex items-center justify-between" style="background:#ecfdf5;border:1px solid #10b981;color:#065f46;padding:12px 16px;border-radius:8px;">
             <span><x-lucide-circle-check class="me-2" />{{ session('success') }}</span>

@@ -18,7 +18,7 @@ class RolePermissionsAndApprovalTest extends TestCase
 
     protected User $adminPusat;
     protected User $owner;
-    protected User $karyawan;
+    protected User $siteEngineer;
     protected User $dualRoleAdmin;
 
     protected function setUp(): void
@@ -41,19 +41,19 @@ class RolePermissionsAndApprovalTest extends TestCase
         );
         $this->owner->syncRoles(['Owner']);
 
-        // 3. Setup user Karyawan
-        $this->karyawan = User::firstOrCreate(
-            ['email' => 'karyawan.test@arsikon.co.id'],
-            ['name' => 'Karyawan Test', 'password' => bcrypt('password')]
+        // 3. Setup user Site Engineer
+        $this->siteEngineer = User::firstOrCreate(
+            ['email' => 'Site Engineer.test@arsikon.co.id'],
+            ['name' => 'Site Engineer Test', 'password' => bcrypt('password')]
         );
-        $this->karyawan->syncRoles(['Karyawan']);
+        $this->siteEngineer->syncRoles(['Site Engineer']);
 
-        // 4. Setup user Dual-Role (Admin Gudang Proyek + Karyawan)
+        // 4. Setup user Dual-Role (Admin Logistik Proyek + Site Engineer)
         $this->dualRoleAdmin = User::firstOrCreate(
             ['email' => 'dual.role@arsikon.co.id'],
             ['name' => 'Dual Role Admin Test', 'password' => bcrypt('password')]
         );
-        $this->dualRoleAdmin->syncRoles(['Admin Gudang Proyek', 'Karyawan']);
+        $this->dualRoleAdmin->syncRoles(['Admin Logistik Proyek', 'Site Engineer']);
     }
 
     public function test_admin_pusat_has_full_access_to_all_abilities(): void
@@ -94,21 +94,21 @@ class RolePermissionsAndApprovalTest extends TestCase
         $this->assertFalse(Gate::allows('projects.manage'));
     }
 
-    public function test_karyawan_can_request_materials_and_tools_but_cannot_approve(): void
+    public function test_site_engineer_can_request_materials_and_tools_but_cannot_approve(): void
     {
-        $this->actingAs($this->karyawan);
+        $this->actingAs($this->siteEngineer);
 
-        // Karyawan diizinkan membuat permintaan / pinjam alat
+        // Site Engineer diizinkan membuat permintaan / pinjam alat
         $this->assertTrue(Gate::allows('create material requests'));
         $this->assertTrue(Gate::allows('create tool assignments'));
 
-        // Karyawan tidak diizinkan approve atau mutasi master
+        // Site Engineer tidak diizinkan approve atau mutasi master
         $this->assertFalse(Gate::allows('approve material requests'));
         $this->assertFalse(Gate::allows('approve tool assignments'));
         $this->assertFalse(Gate::allows('delete inventory'));
     }
 
-    public function test_dual_role_admin_gudang_with_karyawan_does_not_conflict(): void
+    public function test_dual_role_admin_gudang_with_Site_Engineer_does_not_conflict(): void
     {
         $this->actingAs($this->dualRoleAdmin);
 
@@ -118,7 +118,7 @@ class RolePermissionsAndApprovalTest extends TestCase
         $this->assertTrue(Gate::allows('view goods receipts'));
         $this->assertTrue(Gate::allows('create goods receipts'));
 
-        // Ship distributions diizinkan untuk Admin Gudang meskipun merangkap Karyawan
+        // Ship distributions diizinkan untuk Admin Gudang meskipun merangkap Site Engineer
         $this->assertTrue(Gate::allows('ship distributions'));
     }
 
@@ -128,7 +128,7 @@ class RolePermissionsAndApprovalTest extends TestCase
 
         NotificationHelper::notifyApprovers(
             "Permintaan Material Baru",
-            "Diajukan oleh Karyawan Lapangan",
+            "Diajukan oleh Site Engineer Lapangan",
             "approval_needed",
             "/material-requests/1"
         );

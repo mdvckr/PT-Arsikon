@@ -5,8 +5,7 @@ namespace App\Policies;
 use App\Models\PurchaseReceipt;
 use App\Models\User;
 
-class PurchaseReceiptPolicy
-{
+class PurchaseReceiptPolicy {
     /**
      * Determine whether the user can view any models.
      */
@@ -25,13 +24,13 @@ class PurchaseReceiptPolicy
 
     /**
      * Determine whether the user can create models.
-     * po_nota_harian has full CRUD access to Nota Pembelian Harian.
+     * Admin Pengadaan Proyek has full CRUD access to Nota Pembelian Harian.
      */
     public function create(User $user): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'Admin PO Proyek', 'Admin Pengadaan Proyek',
-            'admin_pusat', 'po_lapangan', 'po_nota_harian', 'admin-po-nota', 'Admin Gudang Proyek'
+            'Admin Pusat', 'Admin', 'Admin Pengadaan', 'Admin Pengadaan', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek',
+            'admin_pusat', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Logistik Proyek'
         ]) || $user->can('create purchase receipts');
     }
 
@@ -41,8 +40,8 @@ class PurchaseReceiptPolicy
     public function update(User $user, PurchaseReceipt $purchaseReceipt): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan', 'Admin PO Proyek', 'Admin Pengadaan Proyek',
-            'admin_pusat', 'po_lapangan', 'po_nota_harian', 'admin-po-nota'
+            'Admin Pusat', 'Admin', 'Admin Pengadaan', 'Admin Pengadaan', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek',
+            'admin_pusat', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek'
         ]) || $user->can('edit purchase receipts');
     }
 
@@ -52,7 +51,7 @@ class PurchaseReceiptPolicy
     public function delete(User $user, PurchaseReceipt $purchaseReceipt): bool
     {
         return $user->hasAnyRole([
-            'Admin Pusat', 'Admin', 'admin_pusat', 'po_nota_harian', 'admin-po-nota', 'Admin PO Proyek', 'Admin Pengadaan Proyek'
+            'Admin Pusat', 'Admin', 'admin_pusat', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek'
         ]) || $user->can('delete purchase receipts');
     }
 }

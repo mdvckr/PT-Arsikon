@@ -99,11 +99,11 @@ class SyncProcurementPermissions extends Command
             $this->line('  - Role Admin: disinkronkan ke full access.');
         }
 
-        // C. Admin PO:
+        // C. Admin Pengadaan:
         //    Boleh: create PO, view PO, send PO, cancel PO, create PR, view PR, create payments, view payments,
         //           create transit losses, approve material requests (MR).
         //    HAPUS: approve procurement, verify payments, approve purchase orders, close purchase orders, approve transit losses.
-        $adminPORole = Role::firstOrCreate(['name' => 'Admin PO', 'guard_name' => 'web']);
+        $adminPORole = Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
         $adminPOPermissions = [
             'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials',
@@ -121,11 +121,11 @@ class SyncProcurementPermissions extends Command
             'view audit logs',
         ];
         $adminPORole->syncPermissions($adminPOPermissions);
-        $this->line('  - Role Admin PO: disinkronkan (' . count($adminPOPermissions) . ' permissions, tanpa approval PO/PR/Payment).');
+        $this->line('  - Role Admin Pengadaan: disinkronkan (' . count($adminPOPermissions) . ' permissions, tanpa approval PO/PR/Payment).');
 
-        // D. Admin Gudang Pusat:
+        // D. Admin Logistik Pusat:
         //    Boleh: create & confirm GR, create transit losses, operasional logistik sentral.
-        $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Gudang Pusat', 'guard_name' => 'web']);
+        $adminGudangPusatRole = Role::firstOrCreate(['name' => 'Admin Logistik Pusat', 'guard_name' => 'web']);
         $gudangPusatPermissions = [
             'view suppliers', 'create suppliers', 'edit suppliers',
             'view materials', 'create materials', 'edit materials', 'delete materials',
@@ -141,10 +141,10 @@ class SyncProcurementPermissions extends Command
             'view reports',
         ];
         $adminGudangPusatRole->syncPermissions($gudangPusatPermissions);
-        $this->line('  - Role Admin Gudang Pusat: disinkronkan (' . count($gudangPusatPermissions) . ' permissions).');
+        $this->line('  - Role Admin Logistik Pusat: disinkronkan (' . count($gudangPusatPermissions) . ' permissions).');
 
-        // E. Admin Gudang Proyek: Khusus seluruh operasional logistik fisik gudang proyek
-        $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Gudang Proyek', 'guard_name' => 'web']);
+        // E. Admin Logistik Proyek: Khusus seluruh operasional logistik fisik gudang proyek
+        $adminProyekRole = Role::firstOrCreate(['name' => 'Admin Logistik Proyek', 'guard_name' => 'web']);
         $proyekPermissions = [
             'view distributions', 'create distributions', 'ship distributions', 'receive distributions',
             'view goods receipts', 'create goods receipts', 'confirm goods receipts',
@@ -160,7 +160,7 @@ class SyncProcurementPermissions extends Command
             'create transit losses',
         ];
         $adminProyekRole->syncPermissions($proyekPermissions);
-        $this->line('  - Role Admin Gudang Proyek: disinkronkan (' . count($proyekPermissions) . ' permissions).');
+        $this->line('  - Role Admin Logistik Proyek: disinkronkan (' . count($proyekPermissions) . ' permissions).');
 
         // F. Peran Teknis Lapangan: Site Engineer, Site Manager, Project Manager
         $teknisStaffPermissions = [
@@ -192,7 +192,7 @@ class SyncProcurementPermissions extends Command
         $projectManagerRole->syncPermissions($teknisManagerPermissions);
         $this->line('  - Role Teknis Lapangan (Site Engineer, Site Manager, Project Manager): disinkronkan.');
 
-        // G. Decommission Role Admin Proyek & Karyawan
+        // G. Decommission legacy Admin Proyek alias (if any)
         $adminProyekRole = Role::where('name', 'Admin Proyek')->first();
         if ($adminProyekRole) {
             foreach ($adminProyekRole->users as $user) {
@@ -202,17 +202,6 @@ class SyncProcurementPermissions extends Command
             $adminProyekRole->permissions()->detach();
             $adminProyekRole->delete();
             $this->line('  - Role Admin Proyek: berhasil didekomisi dan user dialihkan ke Site Engineer.');
-        }
-
-        $karyawanRole = Role::where('name', 'Karyawan')->first();
-        if ($karyawanRole) {
-            foreach ($karyawanRole->users as $user) {
-                $user->assignRole($siteEngineerRole);
-                $user->removeRole($karyawanRole);
-            }
-            $karyawanRole->permissions()->detach();
-            $karyawanRole->delete();
-            $this->line('  - Role Karyawan: berhasil didekomisi dan user dialihkan ke Site Engineer.');
         }
 
         // Reset cache kembali

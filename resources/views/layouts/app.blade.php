@@ -631,28 +631,29 @@
         }
 
         .topbar-brand {
-            width: var(--sidebar-width);
+            width: auto;
             height: 100%;
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 0 18px;
-            background: rgba(234, 88, 12, 0.12);
-            border-right: 1px solid rgba(234, 88, 12, 0.25);
+            padding: 0 20px;
+            background: transparent;
+            border-right: none;
             flex-shrink: 0;
             position: relative;
             overflow: hidden;
             animation: slide-in-brand 0.5s ease;
         }
 
-        .topbar-brand::before {
+        .topbar-brand::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(234, 88, 12, 0.08) 0%, transparent 60%);
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.1);
             pointer-events: none;
         }
 
@@ -661,7 +662,6 @@
             align-items: center;
             gap: 12px;
             text-decoration: none;
-            width: 100%;
         }
 
         .brand-logo {
@@ -899,6 +899,7 @@
             font-weight: 700;
             flex-shrink: 0;
             box-shadow: 0 2px 6px rgba(234, 88, 12, 0.4);
+            overflow: hidden;
         }
         .topbar-user-name {
             font-size: 12.5px;
@@ -1326,6 +1327,9 @@
                 padding: 0 0 0 12px;
                 gap: 10px;
                 overflow: visible !important;
+            }
+            .topbar-brand::after {
+                display: none;
             }
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
@@ -1926,7 +1930,13 @@
 
             <div class="topbar-action-separator"></div>
             <a href="{{ route('profile.edit') }}" class="topbar-user-chip" title="Lihat Profil">
-                <div class="topbar-user-avatar">{{ $userInitial }}</div>
+                <div class="topbar-user-avatar">
+                    @if(auth()->user()?->profile_photo_url)
+                        <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ $userName }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    @else
+                        {{ $userInitial }}
+                    @endif
+                </div>
                 <span class="topbar-user-name">{{ $userName }}</span>
             </a>
         </div>
@@ -1960,25 +1970,25 @@
                 $roleIcon = 'shield-check';
                 $subHeadline = 'Kantor Pusat (Full Akses)';
                 $subDesc = 'Manajemen pengguna, gudang & sistem';
-            } elseif ($authUser->hasRole('Admin Gudang Pusat')) {
-                $roleLabel = 'Admin Gudang Pusat';
+            } elseif ($authUser->hasRole('Admin Logistik Pusat')) {
+                $roleLabel = 'Admin Logistik Pusat';
                 $roleBadge = 'Pusat';
                 $roleIcon = 'building-2';
                 $subHeadline = 'Sentral Logistik Jakarta';
                 $subDesc = 'Distribusi material & stok sentral';
-            } elseif ($authUser->hasRole('Admin Gudang Proyek')) {
-                $roleLabel = 'Admin Gudang Proyek';
+            } elseif ($authUser->hasRole('Admin Logistik Proyek')) {
+                $roleLabel = 'Admin Logistik Proyek';
                 $roleBadge = 'Proyek';
                 $roleIcon = 'hard-hat';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'PO Lapangan & alat proyek';
-            } elseif ($authUser->hasAnyRole(['Admin PO Proyek', 'Admin Pengadaan Proyek', 'admin-po-nota', 'po_nota_harian'])) {
-                $roleLabel = 'Admin PO Proyek';
+            } elseif ($authUser->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek'])) {
+                $roleLabel = 'Admin Pengadaan Proyek';
                 $roleBadge = 'PO Proyek';
                 $roleIcon = 'receipt';
                 $subHeadline = $activeWarehouse?->project?->name ?? 'Site Proyek Lapangan';
                 $subDesc = 'Pencatatan nota pembelian harian';
-            } elseif ($authUser->hasAnyRole(['Admin PO', 'Admin Pengadaan', 'admin_po'])) {
+            } elseif ($authUser->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'admin_po'])) {
                 $roleLabel = 'Admin Pengadaan (PO)';
                 $roleBadge = 'Pengadaan';
                 $roleIcon = 'truck';
@@ -2003,11 +2013,11 @@
 
             <!-- 1. GRUP TEKNIS -->
             @php
-                $canDailyLog = (auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) || auth()->user()->can('view daily logs')) && !auth()->user()->hasAnyRole(['Admin Gudang Pusat', 'Admin Gudang Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek']);
-                $isRoleAdminPO = auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin PO', 'admin_po']);
-                $isRoleAdminPOProyek = auth()->user()->hasAnyRole(['Admin Pengadaan Proyek', 'Admin PO Proyek', 'admin-po-nota', 'po_nota_harian']);
-                $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
-                $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
+                $canDailyLog = (auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Site Manager', 'Site Engineer', 'Project Manager']) || auth()->user()->can('view daily logs')) && !auth()->user()->hasAnyRole(['Admin Logistik Pusat', 'Admin Logistik Proyek', 'Admin Logistik Pusat', 'Admin Logistik Proyek']);
+                $isRoleAdminPO = auth()->user()->hasAnyRole(['Admin Pengadaan', 'Admin Pengadaan', 'admin_po']);
+                $isRoleAdminPOProyek = auth()->user()->hasAnyRole(['Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek', 'Admin Pengadaan Proyek']);
+                $isRoleGudangProyek = auth()->user()->hasRole('Admin Logistik Proyek');
+                $isRoleGudangPusat = auth()->user()->hasRole('Admin Logistik Pusat');
                 $isRoleTeknis = auth()->user()->hasAnyRole(['Site Manager', 'Site Engineer', 'Project Manager']);
                 $canTeknis = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && auth()->user()->can('view material requests');
                 $isTeknisActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && !$isRoleGudangProyek && !$isRoleGudangPusat && request()->routeIs(['material-requests.*', 'daily-log.*']);
@@ -2043,7 +2053,7 @@
             <!-- 2. GRUP PENGADAAN -->
             @php
                 $canPengadaan = !$isRoleTeknis && !$isRoleAdminPOProyek && (
-                    (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']))
+                    (auth()->user()->can('view purchase orders') && auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin Pengadaan', 'Admin Pengadaan']))
                     || auth()->user()->can('view purchase receipts')
                     || auth()->user()->can('view payments')
                     || ($isRoleAdminPO && auth()->user()->can('view material requests'))
@@ -2052,7 +2062,7 @@
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*']));
             @endphp
             @if($isRoleAdminPOProyek)
-                {{-- Khusus Admin PO Proyek: Hanya Pencatatan Nota Harian --}}
+                {{-- Khusus Admin Pengadaan Proyek: Hanya Pencatatan Nota Harian --}}
                 <div class="nav-section">
                     <div style="padding: 8px 12px 4px 12px;">
                         <span class="nav-section-label">PENCATATAN NOTA HARIAN</span>
@@ -2116,7 +2126,7 @@
                         <x-lucide-chevron-right class="nav-section-chevron" x-bind:style="open ? 'transform: rotate(90deg)' : 'transform: rotate(0deg)'" aria-hidden="true" />
                     </div>
                     <div x-show="open" class="nav-section-body">
-                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin PO', 'Admin Pengadaan']) && auth()->user()->can('view purchase orders'))
+                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat', 'Admin', 'Admin Pengadaan', 'Admin Pengadaan']) && auth()->user()->can('view purchase orders'))
                         <a href="{{ route('purchase-orders.index') }}" class="nav-item {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
                             <x-lucide-file-text class="nav-icon" aria-hidden="true" /> Purchase Order (PO)
                         </a>
@@ -2150,8 +2160,8 @@
 
             <!-- 3. GRUP LOGISTIK -->
             @php
-                $isRoleGudangProyek = auth()->user()->hasRole('Admin Gudang Proyek');
-                $isRoleGudangPusat = auth()->user()->hasRole('Admin Gudang Pusat');
+                $isRoleGudangProyek = auth()->user()->hasRole('Admin Logistik Proyek');
+                $isRoleGudangPusat = auth()->user()->hasRole('Admin Logistik Pusat');
                 $isLogistikPure = $isRoleGudangProyek || $isRoleGudangPusat;
                 $canLogistik = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     auth()->user()->can('view distributions')
@@ -2323,13 +2333,16 @@
             }
         });
 
-        // Auto-dismiss alerts
-
+        // Auto-dismiss alerts with smooth GSAP motion
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(el => {
-                el.style.transition = 'opacity 0.4s';
-                el.style.opacity = '0';
-                setTimeout(() => el.remove(), 400);
+                if (window.ArsikonAnimate) {
+                    window.ArsikonAnimate.dismissAlert(el);
+                } else {
+                    el.style.transition = 'opacity 0.4s';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 400);
+                }
             });
         }, 4000);
     </script>

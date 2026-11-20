@@ -16,7 +16,7 @@ class SidebarNavigationTest extends TestCase
     protected User $adminPO;
     protected User $adminProyek;
     protected User $adminGudangPusat;
-    protected User $karyawan;
+    protected User $siteEngineer;
 
     protected function setUp(): void
     {
@@ -28,21 +28,21 @@ class SidebarNavigationTest extends TestCase
             ?? User::factory()->create(['email' => 'owner@arsikon.co.id']);
         $this->owner->syncRoles(['Owner']);
 
-        $this->adminPO = User::where('email', 'admin.po@arsikon.co.id')->first()
-            ?? User::factory()->create(['email' => 'admin.po@arsikon.co.id']);
-        $this->adminPO->syncRoles(['Admin PO']);
+        $this->adminPO = User::where('email', 'admin.pengadaan@arsikon.co.id')->first()
+            ?? User::factory()->create(['email' => 'admin.pengadaan@arsikon.co.id']);
+        $this->adminPO->syncRoles(['Admin Pengadaan']);
 
         $this->adminProyek = User::where('email', 'admin.proyek1@arsikon.co.id')->first()
             ?? User::factory()->create(['email' => 'admin.proyek1@arsikon.co.id']);
-        $this->adminProyek->syncRoles(['Admin Gudang Proyek']);
+        $this->adminProyek->syncRoles(['Admin Logistik Proyek']);
 
         $this->adminGudangPusat = User::where('email', 'gudang.pusat@arsikon.co.id')->first()
             ?? User::factory()->create(['email' => 'gudang.pusat@arsikon.co.id']);
-        $this->adminGudangPusat->syncRoles(['Admin Gudang Pusat']);
+        $this->adminGudangPusat->syncRoles(['Admin Logistik Pusat']);
 
-        $this->karyawan = User::where('email', 'karyawan@arsikon.co.id')->first()
-            ?? User::factory()->create(['email' => 'karyawan@arsikon.co.id']);
-        $this->karyawan->syncRoles(['Karyawan']);
+        $this->siteEngineer = User::where('email', 'engineer.prj1@arsikon.co.id')->first()
+            ?? User::factory()->create(['email' => 'engineer.prj1@arsikon.co.id']);
+        $this->siteEngineer->syncRoles(['Site Engineer']);
     }
 
     public function test_sidebar_group_order_is_teknis_pengadaan_logistik(): void
@@ -68,7 +68,7 @@ class SidebarNavigationTest extends TestCase
         $this->assertTrue($posPengadaan < $posLogistik, 'Grup Pengadaan harus berada sebelum Logistik');
     }
 
-    public function test_po_lapangan_is_located_under_pengadaan_and_links_to_material_requests(): void
+    public function test_Admin_Pengadaan_Proyek_is_located_under_pengadaan_and_links_to_material_requests(): void
     {
         $response = $this->actingAs($this->adminPO)->get(route('dashboard'));
         $response->assertOk();
@@ -88,7 +88,7 @@ class SidebarNavigationTest extends TestCase
         $this->assertNotFalse($posPoLapangan);
         $this->assertTrue($posPengadaan < $posPoLapangan, 'PO Lapangan harus berada di dalam grup Pengadaan');
 
-        // Untuk Admin PO, grup Teknis dan Logistik dihapus/disembunyikan dari sidebar
+        // Untuk Admin Pengadaan, grup Teknis dan Logistik dihapus/disembunyikan dari sidebar
         $this->assertStringNotContainsString('nav-section-label">TEKNIS', $content);
         $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $content);
     }
@@ -114,7 +114,7 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString('Nota Pembelian Harian', $sidebar);
         $this->assertStringContainsString('Keuangan', $sidebar);
 
-        // Tidak boleh muncul di sidebar (Surat Jalan & Template Kop Surat dihapus untuk Admin PO, Logistik dihapus, Teknis disatukan ke Pengadaan, tidak ada GR, tidak ada Admin Sistem, tidak ada dropdown chevron):
+        // Tidak boleh muncul di sidebar (Surat Jalan & Template Kop Surat dihapus untuk Admin Pengadaan, Logistik dihapus, Teknis disatukan ke Pengadaan, tidak ada GR, tidak ada Admin Sistem, tidak ada dropdown chevron):
         $this->assertStringNotContainsString('Surat Jalan', $sidebar);
         $this->assertStringNotContainsString('Template Kop Surat', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">LOGISTIK', $sidebar);
@@ -143,7 +143,7 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString('Alat', $sidebar);
 
         // Tidak boleh muncul:
-        // Admin Gudang Proyek TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
+        // Admin Logistik Proyek TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
         $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
         $this->assertStringNotContainsString('PO Lapangan', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
@@ -183,7 +183,7 @@ class SidebarNavigationTest extends TestCase
         $this->assertStringContainsString('Alat', $sidebar);
 
         // Tidak boleh muncul:
-        // Admin Gudang Pusat: TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
+        // Admin Logistik Pusat: TEKNIS (PO Lapangan) disembunyikan, Pengadaan disembunyikan, Admin Sistem disembunyikan
         $this->assertStringNotContainsString('nav-section-label">TEKNIS', $sidebar);
         $this->assertStringNotContainsString('PO Lapangan', $sidebar);
         $this->assertStringNotContainsString('nav-section-label">PENGADAAN', $sidebar);
@@ -205,20 +205,20 @@ class SidebarNavigationTest extends TestCase
         $responseTool->assertSee('Tambah Alat');
     }
 
-    public function test_karyawan_sidebar_visibility_and_restrictions(): void
+    public function test_site_engineer_sidebar_visibility_and_restrictions(): void
     {
-        $response = $this->actingAs($this->karyawan)->get(route('dashboard'));
+        $response = $this->actingAs($this->siteEngineer)->get(route('dashboard'));
         $response->assertOk();
 
         $sidebar = $this->getSidebarContent($response->getContent());
 
-        // Karyawan boleh: PO Lapangan, Pemakaian Material, Peminjaman Alat, Surat Jalan
+        // Site Engineer boleh: PO Lapangan, Pemakaian Material, Peminjaman Alat, Surat Jalan
         $this->assertStringContainsString('PO Lapangan', $sidebar);
         $this->assertStringContainsString('Pemakaian Material', $sidebar);
         $this->assertStringContainsString('Peminjaman Alat', $sidebar);
         $this->assertStringContainsString('Surat Jalan', $sidebar);
 
-        // Karyawan DILARANG di sidebar:
+        // Site Engineer DILARANG di sidebar:
         $this->assertStringNotContainsString('Purchase Order (PO)', $sidebar);
         $this->assertStringNotContainsString('Permintaan Pengadaan', $sidebar);
         $this->assertStringNotContainsString('Nota Pembelian Harian', $sidebar);

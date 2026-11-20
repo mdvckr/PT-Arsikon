@@ -16,14 +16,13 @@ class RoleController extends Controller
     public const PROTECTED_ROLES = [
         'Owner',
         'Admin Pusat',
-        'Admin Gudang Pusat',
-        'Admin Gudang Proyek',
+        'Admin Logistik Pusat',
+        'Admin Logistik Proyek',
         'Site Engineer',
         'Site Manager',
         'Project Manager',
-        'Admin PO',
-        'Admin PO Proyek',
-        'admin-po-nota',
+        'Admin Pengadaan',
+        'Admin Pengadaan Proyek',
     ];
 
     /**
@@ -62,14 +61,14 @@ class RoleController extends Controller
             'icon'        => 'shield-check',
             'description' => 'Full akses sistem, manajemen akun, gudang, jabatan, dan monitoring logistik.',
         ],
-        'Admin Gudang Pusat' => [
+        'Admin Logistik Pusat' => [
             'category'    => 'Logistik Sentral',
             'badge_color' => '#065f46',
             'badge_bg'    => '#d1fae5',
             'icon'        => 'warehouse',
             'description' => 'Operasional gudang sentral, penerimaan barang supplier, dan distribusi ke proyek.',
         ],
-        'Admin Gudang Proyek' => [
+        'Admin Logistik Proyek' => [
             'category'    => 'Site Proyek - Logistik',
             'badge_color' => '#9a3412',
             'badge_bg'    => '#ffedd5',
@@ -97,26 +96,19 @@ class RoleController extends Controller
             'icon'        => 'award',
             'description' => 'Pimpinan proyek, persetujuan penuh PO Lapangan, evaluasi aktivitas proyek, dan kontrol inventori.',
         ],
-        'Admin PO' => [
+        'Admin Pengadaan' => [
             'category'    => 'Pengadaan Pusat',
             'badge_color' => '#5b21b6',
             'badge_bg'    => '#ede9fe',
             'icon'        => 'file-spreadsheet',
             'description' => 'Pengadaan pusat, Purchase Order (PO) resmi, verifikasi nota, dan pembayaran vendor.',
         ],
-        'Admin PO Proyek' => [
+        'Admin Pengadaan Proyek' => [
             'category'    => 'Site Proyek',
             'badge_color' => '#0284c7',
             'badge_bg'    => '#e0f2fe',
             'icon'        => 'receipt',
             'description' => 'Khusus pengisian & pencatatan nota pembelian harian bon toko di proyek.',
-        ],
-        'admin-po-nota' => [
-            'category'    => 'Site Proyek',
-            'badge_color' => '#0891b2',
-            'badge_bg'    => '#cffafe',
-            'icon'        => 'receipt',
-            'description' => 'Pencatatan nota pembelian harian belanja proyek dan monitoring PO Lapangan.',
         ],
     ];
 

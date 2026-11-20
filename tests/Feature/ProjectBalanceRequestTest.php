@@ -37,7 +37,7 @@ class ProjectBalanceRequestTest extends TestCase
         $rolePOProyek = Role::firstOrCreate(['name' => 'Admin Pengadaan Proyek', 'guard_name' => 'web']);
         $rolePOProyek->syncPermissions(['view balance requests', 'create balance requests']);
 
-        $rolePOPusat = Role::firstOrCreate(['name' => 'Admin PO', 'guard_name' => 'web']);
+        $rolePOPusat = Role::firstOrCreate(['name' => 'Admin Pengadaan', 'guard_name' => 'web']);
         $rolePOPusat->syncPermissions([
             'view balance requests',
             'create balance requests',
@@ -64,10 +64,10 @@ class ProjectBalanceRequestTest extends TestCase
         $this->poProyekUser->assignRole('Admin Pengadaan Proyek');
 
         $this->poPusatUser = User::factory()->create([
-            'name'  => 'Admin PO Pusat',
-            'email' => 'admin.po@arsikon.co.id',
+            'name'  => 'Admin Pengadaan Pusat',
+            'email' => 'admin.pengadaan@arsikon.co.id',
         ]);
-        $this->poPusatUser->assignRole('Admin PO');
+        $this->poPusatUser->assignRole('Admin Pengadaan');
     }
 
     public function test_po_proyek_can_view_balance_requests_index()
@@ -108,7 +108,7 @@ class ProjectBalanceRequestTest extends TestCase
             ->get(route('payments.index'));
 
         $response->assertStatus(200);
-        // Admin PO Pusat should see Keuangan
+        // Admin Pengadaan Pusat should see Keuangan
         $response->assertSee(route('payments.index'));
         // But NOT Pengajuan Kas Proyek in the sidebar
         $response->assertDontSee(route('project-balance-requests.index'));
@@ -171,9 +171,9 @@ class ProjectBalanceRequestTest extends TestCase
             'purpose'             => 'Operasional lapangan',
             'urgency'             => 'urgent',
             'status'              => 'pending',
-            'signer_requester'    => 'Admin PO Proyek',
+            'signer_requester'    => 'Admin Pengadaan Proyek',
             'signer_site_manager' => 'Site Manager Lapangan',
-            'signer_approver'     => 'Admin PO Pusat',
+            'signer_approver'     => 'Admin Pengadaan Pusat',
         ]);
 
         $response = $this->actingAs($this->poProyekUser)
@@ -182,7 +182,7 @@ class ProjectBalanceRequestTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('PENGAJUAN KAS LAPANGAN');
         $response->assertSee('PKL-202611-0001');
-        $response->assertSee('Admin PO Pusat');
+        $response->assertSee('Admin Pengadaan Pusat');
     }
 
     public function test_po_pusat_sees_pending_balance_request_in_keuangan_and_approves()
@@ -264,7 +264,7 @@ class ProjectBalanceRequestTest extends TestCase
         // 2. When approved, uses the approver user's name
         $req->approved_by = $this->poPusatUser->id;
         $req->setRelation('approver', $this->poPusatUser);
-        $this->assertEquals('Admin PO Pusat', $req->approver_display_name);
+        $this->assertEquals('Admin Pengadaan Pusat', $req->approver_display_name);
 
         // 3. Fallback to 'Pengadaan' when no PO Pusat account exists
         User::query()->delete();
