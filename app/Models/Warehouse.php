@@ -75,7 +75,7 @@ class Warehouse extends Model
      */
     public function getTypeLabel(): string
     {
-        return $this->is_central ? 'Pusat' : 'Proyek';
+        return $this->isCentral() ? 'Pusat' : 'Proyek';
     }
 
     /**
@@ -83,7 +83,7 @@ class Warehouse extends Model
      */
     public function getBadgeClass(): string
     {
-        return $this->is_central ? 'badge-primary' : 'badge-info';
+        return $this->isCentral() ? 'badge-primary' : 'badge-info';
     }
 
     public function project(): BelongsTo
@@ -129,7 +129,7 @@ class Warehouse extends Model
             return false;
         }
 
-        if ($this->is_central || $this->type === 'central') {
+        if ($this->isCentral()) {
             return true;
         }
 
@@ -140,9 +140,19 @@ class Warehouse extends Model
         return true;
     }
 
+    /**
+     * Status administratif murni dari kolom database.
+     * Berbeda dari accessor is_active yang juga mengikuti status proyek.
+     */
+    public function isAdministrativelyActive(): bool
+    {
+        return (bool) ($this->getRawOriginal('is_active') ?? true);
+    }
+
     public function isCentral(): bool
     {
-        return (bool) $this->is_central || $this->type === 'central';
+        return (bool) $this->is_central
+            || in_array($this->type, ['central', 'main', 'pusat'], true);
     }
 
     public function isProject(): bool
@@ -152,12 +162,20 @@ class Warehouse extends Model
 
     public function scopeCentral(Builder $query): Builder
     {
-        return $query->where('is_central', true);
+        return $query->where(function (Builder $q) {
+            $q->where('is_central', true)
+                ->orWhereIn('type', ['central', 'main', 'pusat']);
+        });
     }
 
     public function scopeProject(Builder $query): Builder
     {
-        return $query->where('is_central', false);
+        return $query->where(function (Builder $q) {
+            $q->where('is_central', false)->orWhereNull('is_central');
+        })->where(function (Builder $q) {
+            $q->whereNotIn('type', ['central', 'main', 'pusat'])
+                ->orWhereNull('type');
+        });
     }
 
     /**
@@ -165,7 +183,7 @@ class Warehouse extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        if ($this->is_central || $this->type === 'central') {
+        if ($this->isCentral()) {
             return 'Aktif (Pusat)';
         }
 
@@ -179,5 +197,23 @@ class Warehouse extends Model
         }
 
         return 'Aktif';
+    }
+
+    /**
+     * Label fase proyek untuk gudang proyek.
+     */
+    public function getProjectPhaseLabelAttribute(): ?string
+    {
+        if ($this->isCentral() || ! $this->project) {
+            return null;
+        }
+
+        return match ($this->project->status) {
+            'active'    => 'Proyek berjalan',
+            'completed' => 'Proyek selesai',
+            'on_hold'   => 'Proyek ditangguhkan',
+            'planning'  => 'Proyek perencanaan',
+            default     => 'Proyek '.str_replace('_', ' ', (string) $this->project->status),
+        };
     }
 }

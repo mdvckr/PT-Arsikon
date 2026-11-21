@@ -181,12 +181,15 @@
             gap: 6px;
             text-decoration: none;
         }
-        .btn-print { background: #2563eb; color: #fff; }
+        .btn-print { background: #ea580c; color: #fff; }
+        .btn-print:hover { background: #d9480c; }
         .btn-close { background: #64748b; color: #fff; }
+        .btn-close:hover { background: #475569; }
         @media print {
             .print-actions { display: none !important; }
             body { background: #fff; }
-            .print-sheet { padding: 0; }
+            .print-sheet { padding: 0; width: 100%; max-width: 100%; }
+            table, tr, .sig-section, .sig-box, .section-header, .kop { page-break-inside: avoid; }
         }
     </style>
 </head>

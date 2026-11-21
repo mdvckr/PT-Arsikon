@@ -15,6 +15,7 @@ class Project extends Model
         'code',
         'name',
         'location',
+        'description',
         'status',
         'operational_balance',
         'start_date',
@@ -22,8 +23,8 @@ class Project extends Model
     ];
 
     protected $casts = [
-        'start_date'          => 'date',
-        'end_date'            => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'operational_balance' => 'decimal:2',
     ];
 

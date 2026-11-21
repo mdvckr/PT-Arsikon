@@ -1,454 +1,282 @@
 <x-app-layout>
     <x-slot name="title">Edit Gudang - {{ $warehouse->name }}</x-slot>
 
-    <div class="warehouse-edit-container" data-animate="panel">
-        <!-- Breadcrumb -->
-        <div class="breadcrumb mb-3">
-            <a href="{{ route('warehouses.index') }}"><x-lucide-warehouse style="font-size:12px;" /> Data Gudang</a>
-            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
-            <span style="color:#1e293b;font-weight:600;">Edit Gudang</span>
-        </div>
+    @push('styles')
+        @include('warehouses.partials.styles')
+    @endpush
 
-        @php
-            $isCentral = $warehouse->is_central || in_array($warehouse->type, ['central', 'main', 'pusat']);
-            $currentType = old('type', $isCentral ? 'central' : 'project');
-        @endphp
+    @php
+        $isCentral = $warehouse->isCentral();
+        $adminActive = $warehouse->isAdministrativelyActive();
+        $oldType = old('type');
+        $currentType = $oldType !== null
+            ? (in_array($oldType, ['central', 'main', 'pusat'], true) ? 'central' : 'project')
+            : ($isCentral ? 'central' : 'project');
+        $isActive = (string) old('is_active', $adminActive ? '1' : '0') === '1';
+    @endphp
 
-        <!-- Header Warehouse Banner -->
-        <div class="card mb-4 warehouse-banner-card">
-            <div class="card-body" style="padding: 20px 24px;">
-                <div class="warehouse-banner-flex">
-                    <div class="warehouse-icon-badge {{ $isCentral ? 'central' : 'project' }}">
-                        @if($isCentral)
-                            <x-lucide-building-2 />
-                        @else
-                            <x-lucide-hard-hat />
-                        @endif
-                    </div>
-                    <div class="warehouse-banner-info">
-                        <div class="flex items-center gap-2 flex-wrap mb-1">
-                            <h2 class="warehouse-banner-title" data-animate="header">{{ $warehouse->name }}</h2>
-                            @if($isCentral)
-                                <span class="badge badge-primary"><x-lucide-building-2 /> Gudang Pusat</span>
-                            @else
-                                <span class="badge badge-info"><x-lucide-hard-hat /> Gudang Proyek</span>
-                            @endif
-                            @if($warehouse->is_active)
-                                <span class="badge badge-success"><x-lucide-circle-check style="font-size:10px;" /> Aktif</span>
-                            @else
-                                <span class="badge badge-danger"><x-lucide-circle-x style="font-size:10px;" /> Nonaktif</span>
-                            @endif
-                        </div>
-                        <div class="warehouse-banner-meta">
-                            <span><x-lucide-barcode class="text-muted" /> {{ $warehouse->code ?: '-' }}</span>
-                            @if($warehouse->project)
-                                <span class="meta-dot">&bull;</span>
-                                <span><x-lucide-folder-open class="text-warning" /> Proyek: <strong>{{ $warehouse->project->name }}</strong></span>
-                            @endif
-                            <span class="meta-dot">&bull;</span>
-                            <span><x-lucide-package class="text-muted" /> {{ $warehouse->inventories()->count() }} Item Material</span>
-                        </div>
-                    </div>
-                    <div class="warehouse-banner-action">
-                        <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
-                            <x-lucide-arrow-left /> Kembali
-                        </a>
-                    </div>
+    <div class="wh-form-shell">
+        <nav class="wh-breadcrumb" aria-label="Breadcrumb">
+            <a href="{{ route('warehouses.index') }}">
+                <x-lucide-warehouse /> Data Gudang
+            </a>
+            <x-lucide-chevron-right />
+            <span>Edit Gudang</span>
+        </nav>
+
+        <div class="wh-banner">
+            <div class="wh-banner-icon {{ $isCentral ? 'is-central' : 'is-project' }}">
+                @if($isCentral)
+                    <x-lucide-building-2 />
+                @else
+                    <x-lucide-hard-hat />
+                @endif
+            </div>
+
+            <div class="wh-banner-info">
+                <div class="wh-banner-title-row">
+                    <h1 class="wh-banner-title">{{ $warehouse->name }}</h1>
+                    <x-warehouse-type-badge :central="$isCentral" />
+                    <x-warehouse-status-badge :active="$adminActive" />
                 </div>
+                <div class="wh-banner-meta">
+                    <span><x-lucide-barcode /> {{ $warehouse->code ?: 'Tanpa kode' }}</span>
+                    @if($warehouse->project)
+                        <span><x-lucide-folder-open /> {{ $warehouse->project->name }}</span>
+                    @endif
+                    <span><x-lucide-package /> {{ $warehouse->inventories_count }} jenis inventori</span>
+                    <span><x-lucide-users /> {{ $warehouse->users_count }} user</span>
+                </div>
+            </div>
+
+            <div class="wh-banner-actions">
+                <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
+                    <x-lucide-arrow-left /> Kembali
+                </a>
             </div>
         </div>
 
-        <!-- Form Card -->
-        <div class="card shadow-sm warehouse-form-card">
-            <div class="card-header warehouse-form-header">
-                <div class="flex items-center gap-2">
-                    <div class="icon-circle icon-circle-warning">
+        <div class="wh-form-card">
+            <div class="wh-form-head">
+                <div class="wh-form-head-main">
+                    <div class="wh-form-head-icon is-amber">
                         <x-lucide-square-pen />
                     </div>
                     <div>
-                        <span class="card-title" style="font-size:16px;">Formulir Perubahan Data Gudang</span>
-                        <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Ubah identitas lokasi, penugasan proyek, dan status operasional pergudangan.</p>
+                        <h2 class="wh-form-title">Formulir Perubahan Data Gudang</h2>
+                        <p class="wh-form-sub">Ubah identitas lokasi, penugasan proyek, dan status operasional pergudangan.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="card-body warehouse-form-body">
-                @if (isset($errors) && $errors->any())
-                    <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
-                        <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
-                        </strong>
-                        <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
-                            @foreach ($errors->all() as $error)
+            <div class="wh-form-body">
+                @if($errors->any())
+                <div class="wh-alert" role="alert">
+                    <x-lucide-circle-alert />
+                    <div>
+                        <strong>Terdapat {{ $errors->count() }} kesalahan pada pengisian form:</strong>
+                        <ul>
+                            @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
                     </div>
+                </div>
                 @endif
 
-                <form method="POST" action="{{ route('warehouses.update', $warehouse) }}" id="editWarehouseForm">
-                    @csrf 
+                <form method="POST" action="{{ route('warehouses.update', $warehouse) }}">
+                    @csrf
                     @method('PUT')
 
-                    <!-- SECTION 1: IDENTITAS GUDANG -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
+                    <div class="wh-section">
+                        <div class="wh-section-head">
                             <x-lucide-warehouse class="text-primary" />
-                            <h3 class="section-title">Identitas Gudang</h3>
+                            <h2 class="wh-section-title">Identitas Gudang</h2>
                         </div>
 
-                        <div class="grid grid-2 responsive-grid">
-                            <div class="mb-3">
+                        <div class="wh-grid-2">
+                            <div class="wh-field-block">
                                 <label class="form-label" for="whCode">
                                     Kode Gudang <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-barcode class="input-icon" />
-                                    <input type="text" id="whCode" name="code" value="{{ old('code', $warehouse->code) }}" class="form-control with-icon" required placeholder="mis. W-CENTRAL">
-                                </div>
+                                <input type="text"
+                                       id="whCode"
+                                       name="code"
+                                       value="{{ old('code', $warehouse->code) }}"
+                                       maxlength="30"
+                                       class="form-control @error('code') is-invalid @enderror"
+                                       placeholder="mis. W-CENTRAL"
+                                       required
+                                       @error('code') aria-invalid="true" aria-describedby="codeError" @enderror>
+                                @error('code')
+                                    <span class="wh-error" id="codeError"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
 
-                            <div class="mb-3">
+                            <div class="wh-field-block">
                                 <label class="form-label" for="whName">
                                     Nama Gudang <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-building-2 class="input-icon" />
-                                    <input type="text" id="whName" name="name" value="{{ old('name', $warehouse->name) }}" class="form-control with-icon" required placeholder="mis. Gudang Sentral Jakarta">
-                                </div>
+                                <input type="text"
+                                       id="whName"
+                                       name="name"
+                                       value="{{ old('name', $warehouse->name) }}"
+                                       maxlength="255"
+                                       class="form-control @error('name') is-invalid @enderror"
+                                       placeholder="mis. Gudang Sentral Jakarta"
+                                       required
+                                       @error('name') aria-invalid="true" aria-describedby="nameError" @enderror>
+                                @error('name')
+                                    <span class="wh-error" id="nameError"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-divider"></div>
+                    <div class="wh-form-divider"></div>
 
-                    <!-- SECTION 2: TIPE & PENUGASAN PROYEK -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
+                    <div class="wh-section">
+                        <div class="wh-section-head">
                             <x-lucide-layers class="text-warning" />
-                            <h3 class="section-title">Tipe Gudang & Relasi Proyek</h3>
+                            <h2 class="wh-section-title">Tipe & Relasi Proyek</h2>
                         </div>
 
-                        <div class="grid grid-2 responsive-grid">
-                            <div class="mb-3">
-                                <label class="form-label" for="warehouseType">
-                                    Tipe Gudang <span class="text-danger">*</span>
+                        <div class="wh-field-block">
+                            <span class="form-label">Tipe Gudang <span class="text-danger">*</span></span>
+                            <div class="wh-type-options" role="radiogroup" aria-label="Tipe gudang">
+                                <label class="wh-type-option">
+                                    <input type="radio" name="type" value="central" @checked($currentType === 'central')>
+                                    <span class="wh-type-option-top"><x-lucide-building-2 /> Gudang Pusat</span>
+                                    <span class="wh-type-option-desc">Lokasi inventori utama dan operasional kantor pusat.</span>
                                 </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-tag class="input-icon" />
-                                    <select name="type" class="form-control with-icon" id="warehouseType" required onchange="toggleProject()">
-                                        <option value="central" {{ $currentType == 'central' ? 'selected' : '' }}>🏢 Gudang Pusat (Central)</option>
-                                        <option value="project" {{ $currentType == 'project' ? 'selected' : '' }}>🏗️ Gudang Proyek (Project Site)</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mb-3" id="projectWrapper" style="display:{{ $currentType == 'project' ? 'block' : 'none' }};">
-                                <label class="form-label" for="projectNameInput">
-                                    Terkait Proyek <span class="text-danger">*</span>
+                                <label class="wh-type-option">
+                                    <input type="radio" name="type" value="project" @checked($currentType === 'project')>
+                                    <span class="wh-type-option-top"><x-lucide-hard-hat /> Gudang Proyek</span>
+                                    <span class="wh-type-option-desc">Lokasi material khusus untuk kebutuhan site proyek.</span>
                                 </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-landmark class="input-icon" />
-                                    <input type="text" 
-                                           id="projectNameInput" 
-                                           name="project_name" 
-                                           list="projectSuggestions" 
-                                           value="{{ old('project_name', $warehouse->project->name ?? '') }}" 
-                                           class="form-control with-icon" 
-                                           placeholder="Ketik nama proyek (mis. Proyek Pembangunan Gedung A)...">
-                                    <datalist id="projectSuggestions">
-                                        @foreach(\App\Models\Project::orderBy('name')->get() as $proj)
-                                        <option value="{{ $proj->name }}">
-                                        @endforeach
-                                    </datalist>
-                                </div>
-                                <span class="text-muted" style="font-size:11.5px;display:block;margin-top:4px;">
-                                    Ketik nama proyek langsung (otomatis terhubung atau dibuatkan proyek baru).
-                                </span>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="whActive">
-                                    Status Operasional
-                                </label>
-                                <div class="input-icon-wrap">
-                                    <x-lucide-toggle-right class="input-icon" />
-                                    <select name="is_active" id="whActive" class="form-control with-icon">
-                                        <option value="1" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '1' ? 'selected' : '' }}>🟢 Aktif (Siap Operasional)</option>
-                                        <option value="0" {{ old('is_active', $warehouse->is_active ? '1' : '0') == '0' ? 'selected' : '' }}>🔴 Nonaktif (Operasional Ditutup)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-divider"></div>
-
-                    <!-- SECTION 3: LOKASI & ALAMAT -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
-                            <x-lucide-map-pin class="text-danger" />
-                            <h3 class="section-title">Lokasi & Alamat Gudang</h3>
+                            @error('type')
+                                <span class="wh-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label" for="whAddress">
-                                Alamat Lengkap
+                        <div class="wh-field-block mt-3 {{ $currentType === 'project' ? '' : 'wh-is-hidden' }}" id="projectWrapper">
+                            <label class="form-label" for="projectNameInput">
+                                Terkait Proyek <span class="text-danger">*</span>
                             </label>
-                            <div class="input-icon-wrap" style="align-items:flex-start;">
-                                <x-lucide-map-pin class="input-icon" style="top:12px;" />
-                                <textarea id="whAddress" name="address" class="form-control with-icon" rows="3" placeholder="Alamat lengkap lokasi gudang atau instruksi akses pengiriman...">{{ old('address', $warehouse->address ?? $warehouse->location) }}</textarea>
-                            </div>
+                            <input type="text"
+                                   id="projectNameInput"
+                                   name="project_name"
+                                   list="projectSuggestions"
+                                   value="{{ old('project_name', $warehouse->project->name ?? '') }}"
+                                   maxlength="255"
+                                   class="form-control @error('project_name') is-invalid @enderror"
+                                   placeholder="Pilih atau ketik nama proyek..."
+                                   @error('project_name') aria-invalid="true" aria-describedby="projectNameError" @enderror>
+                            <datalist id="projectSuggestions">
+                                @foreach($projects as $project)
+                                    <option value="{{ $project->name }}"></option>
+                                @endforeach
+                            </datalist>
+                            <span class="wh-help">
+                                @if($warehouse->project)
+                                    Saat ini terhubung ke {{ $warehouse->project->name }}. Ubah nama untuk memindahkan gudang ke proyek lain.
+                                @else
+                                    Pilih proyek yang sudah ada atau ketik nama baru untuk dibuat otomatis.
+                                @endif
+                            </span>
+                            @error('project_name')
+                                <span class="wh-error" id="projectNameError"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="wh-field-block mt-3">
+                            <span class="form-label">Status Operasional</span>
+                            <label class="wh-switch" for="whActive">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" id="whActive" name="is_active" value="1" @checked($isActive)>
+                                <span>Aktif dan siap digunakan</span>
+                            </label>
+                            <span class="wh-help">Gudang nonaktif tetap tersimpan, tetapi tidak dipakai untuk operasi baru.</span>
                         </div>
                     </div>
 
-                    <!-- FORM FOOTER ACTIONS -->
-                    <div class="form-actions-bar">
-                        <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
-                            <button type="submit" class="btn btn-primary btn-submit-form">
-                                <x-lucide-save /> Simpan Perubahan
-                            </button>
-                            <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <x-lucide-x /> Batal
-                            </a>
+                    <div class="wh-form-divider"></div>
+
+                    <div class="wh-section">
+                        <div class="wh-section-head">
+                            <x-lucide-map-pin class="text-danger" />
+                            <h2 class="wh-section-title">Lokasi & Alamat</h2>
                         </div>
+
+                        <div class="wh-field-block">
+                            <div class="flex items-center justify-between">
+                                <label class="form-label" for="whAddress">Alamat Lengkap</label>
+                                <span class="wh-help" id="addressCount">0/500</span>
+                            </div>
+                            <textarea id="whAddress"
+                                      name="address"
+                                      rows="3"
+                                      maxlength="500"
+                                      class="form-control @error('address') is-invalid @enderror"
+                                      placeholder="Alamat lengkap lokasi gudang atau instruksi akses pengiriman..."
+                                      @error('address') aria-invalid="true" aria-describedby="addressError" @enderror>{{ old('address', $warehouse->address) }}</textarea>
+                            @error('address')
+                                <span class="wh-error" id="addressError"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="wh-form-actions">
+                        <a href="{{ route('warehouses.index') }}" class="btn btn-secondary">
+                            <x-lucide-x /> Batal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <x-lucide-save /> Simpan Perubahan
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    @push('styles')
-    <style>
-        .warehouse-edit-container {
-            width: 100%;
-        }
-
-        /* Banner Card */
-        .warehouse-banner-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        .warehouse-banner-flex {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            flex-wrap: wrap;
-        }
-
-        .warehouse-icon-badge {
-            width: 58px;
-            height: 58px;
-            border-radius: 14px;
-            color: #ffffff;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .warehouse-icon-badge.central {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        }
-        .warehouse-icon-badge.project {
-            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-        }
-
-        .warehouse-banner-info {
-            flex: 1;
-            min-width: 220px;
-        }
-
-        .warehouse-banner-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: #0f172a;
-            margin: 0;
-            line-height: 1.2;
-        }
-
-        .warehouse-banner-meta {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .meta-dot {
-            color: #cbd5e1;
-        }
-
-        .warehouse-banner-action {
-            flex-shrink: 0;
-        }
-
-        /* Form Card */
-        .warehouse-form-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: #ffffff;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-            overflow: hidden;
-        }
-
-        .warehouse-form-header {
-            padding: 18px 24px;
-            background: #ffffff;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .icon-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .icon-circle-warning {
-            background: rgba(245, 158, 11, 0.12);
-            color: #d97706;
-        }
-
-        .warehouse-form-body {
-            padding: 24px;
-        }
-
-        /* Section Titles */
-        .section-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-
-        .section-title {
-            font-size: 14.5px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0;
-        }
-
-        .form-divider {
-            height: 1px;
-            background: #f1f5f9;
-            margin: 24px 0;
-        }
-
-        /* Input With Icon */
-        .input-icon-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-icon-wrap .input-icon {
-            position: absolute;
-            left: 12px;
-            color: #94a3b8;
-            font-size: 14px;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-
-        .input-icon-wrap .form-control.with-icon {
-            padding-left: 36px;
-        }
-
-        .input-icon-wrap .form-control:focus + .input-icon,
-        .input-icon-wrap:focus-within .input-icon {
-            color: #2563eb;
-        }
-
-        /* Form Actions Bar */
-        .form-actions-bar {
-            margin-top: 30px;
-            padding-top: 18px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .btn-submit-form {
-            padding: 10px 22px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .btn-cancel-form {
-            padding: 10px 18px;
-            font-size: 14px;
-        }
-
-        /* RESPONSIVE MOBILE STYLES */
-        @media (max-width: 768px) {
-            .warehouse-edit-container {
-                max-width: 100%;
-            }
-
-            .warehouse-banner-flex {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .warehouse-banner-action {
-                width: 100%;
-            }
-
-            .warehouse-banner-action .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .warehouse-form-body {
-                padding: 16px;
-            }
-
-            .responsive-grid {
-                grid-template-columns: 1fr !important;
-                gap: 0;
-            }
-
-            .form-buttons-wrapper {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .btn-submit-form,
-            .btn-cancel-form {
-                width: 100%;
-                justify-content: center;
-                padding: 12px;
-            }
-        }
-    </style>
-    @endpush
-
     @push('scripts')
     <script>
-        function toggleProject() {
-            const type = document.getElementById('warehouseType').value;
+        document.addEventListener('DOMContentLoaded', function () {
+            const typeInputs = document.querySelectorAll('input[name="type"]');
             const projectWrapper = document.getElementById('projectWrapper');
-            const projectNameInput = document.getElementById('projectNameInput');
-            if (type === 'project') {
-                projectWrapper.style.display = 'block';
-                if (projectNameInput) projectNameInput.required = true;
-            } else {
-                projectWrapper.style.display = 'none';
-                if (projectNameInput) {
-                    projectNameInput.required = false;
+            const projectInput = document.getElementById('projectNameInput');
+            const addressInput = document.getElementById('whAddress');
+            const addressCount = document.getElementById('addressCount');
+
+            function syncProjectField() {
+                const selected = document.querySelector('input[name="type"]:checked');
+                const isProject = selected !== null && selected.value === 'project';
+
+                if (projectWrapper) {
+                    projectWrapper.classList.toggle('wh-is-hidden', !isProject);
+                }
+
+                if (projectInput) {
+                    projectInput.required = isProject;
                 }
             }
-        }
-        document.addEventListener('DOMContentLoaded', toggleProject);
+
+            typeInputs.forEach(function (input) {
+                input.addEventListener('change', syncProjectField);
+            });
+
+            if (addressInput && addressCount) {
+                const updateCount = function () {
+                    addressCount.textContent = addressInput.value.length + '/500';
+                };
+
+                addressInput.addEventListener('input', updateCount);
+                updateCount();
+            }
+
+            syncProjectField();
+        });
     </script>
     @endpush
 </x-app-layout>

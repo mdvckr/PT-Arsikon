@@ -1,121 +1,249 @@
 <x-app-layout>
     <x-slot name="title">Data Proyek</x-slot>
 
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <div class="flex items-center gap-2">
-            <div style="width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,0.12);color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:18px;">
-                <x-lucide-landmark />
-            </div>
-            <div>
-                <h2 class="fw-800" style="font-size:22px;color:#0f172a;line-height:1.2;">Data Proyek Konstruksi</h2>
-                <p class="text-muted" style="font-size:13px;margin:2px 0 0 0;">Kelola data proyek konstruksi beserta site pergudangan terkait.</p>
-            </div>
-        </div>
-        @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-        <div class="flex items-center gap-2">
-            <a href="{{ route('projects.create') }}" class="btn btn-primary" style="border-radius:9px;padding:9px 18px;font-weight:700;">
-                <x-lucide-circle-plus /> Tambah Proyek & Gudang
-            </a>
-        </div>
-        @endif
-    </div>
+    @push('styles')
+        @include('projects.partials.styles')
+    @endpush
 
-    <!-- TAB SWITCHER GUDANG & PROYEK -->
-    <div class="flex items-center gap-2 mb-4" style="background:#f1f5f9;padding:5px;border-radius:12px;width:fit-content;border:1px solid #e2e8f0;">
-        <a href="{{ route('warehouses.index') }}" class="btn btn-sm" style="border-radius:9px;font-weight:600;padding:8px 18px;display:flex;align-items:center;gap:8px;color:#475569;background:transparent;border:none;">
-            <x-lucide-warehouse />
-            <span>Data Gudang</span>
-            <span class="badge" style="background:#e2e8f0;color:#334155;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Warehouse::count() }}</span>
-        </a>
-        <a href="{{ route('projects.index') }}" class="btn btn-sm btn-primary" style="border-radius:9px;font-weight:700;padding:8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-            <x-lucide-landmark />
-            <span>Data Proyek</span>
-            <span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Project::count() }}</span>
-        </a>
-    </div>
+    @php
+        $canManageProjects = auth()->user()?->can('projects.manage')
+            || auth()->user()?->hasAnyRole(['Owner', 'Admin Pusat']);
+        $search = request('search');
+        $statusFilter = request('status');
+        $hasFilters = filled($search) || filled($statusFilter);
+    @endphp
 
-    <div class="card mb-4">
-        <div class="card-body" style="padding:16px 20px;">
-            <form method="GET" class="flex gap-3" style="flex-wrap:wrap;align-items:flex-end;">
-                <div style="flex:1;min-width:200px;">
-                    <label class="form-label">Cari Proyek</label>
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Nama proyek, klien...">
+    <div class="proj-page">
+        <header class="proj-header">
+            <div class="proj-header-main">
+                <div class="proj-header-icon">
+                    <x-lucide-building-2 />
                 </div>
-                <div style="min-width:160px;">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-control" onchange="this.form.submit()">
-                        <option value="">Semua Status</option>
-                        <option value="planning" {{ request('status') === 'planning' ? 'selected' : '' }}>Perencanaan</option>
-                        <option value="ongoing" {{ request('status') === 'ongoing' ? 'selected' : '' }}>Berjalan</option>
-                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
-                        <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Ditangguhkan</option>
-                    </select>
+                <div>
+                    <h1 class="proj-header-title">Data Proyek Konstruksi</h1>
+                    <p class="proj-header-subtitle">Kelola proyek, jadwal pelaksanaan, dan gudang site dalam satu tempat.</p>
+                </div>
+            </div>
+
+            @if($canManageProjects)
+            <div class="proj-header-actions">
+                <a href="{{ route('projects.create') }}" class="btn btn-primary proj-btn-primary">
+                    <x-lucide-circle-plus /> Tambah Proyek
+                </a>
+            </div>
+            @endif
+        </header>
+
+        <nav class="proj-tabs" aria-label="Navigasi data master lokasi">
+            <a href="{{ route('warehouses.index') }}" class="proj-tab">
+                <x-lucide-warehouse />
+                <span>Data Gudang</span>
+                <span class="proj-tab-count">{{ number_format($warehouseCount, 0, ',', '.') }}</span>
+            </a>
+            <a href="{{ route('projects.index') }}" class="proj-tab is-active" aria-current="page">
+                <x-lucide-building-2 />
+                <span>Data Proyek</span>
+                <span class="proj-tab-count">{{ number_format($stats['total'], 0, ',', '.') }}</span>
+            </a>
+        </nav>
+
+        <section class="proj-kpi-grid" aria-label="Ringkasan proyek">
+            <a href="{{ route('projects.index', array_filter(['search' => $search])) }}"
+               class="proj-kpi {{ filled($statusFilter) ? '' : 'is-active' }}"
+               data-animate="kpi">
+                <span class="proj-kpi-icon is-total"><x-lucide-folder-kanban /></span>
+                <span class="proj-kpi-body">
+                    <span class="proj-kpi-label">Total Proyek</span>
+                    <span class="proj-kpi-value" data-counter>{{ number_format($stats['total'], 0, ',', '.') }}</span>
+                </span>
+            </a>
+
+            <a href="{{ route('projects.index', array_filter(['search' => $search, 'status' => 'active'])) }}"
+               class="proj-kpi {{ $statusFilter === 'active' ? 'is-active' : '' }}"
+               data-animate="kpi">
+                <span class="proj-kpi-icon is-active"><x-lucide-activity /></span>
+                <span class="proj-kpi-body">
+                    <span class="proj-kpi-label">Berjalan</span>
+                    <span class="proj-kpi-value" data-counter>{{ number_format($stats['active'], 0, ',', '.') }}</span>
+                </span>
+            </a>
+
+            <a href="{{ route('projects.index', array_filter(['search' => $search, 'status' => 'planning'])) }}"
+               class="proj-kpi {{ $statusFilter === 'planning' ? 'is-active' : '' }}"
+               data-animate="kpi">
+                <span class="proj-kpi-icon is-planning"><x-lucide-clock /></span>
+                <span class="proj-kpi-body">
+                    <span class="proj-kpi-label">Perencanaan</span>
+                    <span class="proj-kpi-value" data-counter>{{ number_format($stats['planning'], 0, ',', '.') }}</span>
+                </span>
+            </a>
+
+            <a href="{{ route('projects.index', array_filter(['search' => $search, 'status' => 'completed'])) }}"
+               class="proj-kpi {{ $statusFilter === 'completed' ? 'is-active' : '' }}"
+               data-animate="kpi">
+                <span class="proj-kpi-icon is-completed"><x-lucide-circle-check /></span>
+                <span class="proj-kpi-body">
+                    <span class="proj-kpi-label">Selesai</span>
+                    <span class="proj-kpi-value" data-counter>{{ number_format($stats['completed'], 0, ',', '.') }}</span>
+                </span>
+            </a>
+        </section>
+
+        <section class="card proj-filter-card" aria-label="Filter data proyek">
+            <form method="GET" action="{{ route('projects.index') }}" class="proj-filter-form">
+                <div class="proj-field proj-field-search">
+                    <label class="form-label" for="projectSearch">Cari Proyek</label>
+                    <div class="input-icon-wrap">
+                        <x-lucide-search class="input-icon" />
+                        <input type="search"
+                               id="projectSearch"
+                               name="search"
+                               value="{{ $search }}"
+                               class="form-control with-icon"
+                               placeholder="Nama, kode, lokasi, atau deskripsi proyek...">
+                    </div>
+                </div>
+
+                <div class="proj-field">
+                    <label class="form-label" for="projectStatusFilter">Status</label>
+                    <div class="input-icon-wrap">
+                        <x-lucide-list-filter class="input-icon" />
+                        <select id="projectStatusFilter" name="status" class="form-control with-icon">
+                            <option value="">Semua Status</option>
+                            <option value="planning" @selected($statusFilter === 'planning')>Perencanaan</option>
+                            <option value="active" @selected($statusFilter === 'active')>Berjalan</option>
+                            <option value="completed" @selected($statusFilter === 'completed')>Selesai</option>
+                            <option value="on_hold" @selected($statusFilter === 'on_hold')>Ditangguhkan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="proj-filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <x-lucide-filter /> Terapkan
+                    </button>
+                    @if($hasFilters)
+                    <a href="{{ route('projects.index') }}" class="btn btn-secondary">
+                        <x-lucide-rotate-ccw /> Reset
+                    </a>
+                    @endif
                 </div>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <div class="card">
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Nama Proyek</th>
-                        <th>Klien</th>
-                        <th>Tanggal Mulai</th>
-                        <th>Tanggal Selesai</th>
-                        <th>Gudang Terkait</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php
-                        $statColors = [
-                            'planning'  => 'badge-gray',
-                            'ongoing'   => 'badge-primary',
-                            'completed' => 'badge-success',
-                            'suspended' => 'badge-danger',
-                        ];
-                        $statLabels = [
-                            'planning'  => 'Perencanaan',
-                            'ongoing'   => 'Berjalan',
-                            'completed' => 'Selesai',
-                            'suspended' => 'Ditangguhkan',
-                        ];
-                    @endphp
-                    @forelse($projects as $proj)
-                    <tr>
-                        <td class="fw-600">{{ $proj->name }}</td>
-                        <td>{{ $proj->client_name ?? '-' }}</td>
-                        <td>{{ $proj->start_date ? \Carbon\Carbon::parse($proj->start_date)->format('d/m/Y') : '-' }}</td>
-                        <td>{{ $proj->end_date ? \Carbon\Carbon::parse($proj->end_date)->format('d/m/Y') : '-' }}</td>
-                        <td><span class="badge badge-gray">{{ $proj->warehouses_count }} Gudang</span></td>
-                        <td>
-                            <span class="badge {{ $statColors[$proj->status] ?? 'badge-gray' }}">
-                                {{ $statLabels[$proj->status] ?? $proj->status }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="flex gap-1">
-                                @if(auth()->user()->can('projects.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-                                <a href="{{ route('projects.edit', $proj) }}" class="btn btn-sm btn-warning btn-icon" title="Edit"><x-lucide-pencil /></a>
-                                <form method="POST" action="{{ route('projects.destroy', $proj) }}" data-confirm="Hapus proyek {{ addslashes($proj->name) }} dari sistem?" data-confirm-title="Konfirmasi Hapus Proyek" data-confirm-btn="Hapus Proyek" data-confirm-danger="true">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-sm btn-danger btn-icon" title="Hapus"><x-lucide-trash-2 /></button>
-                                </form>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="7" class="text-center text-muted p-4">Belum ada data proyek</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($projects->hasPages())
-        <div style="padding:12px;border-top:1px solid #f1f5f9;">{{ $projects->links() }}</div>
-        @endif
+        <section class="card proj-table-card" aria-label="Daftar proyek">
+            <div class="table-wrap">
+                <table class="data-table proj-table">
+                    <thead>
+                        <tr>
+                            <th>Proyek</th>
+                            <th class="proj-col-location">Lokasi</th>
+                            <th class="proj-col-dates">Jadwal Pelaksanaan</th>
+                            <th>Gudang</th>
+                            <th>Status</th>
+                            <th class="proj-th-actions">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($projects as $proj)
+                        <tr>
+                            <td>
+                                <div class="proj-identity">
+                                    <span class="proj-identity-icon"><x-lucide-building-2 /></span>
+                                    <span class="proj-identity-body">
+                                        <span class="proj-identity-name">{{ $proj->name }}</span>
+                                        <span class="proj-identity-code">
+                                            <x-lucide-barcode /> {{ $proj->code ?: 'Tanpa kode' }}
+                                        </span>
+                                        @if(filled($proj->description))
+                                            <span class="proj-identity-desc">{{ \Illuminate\Support\Str::limit($proj->description, 90) }}</span>
+                                        @else
+                                            <span class="proj-identity-desc is-empty">Belum ada deskripsi proyek</span>
+                                        @endif
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="proj-col-location">
+                                <span class="proj-location">
+                                    <x-lucide-map-pin />
+                                    <span>{{ $proj->location ?: 'Belum ditentukan' }}</span>
+                                </span>
+                            </td>
+                            <td class="proj-col-dates">
+                                <div class="proj-dates">
+                                    <span><x-lucide-calendar-days /> {{ $proj->start_date?->format('d M Y') ?? 'Belum dijadwalkan' }}</span>
+                                    <span class="proj-dates-sep">s.d.</span>
+                                    <span><x-lucide-flag /> {{ $proj->end_date?->format('d M Y') ?? 'Belum ditentukan' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-info proj-wh-badge">
+                                    <x-lucide-warehouse /> {{ $proj->warehouses_count }} Gudang
+                                </span>
+                            </td>
+                            <td>
+                                <x-project-status-badge :status="$proj->status" />
+                            </td>
+                            <td>
+                                <div class="proj-row-actions">
+                                    @if($canManageProjects)
+                                    <a href="{{ route('projects.edit', $proj) }}"
+                                       class="btn btn-sm btn-secondary btn-icon"
+                                       title="Edit proyek"
+                                       aria-label="Edit proyek {{ $proj->name }}">
+                                        <x-lucide-square-pen />
+                                    </a>
+                                    <form method="POST"
+                                          action="{{ route('projects.destroy', $proj) }}"
+                                          data-confirm="Hapus proyek {{ addslashes($proj->name) }} dari sistem?"
+                                          data-confirm-title="Konfirmasi Hapus Proyek"
+                                          data-confirm-btn="Hapus Proyek"
+                                          data-confirm-danger="true">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-danger btn-icon"
+                                                title="Hapus proyek"
+                                                aria-label="Hapus proyek {{ $proj->name }}">
+                                            <x-lucide-trash-2 />
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6">
+                                <div class="proj-empty">
+                                    <span class="proj-empty-icon"><x-lucide-folder-search /></span>
+                                    @if($hasFilters)
+                                        <h3>Tidak ada proyek yang cocok</h3>
+                                        <p>Kata kunci atau status yang dipilih tidak menemukan proyek. Coba ubah filter atau bersihkan pencarian.</p>
+                                        <a href="{{ route('projects.index') }}" class="btn btn-secondary">
+                                            <x-lucide-rotate-ccw /> Bersihkan Filter
+                                        </a>
+                                    @else
+                                        <h3>Belum ada data proyek</h3>
+                                        <p>Tambahkan proyek pertama untuk mulai mengelola jadwal pelaksanaan dan gudang site.</p>
+                                        @if($canManageProjects)
+                                        <a href="{{ route('projects.create') }}" class="btn btn-primary">
+                                            <x-lucide-circle-plus /> Tambah Proyek Pertama
+                                        </a>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if($projects->hasPages())
+            <div class="proj-pagination">
+                {{ $projects->links() }}
+            </div>
+            @endif
+        </section>
     </div>
 </x-app-layout>

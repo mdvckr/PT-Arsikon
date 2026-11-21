@@ -151,16 +151,7 @@
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
                     </select>
                 </div>
-                <div>
-                    <button type="submit" class="btn btn-primary">
-                        <x-lucide-filter class="me-1" /> Filter
-                    </button>
-                    @if(request()->anyFilled(['search', 'status']))
-                    <a href="{{ route('distributions.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <x-lucide-rotate-ccw style="font-size:11px;" />
-                    </a>
-                    @endif
-                </div>
+          
             </form>
         </div>
     </div>

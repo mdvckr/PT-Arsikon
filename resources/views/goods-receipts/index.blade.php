@@ -150,14 +150,6 @@
                     </select>
                 </div>
 
-                <div style="display:flex;gap:6px;">
-                    <button type="submit" class="btn btn-primary">
-                        <x-lucide-filter class="me-1" /> Filter
-                    </button>
-                    <a href="{{ route('goods-receipts.index') }}" class="btn btn-secondary" title="Reset Filter" style="padding:0 12px !important;">
-                        <x-lucide-rotate-ccw />
-                    </a>
-                </div>
             </form>
         </div>
     </div>

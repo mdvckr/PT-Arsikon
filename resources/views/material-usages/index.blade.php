@@ -145,16 +145,6 @@
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Sampai Tanggal</label>
                     <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-control">
                 </div>
-                <div class="flex gap-1 filter-actions-flex" style="align-items:center;">
-                    <button type="submit" class="btn btn-primary">
-                        <x-lucide-filter class="me-1" /> Filter
-                    </button>
-                    @if(request()->anyFilled(['search', 'warehouse_id', 'start_date', 'end_date']))
-                    <a href="{{ route('material-usages.index') }}" class="btn btn-light border" style="width:36px;padding:0;color:#64748b;" title="Reset Filter">
-                        <x-lucide-rotate-ccw style="font-size:11px;" />
-                    </a>
-                    @endif
-                </div>
             </form>
         </div>
     </div>

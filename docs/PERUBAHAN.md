@@ -1676,3 +1676,29 @@ Dokumentasi ini mencatat setiap perubahan, file terkait, hasil pengujian, dan bu
 - **Hasil Pengujian**:
   - `ProjectBalanceRequestTest`: 12 passed
   - `AdminPoFinanceApprovalAndExcelImportTest`: 3 passed
+
+---
+
+### T34. Perbaikan Mass Assignment Deskripsi Proyek & Redesign UI Modul Proyek
+- **Tujuan**:
+  - Memperbaiki error `Add fillable property [description] to allow mass assignment on [App\Models\Project]` saat menyimpan form proyek di `/projects`.
+  - Menambahkan kolom `description` pada tabel `projects` beserta properti `$fillable` pada model `Project`.
+  - Menambahkan filter pencarian (nama, kode, lokasi, deskripsi) dan filter status pada halaman daftar proyek.
+  - Melakukan redesign total 3 halaman proyek (index, create, edit) dengan standar UI/UX konsisten: tanpa emoji, ikon Lucide, 4 kartu KPI, badge status terpusat, validasi inline, dan empty state informatif.
+- **Rincian Perubahan File**:
+  1. `database/migrations/2026_11_21_000001_add_description_to_projects_table.php`: Menambahkan kolom `description` (text, nullable) setelah `location`, dengan rollback `dropColumn`.
+  2. `app/Models/Project.php`: Menambahkan `description` ke `$fillable`.
+  3. `app/Http/Controllers/ProjectController.php`:
+     - `index()`: filter `search` (nama/kode/lokasi/deskripsi), filter `status` tervalidasi, `withQueryString()`, serta statistik `$stats` (total, active, planning, completed) dan `$warehouseCount`.
+     - `store()` & `update()`: validasi `description` (`nullable|string|max:2000`) dan menyimpan nilai melalui `$validated`.
+     - Normalisasi status lama (`ongoing` → `active`, `suspended` → `on_hold`) dan validasi status `planning,active,completed,on_hold`.
+  4. `resources/views/components/project-status-badge.blade.php`: Komponen badge status reusable (label, warna, dan ikon Lucide konsisten).
+  5. `resources/views/projects/partials/styles.blade.php`: Stylesheet bersama untuk seluruh halaman proyek (header, tabs, KPI, filter, tabel, form, status card, responsive).
+  6. `resources/views/projects/index.blade.php`: Redesign header, tabs Data Gudang/Proyek, 4 KPI clickable, filter bar, tabel dengan snippet deskripsi, badge status/gudang, empty state, dan pagination.
+  7. `resources/views/projects/create.blade.php`: Redesign form, status berupa radio card, validasi inline per field, perbaikan markup yang sebelumnya kehilangan penutup `</div>`, penghapusan emoji, serta mempertahankan auto-fill gudang site.
+  8. `resources/views/projects/edit.blade.php`: Redesign banner ringkasan proyek + form konsisten, status radio card, validasi inline, dan field deskripsi yang tersimpan.
+  9. `tests/Feature/ProjectManagementTest.php`: Test regresi untuk create/update deskripsi, filter pencarian & status, snippet deskripsi + label status, serta form tanpa emoji.
+- **Catatan Deployment**: Jalankan `php artisan migrate` untuk menambahkan kolom `description` pada database utama.
+- **Hasil Pengujian**:
+  - `ProjectManagementTest`: 5 passed (32 assertions).
+  - `php artisan view:cache`: seluruh Blade template berhasil dikompilasi.

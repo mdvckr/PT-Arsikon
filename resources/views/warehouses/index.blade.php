@@ -1,383 +1,297 @@
 <x-app-layout>
-    <x-slot name="title">Manajemen Gudang & Lokasi</x-slot>
+    <x-slot name="title">Data Gudang & Lokasi</x-slot>
 
-    <!-- Page Header -->
-    <div class="warehouse-header-wrap mb-4">
-        <div class="warehouse-header-title">
-            <div class="flex items-center gap-2">
-                <div class="icon-circle icon-circle-orange">
+    @push('styles')
+        @include('warehouses.partials.styles')
+    @endpush
+
+    @php
+        $canManage = auth()->user()?->can('warehouses.manage')
+            || auth()->user()?->hasAnyRole(['Owner', 'Admin Pusat']);
+        $canOpenProjects = auth()->user()?->can('projects.manage')
+            || auth()->user()?->hasAnyRole(['Owner', 'Admin Pusat']);
+        $search = request('search');
+        $typeFilter = request('type');
+        $statusFilter = request('status');
+        $hasFilters = filled($search) || filled($typeFilter) || filled($statusFilter);
+    @endphp
+
+    <div class="wh-page">
+        <header class="wh-header">
+            <div class="wh-header-main">
+                <div class="wh-header-icon">
                     <x-lucide-warehouse />
                 </div>
                 <div>
-                    <h2 class="fw-800" style="font-size:22px;color:#0f172a;line-height:1.2;">Data Gudang & Lokasi</h2>
-                    <p class="text-muted" style="font-size:13px;margin:2px 0 0 0;">Kelola master lokasi pergudangan logistik pusat dan site proyek konstruksi.</p>
+                    <h1 class="wh-header-title">Data Gudang & Lokasi</h1>
+                    <p class="wh-header-subtitle">Kelola gudang pusat dan gudang site proyek, termasuk status operasional dan isi inventori.</p>
                 </div>
             </div>
-        </div>
-        @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-        <div class="warehouse-header-action flex items-center gap-2">
-            <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-add-wh">
-                <x-lucide-circle-plus /> Tambah Gudang
-            </a>
-            <a href="{{ route('projects.create') }}" class="btn btn-secondary" style="border-radius:9px;font-size:13px;padding:9px 15px;">
-                <x-lucide-folder-plus class="text-primary" /> Tambah Proyek Terpadu
-            </a>
-        </div>
-        @endif
-    </div>
 
-    <!-- TAB SWITCHER GUDANG & PROYEK -->
-    <div class="flex items-center gap-2 mb-4" style="background:#f1f5f9;padding:5px;border-radius:12px;width:fit-content;border:1px solid #e2e8f0;">
-        <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-primary" style="border-radius:9px;font-weight:700;padding:8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-            <x-lucide-warehouse />
-            <span>Data Gudang</span>
-            <span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Warehouse::count() }}</span>
-        </a>
-        <a href="{{ route('projects.index') }}" class="btn btn-sm" style="border-radius:9px;font-weight:600;padding:8px 18px;display:flex;align-items:center;gap:8px;color:#475569;background:transparent;border:none;">
-            <x-lucide-landmark />
-            <span>Data Proyek</span>
-            <span class="badge" style="background:#e2e8f0;color:#334155;font-size:11px;padding:2px 7px;border-radius:10px;">{{ \App\Models\Project::count() }}</span>
-        </a>
-    </div>
-    <div class="card mb-4 wh-filter-card">
-        <div class="card-body" style="padding:16px 20px;">
+            @if($canManage)
+            <div class="wh-header-actions">
+                <a href="{{ route('warehouses.create') }}" class="btn btn-primary wh-btn-primary">
+                    <x-lucide-circle-plus /> Tambah Gudang
+                </a>
+                <a href="{{ route('projects.create') }}" class="btn btn-secondary wh-btn-secondary">
+                    <x-lucide-folder-plus /> Tambah Proyek
+                </a>
+            </div>
+            @endif
+        </header>
+
+        <nav class="wh-tabs" aria-label="Navigasi data master lokasi">
+            <a href="{{ route('warehouses.index') }}" class="wh-tab is-active" aria-current="page">
+                <x-lucide-warehouse />
+                <span>Data Gudang</span>
+                <span class="wh-tab-count">{{ number_format($warehouseCount, 0, ',', '.') }}</span>
+            </a>
+            <a href="{{ route('projects.index') }}" class="wh-tab">
+                <x-lucide-building-2 />
+                <span>Data Proyek</span>
+                <span class="wh-tab-count">{{ number_format($projectCount, 0, ',', '.') }}</span>
+            </a>
+        </nav>
+
+        <section class="card wh-filter-card" aria-label="Filter data gudang">
             <form method="GET" action="{{ route('warehouses.index') }}" class="wh-filter-form">
-                <div class="wh-search-input-wrap">
-                    <label class="form-label" style="font-size:12px;margin-bottom:4px;">Cari Gudang</label>
-                    <div class="input-icon-wrap">
-                        <x-lucide-search class="input-icon" />
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control with-icon" placeholder="Nama, kode, atau alamat gudang...">
+                <div class="wh-field wh-field-search">
+                    <label class="form-label" for="warehouseSearch">Cari Gudang</label>
+                    <div class="wh-input-wrap">
+                        <x-lucide-search class="wh-input-icon" />
+                        <input type="search"
+                               id="warehouseSearch"
+                               name="search"
+                               value="{{ $search }}"
+                               class="form-control with-icon"
+                               placeholder="Nama, kode, alamat, atau proyek...">
                     </div>
                 </div>
 
-                <div class="wh-select-wrap">
-                    <label class="form-label" style="font-size:12px;margin-bottom:4px;">Tipe Gudang</label>
-                    <div class="input-icon-wrap">
-                        <x-lucide-layers class="input-icon" />
-                        <select name="type" class="form-control with-icon" onchange="this.form.submit()">
+                <div class="wh-field">
+                    <label class="form-label" for="warehouseTypeFilter">Tipe Gudang</label>
+                    <div class="wh-input-wrap">
+                        <x-lucide-layers class="wh-input-icon" />
+                        <select id="warehouseTypeFilter" name="type" class="form-control with-icon">
                             <option value="">Semua Tipe</option>
-                            <option value="main" {{ request('type') === 'main' || request('type') === 'central' ? 'selected' : '' }}>Gudang Pusat</option>
-                            <option value="project" {{ request('type') === 'project' ? 'selected' : '' }}>Gudang Proyek</option>
+                            <option value="central" @selected(in_array($typeFilter, ['central', 'main', 'pusat'], true))>Gudang Pusat</option>
+                            <option value="project" @selected($typeFilter === 'project')>Gudang Proyek</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="wh-select-wrap">
-                    <label class="form-label" style="font-size:12px;margin-bottom:4px;">Status Operasional</label>
-                    <div class="input-icon-wrap">
-                        <x-lucide-toggle-right class="input-icon" />
-                        <select name="status" class="form-control with-icon" onchange="this.form.submit()">
+                <div class="wh-field">
+                    <label class="form-label" for="warehouseStatusFilter">Status</label>
+                    <div class="wh-input-wrap">
+                        <x-lucide-toggle-right class="wh-input-icon" />
+                        <select id="warehouseStatusFilter" name="status" class="form-control with-icon">
                             <option value="">Semua Status</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Aktif</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                            <option value="active" @selected($statusFilter === 'active')>Aktif</option>
+                            <option value="inactive" @selected($statusFilter === 'inactive')>Nonaktif</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="wh-btn-filter-wrap">
-                    <button type="submit" class="btn btn-primary" title="Terapkan Filter" style="height:38px;">
-                        <x-lucide-filter /> Filter
+                <div class="wh-filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <x-lucide-filter /> Terapkan
                     </button>
-                    @if(request()->hasAny(['search', 'type', 'status']))
-                    <a href="{{ route('warehouses.index') }}" class="btn btn-secondary" title="Reset Pencarian" style="height:38px;">
+                    @if($hasFilters)
+                    <a href="{{ route('warehouses.index') }}" class="btn btn-secondary">
                         <x-lucide-rotate-ccw /> Reset
                     </a>
                     @endif
                 </div>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <!-- Data Table Card -->
-    <div class="card wh-table-card shadow-sm">
-        <div class="table-wrap">
-            <table class="data-table wh-data-table">
-                <thead>
-                    <tr>
-                        <th style="min-width:180px;">Nama & Kode Gudang</th>
-                        <th style="min-width:130px;">Tipe</th>
-                        <th style="min-width:160px;">Proyek Terkait</th>
-                        <th style="min-width:180px;">Lokasi / Alamat</th>
-                        <th style="min-width:110px;">Item / Inventori</th>
-                        <th style="min-width:100px;">Status</th>
-                        <th style="min-width:90px;text-align:center;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($warehouses as $wh)
-                    @php
-                        $isCentral = $wh->is_central || in_array($wh->type, ['central', 'main', 'pusat']);
-                    @endphp
-                    <tr>
-                        <td>
-                            <div class="flex items-center gap-3">
-                                <div class="wh-item-icon {{ $isCentral ? 'central' : 'project' }}">
+        <section class="card wh-table-card" aria-label="Daftar gudang">
+            <div class="wh-table-head">
+                <div>
+                    <h2 class="wh-table-title">Daftar Gudang</h2>
+                    <p class="wh-table-sub">
+                        @if($warehouses->total() > 0)
+                            Menampilkan {{ number_format($warehouses->firstItem(), 0, ',', '.') }}–{{ number_format($warehouses->lastItem(), 0, ',', '.') }} dari {{ number_format($warehouses->total(), 0, ',', '.') }} gudang
+                        @else
+                            Tidak ada gudang untuk ditampilkan
+                        @endif
+                    </p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table wh-table" aria-label="Daftar gudang dan lokasi">
+                    <thead>
+                        <tr>
+                            <th>Gudang</th>
+                            <th class="wh-col-type">Tipe</th>
+                            <th class="wh-col-project">Proyek</th>
+                            <th class="wh-col-address">Alamat</th>
+                            <th class="wh-col-inventory">Inventori</th>
+                            <th>Status</th>
+                            <th class="wh-th-actions">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($warehouses as $wh)
+                        @php
+                            $isCentral = $wh->isCentral();
+                            $adminActive = $wh->isAdministrativelyActive();
+                            $deleteBlocked = ($wh->active_stock_count ?? 0) > 0 || ($wh->users_count ?? 0) > 0;
+                        @endphp
+                        <tr>
+                            <td>
+                                <div class="wh-identity">
+                                    <span class="wh-identity-icon {{ $isCentral ? 'is-central' : 'is-project' }}">
+                                        @if($isCentral)
+                                            <x-lucide-building-2 />
+                                        @else
+                                            <x-lucide-hard-hat />
+                                        @endif
+                                    </span>
+                                    <span class="wh-identity-body">
+                                        <span class="wh-identity-name">{{ $wh->name }}</span>
+                                        <span class="wh-identity-code">
+                                            <x-lucide-barcode /> {{ $wh->code ?: 'Tanpa kode' }}
+                                        </span>
+                                        <span class="wh-identity-meta">
+                                            <span><x-lucide-users /> {{ $wh->users_count }} user</span>
+                                        </span>
+                                        <span class="wh-mobile-meta">
+                                            <x-warehouse-type-badge :central="$isCentral" />
+                                            @if($wh->project)
+                                                <span class="wh-mobile-item"><x-lucide-folder-open /> {{ $wh->project->name }}</span>
+                                            @endif
+                                            <span class="wh-mobile-item"><x-lucide-package /> {{ $wh->inventories_count }} jenis</span>
+                                        </span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="wh-col-type">
+                                <x-warehouse-type-badge :central="$isCentral" />
+                            </td>
+                            <td class="wh-col-project">
+                                @if($wh->project)
+                                    @if($canOpenProjects)
+                                    <a href="{{ route('projects.edit', $wh->project) }}" class="wh-project" title="Buka data proyek {{ $wh->project->name }}">
+                                        <x-lucide-folder-open /> {{ $wh->project->name }}
+                                    </a>
+                                    @else
+                                    <span class="wh-project"><x-lucide-folder-open /> {{ $wh->project->name }}</span>
+                                    @endif
+                                @elseif($isCentral)
+                                    <span class="wh-muted">Kantor pusat</span>
+                                @else
+                                    <span class="wh-muted">Belum terhubung</span>
+                                @endif
+                            </td>
+                            <td class="wh-col-address">
+                                @if(filled($wh->address))
+                                    <span class="wh-address">
+                                        <x-lucide-map-pin />
+                                        <span>{{ \Illuminate\Support\Str::limit($wh->address, 80) }}</span>
+                                    </span>
+                                @else
+                                    <span class="wh-muted">Belum diisi</span>
+                                @endif
+                            </td>
+                            <td class="wh-col-inventory">
+                                <div class="wh-inventory">
+                                    @if($wh->inventories_count > 0)
+                                        <span class="wh-inventory-main"><x-lucide-package /> {{ $wh->inventories_count }} jenis</span>
+                                    @else
+                                        <span class="wh-muted">Belum ada stok</span>
+                                    @endif
+                                    @if(($wh->low_stock_count ?? 0) > 0)
+                                        <span class="badge badge-warning wh-low-stock">
+                                            <x-lucide-triangle-alert /> {{ $wh->low_stock_count }} menipis
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
+                                <div class="wh-status">
+                                    <x-warehouse-status-badge :active="$adminActive" />
                                     @if($isCentral)
-                                        <x-lucide-building-2 />
+                                        <span class="wh-status-sub">Operasional pusat</span>
+                                    @elseif($wh->project)
+                                        <span class="wh-status-sub">{{ $wh->project_phase_label }}</span>
                                     @else
-                                        <x-lucide-hard-hat />
+                                        <span class="wh-status-sub">Belum terhubung ke proyek</span>
                                     @endif
                                 </div>
-                                <div>
-                                    <div class="fw-700" style="color:#0f172a;font-size:13.5px;">{{ $wh->name }}</div>
-                                    <div class="text-muted" style="font-size:11.5px;font-family:monospace;margin-top:1px;">
-                                        <x-lucide-barcode style="font-size:10px;" /> {{ $wh->code ?: '-' }}
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            @if($isCentral)
-                                <span class="badge badge-primary wh-badge-pill">
-                                    <x-lucide-building-2 /> Gudang Pusat
-                                </span>
-                            @else
-                                <span class="badge badge-info wh-badge-pill">
-                                    <x-lucide-hard-hat /> Gudang Proyek
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($wh->project)
-                                <div class="flex items-center gap-2">
-                                    <x-lucide-folder-open class="text-warning" style="font-size:13px;" />
-                                    <span class="fw-600" style="color:#1e293b;font-size:13px;">{{ $wh->project->name }}</span>
-                                </div>
-                            @elseif($isCentral)
-                                <span class="text-muted" style="font-size:12px;">
-                                    <x-lucide-star class="text-warning" style="font-size:10px;" /> Sentral Kantor Pusat
-                                </span>
-                            @else
-                                <span class="text-muted" style="font-size:12px;">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="flex items-start gap-1 text-muted" style="font-size:12px;max-width:240px;line-height:1.4;">
-                                <x-lucide-map-pin class="text-danger" style="margin-top:2px;font-size:11px;flex-shrink:0;" />
-                                <span>{{ $wh->address ?: ($wh->location ?: 'Lokasi Sentral Jakarta') }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge badge-secondary" style="font-weight:600;font-size:11.5px;">
-                                <x-lucide-package style="font-size:10px;" /> {{ $wh->inventories_count ?? 0 }} Item
-                            </span>
-                        </td>
-                        <td>
-                            @if($wh->is_active)
-                                <span class="badge badge-success">
-                                    <x-lucide-circle-check style="font-size:10px;" /> Aktif
-                                </span>
-                            @else
-                                <span class="badge badge-danger">
-                                    <x-lucide-circle-x style="font-size:10px;" /> Nonaktif
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            <div class="flex items-center justify-center gap-1">
-                                @if(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-                                <a href="{{ route('warehouses.edit', $wh) }}" class="btn btn-sm btn-warning btn-icon" title="Edit Data Gudang">
-                                    <x-lucide-square-pen />
-                                </a>
-                                <form method="POST" action="{{ route('warehouses.destroy', $wh) }}" data-confirm="Apakah Anda yakin ingin menghapus gudang {{ addslashes($wh->name) }}?" data-confirm-title="Konfirmasi Hapus Gudang" data-confirm-btn="Hapus Gudang" data-confirm-danger="true">
-                                    @csrf 
-                                    @method('DELETE')
-                                    <button class="btn btn-sm btn-danger btn-icon" title="Hapus Gudang">
-                                        <x-lucide-trash-2 />
+                            </td>
+                            <td>
+                                <div class="wh-row-actions">
+                                    @if($canManage)
+                                    <a href="{{ route('warehouses.edit', $wh) }}"
+                                       class="btn btn-sm btn-secondary btn-icon"
+                                       title="Edit gudang"
+                                       aria-label="Edit gudang {{ $wh->name }}">
+                                        <x-lucide-square-pen />
+                                    </a>
+
+                                    @if($deleteBlocked)
+                                    <button type="button"
+                                            class="btn btn-sm btn-secondary btn-icon is-disabled"
+                                            disabled
+                                            title="Tidak dapat dihapus: {{ ($wh->active_stock_count ?? 0) > 0 ? $wh->active_stock_count.' item stok aktif' : $wh->users_count.' user ditugaskan' }}"
+                                            aria-label="Gudang {{ $wh->name }} tidak dapat dihapus karena masih memiliki data terkait">
+                                        <x-lucide-lock />
                                     </button>
-                                </form>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center p-5">
-                            <div class="empty-state" style="padding:24px 10px;">
-                                <div style="width:60px;height:60px;border-radius:50%;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;color:#94a3b8;font-size:24px;">
-                                    <x-lucide-warehouse />
-                                </div>
-                                <h4 class="fw-700" style="color:#1e293b;font-size:15px;margin-bottom:4px;">Tidak Ada Data Gudang</h4>
-                                <p class="text-muted" style="font-size:13px;max-width:360px;margin:0 auto 16px auto;">
-                                    @if(request()->hasAny(['search', 'type', 'status']))
-                                        Tidak ditemukan gudang dengan filter pencarian tersebut. Silakan reset filter.
                                     @else
-                                        Belum ada lokasi gudang yang ditambahkan ke sistem.
+                                    <form method="POST"
+                                          action="{{ route('warehouses.destroy', $wh) }}"
+                                          data-confirm="Hapus gudang {{ addslashes($wh->name) }}?"
+                                          data-confirm-title="Konfirmasi Hapus Gudang"
+                                          data-confirm-btn="Hapus Gudang"
+                                          data-confirm-danger="true">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-danger btn-icon"
+                                                title="Hapus gudang"
+                                                aria-label="Hapus gudang {{ $wh->name }}">
+                                            <x-lucide-trash-2 />
+                                        </button>
+                                    </form>
                                     @endif
-                                </p>
-                                @if(request()->hasAny(['search', 'type', 'status']))
-                                    <a href="{{ route('warehouses.index') }}" class="btn btn-secondary btn-sm">
-                                        <x-lucide-rotate-ccw /> Bersihkan Filter
-                                    </a>
-                                @elseif(auth()->user()->can('warehouses.manage') || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
-                                    <a href="{{ route('warehouses.create') }}" class="btn btn-primary btn-sm">
-                                        <x-lucide-plus /> Tambah Gudang Pertama
-                                    </a>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="wh-empty">
+                                    <span class="wh-empty-icon"><x-lucide-warehouse /></span>
+                                    @if($hasFilters)
+                                        <h3>Tidak ada gudang yang cocok</h3>
+                                        <p>Kata kunci, tipe, atau status yang dipilih tidak menemukan gudang. Coba ubah filter atau bersihkan pencarian.</p>
+                                        <a href="{{ route('warehouses.index') }}" class="btn btn-secondary">
+                                            <x-lucide-rotate-ccw /> Bersihkan Filter
+                                        </a>
+                                    @else
+                                        <h3>Belum ada data gudang</h3>
+                                        <p>Tambahkan gudang pertama untuk mulai mengelola lokasi pusat dan site proyek.</p>
+                                        @if($canManage)
+                                        <a href="{{ route('warehouses.create') }}" class="btn btn-primary">
+                                            <x-lucide-circle-plus /> Tambah Gudang Pertama
+                                        </a>
+                                        @endif
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-        @if($warehouses->hasPages())
-        <div class="card-footer wh-pagination-footer" style="padding:14px 20px;border-top:1px solid #f1f5f9;background:#ffffff;">
-            {{ $warehouses->links() }}
-        </div>
-        @endif
+            @if($warehouses->hasPages())
+            <div class="wh-pagination">
+                {{ $warehouses->links() }}
+            </div>
+            @endif
+        </section>
     </div>
-
-    @push('styles')
-    <style>
-        .warehouse-header-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .icon-circle-orange {
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            background: rgba(234, 88, 12, 0.12);
-            color: #ea580c;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .btn-add-wh {
-            padding: 9px 18px;
-            font-size: 13.5px;
-            font-weight: 700;
-        }
-
-        /* Filter Form */
-        .wh-filter-form {
-            display: flex;
-            align-items: flex-end;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .wh-search-input-wrap {
-            flex: 2;
-            min-width: 240px;
-        }
-
-        .wh-select-wrap {
-            flex: 1;
-            min-width: 170px;
-        }
-
-        .wh-btn-filter-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        /* Input With Icon */
-        .input-icon-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-icon-wrap .input-icon {
-            position: absolute;
-            left: 12px;
-            color: #94a3b8;
-            font-size: 13px;
-            pointer-events: none;
-        }
-
-        .input-icon-wrap .form-control.with-icon {
-            padding-left: 36px;
-        }
-
-        /* Warehouse Item Icon */
-        .wh-item-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        .wh-item-icon.central {
-            background: rgba(37, 99, 235, 0.1);
-            color: #2563eb;
-        }
-        .wh-item-icon.project {
-            background: rgba(8, 145, 178, 0.1);
-            color: #0891b2;
-        }
-
-        .wh-badge-pill {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 700;
-        }
-
-        .wh-data-table td {
-            vertical-align: middle;
-            padding: 14px 16px;
-        }
-
-        .wh-data-table th {
-            padding: 12px 16px;
-        }
-
-        /* RESPONSIVE MOBILE STYLES */
-        @media (max-width: 768px) {
-            .warehouse-header-wrap {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .warehouse-header-action {
-                width: 100%;
-            }
-
-            .btn-add-wh {
-                width: 100%;
-                justify-content: center;
-            }
-
-
-            .wh-filter-form {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
-            }
-
-            .wh-search-input-wrap,
-            .wh-select-wrap {
-                width: 100%;
-                min-width: 0;
-                flex: none;
-            }
-
-            .wh-btn-filter-wrap {
-                width: 100%;
-            }
-
-            .wh-btn-filter-wrap .btn {
-                flex: 1;
-                justify-content: center;
-            }
-        }
-    </style>
-    @endpush
 </x-app-layout>

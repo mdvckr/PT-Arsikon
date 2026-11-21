@@ -1,356 +1,312 @@
 <x-app-layout>
     <x-slot name="title">Tambah Proyek Baru</x-slot>
 
-    <div class="project-edit-container" data-animate="panel">
-        <!-- Breadcrumb -->
-        <div class="breadcrumb mb-3">
-            <a href="{{ route('projects.index') }}"><x-lucide-folder style="font-size:12px;" /> Data Proyek</a>
-            <span class="breadcrumb-sep"><x-lucide-chevron-right style="font-size:10px;" /></span>
-            <span style="color:#1e293b;font-weight:600;">Tambah Baru</span>
-        </div>
+    @push('styles')
+        @include('projects.partials.styles')
+    @endpush
 
-        <!-- Form Card -->
-        <div class="card shadow-sm project-form-card">
-            <div class="card-header project-form-header">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                    <div class="flex items-center gap-2">
-                        <div class="icon-circle icon-circle-primary">
-                            <x-lucide-folder-plus />
-                        </div>
-                        <div>
-                            <span class="card-title" style="font-size:16px;" data-animate="header">Form Tambah Proyek Baru</span>
-                            <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Daftarkan proyek baru beserta jadwal dan lokasi pengerjaan site.</p>
-                        </div>
+    @php
+        $warehouseChecked = old('auto_create_warehouse', $errors->any() ? null : '1') === '1';
+    @endphp
+
+    <div class="proj-form-shell" data-animate="panel">
+        <nav class="proj-breadcrumb" aria-label="Breadcrumb">
+            <a href="{{ route('projects.index') }}"><x-lucide-folder-kanban /> Data Proyek</a>
+            <x-lucide-chevron-right />
+            <span style="color:#1e293b;font-weight:600;">Tambah Baru</span>
+        </nav>
+
+        <div class="proj-form-card">
+            <div class="proj-form-head">
+                <div class="proj-form-head-main">
+                    <span class="proj-form-head-icon is-blue"><x-lucide-folder-plus /></span>
+                    <div>
+                        <h1 class="proj-form-title">Form Tambah Proyek Baru</h1>
+                        <p class="proj-form-sub">Daftarkan proyek baru beserta jadwal, lokasi, dan gudang site-nya.</p>
                     </div>
-                    <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-sm">
-                        <x-lucide-arrow-left /> Kembali
-                    </a>
                 </div>
+                <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-sm">
+                    <x-lucide-arrow-left /> Kembali
+                </a>
             </div>
 
-            <div class="card-body project-form-body">
-                @if (isset($errors) && $errors->any())
-                    <div class="alert alert-danger mb-4" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px;border-radius:10px;">
-                        <strong style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                            <x-lucide-triangle-alert /> Terdapat kesalahan pada pengisian form:
-                        </strong>
-                        <ul style="margin:0;padding-left:22px;font-size:13px;line-height:1.5;">
-                            @foreach ($errors->all() as $error)
+            <div class="proj-form-body">
+                @if($errors->any())
+                <div class="proj-alert" role="alert">
+                    <x-lucide-triangle-alert />
+                    <div>
+                        <strong>Terdapat {{ $errors->count() }} kesalahan pada pengisian form:</strong>
+                        <ul>
+                            @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
                     </div>
+                </div>
                 @endif
 
                 <form method="POST" action="{{ route('projects.store') }}">
                     @csrf
 
-                    <!-- SECTION 1: IDENTITAS PROYEK -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
-                            <x-lucide-file-text class="text-primary" />
-                            <h3 class="section-title">Informasi Utama Proyek</h3>
+                    <div class="proj-section">
+                        <div class="proj-section-head">
+                            <x-lucide-file-text style="color:#2563eb;" />
+                            <h2 class="proj-section-title">Informasi Utama Proyek</h2>
                         </div>
 
-                        <div class="grid grid-2 responsive-grid">
-                            <div class="mb-3">
+                        <div class="proj-grid-2">
+                            <div class="proj-field-block">
                                 <label class="form-label" for="projectCode">
-                                    Kode Proyek <span class="text-muted" style="font-size:12px;font-weight:normal;">(Otomatis dibuat jika kosong)</span>
+                                    Kode Proyek <span class="text-muted" style="font-weight:500;font-size:11.5px;">(otomatis jika kosong)</span>
                                 </label>
                                 <div class="input-icon-wrap">
                                     <x-lucide-barcode class="input-icon" />
-                                    <input type="text" id="projectCode" name="code" value="{{ old('code') }}" class="form-control with-icon" placeholder="Contoh: PRJ-005">
+                                    <input type="text"
+                                           id="projectCode"
+                                           name="code"
+                                           value="{{ old('code') }}"
+                                           class="form-control with-icon @error('code') is-invalid @enderror"
+                                           placeholder="Contoh: PRJ-005"
+                                           maxlength="30">
                                 </div>
+                                @error('code')
+                                    <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
 
-                            <div class="mb-3">
+                            <div class="proj-field-block">
                                 <label class="form-label" for="projectName">
                                     Nama Proyek <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-icon-wrap">
                                     <x-lucide-building-2 class="input-icon" />
-                                    <input type="text" id="projectName" name="name" value="{{ old('name') }}" class="form-control with-icon" placeholder="Nama proyek pembangunan..." required>
+                                    <input type="text"
+                                           id="projectName"
+                                           name="name"
+                                           value="{{ old('name') }}"
+                                           class="form-control with-icon @error('name') is-invalid @enderror"
+                                           placeholder="Nama proyek pembangunan..."
+                                           maxlength="255"
+                                           required>
                                 </div>
+                                @error('name')
+                                    <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-divider"></div>
+                    <div class="proj-form-divider"></div>
 
-                    <!-- SECTION 2: JADWAL & STATUS -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
-                            <x-lucide-calendar-check class="text-warning" />
-                            <h3 class="section-title">Jadwal & Status Pelaksanaan</h3>
+                    <div class="proj-section">
+                        <div class="proj-section-head">
+                            <x-lucide-calendar-check style="color:#d97706;" />
+                            <h2 class="proj-section-title">Jadwal & Status Pelaksanaan</h2>
                         </div>
 
-                        <div class="grid grid-2 responsive-grid">
-                            <div class="mb-3">
-                                <label class="form-label" for="startDate">
-                                    Tanggal Mulai <span class="text-danger">*</span>
-                                </label>
+                        <div class="proj-grid-2" style="margin-bottom:16px;">
+                            <div class="proj-field-block">
+                                <label class="form-label" for="startDate">Tanggal Mulai</label>
                                 <div class="input-icon-wrap">
                                     <x-lucide-calendar-days class="input-icon" />
-                                    <input type="date" id="startDate" name="start_date" value="{{ old('start_date', date('Y-m-d')) }}" class="form-control with-icon" required>
+                                    <input type="date"
+                                           id="startDate"
+                                           name="start_date"
+                                           value="{{ old('start_date', date('Y-m-d')) }}"
+                                           class="form-control with-icon @error('start_date') is-invalid @enderror">
                                 </div>
+                                <span class="proj-help">Boleh dikosongkan bila jadwal belum ditetapkan.</span>
+                                @error('start_date')
+                                    <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label" for="endDate">
-                                    Estimasi Tanggal Selesai
-                                </label>
+                            <div class="proj-field-block">
+                                <label class="form-label" for="endDate">Estimasi Tanggal Selesai</label>
                                 <div class="input-icon-wrap">
                                     <x-lucide-flag class="input-icon" />
-                                    <input type="date" id="endDate" name="end_date" value="{{ old('end_date') }}" class="form-control with-icon">
+                                    <input type="date"
+                                           id="endDate"
+                                           name="end_date"
+                                           value="{{ old('end_date') }}"
+                                           class="form-control with-icon @error('end_date') is-invalid @enderror">
                                 </div>
+                                <span class="proj-help">Tidak boleh lebih awal dari tanggal mulai.</span>
+                                @error('end_date')
+                                    <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
 
-                        <div class="mb-3" style="max-width: 420px;">
-                            <label class="form-label" for="projectStatus">
-                                Status Pengerjaan Proyek <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-icon-wrap">
-                                <x-lucide-list-todo class="input-icon" />
-                                <select id="projectStatus" name="status" class="form-control with-icon" required>
-                                    <option value="planning" {{ old('status') == 'planning' ? 'selected' : '' }}>📋 Perencanaan (Planning)</option>
-                                    <option value="ongoing" {{ old('status', 'ongoing') == 'ongoing' ? 'selected' : '' }}>⚡ Sedang Berjalan (Ongoing / Active)</option>
-                                    <option value="on_hold" {{ old('status') == 'on_hold' ? 'selected' : '' }}>⏸️ Ditangguhkan (On Hold)</option>
-                                    <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>✅ Selesai (Completed)</option>
-                                </select>
+                        <div class="proj-field-block">
+                            <label class="form-label">Status Pengerjaan Proyek <span class="text-danger">*</span></label>
+                            <div class="proj-status-options">
+                                <label class="proj-status-option" for="statusPlanning">
+                                    <input type="radio" id="statusPlanning" name="status" value="planning"
+                                           @checked(old('status', 'active') === 'planning')>
+                                    <span class="proj-status-option-top"><x-lucide-clock /> Perencanaan</span>
+                                    <span class="proj-status-option-desc">Belum mulai dikerjakan</span>
+                                </label>
+
+                                <label class="proj-status-option" for="statusActive">
+                                    <input type="radio" id="statusActive" name="status" value="active"
+                                           @checked(old('status', 'active') === 'active')>
+                                    <span class="proj-status-option-top"><x-lucide-activity /> Berjalan</span>
+                                    <span class="proj-status-option-desc">Sedang dalam pelaksanaan</span>
+                                </label>
+
+                                <label class="proj-status-option" for="statusOnHold">
+                                    <input type="radio" id="statusOnHold" name="status" value="on_hold"
+                                           @checked(old('status') === 'on_hold')>
+                                    <span class="proj-status-option-top"><x-lucide-pause /> Ditangguhkan</span>
+                                    <span class="proj-status-option-desc">Sementara dihentikan</span>
+                                </label>
+
+                                <label class="proj-status-option" for="statusCompleted">
+                                    <input type="radio" id="statusCompleted" name="status" value="completed"
+                                           @checked(old('status') === 'completed')>
+                                    <span class="proj-status-option-top"><x-lucide-circle-check /> Selesai</span>
+                                    <span class="proj-status-option-desc">Pekerjaan telah rampung</span>
+                                </label>
                             </div>
+                            @error('status')
+                                <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
 
-                    <div class="form-divider"></div>
+                    <div class="proj-form-divider"></div>
 
-                    <!-- SECTION 3: LOKASI & DETAIL -->
-                    <div class="form-section mb-4">
-                        <div class="section-title-wrap">
-                            <x-lucide-map-pin class="text-danger" />
-                            <h3 class="section-title">Lokasi & Keterangan Tambahan</h3>
+                    <div class="proj-section">
+                        <div class="proj-section-head">
+                            <x-lucide-map-pin style="color:#dc2626;" />
+                            <h2 class="proj-section-title">Lokasi & Keterangan Tambahan</h2>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label" for="projectLocation">
-                                Lokasi Proyek
-                            </label>
+                        <div class="proj-field-block" style="margin-bottom:16px;">
+                            <label class="form-label" for="projectLocation">Lokasi Proyek</label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
                                 <x-lucide-map-pin class="input-icon" style="top:12px;" />
-                                <textarea id="projectLocation" name="location" class="form-control with-icon" rows="2" placeholder="Alamat atau lokasi proyek site (kabupaten, kota, provinsi)...">{{ old('location') }}</textarea>
+                                <textarea id="projectLocation"
+                                          name="location"
+                                          class="form-control with-icon @error('location') is-invalid @enderror"
+                                          rows="2"
+                                          maxlength="255"
+                                          placeholder="Alamat atau lokasi site proyek (kabupaten, kota, provinsi)...">{{ old('location') }}</textarea>
                             </div>
+                            @error('location')
+                                <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label" for="projectDesc">
-                                Deskripsi & Catatan Proyek
-                            </label>
+                        <div class="proj-field-block">
+                            <label class="form-label" for="projectDesc">Deskripsi & Catatan Proyek</label>
                             <div class="input-icon-wrap" style="align-items:flex-start;">
                                 <x-lucide-align-left class="input-icon" style="top:12px;" />
-                                <textarea id="projectDesc" name="description" class="form-control with-icon" rows="3" placeholder="Informasi ringkas mengenai spesifikasi pengerjaan proyek...">{{ old('description') }}</textarea>
+                                <textarea id="projectDesc"
+                                          name="description"
+                                          class="form-control with-icon @error('description') is-invalid @enderror"
+                                          rows="3"
+                                          maxlength="2000"
+                                          placeholder="Informasi ringkas mengenai lingkup dan spesifikasi pekerjaan...">{{ old('description') }}</textarea>
                             </div>
+                            <span class="proj-help">Maksimal 2.000 karakter. Akan tampil sebagai ringkasan pada tabel proyek.</span>
+                            @error('description')
+                                <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                            @enderror
                         </div>
-                    <div class="form-divider"></div>
+                    </div>
 
-                    <!-- SECTION 4: GUDANG SITE LOGISTIK TERPADU -->
-                    <div class="form-section mb-4" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">
-                        <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
-                            <div class="flex items-center gap-2">
-                                <div style="width:34px;height:34px;border-radius:8px;background:rgba(234,88,12,0.12);color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:16px;">
-                                    <x-lucide-warehouse />
-                                </div>
+                    <div class="proj-form-divider"></div>
+
+                    <div class="proj-warehouse-card">
+                        <div class="proj-warehouse-head">
+                            <div class="proj-warehouse-title-wrap">
+                                <span class="proj-warehouse-icon"><x-lucide-warehouse /></span>
                                 <div>
-                                    <h3 class="section-title" style="margin:0;font-size:15px;color:#0f172a;">Gudang Site Logistik Terpadu</h3>
-                                    <p class="text-muted" style="font-size:12px;margin:2px 0 0 0;">Otomatis daftarkan tempat penyimpanan material & alat di site proyek ini sekaligus.</p>
+                                    <h2 class="proj-warehouse-title">Gudang Site Logistik Terpadu</h2>
+                                    <p class="proj-warehouse-sub">Daftarkan tempat penyimpanan material dan alat di site proyek ini sekaligus.</p>
                                 </div>
                             </div>
-                            <label class="flex items-center gap-2" style="cursor:pointer;background:#fff;padding:6px 14px;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;font-size:13px;color:#1e293b;">
-                                <input type="checkbox" id="autoCreateWarehouse" name="auto_create_warehouse" value="1" {{ old('auto_create_warehouse', '1') == '1' ? 'checked' : '' }} onchange="toggleWhBox()" style="width:16px;height:16px;accent-color:#ea580c;">
+                            <label class="proj-switch" for="autoCreateWarehouse">
+                                <input type="checkbox"
+                                       id="autoCreateWarehouse"
+                                       name="auto_create_warehouse"
+                                       value="1"
+                                       @checked($warehouseChecked)
+                                       onchange="toggleWhBox()">
                                 <span>Buat Gudang Site Sekaligus</span>
                             </label>
                         </div>
 
-                        <div id="whFieldsContainer" style="display:{{ old('auto_create_warehouse', '1') == '1' ? 'block' : 'none' }};margin-top:14px;padding-top:14px;border-top:1px dashed #cbd5e1;">
-                            <div class="grid grid-2 responsive-grid">
-                                <div class="mb-3">
-                                    <label class="form-label" for="whName">
-                                        Nama Gudang Site
-                                    </label>
+                        <div id="whFieldsContainer" class="proj-warehouse-fields" style="display:{{ $warehouseChecked ? 'block' : 'none' }};">
+                            <div class="proj-grid-2">
+                                <div class="proj-field-block">
+                                    <label class="form-label" for="whName">Nama Gudang Site</label>
                                     <div class="input-icon-wrap">
                                         <x-lucide-warehouse class="input-icon" />
-                                        <input type="text" id="whName" name="warehouse_name" value="{{ old('warehouse_name') }}" class="form-control with-icon" placeholder="Otomatis: Gudang Site [Nama Proyek]">
+                                        <input type="text"
+                                               id="whName"
+                                               name="warehouse_name"
+                                               value="{{ old('warehouse_name') }}"
+                                               class="form-control with-icon @error('warehouse_name') is-invalid @enderror"
+                                               maxlength="255"
+                                               placeholder="Otomatis: Gudang Site [Nama Proyek]">
                                     </div>
-                                    <span class="text-muted" style="font-size:11.5px;">Otomatis terisi mengikuti nama proyek bila dikosongkan.</span>
+                                    <span class="proj-help">Terisi otomatis mengikuti nama proyek bila dikosongkan.</span>
+                                    @error('warehouse_name')
+                                        <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                    @enderror
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label" for="whCode">
-                                        Kode Gudang Site
-                                    </label>
+                                <div class="proj-field-block">
+                                    <label class="form-label" for="whCode">Kode Gudang Site</label>
                                     <div class="input-icon-wrap">
                                         <x-lucide-barcode class="input-icon" />
-                                        <input type="text" id="whCode" name="warehouse_code" value="{{ old('warehouse_code') }}" class="form-control with-icon" placeholder="Otomatis (contoh: W-PRJ-005)">
+                                        <input type="text"
+                                               id="whCode"
+                                               name="warehouse_code"
+                                               value="{{ old('warehouse_code') }}"
+                                               class="form-control with-icon @error('warehouse_code') is-invalid @enderror"
+                                               maxlength="30"
+                                               placeholder="Otomatis (contoh: W-PRJ-005)">
                                     </div>
-                                    <span class="text-muted" style="font-size:11.5px;">Otomatis dibuat dari kode proyek bila dikosongkan.</span>
+                                    <span class="proj-help">Dibuat otomatis dari kode proyek bila dikosongkan.</span>
+                                    @error('warehouse_code')
+                                        <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                    @enderror
                                 </div>
                             </div>
 
-                            <div class="mb-2">
-                                <label class="form-label" for="whAddress">
-                                    Alamat / Titik Gudang Site
-                                </label>
+                            <div class="proj-field-block" style="margin-top:14px;">
+                                <label class="form-label" for="whAddress">Alamat / Titik Gudang Site</label>
                                 <div class="input-icon-wrap" style="align-items:flex-start;">
                                     <x-lucide-navigation class="input-icon" style="top:12px;" />
-                                    <textarea id="whAddress" name="warehouse_address" class="form-control with-icon" rows="2" placeholder="Otomatis mengambil dari lokasi proyek bila dikosongkan...">{{ old('warehouse_address') }}</textarea>
+                                    <textarea id="whAddress"
+                                              name="warehouse_address"
+                                              class="form-control with-icon @error('warehouse_address') is-invalid @enderror"
+                                              rows="2"
+                                              placeholder="Otomatis mengambil dari lokasi proyek bila dikosongkan...">{{ old('warehouse_address') }}</textarea>
                                 </div>
+                                @error('warehouse_address')
+                                    <span class="proj-error"><x-lucide-circle-alert /> {{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
                     </div>
 
-                    <!-- FORM FOOTER ACTIONS -->
-                    <div class="form-actions-bar">
-                        <div class="flex items-center gap-2 flex-wrap form-buttons-wrapper">
-                            <button type="submit" class="btn btn-primary btn-submit-form">
-                                <x-lucide-circle-plus /> <span id="btnSubmitLabel">Simpan Proyek & Gudang Sekaligus</span>
-                            </button>
-                            <a href="{{ route('projects.index') }}" class="btn btn-secondary btn-cancel-form">
-                                <x-lucide-x /> Batal
-                            </a>
-                        </div>
+                    <div class="proj-form-actions">
+                        <a href="{{ route('projects.index') }}" class="btn btn-secondary">
+                            <x-lucide-x /> Batal
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <x-lucide-circle-plus /> <span id="btnSubmitLabel">{{ $warehouseChecked ? 'Simpan Proyek & Gudang Sekaligus' : 'Simpan Proyek Baru' }}</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-
-    @push('styles')
-    <style>
-        .project-edit-container {
-            width: 100%;
-        }
-
-        .project-form-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            background: #ffffff;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-            overflow: hidden;
-        }
-
-        .project-form-header {
-            padding: 18px 24px;
-            background: #ffffff;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .icon-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .icon-circle-primary {
-            background: rgba(37, 99, 235, 0.12);
-            color: #2563eb;
-        }
-
-        .project-form-body {
-            padding: 24px;
-        }
-
-        .section-title-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-
-        .section-title {
-            font-size: 14.5px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0;
-        }
-
-        .form-divider {
-            height: 1px;
-            background: #f1f5f9;
-            margin: 24px 0;
-        }
-
-        .input-icon-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-icon-wrap .input-icon {
-            position: absolute;
-            left: 12px;
-            color: #94a3b8;
-            font-size: 14px;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-
-        .input-icon-wrap .form-control.with-icon {
-            padding-left: 36px;
-        }
-
-        .input-icon-wrap .form-control:focus + .input-icon,
-        .input-icon-wrap:focus-within .input-icon {
-            color: #2563eb;
-        }
-
-        .form-actions-bar {
-            margin-top: 30px;
-            padding-top: 18px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .btn-submit-form {
-            padding: 10px 22px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .btn-cancel-form {
-            padding: 10px 18px;
-            font-size: 14px;
-        }
-
-        @media (max-width: 768px) {
-            .project-edit-container {
-                max-width: 100%;
-            }
-
-            .project-form-body {
-                padding: 16px;
-            }
-
-            .responsive-grid {
-                grid-template-columns: 1fr !important;
-                gap: 0;
-            }
-
-            .form-buttons-wrapper {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .btn-submit-form,
-            .btn-cancel-form {
-                width: 100%;
-                justify-content: center;
-                padding: 12px;
-            }
-        }
-    </style>
-    @endpush
 
     @push('scripts')
     <script>
@@ -366,7 +322,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const projName = document.getElementById('projectName');
             const whName = document.getElementById('whName');
             const projLoc = document.getElementById('projectLocation');
@@ -378,18 +334,12 @@
             let whCodeEdited = false;
             let whAddrEdited = false;
 
-            if (whName) {
-                whName.addEventListener('input', () => { whNameEdited = true; });
-            }
-            if (whCode) {
-                whCode.addEventListener('input', () => { whCodeEdited = true; });
-            }
-            if (whAddress) {
-                whAddress.addEventListener('input', () => { whAddrEdited = true; });
-            }
+            if (whName) whName.addEventListener('input', () => { whNameEdited = true; });
+            if (whCode) whCode.addEventListener('input', () => { whCodeEdited = true; });
+            if (whAddress) whAddress.addEventListener('input', () => { whAddrEdited = true; });
 
             if (projName && whName) {
-                projName.addEventListener('input', function() {
+                projName.addEventListener('input', function () {
                     if (!whNameEdited) {
                         whName.value = this.value.trim() ? ('Gudang Site ' + this.value.trim()) : '';
                     }
@@ -397,7 +347,7 @@
             }
 
             if (projCode && whCode) {
-                projCode.addEventListener('input', function() {
+                projCode.addEventListener('input', function () {
                     if (!whCodeEdited) {
                         whCode.value = this.value.trim() ? ('W-' + this.value.trim()) : '';
                     }
@@ -405,7 +355,7 @@
             }
 
             if (projLoc && whAddress) {
-                projLoc.addEventListener('input', function() {
+                projLoc.addEventListener('input', function () {
                     if (!whAddrEdited) {
                         whAddress.value = this.value;
                     }
