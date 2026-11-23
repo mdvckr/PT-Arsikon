@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { arsikonScroll } from '../scroll';
 
 /**
  * Arsikon Enterprise Smooth Motion Engine (powered by GSAP v3)
@@ -232,6 +233,7 @@ export const ArsikonAnimate = {
     openModal(modalBackdropEl) {
         if (!modalBackdropEl) return;
         modalBackdropEl.classList.add('open');
+        arsikonScroll.stop();
 
         if (prefersReducedMotion()) {
             modalBackdropEl.style.opacity = '1';
@@ -272,6 +274,7 @@ export const ArsikonAnimate = {
             onComplete: () => {
                 modalBackdropEl.classList.remove('open');
                 gsap.set([modalBackdropEl, modalBox], { clearProps: 'all' });
+                arsikonScroll.start();
                 if (callback) callback();
             }
         });

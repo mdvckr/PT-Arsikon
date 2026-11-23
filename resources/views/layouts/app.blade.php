@@ -2281,6 +2281,9 @@
             const iconClose = document.getElementById('mobileToggleIconClose');
             if (!sidebar) return;
             const isOpen = sidebar.classList.toggle('open');
+            if (window.arsikonScroll) {
+                isOpen ? window.arsikonScroll.stop() : window.arsikonScroll.start();
+            }
             // Swap toggle icon: ≡ ↔ ✕
             if (iconMenu) iconMenu.style.display = isOpen ? 'none' : 'flex';
             if (iconClose) iconClose.style.display = isOpen ? 'flex' : 'none';
@@ -2311,6 +2314,7 @@
                     if (toggleBtn) toggleBtn.classList.remove('is-active');
                     if (overlay) overlay.classList.remove('active');
                     document.body.style.overflow = '';
+                    if (window.arsikonScroll) window.arsikonScroll.start();
                 }
             }
         });
@@ -2328,6 +2332,7 @@
                 if (toggleBtn) toggleBtn.classList.remove('is-active');
                 if (overlay) overlay.classList.remove('active');
                 document.body.style.overflow = '';
+                if (window.arsikonScroll) window.arsikonScroll.start();
             }
         });
 

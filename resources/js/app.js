@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Flip } from 'gsap/Flip';
 import { ArsikonAnimate } from './animations';
+import { arsikonScroll } from './scroll';
 import Alpine from 'alpinejs';
 import { notificationCenter } from './notification-center';
 

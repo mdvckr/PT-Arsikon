@@ -1,23 +1,31 @@
 /* ==========================================================================
-   SweetAlert2 Pastel Pill Toast Notification Theme
-   Matches User Design Mockup with 5 Semantic Pastel States
+   SweetAlert2 Modern Compact Card Toast Notification Theme (PT Arsikon)
+   Compact, Sleek, 1:1 Color Match with Modern Reference Mockup
    ========================================================================== */
 
-/* Toast Container Base - Zero-height Floating Anchor */
+/* Toast Container Base - Floating Zero-height Anchor (True Center Top) */
+body.swal2-toast-shown .swal2-container,
+body.swal2-toast-shown .swal2-container.swal2-top,
+body.swal2-toast-shown .swal2-container.swal2-toast-clean-container,
 .swal2-container.swal2-top,
+.swal2-container.swal2-top-end,
 .swal2-container.swal2-toast-clean-container,
 .swal2-container:has(.swal2-pastel-toast),
 .swal2-container:has(.swal2-toast) {
-    top: 24px !important;
+    position: fixed !important;
+    top: 16px !important;
     left: 50% !important;
     right: auto !important;
     bottom: auto !important;
+    inset: 16px auto auto 50% !important;
     transform: translateX(-50%) !important;
-    width: auto !important;
+    width: max-content !important;
+    max-width: min(420px, calc(100vw - 24px)) !important;
     height: 0 !important;
     min-height: 0 !important;
     max-height: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     z-index: 100000 !important;
     display: flex !important;
     justify-content: center !important;
@@ -32,45 +40,49 @@
 }
 
 .swal2-container.swal2-top .swal2-popup,
+.swal2-container.swal2-top-end .swal2-popup,
 .swal2-container.swal2-toast-clean-container .swal2-popup {
     pointer-events: auto !important;
+    margin: 0 !important;
 }
 
-.swal2-container.swal2-top-end {
-    padding: 16px 20px !important;
-    z-index: 100000 !important;
-}
-
+/* ==========================================================================
+   Modern Compact Rounded Card Toast (Centered Top Base)
+   ========================================================================== */
 .swal2-popup.swal2-pastel-toast {
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     justify-content: space-between !important;
     width: max-content !important;
-    max-width: min(520px, calc(100vw - 32px)) !important;
-    min-width: min(340px, calc(100vw - 32px)) !important;
-    padding: 10px 20px !important;
-    border-radius: 9999px !important;
-    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06) !important;
+    max-width: min(390px, calc(100vw - 24px)) !important;
+    min-width: min(280px, calc(100vw - 24px)) !important;
+    margin: 0 !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 22px -4px rgba(15, 23, 42, 0.08), 0 3px 8px -2px rgba(15, 23, 42, 0.04) !important;
     border: 1px solid transparent !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
-    animation: swal2PastelToastSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    animation: swal2PastelToastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    gap: 10px !important;
+    grid-column: unset !important;
+    place-self: unset !important;
 }
 
 .swal2-popup.swal2-pastel-toast:hover {
-    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.16), 0 6px 12px -2px rgba(15, 23, 42, 0.08) !important;
+    box-shadow: 0 12px 26px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.05) !important;
     transform: translateY(-2px) !important;
 }
 
 @keyframes swal2PastelToastSlideDown {
     from {
         opacity: 0;
-        transform: translateY(-22px) scale(0.96);
+        transform: translateY(-20px) scale(0.96);
     }
     to {
         opacity: 1;
@@ -78,7 +90,7 @@
     }
 }
 
-/* Hide Default SweetAlert2 Icon Container (we use custom stroke SVGs) */
+/* Hide Default SweetAlert2 Icon Container */
 .swal2-popup.swal2-pastel-toast .swal2-icon {
     display: none !important;
 }
@@ -88,8 +100,8 @@
     order: 1 !important;
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
-    gap: 14px !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
     margin: 0 !important;
     padding: 0 !important;
     flex: 1 1 auto !important;
@@ -98,24 +110,56 @@
     overflow: visible !important;
 }
 
-/* Custom Icon Wrapper */
-.swal2-pastel-icon {
-    flex: 0 0 auto !important;
-    width: 24px !important;
-    height: 24px !important;
-    min-width: 24px !important;
+/* ==========================================================================
+   Compact Circular White Disc & Solid Badges
+   ========================================================================== */
+.swal2-pastel-icon-disc {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin-top: 1px !important;
 }
 
-.swal2-pastel-icon svg {
-    width: 22px !important;
-    height: 22px !important;
-    stroke-width: 2 !important;
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
-    fill: none !important;
+.swal2-icon-badge {
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.swal2-icon-badge svg {
+    width: 11px !important;
+    height: 11px !important;
+}
+
+.swal2-icon-badge.swal2-icon-badge-triangle {
+    border-radius: 4px !important;
+}
+
+.swal2-icon-glyph-i {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    font-style: italic !important;
+    color: #ffffff !important;
+    font-family: serif, 'Times New Roman', sans-serif !important;
+    line-height: 1 !important;
+}
+
+.swal2-icon-glyph-exclamation {
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    line-height: 1 !important;
 }
 
 /* Toast Content Block */
@@ -123,172 +167,223 @@
     flex: 1 1 auto !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 2px !important;
+    gap: 1px !important;
     text-align: left !important;
     overflow: hidden !important;
+    padding-top: 1px !important;
 }
 
 .swal2-pastel-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
+    color: #0f172a !important; /* Solid dark charcoal, sharp & legible */
     letter-spacing: -0.01em !important;
     margin: 0 !important;
     line-height: 1.3 !important;
 }
 
 .swal2-pastel-message {
-    font-size: 12.5px !important;
+    font-size: 11.5px !important;
     font-weight: 400 !important;
-    margin: 0 !important;
-    line-height: 1.35 !important;
+    color: #475569 !important; /* Soft slate */
+    margin: 2px 0 0 0 !important;
+    line-height: 1.4 !important;
     word-break: break-word !important;
 }
 
-/* Custom Soft Close Button on the Far Right */
-.swal2-popup.swal2-pastel-toast .swal2-close {
+/* Custom Minimalist Close Button */
+.swal2-popup.swal2-pastel-toast .swal2-close,
+.swal2-pastel-close-btn {
     order: 2 !important;
     position: static !important;
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    border-radius: 8px !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    border-radius: 6px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 20px !important;
-    font-weight: 400 !important;
-    line-height: 1 !important;
     cursor: pointer !important;
     transition: background-color 0.15s ease, color 0.15s ease !important;
-    margin-left: 14px !important;
+    margin-left: 6px !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
-    margin-right: 0 !important;
+    margin-right: -2px !important;
     padding: 0 !important;
     box-shadow: none !important;
     outline: none !important;
     background: transparent !important;
     border: none !important;
     flex: 0 0 auto !important;
+    color: #94a3b8 !important;
+}
+
+.swal2-popup.swal2-pastel-toast .swal2-close:hover,
+.swal2-pastel-close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: #334155 !important;
+}
+
+.swal2-pastel-close-icon {
+    width: 13px !important;
+    height: 13px !important;
+    stroke: currentColor !important;
 }
 
 /* ==========================================================================
-   5 Semantic Pastel Color Variants (Reference Image Exact Match)
+   4 Semantic Pastel States (1:1 Reference Mockup)
    ========================================================================== */
 
-/* 1. Neutral Toast (Default State) */
-.swal2-pastel-toast.toast-neutral {
-    background-color: #f4f4f5 !important;
-    border-color: #e4e4e7 !important;
-    color: #27272a !important;
-}
-.swal2-pastel-toast.toast-neutral .swal2-pastel-icon svg {
-    stroke: #52525b !important;
-}
-.swal2-pastel-toast.toast-neutral .swal2-pastel-title {
-    color: #18181b !important;
-}
-.swal2-pastel-toast.toast-neutral .swal2-pastel-message {
-    color: #52525b !important;
-}
-.swal2-pastel-toast.toast-neutral .swal2-close {
-    color: #52525b !important;
-}
-.swal2-pastel-toast.toast-neutral .swal2-close:hover {
-    background-color: #e4e4e7 !important;
-    color: #18181b !important;
-}
-
-/* 2. Neutral Blue Toast (Info / Secondary State) */
-.swal2-pastel-toast.toast-blue {
-    background-color: #eff6ff !important;
-    border-color: #dbeafe !important;
-    color: #1e40af !important;
-}
-.swal2-pastel-toast.toast-blue .swal2-pastel-icon svg {
-    stroke: #2563eb !important;
-}
-.swal2-pastel-toast.toast-blue .swal2-pastel-title {
-    color: #1e3a8a !important;
-}
-.swal2-pastel-toast.toast-blue .swal2-pastel-message {
-    color: #3b82f6 !important;
-}
-.swal2-pastel-toast.toast-blue .swal2-close {
-    color: #2563eb !important;
-}
-.swal2-pastel-toast.toast-blue .swal2-close:hover {
-    background-color: #bfdbfe !important;
-    color: #1d4ed8 !important;
-}
-
-/* 3. Successful Toast (Green State) */
+/* 1. Success Toast */
 .swal2-pastel-toast.toast-success {
-    background-color: #ecfdf5 !important;
-    border-color: #a7f3d0 !important;
+    background-color: #f0fdf4 !important;
+    border-color: #dcfce7 !important;
+}
+.swal2-pastel-toast.toast-success .swal2-pastel-icon-disc {
+    border: 1px solid rgba(16, 185, 129, 0.15) !important;
+}
+.swal2-pastel-toast.toast-success:hover .swal2-close:hover {
+    background-color: rgba(16, 185, 129, 0.15) !important;
     color: #065f46 !important;
 }
-.swal2-pastel-toast.toast-success .swal2-pastel-icon svg {
-    stroke: #059669 !important;
-}
-.swal2-pastel-toast.toast-success .swal2-pastel-title {
-    color: #064e3b !important;
-}
-.swal2-pastel-toast.toast-success .swal2-pastel-message {
-    color: #047857 !important;
-}
-.swal2-pastel-toast.toast-success .swal2-close {
-    color: #059669 !important;
-}
-.swal2-pastel-toast.toast-success .swal2-close:hover {
-    background-color: #a7f3d0 !important;
-    color: #064e3b !important;
-}
 
-/* 4. Warning Toast (Orange State) */
-.swal2-pastel-toast.toast-warning {
-    background-color: #fff7ed !important;
-    border-color: #fed7aa !important;
-    color: #9a3412 !important;
-}
-.swal2-pastel-toast.toast-warning .swal2-pastel-icon svg {
-    stroke: #ea580c !important;
-}
-.swal2-pastel-toast.toast-warning .swal2-pastel-title {
-    color: #7c2d12 !important;
-}
-.swal2-pastel-toast.toast-warning .swal2-pastel-message {
-    color: #c2410c !important;
-}
-.swal2-pastel-toast.toast-warning .swal2-close {
-    color: #ea580c !important;
-}
-.swal2-pastel-toast.toast-warning .swal2-close:hover {
-    background-color: #fed7aa !important;
-    color: #7c2d12 !important;
-}
-
-/* 5. Error Toast (Red State) */
+/* 2. Error / Failure Toast */
 .swal2-pastel-toast.toast-error {
     background-color: #fef2f2 !important;
-    border-color: #fecaca !important;
+    border-color: #fee2e2 !important;
+}
+.swal2-pastel-toast.toast-error .swal2-pastel-icon-disc {
+    border: 1px solid rgba(239, 68, 68, 0.15) !important;
+}
+.swal2-pastel-toast.toast-error:hover .swal2-close:hover {
+    background-color: rgba(239, 68, 68, 0.15) !important;
     color: #991b1b !important;
 }
-.swal2-pastel-toast.toast-error .swal2-pastel-icon svg {
-    stroke: #dc2626 !important;
+
+/* 3. Warning Toast */
+.swal2-pastel-toast.toast-warning {
+    background-color: #fffbeb !important;
+    border-color: #fef3c7 !important;
 }
-.swal2-pastel-toast.toast-error .swal2-pastel-title {
-    color: #7f1d1d !important;
+.swal2-pastel-toast.toast-warning .swal2-pastel-icon-disc {
+    border: 1px solid rgba(245, 158, 11, 0.15) !important;
 }
-.swal2-pastel-toast.toast-error .swal2-pastel-message {
-    color: #b91c1c !important;
+.swal2-pastel-toast.toast-warning:hover .swal2-close:hover {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #92400e !important;
 }
-.swal2-pastel-toast.toast-error .swal2-close {
-    color: #dc2626 !important;
+
+/* 4. Info / Update Toast */
+.swal2-pastel-toast.toast-blue,
+.swal2-pastel-toast.toast-info {
+    background-color: #f0f9ff !important;
+    border-color: #e0f2fe !important;
 }
-.swal2-pastel-toast.toast-error .swal2-close:hover {
-    background-color: #fecaca !important;
-    color: #7f1d1d !important;
+.swal2-pastel-toast.toast-blue .swal2-pastel-icon-disc,
+.swal2-pastel-toast.toast-info .swal2-pastel-icon-disc {
+    border: 1px solid rgba(14, 165, 233, 0.15) !important;
+}
+.swal2-pastel-toast.toast-blue:hover .swal2-close:hover,
+.swal2-pastel-toast.toast-info:hover .swal2-close:hover {
+    background-color: rgba(14, 165, 233, 0.15) !important;
+    color: #0369a1 !important;
+}
+
+/* 5. Neutral Toast */
+.swal2-pastel-toast.toast-neutral {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+.swal2-pastel-toast.toast-neutral .swal2-pastel-icon-disc {
+    border: 1px solid rgba(100, 116, 139, 0.15) !important;
+}
+
+/* ==========================================================================
+   📱 Mobile App (PWA & Responsive Touch Viewports) Compact Optimization
+   ========================================================================== */
+@media (max-width: 640px) {
+    body.swal2-toast-shown .swal2-container,
+    body.swal2-toast-shown .swal2-container.swal2-top,
+    body.swal2-toast-shown .swal2-container.swal2-toast-clean-container,
+    .swal2-container.swal2-top,
+    .swal2-container.swal2-top-end,
+    .swal2-container.swal2-toast-clean-container,
+    .swal2-container:has(.swal2-pastel-toast),
+    .swal2-container:has(.swal2-toast) {
+        top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+        inset: calc(10px + env(safe-area-inset-top, 0px)) auto auto 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        justify-content: center !important;
+        z-index: 99999 !important;
+    }
+
+    .swal2-popup.swal2-pastel-toast {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        animation: swal2PastelToastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    .swal2-pastel-icon-disc {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+    }
+
+    .swal2-icon-badge {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .swal2-icon-badge svg {
+        width: 10px !important;
+        height: 10px !important;
+    }
+
+    .swal2-icon-glyph-i,
+    .swal2-icon-glyph-exclamation {
+        font-size: 9.5px !important;
+    }
+
+    .swal2-pastel-title {
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+    }
+
+    .swal2-pastel-message {
+        font-size: 11px !important;
+        line-height: 1.35 !important;
+        margin-top: 1px !important;
+    }
+
+    /* Thumb-friendly Touch Hitbox for Mobile Dismiss Button */
+    .swal2-popup.swal2-pastel-toast .swal2-close,
+    .swal2-pastel-close-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        margin-left: 2px !important;
+        margin-right: -4px !important;
+        margin-top: -2px !important;
+        touch-action: manipulation !important;
+        border-radius: 8px !important;
+    }
+
+    .swal2-pastel-close-icon {
+        width: 13px !important;
+        height: 13px !important;
+    }
 }
 
 /* ==========================================================================
@@ -308,14 +403,15 @@
 }
 
 /* Backdrop ONLY for modal confirmation / alert dialogs (Bukan untuk Toast) */
-.swal2-container.swal2-backdrop-show:not(.swal2-top):not(.swal2-toast-clean-container):not(:has(.swal2-pastel-toast)):not(:has(.swal2-toast)) {
+.swal2-container.swal2-backdrop-show:not(.swal2-top):not(.swal2-top-end):not(.swal2-toast-clean-container):not(:has(.swal2-pastel-toast)):not(:has(.swal2-toast)) {
     background: rgba(15, 23, 42, 0.45) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
 }
 
-/* Fallback pelindung: Jika container adalah swal2-top atau toast, pastikan 100% transparan tanpa backdrop */
+/* Fallback pelindung: Jika container adalah toast, pastikan 100% transparan tanpa backdrop */
 .swal2-container.swal2-top.swal2-backdrop-show,
+.swal2-container.swal2-top-end.swal2-backdrop-show,
 .swal2-container.swal2-toast-clean-container.swal2-backdrop-show,
 .swal2-container.swal2-backdrop-show:has(.swal2-pastel-toast),
 .swal2-container.swal2-backdrop-show:has(.swal2-toast) {
@@ -419,5 +515,3 @@
     border-color: #94a3b8 !important;
     transform: translateY(-1px) !important;
 }
-
-
