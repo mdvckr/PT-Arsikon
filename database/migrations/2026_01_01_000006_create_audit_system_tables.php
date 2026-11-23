@@ -13,27 +13,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // 1. Print Templates (Letterheads, PR/PO printing configuration)
-        Schema::create('print_templates', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('file_path');
-            $table->string('file_name');
-            $table->unsignedBigInteger('file_size')->default(0);
-            $table->unsignedInteger('width_px')->default(0);
-            $table->unsignedInteger('height_px')->default(0);
-            $table->boolean('used_for_pr')->default(false);
-            $table->boolean('used_for_po')->default(false);
-            $table->decimal('padding_top_mm', 5, 1)->default(45.0);
-            $table->decimal('padding_left_mm', 5, 1)->default(14.0);
-            $table->decimal('padding_right_mm', 5, 1)->default(14.0);
-            $table->decimal('padding_bottom_mm', 5, 1)->default(22.0);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamps();
-        });
-
-        // 2. Document Numbering Counters (Sequential number generator)
+        // 1. Document Numbering Counters (Sequential number generator)
         Schema::create('document_counters', function (Blueprint $table) {
             $table->id();
             $table->string('type', 50);
@@ -92,6 +72,5 @@ return new class extends Migration {
 
         Schema::dropIfExists('security_logs');
         Schema::dropIfExists('document_counters');
-        Schema::dropIfExists('print_templates');
     }
 };

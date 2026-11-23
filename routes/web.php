@@ -26,7 +26,6 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MaterialUsageController;
 use App\Http\Controllers\DailyLogController;
 use App\Http\Controllers\PushSubscriptionController;
-use App\Http\Controllers\PrintTemplateController;
 use App\Http\Controllers\TransitLossController;
 use App\Http\Controllers\SecureAttachmentController;
 use Illuminate\Support\Facades\Route;
@@ -241,20 +240,6 @@ Route::middleware(['auth', 'auth.session', 'verified'])->group(function () {
     Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('warehouses', WarehouseController::class)->except(['show']);
     Route::resource('projects', ProjectController::class)->except(['show']);
-
-    // Print Template Manager (Hanya Owner, Super Admin, Admin Pusat)
-    Route::group(['middleware' => ['role:Owner|Super Admin|Admin Pusat|Admin']], function () {
-        Route::resource('print-templates', PrintTemplateController::class)
-            ->only(['index', 'store', 'update', 'destroy']);
-        Route::post('/print-templates/{printTemplate}/set-active',
-            [PrintTemplateController::class, 'setActive'])
-            ->name('print-templates.setActive');
-    });
-
-    Route::get('/print-templates/{printTemplate}/file',
-        [PrintTemplateController::class, 'file'])
-        ->name('print-templates.file')
-        ->middleware('signed');
 
     // Secure Internal Document Attachments
     Route::get('/secure-attachments/{path}', [SecureAttachmentController::class, 'show'])

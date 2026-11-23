@@ -19,6 +19,7 @@
                 @endif
             </p>
         </div>
+        @if(!auth()->user()->hasRole('Owner'))
         <div class="flex items-center gap-2 flex-wrap">
             {{-- Tombol Cetak Laporan Mingguan --}}
             <button type="button" onclick="openPrintModal('weekly')"
@@ -49,6 +50,7 @@
                 <x-lucide-circle-plus /> Catat Nota Baru
             </a>
         </div>
+        @endif
     </div>
 
     @if(session('success'))
@@ -145,6 +147,7 @@
                             $projId = request('project_id') ?: ($firstRec->project_id ?? null);
                             $firstDate = $firstRec->receipt_date ? $firstRec->receipt_date->format('Y-m-d') : null;
                         @endphp
+                        @if(!auth()->user()->hasRole('Owner'))
                         <a href="{{ route('purchase-receipts.weekly-report', array_filter(['project_id' => $projId, 'date' => $firstDate])) }}"
                            target="_blank"
                            onclick="event.stopPropagation();"
@@ -167,6 +170,7 @@
                            title="Lihat Catatan Material & Sewa Alat Minggu Ini">
                             <x-lucide-clipboard-check /> Material & Alat
                         </a>
+                        @endif
                     @endif
                     <x-lucide-chevron-down class="week-icon" id="week-icon-{{ $weekIdx }}" style="font-size:14px;color:#94a3b8;transition:transform 0.2s;" />
                 </div>
@@ -295,6 +299,7 @@
                                         <td class="text-muted" style="font-size:12px;">{{ $receipt->creator?->name ?? '-' }}</td>
                                         <td class="text-nowrap text-center">
                                             <div class="flex items-center justify-center gap-1">
+                                                @if(!auth()->user()->hasRole('Owner'))
                                                 <a href="{{ route('purchase-receipts.show', $receipt) }}" class="btn btn-sm btn-secondary btn-icon" title="Detail Nota">
                                                     <x-lucide-eye />
                                                 </a>
@@ -311,6 +316,7 @@
                                                         </button>
                                                     </form>
                                                 @endcan
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

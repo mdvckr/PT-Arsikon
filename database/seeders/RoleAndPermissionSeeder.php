@@ -155,7 +155,6 @@ class RoleAndPermissionSeeder extends Seeder
             'material_requests' => ['approved_by_user_id', 'requested_by_user_id'],
             'material_usages' => ['cancelled_by_user_id', 'issued_by_user_id'],
             'payments' => ['created_by', 'verified_by'],
-            'print_templates' => ['created_by'],
             'procurement_requests' => ['approved_by', 'requested_by'],
             'project_balance_logs' => ['user_id'],
             'project_balance_requests' => ['approved_by', 'requested_by'],

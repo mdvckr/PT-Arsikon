@@ -2058,7 +2058,7 @@
                     || auth()->user()->can('view payments')
                     || ($isRoleAdminPO && auth()->user()->can('view material requests'))
                 );
-                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'project-notes.*', 'payments.*', 'print-templates.*', 'project-balance-requests.*'])
+                $isPengadaanActive = request()->routeIs(['purchase-orders.*', 'purchase-receipts.*', 'project-notes.*', 'payments.*', 'project-balance-requests.*'])
                     || ($isRoleAdminPO && request()->routeIs(['material-requests.*']));
             @endphp
             @if($isRoleAdminPOProyek)
@@ -2148,11 +2148,6 @@
                         </a>
                         @endcan
 
-                        @if(auth()->user()->hasAnyRole(['Owner', 'Super Admin', 'Admin Pusat']))
-                        <a href="{{ route('print-templates.index') }}" class="nav-item {{ request()->routeIs('print-templates.*') ? 'active' : '' }}">
-                            <x-lucide-layout-template class="nav-icon" aria-hidden="true" /> Template Kop Surat
-                        </a>
-                        @endif
                     </div>
                 </div>
                 @endif
@@ -2162,15 +2157,16 @@
             @php
                 $isRoleGudangProyek = auth()->user()->hasRole('Admin Logistik Proyek');
                 $isRoleGudangPusat = auth()->user()->hasRole('Admin Logistik Pusat');
+                $isRoleOwner = auth()->user()->hasRole('Owner');
                 $isLogistikPure = $isRoleGudangProyek || $isRoleGudangPusat;
                 $canLogistik = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
                     auth()->user()->can('view distributions')
-                    || auth()->user()->can('view goods receipts')
-                    || auth()->user()->can('view material usages')
+                    || (!$isRoleOwner && auth()->user()->can('view goods receipts'))
+                    || (!$isRoleOwner && auth()->user()->can('view material usages'))
                     || auth()->user()->can('view inventory')
-                    || auth()->user()->can('view materials')
-                    || auth()->user()->can('view tools')
-                    || auth()->user()->can('view tool assignments')
+                    || (!$isRoleOwner && auth()->user()->can('view materials'))
+                    || (!$isRoleOwner && auth()->user()->can('view tools'))
+                    || (!$isRoleOwner && auth()->user()->can('view tool assignments'))
                     || ($canDailyLog && !$isLogistikPure && !$isRoleTeknis)
                 );
                 $isLogistikActive = !$isRoleAdminPO && !$isRoleAdminPOProyek && (
@@ -2196,7 +2192,7 @@
                     </a>
                     @endcan
 
-                    @if(!$isRoleTeknis)
+                    @if(!$isRoleTeknis && !$isRoleOwner)
                     @can('view goods receipts')
                     <a href="{{ route('goods-receipts.index') }}" class="nav-item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
                         <x-lucide-package-check class="nav-icon" aria-hidden="true" /> Penerimaan Barang
@@ -2210,6 +2206,7 @@
                     </a>
                     @endcan
 
+                    @if(!$isRoleOwner)
                     @can('view materials')
                     <a href="{{ route('materials.index') }}" class="nav-item {{ request()->routeIs('materials.*') ? 'active' : '' }}">
                         <x-lucide-package class="nav-icon" aria-hidden="true" /> Material
@@ -2233,6 +2230,7 @@
                         <x-lucide-hand-helping class="nav-icon" aria-hidden="true" /> Peminjaman Alat
                     </a>
                     @endcan
+                    @endif
 
                     @if($canDailyLog && !$isRoleGudangProyek && !$isRoleTeknis)
                     <a href="{{ route('daily-log.index') }}" class="nav-item {{ request()->routeIs('daily-log.*') ? 'active' : '' }}">
@@ -2244,7 +2242,7 @@
             @endif
 
             <!-- 4. GRUP ADMIN SISTEM -->
-            @if(auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']))
+            @if(!auth()->user()->hasRole('Owner') && auth()->user()->hasRole('Admin Pusat'))
             @php
                 $isAdminActive = request()->routeIs(['users.*', 'roles.*', 'warehouses.*', 'projects.*']);
             @endphp

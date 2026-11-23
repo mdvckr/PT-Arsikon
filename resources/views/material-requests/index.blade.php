@@ -117,6 +117,19 @@
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="No. PO Lapangan, pemohon..." style="padding-left:28px !important;">
                     </div>
                 </div>
+                @if(auth()->user()->hasRole('Owner'))
+                <div class="filter-col" style="min-width:180px; max-width:240px;">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Filter Proyek</label>
+                    <select name="project_id" class="form-control" onchange="this.form.submit()">
+                        <option value="">Semua Proyek</option>
+                        @foreach($projects as $proj)
+                            <option value="{{ $proj->id }}" {{ request('project_id') == $proj->id ? 'selected' : '' }}>
+                                {{ $proj->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
                 <div class="filter-col" style="max-width:180px;">
                     <label class="form-label" style="font-size:11px;font-weight:600;color:#475569;margin-bottom:3px;">Status</label>
                     <select name="status" class="form-control" onchange="this.form.submit()">
@@ -165,6 +178,13 @@
                             <div style="font-size:11.5px;color:#334155;">{{ $req->fromWarehouse?->name ?? 'Pengadaan' }}</div>
                             @if($req->toWarehouse)
                             <div class="text-muted" style="font-size:10.5px;">→ {{ $req->toWarehouse->display_name }}</div>
+                            @if($req->toWarehouse->project)
+                            <div style="margin-top:2px;">
+                                <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:10px;padding:1px 6px;border-radius:4px;display:inline-block;font-weight:600;">
+                                    🏢 {{ $req->toWarehouse->project->name }}
+                                </span>
+                            </div>
+                            @endif
                             @endif
                         </td>
                         <td class="nowrap" style="font-size:12px;color:#334155;">
@@ -204,7 +224,7 @@
                                 <a href="{{ route('material-requests.show', $req) }}" class="btn btn-sm btn-light border" title="Lihat Detail" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#2563eb;background:#f8fafc;">
                                     <x-lucide-eye style="font-size:11px;" />
                                 </a>
-                                @if(in_array($req->status, ['submitted', 'draft']) && ($req->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat'])))
+                                @if(!auth()->user()->hasRole('Owner') && in_array($req->status, ['submitted', 'draft']) && ($req->requested_by_user_id === auth()->id() || auth()->user()->hasRole('Admin Pusat')))
                                 <a href="{{ route('material-requests.edit', $req) }}" class="btn btn-sm btn-light border" title="Edit PO Lapangan" style="width:28px;height:28px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#d97706;background:#f8fafc;">
                                     <x-lucide-square-pen style="font-size:11px;" />
                                 </a>

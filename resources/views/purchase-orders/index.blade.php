@@ -11,10 +11,6 @@
             <p class="text-muted" style="font-size:13px;">Manajemen Pesanan Pembelian</p>
         </div>
         <div class="flex gap-2 items-center">
-
-            <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
-                <x-lucide-plus class="me-1" /> Buat PO Baru
-            </a>
         </div>
     </div>
 
@@ -295,11 +291,7 @@
             <x-lucide-receipt class="text-muted mb-3" style="font-size:36px;color:#94a3b8;" />
             <h4 class="font-semibold text-slate-700 mb-1">Belum Ada Purchase Order</h4>
             <p class="text-muted text-sm mb-4">Tidak ada PO yang sesuai dengan filter atau belum ada PO yang dibuat.</p>
-            <div>
-                <a href="{{ route('purchase-orders.create') }}" class="btn btn-primary">
-                    <x-lucide-plus class="me-1" /> Buat PO Pertama
-                </a>
-            </div>
+
         </div>
     @endif
 

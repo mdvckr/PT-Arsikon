@@ -367,7 +367,7 @@
 
         /* ===== ACTION BUTTONS ===== */
         .btn-clean-amber {
-            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            background: #ea580c;
             color: #ffffff;
             border: none;
             border-radius: 9px;
@@ -735,7 +735,7 @@
                     @csrf
                     <button type="submit" class="profile-logout-ghost-btn">
                         <x-lucide-log-out class="w-3.5 h-3.5 transform -scale-x-100" />
-                        <span>Keluar Sesi</span>
+                        <span>Logout</span>
                     </button>
                 </form>
             </div>

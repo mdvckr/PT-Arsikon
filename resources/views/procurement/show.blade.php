@@ -1,10 +1,9 @@
 @php
-    $activeTpl = $printTemplate ?? null;
-    $templateUrl = $activeTpl ? $activeTpl->url : asset('assets/kop-surat-a4.png');
-    $padTop = $activeTpl ? $activeTpl->padding_top_mm : 45.0;
-    $padLeft = $activeTpl ? $activeTpl->padding_left_mm : 14.0;
-    $padRight = $activeTpl ? $activeTpl->padding_right_mm : 14.0;
-    $padBottom = $activeTpl ? $activeTpl->padding_bottom_mm : 22.0;
+    $templateUrl = asset('assets/kop-surat-a4.png');
+    $padTop    = 45.0;
+    $padLeft   = 14.0;
+    $padRight  = 14.0;
+    $padBottom = 22.0;
 @endphp
 
 <x-app-layout>
@@ -22,23 +21,6 @@
             {{ $procurement->status_label }}
         </div>
         <div class="pr-action-buttons">
-            @if(isset($allTemplates) && $allTemplates->count() > 0)
-            <div style="display:inline-flex;align-items:center;background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:6px;">
-                <select id="templateSelector" onchange="switchTemplate(this)" style="border:none;background:transparent;font-size:12px;font-weight:600;color:#334155;outline:none;cursor:pointer;">
-                    @foreach($allTemplates as $tpl)
-                    <option value="{{ $tpl->url }}"
-                        data-top="{{ $tpl->padding_top_mm }}"
-                        data-left="{{ $tpl->padding_left_mm }}"
-                        data-right="{{ $tpl->padding_right_mm }}"
-                        data-bottom="{{ $tpl->padding_bottom_mm }}"
-                        {{ ($activeTpl && $activeTpl->id === $tpl->id) ? 'selected' : '' }}>
-                        {{ $tpl->name }} {{ $tpl->used_for_pr ? '★' : '' }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-            @endif
-
             @can('approve procurement')
                 @if($procurement->status === 'submitted')
                 <form method="POST" action="{{ route('procurement.approve', $procurement) }}" style="display:inline;"

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\MaterialRequest;
 use App\Models\Material;
+use App\Models\Project;
 use App\Models\Warehouse;
 use App\Services\MaterialRequestService;
 use Illuminate\Http\Request;
@@ -50,13 +51,21 @@ class MaterialRequestController extends Controller
                   ->whereNotIn('status', ['fulfilled', 'rejected', 'cancelled']);
         }
 
+        if ($request->filled('project_id')) {
+            $projectId = $request->project_id;
+            $query->whereHas('toWarehouse', function ($wq) use ($projectId) {
+                $wq->where('project_id', $projectId);
+            });
+        }
+
         $sort = in_array($request->sort, ['created_at', 'needed_at']) ? $request->sort : 'created_at';
         $direction = strtolower($request->direction) === 'asc' ? 'asc' : 'desc';
 
         $requests = $query->orderBy($sort, $direction)->paginate(15)->withQueryString();
         $categories = Category::orderBy('name')->get();
+        $projects = $authUser->hasRole('Owner') ? Project::orderBy('name')->get() : collect();
 
-        return view('material-requests.index', compact('requests', 'categories'));
+        return view('material-requests.index', compact('requests', 'categories', 'projects'));
     }
 
     public function create()

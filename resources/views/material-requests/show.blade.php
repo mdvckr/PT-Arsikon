@@ -370,7 +370,7 @@
     @php
         $hasPurchaseItems = $materialRequest->items->contains(fn($it) => ($it->fulfillment === 'purchase' || empty($it->material_id) || ($it->fulfillment !== 'stock' && empty($materialRequest->from_warehouse_id))) && (((float)$it->qty_approved > 0 ? (float)$it->qty_approved : (float)$it->qty_requested) - (float)$it->qty_ordered) > 0);
         $hasCustomItems = $materialRequest->items->contains(fn($it) => empty($it->material_id) || !empty($it->custom_item_name));
-        $canCreatePo = auth()->user()->hasAnyRole(['Owner', 'Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) || auth()->user()->can('create purchase orders');
+        $canCreatePo = !auth()->user()->hasRole('Owner') && (auth()->user()->hasAnyRole(['Admin Pusat', 'Admin Logistik Pusat', 'Admin Pengadaan']) || auth()->user()->can('create purchase orders'));
         $relatedPos = $materialRequest->items->flatMap->purchaseOrderItems->map->purchaseOrder->filter()->unique('id');
         $sentPo = $relatedPos->first(fn($p) => in_array($p->status, ['sent', 'partial_received', 'approved']))
             ?? $relatedPos->first(fn($p) => $p->status !== 'received' && $p->status !== 'cancelled')
@@ -378,8 +378,8 @@
         $inTransitDist = $materialRequest->distributions->firstWhere('status', 'in_transit');
         $canReceiveGr = auth()->user()->can('create goods receipts');
         $canReceiveDist = $inTransitDist && $inTransitDist->canUserReceive(auth()->user());
-        $canEdit = in_array($materialRequest->status, ['submitted', 'draft']) &&
-            ($materialRequest->requested_by_user_id === auth()->id() || auth()->user()->hasAnyRole(['Owner', 'Admin Pusat']));
+        $canEdit = !auth()->user()->hasRole('Owner') && in_array($materialRequest->status, ['submitted', 'draft']) &&
+            ($materialRequest->requested_by_user_id === auth()->id() || auth()->user()->hasRole('Admin Pusat'));
 
         // Direct & Related Goods Receipts
         $directGrs = $materialRequest->goodsReceipts ?? collect();
@@ -721,7 +721,7 @@
         @endif
 
         {{-- 2. Butuh PO ke Vendor --}}
-        @if(in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
+        @if(!auth()->user()->hasRole('Owner') && in_array($materialRequest->status, ['approved', 'partially_fulfilled']) && $hasPurchaseItems)
         <div class="mb-4 p-4 rounded-xl border flex items-center justify-between gap-4 flex-wrap" style="background:#fffbeb;border-color:#fcd34d;">
             <div class="flex items-center gap-3.5">
                 <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm">

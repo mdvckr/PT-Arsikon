@@ -554,8 +554,6 @@ class PurchaseOrderController extends Controller
         $itemGrs = !empty($itemGrIds) ? \App\Models\GoodsReceipt::whereIn('id', $itemGrIds)->with(['creator', 'confirmedBy', 'warehouse', 'items.material.unit', 'items.tool'])->get() : collect();
         $allGoodsReceipts = $directGrs->merge($itemGrs)->unique('id')->sortByDesc('receipt_date')->values();
 
-        $printTemplate = \App\Models\PrintTemplate::activeForPO();
-        $allTemplates  = \App\Models\PrintTemplate::latest()->get();
         $userCanViewPrice = auth()->user() ? auth()->user()->canViewPoPrice() : false;
 
         // Keamanan Blind PO / Hidden Harga di Backend:
@@ -599,7 +597,7 @@ class PurchaseOrderController extends Controller
             }
         }
 
-        return view('purchase-orders.show', compact('purchaseOrder', 'printTemplate', 'allTemplates', 'userCanViewPrice', 'allGoodsReceipts'));
+        return view('purchase-orders.show', compact('purchaseOrder', 'userCanViewPrice', 'allGoodsReceipts'));
     }
 
     public function edit(PurchaseOrder $purchaseOrder)

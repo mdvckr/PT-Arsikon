@@ -3,10 +3,17 @@
 
     @push('styles')
     <style>
-        /* ========================================================
-           ENTERPRISE NOTIFICATION CENTER (PT ARSIKON)
-           Clean, Human-Crafted, Responsive Activity Feed
-           ======================================================== */
+        :root {
+            --arsikon-amber: #ea580c;
+            --arsikon-amber-dark: #c2410c;
+            --arsikon-amber-soft: #fff7ed;
+            --arsikon-slate-dark: #0f172a;
+            --arsikon-slate-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.88);
+            --glass-border: rgba(226, 232, 240, 0.85);
+            --glass-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+        }
+
         .notif-container {
             width: 100%;
         }
@@ -16,83 +23,144 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
+            font-size: 12.5px;
             color: #64748b;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            font-weight: 500;
         }
 
         .notif-breadcrumb a {
             color: #64748b;
             text-decoration: none;
-            font-weight: 500;
+            transition: color 0.15s ease;
         }
 
         .notif-breadcrumb a:hover {
             color: #0f172a;
         }
 
-        /* Page Header Banner */
+        /* Header Banner */
         .notif-header-banner {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            margin-bottom: 20px;
+            padding: 20px 24px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
-        .notif-title-area h1 {
-            font-size: 22px;
-            font-weight: 900;
+        .notif-header-title {
+            font-size: 21px;
+            font-weight: 800;
             color: #0f172a;
-            letter-spacing: -0.4px;
+            letter-spacing: -0.3px;
             margin: 0;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .notif-title-area p {
+        .notif-header-desc {
             font-size: 13px;
             color: #64748b;
             margin: 4px 0 0 0;
         }
 
-        /* Controls Bar (Filter Tabs + Search) */
+        /* Top KPI Metric Cards */
+        .notif-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .notif-kpi-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .notif-kpi-card:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.06);
+        }
+
+        .notif-kpi-card.is-active-filter {
+            border-color: var(--arsikon-amber);
+            background: #fffcf9;
+            box-shadow: 0 0 0 1px var(--arsikon-amber), 0 4px 14px -2px rgba(234, 88, 12, 0.12);
+        }
+
+        .notif-kpi-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .notif-kpi-number {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .notif-kpi-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        /* Controls Bar */
         .notif-controls-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
 
         .notif-tabs-segment {
             display: inline-flex;
-            background: #e2e8f0;
+            align-items: center;
+            background: #f1f5f9;
             padding: 4px;
             border-radius: 12px;
             gap: 4px;
+            border: 1px solid #e2e8f0;
         }
 
         .notif-tab-btn {
             border: none;
             background: transparent;
-            padding: 7px 14px;
+            padding: 7px 15px;
             border-radius: 8px;
             font-size: 12.5px;
             font-weight: 600;
-            color: #475569;
+            color: #64748b;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
+            white-space: nowrap;
             transition: all 0.15s ease;
         }
 
@@ -103,48 +171,47 @@
         .notif-tab-btn.active {
             background: #ffffff;
             color: #0f172a;
-            font-weight: 800;
+            font-weight: 700;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .notif-tab-badge {
-            font-size: 10.5px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 700;
             padding: 1px 7px;
             border-radius: 9999px;
-            background: #cbd5e1;
-            color: #334155;
+            background: #e2e8f0;
+            color: #475569;
         }
 
         .notif-tab-btn.active .notif-tab-badge.badge-active-unread {
-            background: #2563eb;
+            background: var(--arsikon-amber);
             color: #ffffff;
         }
 
-        /* Search Input */
+        /* Search Box */
         .notif-search-wrap {
             position: relative;
-            min-width: 240px;
-            flex: 1;
+            width: 100%;
             max-width: 320px;
         }
 
         .notif-search-wrap input {
             width: 100%;
             height: 38px;
-            padding: 0 12px 0 36px;
+            padding: 0 14px 0 36px;
             font-size: 12.5px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
             background: #ffffff;
             color: #0f172a;
             outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            transition: all 0.15s ease;
         }
 
         .notif-search-wrap input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            border-color: var(--arsikon-amber);
+            box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
         }
 
         .notif-search-icon {
@@ -152,148 +219,155 @@
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
             color: #94a3b8;
-            font-size: 13px;
             pointer-events: none;
         }
 
-        /* Card List */
-        .notif-list-feed {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        /* Notification Feed Cards */
         .notif-feed-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 14px;
-            padding: 18px 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
+            padding: 18px 22px;
+            margin-bottom: 12px;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
             position: relative;
+            overflow: hidden;
         }
 
         .notif-feed-card:hover {
             border-color: #cbd5e1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px -3px rgba(15, 23, 42, 0.06);
         }
 
         .notif-feed-card.is-unread {
-            background: #fcfdfe;
-            border-color: #bfdbfe;
-            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.05);
+            background: #ffffff;
+            border-left: 4px solid var(--arsikon-amber);
+            box-shadow: 0 3px 12px -2px rgba(234, 88, 12, 0.06);
         }
 
-        .notif-feed-card.is-unread::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 14px;
-            bottom: 14px;
-            width: 4px;
-            border-radius: 0 4px 4px 0;
-            background: #2563eb;
+        .notif-feed-card.is-read {
+            background: #fbfcfd;
+            border-color: #e2e8f0;
+            opacity: 0.92;
         }
 
-        .notif-squircle-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 17px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-
-        .notif-body-area {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .notif-meta-header {
+        .notif-card-meta {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .notif-card-title {
-            font-size: 14.5px;
+            font-size: 15.5px;
             font-weight: 800;
             color: #0f172a;
+            letter-spacing: -0.2px;
             line-height: 1.35;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .notif-card-desc {
             font-size: 13px;
-            color: #334155;
-            line-height: 1.5;
-            margin-bottom: 12px;
-            font-weight: 500;
-            word-break: break-word;
+            color: #475569;
+            line-height: 1.55;
+            margin-bottom: 14px;
         }
 
         .notif-actions-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
             flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 14px;
+            border-top: 1px solid #f1f5f9;
         }
 
-        .btn-notif-action {
-            height: 32px;
-            padding: 0 12px;
-            font-size: 12px;
-            font-weight: 700;
-            border-radius: 8px;
+        /* Buttons */
+        .btn-notif-primary {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            height: 34px;
+            padding: 0 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            background: #0f172a;
+            border: 1px solid #0f172a;
+            border-radius: 9px;
             text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-notif-primary:hover {
+            background: var(--arsikon-amber);
+            border-color: var(--arsikon-amber);
+            color: #ffffff;
+        }
+
+        .btn-notif-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            text-decoration: none;
+            cursor: pointer;
             transition: all 0.15s ease;
         }
 
-        .btn-notif-primary {
-            background: #2563eb;
-            color: #ffffff;
-            border: 1px solid #1d4ed8;
-        }
-        .btn-notif-primary:hover {
-            background: #1d4ed8;
-            color: #ffffff;
-        }
-
-        .btn-notif-ghost {
-            background: #ffffff;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-        }
-        .btn-notif-ghost:hover {
+        .btn-notif-secondary:hover {
             background: #f8fafc;
             color: #0f172a;
-            border-color: #94a3b8;
+            border-color: #cbd5e1;
         }
 
         .notif-empty-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            padding: 56px 24px;
+            padding: 48px 20px;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
-        @media (max-width: 640px) {
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 88, 12, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+        }
+
+        .pulse-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--arsikon-amber);
+            display: inline-block;
+            animation: pulseDot 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .notif-kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
             .notif-header-banner {
                 flex-direction: column;
                 align-items: flex-start;
@@ -304,15 +378,6 @@
             }
             .notif-search-wrap {
                 max-width: 100%;
-            }
-            .notif-feed-card {
-                padding: 14px;
-                gap: 12px;
-            }
-            .notif-squircle-icon {
-                width: 38px;
-                height: 38px;
-                font-size: 15px;
             }
         }
     </style>
@@ -328,21 +393,23 @@
         
         {{-- Breadcrumb --}}
         <div class="notif-breadcrumb">
-            <a href="{{ route('dashboard') }}"><x-lucide-home class="me-1" /> Dashboard</a>
-            <x-lucide-chevron-right class="text-[10px] text-slate-400" />
-            <span style="color:#0f172a;font-weight:700;">Pusat Pemberitahuan</span>
+            <a href="{{ route('dashboard') }}">Dashboard</a>
+            <span style="color:#cbd5e1;">/</span>
+            <span style="color:#0f172a;font-weight:600;">Pusat Pemberitahuan</span>
         </div>
 
         {{-- Page Header Banner --}}
         <div class="notif-header-banner">
-            <div class="notif-title-area">
-                <h1 data-animate="header">
-                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base shrink-0 border border-blue-100">
-                        <x-lucide-bell />
-                    </div>
-                    <span>Pusat Pemberitahuan</span>
+            <div>
+                <h1 class="notif-header-title">
+                    <span>Pusat Pemberitahuan & Aktivitas</span>
+                    @if($unreadCount > 0)
+                        <span style="font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:9999px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;">
+                            {{ $unreadCount }} Perlu Tindakan
+                        </span>
+                    @endif
                 </h1>
-                <p>
+                <p class="notif-header-desc">
                     Pantau aktivitas persetujuan, logistik material proyek, dan pembaruan sistem secara langsung.
                 </p>
             </div>
@@ -353,30 +420,25 @@
                   data-confirm-title="Tandai Semua Dibaca"
                   data-confirm-btn="Ya, Tandai Semua">
                 @csrf
-                <button type="submit" class="btn-notif-action btn-notif-primary" style="height:36px;padding:0 16px;box-shadow:0 1px 2px rgba(37,99,235,0.2);">
-                    <x-lucide-check-check />
-                    <span>Tandai Semua Dibaca</span>
+                <button type="submit" class="btn-notif-secondary" style="height:36px;padding:0 16px;font-weight:600;">
+                    Tandai Semua Dibaca
                 </button>
             </form>
             @endif
         </div>
-
-        {{-- Controls Bar (Segmented Tabs & Search) --}}
+        {{-- Controls Bar (Tabs + Search) --}}
         <div class="notif-controls-bar">
-            {{-- Tabs --}}
+            {{-- Segmented Tabs --}}
             <div class="notif-tabs-segment">
                 <button type="button" class="notif-tab-btn active" data-filter="all" onclick="filterNotifs('all', this)">
-                    <x-lucide-inbox />
                     <span>Semua</span>
                     <span class="notif-tab-badge">{{ $totalCount }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" data-filter="unread" onclick="filterNotifs('unread', this)">
-                    <x-lucide-mail />
                     <span>Belum Dibaca</span>
                     <span class="notif-tab-badge {{ $unreadCount > 0 ? 'badge-active-unread' : '' }}">{{ $unreadCount }}</span>
                 </button>
                 <button type="button" class="notif-tab-btn" data-filter="read" onclick="filterNotifs('read', this)">
-                    <x-lucide-mail-open />
                     <span>Sudah Dibaca</span>
                     <span class="notif-tab-badge">{{ $readCount }}</span>
                 </button>
@@ -390,7 +452,7 @@
         </div>
 
         {{-- Notification List Feed --}}
-        <div class="notif-list-feed" id="notifFeed">
+        <div id="notifFeed">
             @forelse($notifications as $notif)
                 @php
                     $isUnread = is_null($notif->read_at);
@@ -400,136 +462,108 @@
                     $message = $data['message'] ?? $notif->message ?? '-';
                     $link = $data['url'] ?? $data['link'] ?? $notif->url ?? $notif->link ?? null;
 
-                    // Color & Icon Resolution
-                    $icon = 'bell';
-                    $iconColor = '#2563eb';
-                    $iconBg = '#eff6ff';
-                    $badgeStyle = 'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;';
+                    // Clean, subtle category styling (no screaming rainbow colors)
                     $categoryLabel = 'Informasi';
+                    $badgeStyle = 'background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;';
 
                     if ($type === 'stock_alert' || str_contains(strtolower($title), 'stok')) {
-                        $icon = 'triangle-alert';
-                        $iconColor = '#dc2626';
-                        $iconBg = '#fef2f2';
-                        $badgeStyle = 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;';
                         $categoryLabel = 'Peringatan Stok';
+                        $badgeStyle = 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;';
                     } elseif ($type === 'approval_needed' || str_contains(strtolower($title), 'approval') || str_contains(strtolower($title), 'persetujuan')) {
-                        $icon = 'hourglass';
-                        $iconColor = '#d97706';
-                        $iconBg = '#fffbeb';
-                        $badgeStyle = 'background:#fffbeb;color:#92400e;border:1px solid #fde68a;';
                         $categoryLabel = 'Persetujuan';
+                        $badgeStyle = 'background:#fffbeb;color:#92400e;border:1px solid #fde68a;';
+                    } elseif (str_contains(strtolower($title), 'pengadaan') || str_contains(strtolower($title), 'mr') || str_contains(strtolower($title), 'po')) {
+                        $categoryLabel = 'Pengadaan Material';
+                        $badgeStyle = 'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;';
                     } elseif (str_contains(strtolower($title), 'surat jalan') || str_contains(strtolower($title), 'pengiriman')) {
-                        $icon = 'truck';
-                        $iconColor = '#2563eb';
-                        $iconBg = '#eff6ff';
-                        $badgeStyle = 'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;';
                         $categoryLabel = 'Surat Jalan';
+                        $badgeStyle = 'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;';
                     } elseif (str_contains(strtolower($title), 'pengeluaran') || str_contains(strtolower($title), 'pemakaian')) {
-                        $icon = 'receipt';
-                        $iconColor = '#ea580c';
-                        $iconBg = '#fff7ed';
-                        $badgeStyle = 'background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;';
                         $categoryLabel = 'Pemakaian Material';
+                        $badgeStyle = 'background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;';
                     } elseif (str_contains(strtolower($title), 'penerimaan') || str_contains(strtolower($title), 'masuk') || str_contains(strtolower($title), 'gr')) {
-                        $icon = 'package-check';
-                        $iconColor = '#059669';
-                        $iconBg = '#ecfdf5';
-                        $badgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;';
                         $categoryLabel = 'Penerimaan Barang';
-                    } elseif (str_contains(strtolower($title), 'peminjaman') || str_contains(strtolower($title), 'alat')) {
-                        $icon = 'wrench';
-                        $iconColor = '#7c3aed';
-                        $iconBg = '#f5f3ff';
-                        $badgeStyle = 'background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;';
-                        $categoryLabel = 'Peminjaman Alat';
-                    } elseif ($type === 'success' || str_contains(strtolower($title), 'selesai')) {
-                        $icon = 'circle-check';
-                        $iconColor = '#059669';
-                        $iconBg = '#ecfdf5';
                         $badgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;';
+                    } elseif (str_contains(strtolower($title), 'peminjaman') || str_contains(strtolower($title), 'alat')) {
+                        $categoryLabel = 'Peminjaman Alat';
+                        $badgeStyle = 'background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;';
+                    } elseif ($type === 'success' || str_contains(strtolower($title), 'selesai')) {
                         $categoryLabel = 'Selesai';
+                        $badgeStyle = 'background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;';
                     }
                 @endphp
 
                 <div class="notif-feed-card {{ $isUnread ? 'is-unread' : 'is-read' }}" data-status="{{ $isUnread ? 'unread' : 'read' }}">
-                    {{-- Left Squircle Icon --}}
-                    <div class="notif-squircle-icon" style="background:{{ $iconBg }};color:{{ $iconColor }};border:1px solid {{ $iconColor }}25;">
-                        <x-dynamic-component :component="'lucide-'.$icon" class="w-4 h-4" />
+                    {{-- Meta Header: Category Badge + Status + Timestamp --}}
+                    <div class="notif-card-meta">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span style="{{ $badgeStyle }}font-size:11px;font-weight:700;padding:2.5px 9px;border-radius:6px;letter-spacing:0.2px;">
+                                {{ $categoryLabel }}
+                            </span>
+
+                            @if($isUnread)
+                            <span style="font-size:11.5px;font-weight:700;color:var(--arsikon-amber);display:inline-flex;align-items:center;gap:6px;">
+                                <span class="pulse-indicator"></span>
+                                Belum Dibaca
+                            </span>
+                            @else
+                            <span style="font-size:11px;font-weight:500;color:#94a3b8;">
+                                Sudah Ditinjau
+                            </span>
+                            @endif
+                        </div>
+
+                        <div style="font-size:12px;color:#64748b;font-weight:500;">
+                            <strong style="color:#1e293b;">{{ $notif->created_at->diffForHumans() }}</strong>
+                            <span style="color:#cbd5e1;margin:0 5px;">&bull;</span>
+                            <span>{{ $notif->created_at->format('d M Y, H:i') }}</span>
+                        </div>
                     </div>
 
-                    {{-- Content --}}
-                    <div class="notif-body-area">
-                        {{-- Meta Header: Category Badge + Timestamp + Unread Status --}}
-                        <div class="notif-meta-header">
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="badge" style="{{ $badgeStyle }}font-size:10.5px;padding:2px 8px;border-radius:6px;font-weight:700;">
-                                    {{ $categoryLabel }}
-                                </span>
+                    {{-- Title --}}
+                    <div class="notif-card-title">
+                        {{ $title }}
+                    </div>
 
-                                @if($isUnread)
-                                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#2563eb;">
-                                    <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;box-shadow:0 0 6px #2563eb;"></span>
-                                    Belum Dibaca
-                                </span>
-                                @else
-                                <span style="font-size:11px;color:#94a3b8;font-weight:600;">
-                                    <x-lucide-check class="text-slate-400 me-1" /> Dibaca
-                                </span>
-                                @endif
-                            </div>
+                    {{-- Description --}}
+                    <div class="notif-card-desc">
+                        {{ $message }}
+                    </div>
 
-                            <div style="font-size:11.5px;color:#64748b;display:flex;align-items:center;gap:6px;font-weight:500;">
-                                <x-lucide-clock style="font-size:10.5px;color:#94a3b8;" />
-                                <strong style="color:#0f172a;">{{ $notif->created_at->diffForHumans() }}</strong>
-                                <span style="color:#cbd5e1;">&bull;</span>
-                                <span>{{ $notif->created_at->format('d/m/Y H:i') }}</span>
-                            </div>
-                        </div>
-
-                        {{-- Title: 100% BLACK TEXT --}}
-                        <div class="notif-card-title">
-                            {{ $title }}
-                        </div>
-
-                        {{-- Message: 100% BLACK/DARK SLATE TEXT --}}
-                        <div class="notif-card-desc">
-                            {{ $message }}
-                        </div>
-
-                        {{-- Action Buttons --}}
-                        <div class="notif-actions-row">
+                    {{-- Action Row --}}
+                    @if($link || $isUnread)
+                    <div class="notif-actions-row">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             @if($link)
-                            <a href="{{ $link }}" class="btn-notif-action btn-notif-primary">
-                                <span>Buka Berkas</span>
-                                <x-lucide-arrow-right class="text-[10px]" />
+                            <a href="{{ $link }}" class="btn-notif-primary">
+                                Buka Berkas
                             </a>
                             @endif
 
                             @if($isUnread)
                             <form method="POST" action="{{ route('notifications.markAsRead', $notif->id) }}" style="margin:0;">
                                 @csrf
-                                <button type="submit" class="btn-notif-action btn-notif-ghost" title="Tandai Sudah Dibaca">
-                                    <x-lucide-check class="text-emerald-600" />
-                                    <span>Tandai Dibaca</span>
+                                <button type="submit" class="btn-notif-secondary" title="Tandai Sudah Dibaca">
+                                    Tandai Dibaca
                                 </button>
                             </form>
                             @endif
                         </div>
+
+                        <div style="font-size:11.5px;color:#94a3b8;font-weight:500;">
+                            Pusat Notifikasi PT-Arsikon
+                        </div>
                     </div>
+                    @endif
                 </div>
             @empty
                 <div class="notif-empty-box">
-                    <div style="width:56px;height:56px;border-radius:16px;background:#f1f5f9;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;">
-                        <x-lucide-bell-off />
-                    </div>
-                    <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px;">Kotak Masuk Bersih</h3>
-                    <p style="font-size:13px;color:#64748b;max-width:360px;margin:0 auto 20px;line-height:1.5;">
-                        Tidak ada notifikasi baru saat ini. Semua pembaruan permohonan, persetujuan, dan pengiriman material akan langsung muncul di sini.
+                    <h3 style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:6px;">Semua Pemberitahuan Telah Ditinjau</h3>
+                    <p style="font-size:13px;color:#64748b;max-width:380px;margin:0 auto 20px;line-height:1.5;">
+                        Tidak ada notifikasi baru saat ini. Semua pembaruan aktivitas permohonan, persetujuan, dan logistik akan langsung muncul di sini.
                     </p>
-                    <a href="{{ route('dashboard') }}" class="btn-notif-action btn-notif-ghost" style="height:36px;padding:0 16px;">
-                        <x-lucide-arrow-left />
-                        <span>Kembali ke Dashboard</span>
+                    <a href="{{ route('dashboard') }}" class="btn-notif-secondary" style="height:36px;padding:0 18px;">
+                        Kembali ke Dashboard
                     </a>
                 </div>
             @endforelse
@@ -537,18 +571,15 @@
 
         {{-- Filter Empty State (Shown via JS when search / filter produces 0 results) --}}
         <div id="filterEmptyNotice" class="notif-empty-box" style="display:none;margin-top:14px;">
-            <div style="width:50px;height:50px;border-radius:14px;background:#ecfdf5;color:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;">
-                <x-lucide-circle-check />
-            </div>
-            <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:4px;">Tidak Ada Notifikasi Sesuai Filter</h4>
-            <p style="font-size:12.5px;color:#64748b;margin:0;">
-                Semua notifikasi pada kategori atau kata kunci ini telah selesai atau tidak ditemukan.
+            <h4 style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">Tidak Ada Notifikasi Sesuai Filter</h4>
+            <p style="font-size:13px;color:#64748b;margin:0;">
+                Semua notifikasi pada kategori atau kata kunci pencarian ini tidak ditemukan.
             </p>
         </div>
 
         {{-- Pagination --}}
         @if($notifications->hasPages())
-        <div class="mt-4 p-3 bg-white border border-slate-200 rounded-xl">
+        <div style="margin-top:16px;padding:12px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;">
             {{ $notifications->links() }}
         </div>
         @endif
@@ -560,10 +591,25 @@
         let currentFilterStatus = 'all';
         let currentSearchQuery = '';
 
+        function setFilterTab(status) {
+            const btn = document.querySelector(`.notif-tab-btn[data-filter="${status}"]`);
+            if (btn) {
+                filterNotifs(status, btn);
+            }
+        }
+
         function filterNotifs(status, btn) {
             currentFilterStatus = status;
             document.querySelectorAll('.notif-tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            // Highlight corresponding KPI card
+            document.querySelectorAll('.notif-kpi-card').forEach(c => c.classList.remove('is-active-filter'));
+            const kpiTarget = document.getElementById(`kpi-${status}`);
+            if (kpiTarget) {
+                kpiTarget.classList.add('is-active-filter');
+            }
+
             applyFilters();
         }
 
@@ -584,7 +630,7 @@
                 const matchesSearch = (!currentSearchQuery || cardText.includes(currentSearchQuery));
 
                 if (matchesStatus && matchesSearch) {
-                    card.style.display = 'flex';
+                    card.style.display = 'block';
                     visibleCount++;
                 } else {
                     card.style.display = 'none';

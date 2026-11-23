@@ -68,9 +68,7 @@ class ProcurementController extends Controller
     public function show(ProcurementRequest $procurement)
     {
         $procurement->load(['requester','approver','items.material.unit','purchaseOrders.supplier']);
-        $printTemplate = \App\Models\PrintTemplate::activeForPR();
-        $allTemplates  = \App\Models\PrintTemplate::latest()->get();
-        return view('procurement.show', compact('procurement', 'printTemplate', 'allTemplates'));
+        return view('procurement.show', compact('procurement'));
     }
 
     public function approve(ProcurementRequest $procurement)
